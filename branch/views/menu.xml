@@ -1,0 +1,17 @@
+<odoo>
+    <data>
+        <record id="action_res_branch_form" model="ir.actions.act_window">
+            <field name="name">Divisi</field>
+            <field name="res_model">res.branch</field>
+            <field name="view_mode">tree,form</field>
+            <field name="view_id" ref="view_res_branch_tree"/>
+        </record>
+
+        <menuitem action="action_res_branch_form"
+                  id="menu_action_res_branch"
+                  parent="base.menu_users"
+        />
+
+
+    </data>
+</odoo>
