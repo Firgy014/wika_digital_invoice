@@ -1,0 +1,18 @@
+<odoo>
+    <data>
+
+        <record id="branch_res_partner_form_view" model="ir.ui.view">
+            <field name="name">res.user.form.extended</field>
+            <field name="model">res.users</field>
+            <field name="inherit_id" ref="base.view_users_form"/>
+            <field name="arch" type="xml">
+                <group name="preferences" position="before">
+                    <group string='Allowed Branches'>
+                        <field name="branch_ids" nolabel="1" widget="many2many_tags "/>
+                        <field name="branch_id"/>
+                    </group>
+                </group>
+            </field>
+        </record>
+    </data>
+</odoo>

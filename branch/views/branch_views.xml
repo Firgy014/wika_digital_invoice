@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+
+        <record id="view_res_branch_form" model="ir.ui.view">
+            <field name="name">res.branch.form</field>
+            <field name="model">res.branch</field>
+            <field name="arch" type="xml">
+                <form string="Divisi Information" version="7.0">
+                    <sheet>
+                        <group cols="4">
+                            <group>
+                                <field name="name"/>
+                                 <field name="code"/>
+                                <field name="company_id"/>
+                                <field name="sequence"/>
+                                <field name="parent_id"/>
+                                <field name="biro"/>
+                                <field name="active"/>
+                            </group>
+                            <group>
+                                <field name="partner_id"/>
+                                <field name="kode_coa_rk_id"/>
+                                <field name="sap_code"/>
+                                <field name="sap_code_cost"/>
+                            </group>
+
+                        </group>
+                         <notebook>
+                        	<page string='Tanda Tangan'>
+                        		<field name="ttd_ids" nolabel="1">
+                        			<tree editable="bottom">
+                                        <field name="laporan"/>
+                                        <field name="partner_id"/>
+                                        <field name="sequence"/>
+                                    </tree>
+                                </field>
+                            </page>
+                              <page string="RK Divisi">
+
+                                <field name="rk_ids" nolabel="1" context="{'default_parent_id':id}">
+                                    <tree editable="bottom">
+                                        <field name="parent_id" invisible="1"/>
+                                        <field name="branch_id" string="Divisi"
+                                               domain="[('id', '!=', parent_id)]"/>
+                                        <field name="account_id"/>
+                                    </tree>
+                                </field>
+                            </page>
+                     </notebook>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+
+
+
+        <record id="view_res_branch_tree" model="ir.ui.view">
+            <field name="name">res.branch.tree</field>
+            <field name="model">res.branch</field>
+            <field name="arch" type="xml">
+                <tree string="Divisi Information">
+                    <field name="code"/>
+                    <field name="name"/>
+                    <field name="company_id"/>
+                    <field name="sequence"/>
+                    <field name="parent_id"/>
+                    <field name="sap_code"/>
+                </tree>
+            </field>
+        </record>
+
+
+
+
+
+
+    </data>
+</odoo>
