@@ -1,0 +1,47 @@
+# Odoo specific
+*.pyc
+__pycache__/
+*.pyo
+*.pyd
+*.db
+*.log
+
+# Odoo development files
+*.bak
+*.sublime-project
+*.sublime-workspace
+
+# Odoo database dump
+dump.sql
+
+# Web assets
+web/bundle.js
+web/bundle.css
+
+# Editor-specific files
+.vscode/
+.idea/
+
+# Compiled files
+*.pyc
+*.pyo
+*.pyd
+
+# Python virtual environment
+venv/
+.env/
+
+# Docker
+docker-compose.yml
+.env
+
+# Log files
+*.log
+
+# Backup and temporary files
+*.bak
+*.swp
+*~
+
+# Database
+*.db

@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="purchase_order_approval_history_tree_view" model="ir.ui.view">
+        <field name="name">wika.purchase.order.approval.history.tree</field>
+        <field name="model">wika.purchase.order.approval.history</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="purchase_order_id"/>
+                <field name="user_id"/>
+                <field name="group_id"/>
+                <field name="date"/>
+                <field name="note"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="purchase_order_approval_history_form_view" model="ir.ui.view">
+        <field name="name">wika.purchase.order.approval.history.form</field>
+        <field name="model">wika.purchase.order.approval.history</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="purchase_order_id"/>
+                <field name="user_id"/>
+                <field name="group_id"/>
+                <field name="date"/>
+                <field name="note"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="purchase_order_form_inherit_wika" model="ir.ui.view">
+        <field name="name">purchase.order.form.inherit.wika</field>
+        <field name="model">purchase.order</field>
+        <field name="inherit_id" ref="purchase.purchase_order_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='partner_id']" position="after">
+                <field name="is_visible_button" invisible="1"/>
+            </xpath>
+            <!-- <xpath expr="//button[@id='draft_confirm']" position="attributes">
+                <attribute name="attrs">{'invisible': ['|', ('is_visible_button', '=', False)]}</attribute>
+            </xpath>
+            <xpath expr="//button[@data-hotkey='x']" position="attributes">
+                <attribute name="attrs">{'invisible': ['|', ('is_visible_button', '=', False)]}</attribute>
+            </xpath> -->
+        </field>
+    </record>
+
+    <record id="purchase_order_view_tree_inherit_wika" model="ir.ui.view">
+        <field name="name">purchase.order.tree.inherit.wika</field>
+        <field name="model">purchase.order</field>
+        <field name="inherit_id" ref="purchase.purchase_order_view_tree"/>
+        <field name="arch" type="xml">
+            <!-- Hidden Fields  -->
+            <xpath expr="//field[@name='date_approve']" position="replace">
+                <field name="date_approve" invisible="1"/>
+            </xpath>
+            <xpath expr="//field[@name='company_id']" position="replace">
+                <field name="company_id" invisible="1"/>
+            </xpath>
+            <xpath expr="//field[@name='user_id']" position="replace">
+                <field name="user_id" invisible="1"/>
+            </xpath>
+            <xpath expr="//field[@name='activity_ids']" position="replace">
+                <field name="activity_ids" invisible="1"/>
+            </xpath>
+            <xpath expr="//field[@name='origin']" position="replace">
+                <field name="origin" invisible="1"/>
+            </xpath>
+
+            <!-- New Custom Fields -->
+            <xpath expr="//field[@name='name']" position="before">
+                <field name="branch_id"/>
+            </xpath>
+            <xpath expr="//field[@name='branch_id']" position="after">
+                <field name="department_id" string="Dept"/>
+            </xpath>
+            <xpath expr="//field[@name='department_id']" position="after">
+                <field name="project_id"/>
+            </xpath>
+            <xpath expr="//field[@name='project_id']" position="after">
+                <field name="po_type"/>
+            </xpath>
+
+        </field>
+    </record>
+    
+</odoo>
