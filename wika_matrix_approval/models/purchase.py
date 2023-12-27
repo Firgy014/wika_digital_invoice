@@ -19,15 +19,22 @@ class PurchaseOrderInherit(models.Model):
     branch_id = fields.Many2one('res.branch', string='Divisi')
     department_id = fields.Many2one('res.branch', string='Department')
     project_id = fields.Many2one('project.project', string='Project')
-    state = fields.Selection([
-        ('po', 'PO'),
-        ('uploaded', 'Uploaded'),
+    # state = fields.Selection([
+    #     ('po', 'PO'),
+    #     ('uploaded', 'Uploaded'),
+    #     ('approved', 'Approved')
+    # ], string='Status')
+    state = fields.Selection(selection_add=[
+        ('po', 'PO'), 
+        ('uploaded', 'Uploaded'), 
         ('approved', 'Approved')
-    ], string='Status')
+    ])
     po_type = fields.Char(string='Purchasing Doc Type')
+    begin_date = fields.Date(string='Tgl Mulai Kontrak')
     end_date = fields.Date(string='Tgl Akhir Kontrak')
-    document_ids = fields.One2many('wika.po.document.line', 'document_id', string='Purchase Order Document Lines')
+    document_ids = fields.One2many('wika.po.document.line', 'purchase_id', string='Purchase Order Document Lines')
     history_approval_ids = fields.One2many('wika.po.approval.line', 'approval_id', string='Purchase Order Approval Lines')
+    sap_doc_number = fields.Char(string='SAP Doc Number')
 
     def _get_matrix_approval_group(self):
         model_id = self.env['ir.model'].sudo().search([('name', '=', 'matrix.approval')], limit=1)
@@ -106,9 +113,27 @@ class PurchaseOrderInherit(models.Model):
             print("User has no access to cancel a purchase order based on the matrix_approval_group")
             return {'type': 'ir.actions.act_window_close'}
 
+    @api.model
+    def create(self, vals):
+        res = super(PurchaseOrderInherit, self).create(vals)
+        model_model = self.env['ir.model'].sudo()
+        model_id = model_model.search([('name', '=', 'purchase.order')], limit=1)
+        doc_setting_model = self.env['wika.document.setting'].sudo()
+        doc_setting_id = doc_setting_model.search([('model_id', '=', model_id.id)])
+
+        if doc_setting_id:
+            print("ADA DOC")
+            ada_doc
+        else:
+            print("GA ADA DOC")
+            ga_ada_doc
+
+        return res
+
 class PurchaseOrderDocumentLine(models.Model):
     _name = 'wika.po.document.line'
 
+    description = fields.Char(string='Description')
     purchase_id = fields.Many2one('purchase.order', string='Purchase')
     document_id = fields.Many2one('wika.document.setting', string='Document')
     document = fields.Binary(attachment=True, store=True, string='Upload File')

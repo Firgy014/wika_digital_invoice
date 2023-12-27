@@ -9,11 +9,11 @@
         <menuitem id="main_menu_approval" name="Approval" parent="wika_matrix_approval_root_menu" action="action_matrix_approval"/>
         <menuitem id="main_menu_history" name="History" parent="wika_matrix_approval_root_menu" action="action_purchase_approval_history"/>
 
-        <!-- Approval Menus -->
-        <menuitem id="menu_approval_setting" parent="base.menu_users" action="action_wika_approval_setting_line_tree"/>
+        <!-- Approval Menu -->
+        <menuitem id="menu_approval_setting" parent="base.menu_users" action="action_wika_approval_setting_line_tree" sequence="15"/>
 
-        <!-- Document Menus -->
-        <menuitem id="menu_approval_setting" parent="base.menu_users" action="action_wika_document_setting_tree"/>
+        <!-- Document Menu -->
+        <menuitem id="menu_document_setting" parent="base.menu_users" action="action_wika_document_setting_tree" sequence="25"/>
 
     </data>
 </odoo>
