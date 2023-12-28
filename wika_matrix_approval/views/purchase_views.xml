@@ -34,6 +34,59 @@
         <field name="model">purchase.order</field>
         <field name="inherit_id" ref="purchase.purchase_order_form"/>
         <field name="arch" type="xml">
+        <xpath expr="//button[@name='action_rfq_send']" position="attributes">
+            <attribute name="modifiers">{
+                "invisible": ["|", ["partner_id", "=", False], ["partner_id", "=", False, "context", "=", "{'send_rfq': False}"]]
+            }</attribute>
+        </xpath>
+            <!-- <xpath expr="//button[@name='button_name2']" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath> -->
+
+                <!-- <button name="print_quotation" position="attributes">
+                    <attribute name="invisible">1</attribute>
+                </button>
+                <button name="button_confirm" position="attributes">
+                    <attribute name="invisible">1</attribute>
+                </button>
+                <button name="button_approve" position="attributes">
+                    <attribute name="invisible">1</attribute>
+                </button>
+                <button name="action_create_invoice" position="attributes">
+                    <attribute name="invisible">1</attribute>
+                </button>
+                <button name="action_rfq_send" states="sent" position="attributes">
+                    <attribute name="invisible">1</attribute>
+                </button>
+                <button name="print_quotation" states="sent" position="attributes">
+                    <attribute name="invisible">1</attribute>
+                </button>
+                <button name="button_confirm" states="draft" position="attributes">
+                    <attribute name="invisible">1</attribute>
+                </button>
+                <button name="action_rfq_send" states="purchase" position="attributes">
+                    <attribute name="invisible">1</attribute>
+                </button>
+                <button name="confirm_reminder_mail" position="attributes">
+                    <attribute name="invisible">1</attribute>
+                </button>
+                <button name="action_create_invoice" position="attributes">
+                    <attribute name="invisible">1</attribute>
+                </button>
+                <button name="button_draft" states="cancel" position="attributes">
+                    <attribute name="invisible">1</attribute>
+                </button>
+                <button name="button_cancel" states="draft,to approve,sent,purchase" position="attributes">
+                    <attribute name="invisible">1</attribute>
+                </button>
+                <button name="button_done" position="attributes">
+                    <attribute name="invisible">1</attribute>
+                </button>
+                <button name="button_unlock" states="done" groups="purchase.group_purchase_manager" position="attributes">
+                    <attribute name="invisible">1</attribute>
+                </button>
+                <field name="state" widget="statusbar" statusbar_visible="draft,sent,purchase" readonly="1"/>
+            </xpath> -->
 
             <data>
                 <xpath expr="//page[@name='purchase_delivery_invoice']" position="attributes">
@@ -41,6 +94,8 @@
                 </xpath>
             </data>
 
+            <!-- <data>
+            </data> -->
 
 
             <xpath expr="//field[@name='currency_id']" position="after">
@@ -88,11 +143,12 @@
 
             <xpath expr="//notebook/page[@name='purchase_delivery_invoice']" position="after">
                 <page string="History Approval">
-                    <field name="approval_history_ids">
+                    <field name="history_approval_ids">
                         <tree>
-                            <field name="purchase_order_id"/>
+                            <field name="purchase_id"/>
                             <field name="user_id"/>
-                            <field name="group_id"/>
+                            <field name="groups_id"/>
+                            <!-- <field name="approval_id"/> -->
                             <field name="date"/>
                             <field name="note"/>
                         </tree>
@@ -101,7 +157,7 @@
                 <page string="List Document">
                     <field name="document_ids">
                         <tree editable="top">
-                            <field name="description"/>
+                            <field name="document_id"/>
                             <field name="document" widget="binary_button"/>
                             <field name="state"/>
                         </tree>
