@@ -34,6 +34,139 @@
         <field name="model">purchase.order</field>
         <field name="inherit_id" ref="purchase.purchase_order_form"/>
         <field name="arch" type="xml">
+        <xpath expr="//button[@name='action_rfq_send']" position="attributes">
+            <attribute name="modifiers">{
+                "invisible": ["|", ["partner_id", "=", False], ["partner_id", "=", False, "context", "=", "{'send_rfq': False}"]]
+            }</attribute>
+        </xpath>
+            <!-- <xpath expr="//button[@name='button_name2']" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath> -->
+
+                <!-- <button name="print_quotation" position="attributes">
+                    <attribute name="invisible">1</attribute>
+                </button>
+                <button name="button_confirm" position="attributes">
+                    <attribute name="invisible">1</attribute>
+                </button>
+                <button name="button_approve" position="attributes">
+                    <attribute name="invisible">1</attribute>
+                </button>
+                <button name="action_create_invoice" position="attributes">
+                    <attribute name="invisible">1</attribute>
+                </button>
+                <button name="action_rfq_send" states="sent" position="attributes">
+                    <attribute name="invisible">1</attribute>
+                </button>
+                <button name="print_quotation" states="sent" position="attributes">
+                    <attribute name="invisible">1</attribute>
+                </button>
+                <button name="button_confirm" states="draft" position="attributes">
+                    <attribute name="invisible">1</attribute>
+                </button>
+                <button name="action_rfq_send" states="purchase" position="attributes">
+                    <attribute name="invisible">1</attribute>
+                </button>
+                <button name="confirm_reminder_mail" position="attributes">
+                    <attribute name="invisible">1</attribute>
+                </button>
+                <button name="action_create_invoice" position="attributes">
+                    <attribute name="invisible">1</attribute>
+                </button>
+                <button name="button_draft" states="cancel" position="attributes">
+                    <attribute name="invisible">1</attribute>
+                </button>
+                <button name="button_cancel" states="draft,to approve,sent,purchase" position="attributes">
+                    <attribute name="invisible">1</attribute>
+                </button>
+                <button name="button_done" position="attributes">
+                    <attribute name="invisible">1</attribute>
+                </button>
+                <button name="button_unlock" states="done" groups="purchase.group_purchase_manager" position="attributes">
+                    <attribute name="invisible">1</attribute>
+                </button>
+                <field name="state" widget="statusbar" statusbar_visible="draft,sent,purchase" readonly="1"/>
+            </xpath> -->
+
+            <data>
+                <xpath expr="//page[@name='purchase_delivery_invoice']" position="attributes">
+                    <attribute name="invisible">1</attribute>
+                </xpath>
+            </data>
+
+            <!-- <data>
+            </data> -->
+
+
+            <xpath expr="//field[@name='currency_id']" position="after">
+                <field name="po_type"/>
+            </xpath>
+            <xpath expr="//field[@name='po_type']" position="after">
+                <field name="sap_doc_number"/>
+            </xpath>
+
+            <!-- <xpath expr="//field[@name='sap_doc_number']" position="after">
+                <group>
+                    <field name="branch_id"/>
+                </group>
+            </xpath> -->
+
+            <!-- <xpath expr="//field[@name='date_approve']" position="replace">
+                <field name="date_approve" invisible="1"/>
+            </xpath> -->
+            <xpath expr="//field[@name='date_approve']" position="after">
+                <field name="branch_id"/>
+            </xpath>
+            <xpath expr="//field[@name='date_planned']" position="replace">
+                <field name="date_planned" invisible="1"/>
+            </xpath>
+            <xpath expr="//field[@name='branch_id']" position="after">
+                <field name="department_id"/>
+            </xpath>
+            <xpath expr="//field[@name='department_id']" position="after">
+                <field name="project_id"/>
+            </xpath>
+            <xpath expr="//field[@name='project_id']" position="after">
+                <field name="begin_date"/>
+            </xpath>
+            <xpath expr="//field[@name='begin_date']" position="after">
+                <field name="end_date"/>
+            </xpath>
+
+            <!-- <xpath expr="//notebook/page[@name='purchase_delivery_invoice']" position="replace">
+                <page string="Other Information" name="purchase_delivery_invoice">
+                    <form>
+                        <field name="end_date" invisible="1/>
+                    </form>
+                </page>
+            </xpath> -->
+
+            <xpath expr="//notebook/page[@name='purchase_delivery_invoice']" position="after">
+                <page string="History Approval">
+                    <field name="history_approval_ids">
+                        <tree>
+                            <field name="purchase_id"/>
+                            <field name="user_id"/>
+                            <field name="groups_id"/>
+                            <!-- <field name="approval_id"/> -->
+                            <field name="date"/>
+                            <field name="note"/>
+                        </tree>
+                    </field>
+                </page>
+                <page string="List Document">
+                    <field name="document_ids">
+                        <tree editable="top">
+                            <field name="document_id"/>
+                            <field name="document" widget="binary_button"/>
+                            <field name="state"/>
+                        </tree>
+                    </field>
+                </page>
+            </xpath>
+            
+            <!-- </xpath> -->
+
             <xpath expr="//field[@name='partner_id']" position="after">
                 <field name="is_visible_button" invisible="1"/>
             </xpath>
@@ -67,6 +200,9 @@
             <xpath expr="//field[@name='origin']" position="replace">
                 <field name="origin" invisible="1"/>
             </xpath>
+            <xpath expr="//field[@name='date_planned']" position="replace">
+                <field name="date_planned" invisible="1"/>
+            </xpath>
 
             <!-- New Custom Fields -->
             <xpath expr="//field[@name='name']" position="before">
@@ -79,7 +215,16 @@
                 <field name="project_id"/>
             </xpath>
             <xpath expr="//field[@name='project_id']" position="after">
-                <field name="po_type"/>
+                <field name="po_type" string="PO Type"/>
+            </xpath>
+            <xpath expr="//field[@name='name']" position="after">
+                <field name="sap_doc_number"/>
+            </xpath>
+            <xpath expr="//field[@name='sap_doc_number']" position="after">
+                <field name="begin_date"/>
+            </xpath>
+            <xpath expr="//field[@name='begin_date']" position="after">
+                <field name="end_date"/>
             </xpath>
 
         </field>
