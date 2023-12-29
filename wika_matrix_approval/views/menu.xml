@@ -12,13 +12,8 @@
         <!-- Approval Menu -->
         <menuitem id="menu_approval_setting" parent="base.menu_users" action="action_wika_approval_setting_line_tree" sequence="15"/>
 
-<<<<<<< HEAD
-        <!-- Document Menus -->
-        <menuitem id="menu_document_setting" parent="base.menu_users" action="action_wika_document_setting_tree"/>
-=======
         <!-- Document Menu -->
         <menuitem id="menu_document_setting" parent="base.menu_users" action="action_wika_document_setting_tree" sequence="25"/>
->>>>>>> 39e64057a4efb25502979477d4fce6576d3ea29b
 
     </data>
 </odoo>
