@@ -2,64 +2,6 @@
 <odoo>
     <data>
 
-        <record id="matrix_approval_form_view" model="ir.ui.view">
-            <field name="name">wika.matrix.approval.form</field>
-            <field name="model">wika.matrix.approval</field>
-            <field name="arch" type="xml">
-                <form>
-                    <group>
-                        <field name="name"/>
-                        <field name="model_id"/>
-                    </group>
-                    <notebook>
-                        <page string="Approval Lines">
-                            <field name="line_ids" widget="one2many_list" options="{'editable': true}">
-                                <tree editable="bottom">
-                                    <field name="group_id"/>
-                                    <field name="sequence"/>
-                                </tree>
-                            </field>
-                        </page>
-                    </notebook>
-                </form>
-            </field>
-        </record>
-
-        <record id="matrix_approval_tree_view" model="ir.ui.view">
-            <field name="name">wika.matrix.approval.tree</field>
-            <field name="model">wika.matrix.approval</field>
-            <field name="arch" type="xml">
-                <tree>
-                    <field name="name"/>
-                    <field name="model_id"/>
-                </tree>
-            </field>
-        </record>
-
-        <record id="matrix_approval_line_form_view" model="ir.ui.view">
-            <field name="name">wika.matrix.approval.line.form</field>
-            <field name="model">wika.matrix.approval.line</field>
-            <field name="arch" type="xml">
-                <form>
-                    <group>
-                        <field name="group_id"/>
-                        <field name="sequence"/>
-                    </group>
-                </form>
-            </field>
-        </record>
-
-        <record id="matrix_approval_line_tree_view" model="ir.ui.view">
-            <field name="name">wika.matrix.approval.line.tree</field>
-            <field name="model">wika.matrix.approval.line</field>
-            <field name="arch" type="xml">
-                <tree>
-                    <field name="group_id"/>
-                    <field name="sequence"/>
-                </tree>
-            </field>
-        </record>
-
         <record id="wika_approval_setting_tree_view" model="ir.ui.view">
             <field name="name">wika.approval.setting.tree</field>
             <field name="model">wika.approval.setting</field>
@@ -83,6 +25,7 @@
                         <field name="project_id"/>
                         <field name="model_id"/>
                         <field name="state"/>
+                        <field name="total_approve"/>     
                     </group>
                     <notebook>
                         <page string="Setting Lines">
