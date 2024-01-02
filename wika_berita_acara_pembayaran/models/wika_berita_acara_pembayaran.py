@@ -1,4 +1,5 @@
 from odoo import models, fields, api
+from datetime import datetime, timedelta
 
 class WikaBeritaAcaraPembayaran(models.Model):
     _name = 'wika.berita.acara.pembayaran'
@@ -15,8 +16,9 @@ class WikaBeritaAcaraPembayaran(models.Model):
     history_approval_ids = fields.One2many('wika.bap.approval.line', 'bap_id', string='List Approval')
     start_date = fields.Datetime('Start Date')
     end_date = fields.Datetime('End Date')
-    state = fields.Selection([('draft', 'Draft'), ('approve', 'Approve'), ('reject', 'Reject')], string='Status', readonly=True, default='draft')
+    state = fields.Selection([('draft', 'Draft'), ('upload', 'Upload'), ('approve', 'Approve'), ('reject', 'Reject')], string='Status', readonly=True, default='draft')
     reject_reason = fields.Text(string='Reject Reason')
+    step_approve = fields.Integer(string='step approve')
 
     # @api.model
     # def create(self, vals):
@@ -30,7 +32,21 @@ class WikaBeritaAcaraPembayaran(models.Model):
         
         return action
 
-    def action_confirm(self):
+    def action_submit(self):
+        self.write({'state': 'upload'})
+
+    def action_approve(self):
+        active_id = self.env.context.get('active_id')
+        # print("TESTTTTT" , active_id)
+        if active_id:
+            audit_log_obj = self.env['wika.bap.approval.line'].create({'user_id': self._uid,
+                # 'groups_id' :groups_id.id,
+                'date': datetime.now(),
+                # 'description': 'Approve',
+                # 'level': 'Department',
+                'bap_id': self.active_id
+                })
+            # return {'type': 'ir.actions.act_window_close'}
         self.write({'state': 'approve'})
       
     def action_cancel(self):

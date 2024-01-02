@@ -92,8 +92,9 @@
             <field name="arch" type="xml">
                 <form string="Berita Acara Pembayaran Form">
                     <header>
-                        <button name="action_confirm" type="object" string="CONFIRM" states="draft" class="btn-success"/>
+                        <button name="action_approve" type="object" string="APPROVE" states="draft" class="btn-success"/>
                         <button name="action_cancel" type="object" string="CANCEL" states="approve"/>
+                        <button name="action_submit" type="object" string="SUBMIT" states="draft"/>
                         <!-- <button name="action_reject" type="object" string="REJECT" states="approve" class="btn-danger"/> -->
                         <button name="%(wika_berita_acara_pembayaran.action_reject_wizard)d" type="action" string="REJECT" states="approve" class="btn-danger"/>
                         <field name="state" widget="statusbar" statusbar_visible="draft,approve,reject"/>
@@ -103,6 +104,8 @@
                             <group>
                                 <field name="partner_id"/>
                                 <field name="po_id"/>
+                                <field name="step_approve"/>
+                                
                             </group>
                             <group>
                                 <field name="branch_id"/>
