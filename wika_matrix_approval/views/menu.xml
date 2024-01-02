@@ -1,9 +1,6 @@
 <?xml version='1.0' encoding='utf-8'?>
 <odoo>
     <data>
-        <!-- Main menu -->
-        <!-- <menuitem id="matrix_approval_root_menu" name="Matrix Wika" sequence="78" web_icon="matrix_approval/static/description/icon.png"/> -->
-        <menuitem id="wika_matrix_approval_root_menu" name="Matrix" sequence="100" web_icon="wika_matrix_approval,static/description/icon.png"/>
 
         <!-- Submenus -->
         <!-- <menuitem id="main_menu_approval" name="Approval" parent="wika_matrix_approval_root_menu" action="action_matrix_approval"/>
@@ -14,10 +11,6 @@
 
         <!-- Document Menu -->
         <menuitem id="menu_document_setting" parent="base.menu_users" action="action_wika_document_setting_tree" sequence="25"/>
-
-        <!-- New Purchase Menu -->
-        <menuitem id="menu_purchase_wika" name="Wika" parent="purchase.menu_purchase_root" sequence="25"/>
-        <menuitem id="menu_purchase_wika_orders" name="Purchase Orders" parent="wika_matrix_approval.menu_purchase_wika" action="action_wika_purchase_order" sequence="2"/>
 
     </data>
 </odoo>

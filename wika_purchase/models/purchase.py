@@ -3,6 +3,7 @@ from datetime import datetime
 from odoo.exceptions import AccessError, ValidationError
 import pytz
 
+
 class PurchaseOrderApprovalHistory(models.Model):
     _name = 'wika.purchase.order.approval.history'
     _description = 'List of Approved Orders'
@@ -13,6 +14,7 @@ class PurchaseOrderApprovalHistory(models.Model):
     date = fields.Datetime(string='Date')
     note = fields.Text(string='Note')
 
+
 class PurchaseOrderInherit(models.Model):
     _inherit = 'purchase.order'
 
@@ -22,27 +24,28 @@ class PurchaseOrderInherit(models.Model):
     department_id = fields.Many2one('res.branch', string='Department')
     project_id = fields.Many2one('project.project', string='Project')
     state = fields.Selection(selection_add=[
-        ('po', 'PO'), 
-        ('uploaded', 'Uploaded'), 
+        ('po', 'PO'),
+        ('uploaded', 'Uploaded'),
         ('approved', 'Approved')
     ])
     po_type = fields.Char(string='Purchasing Doc Type')
     begin_date = fields.Date(string='Tgl Mulai Kontrak')
     end_date = fields.Date(string='Tgl Akhir Kontrak')
     document_ids = fields.One2many('wika.po.document.line', 'purchase_id', string='Purchase Order Document Lines')
-    history_approval_ids = fields.One2many('wika.po.approval.line', 'purchase_id', string='Purchase Order Approval Lines')
+    history_approval_ids = fields.One2many('wika.po.approval.line', 'purchase_id',
+                                           string='Purchase Order Approval Lines')
     sap_doc_number = fields.Char(string='SAP Doc Number')
     step_approve = fields.Integer(string='Step Approve')
 
     def _get_matrix_approval_group(self):
-    #     model_id = self.env['ir.model'].sudo().search([('name', '=', 'matrix.approval')], limit=1)
-    #     group_id = self.env['res.groups'].sudo().search([
-    #         ('model_access.model_id', '=', model_id.id)
-    #     ])
-    #     if group_id:
-    #         return group_id
-    #     else:
-    #         return False
+        #     model_id = self.env['ir.model'].sudo().search([('name', '=', 'matrix.approval')], limit=1)
+        #     group_id = self.env['res.groups'].sudo().search([
+        #         ('model_access.model_id', '=', model_id.id)
+        #     ])
+        #     if group_id:
+        #         return group_id
+        #     else:
+        #         return False
         return None
 
     @api.onchange('partner_id')
@@ -53,7 +56,6 @@ class PurchaseOrderInherit(models.Model):
             print("User has access to confirm a purchase order based on the matrix_approval_group")
         else:
             print("User has no access to confirm a purchase order based on the matrix_approval_group")
-
 
     def button_confirm(self):
         res = super(PurchaseOrderInherit, self).button_confirm()
@@ -111,7 +113,7 @@ class PurchaseOrderInherit(models.Model):
         model_id = model_model.search([('model', '=', 'purchase.order')], limit=1)
         for vals in vals_list:
             res = super(PurchaseOrderInherit, self).create(vals)
-            
+
             # Get Document Setting
             document_list = []
             doc_setting_id = document_setting_model.search([('model_id', '=', model_id.id)])
@@ -122,18 +124,19 @@ class PurchaseOrderInherit(models.Model):
 
             if doc_setting_id:
                 for document_line in doc_setting_id:
-                    document_list.append((0,0, {
+                    document_list.append((0, 0, {
                         'purchase_id': res.id,
                         'document_id': document_line.id,
                         'state': 'waiting'
                     }))
                 res.document_ids = document_list
             else:
-                raise AccessError("Either approval and/or document settings are not found. Please configure it first in the settings menu.")
-            
+                raise AccessError(
+                    "Either approval and/or document settings are not found. Please configure it first in the settings menu.")
+
             # for group in res.env.user.groups_id:
             #     for menu in group.menu_access:
-            #         if 'Purchase' in menu.name: 
+            #         if 'Purchase' in menu.name:
             #             if len(menu.parent_path) > 4:
             #                 po_approval_group = group
 
@@ -153,15 +156,16 @@ class PurchaseOrderInherit(models.Model):
         return res
 
     def action_approve(self):
-        user = self.env['res.users'].search([('id','=',self._uid)], limit=1)
+        user = self.env['res.users'].search([('id', '=', self._uid)], limit=1)
         cek = False
-        model_id = self.env['ir.model'].search([('model','=', 'purchase.order')], limit=1)
+        model_id = self.env['ir.model'].search([('model', '=', 'purchase.order')], limit=1)
         if model_id:
-            model_wika_id = self.env['wika.approval.setting'].search([('model_id','=',  model_id.id)], limit=1)
+            model_wika_id = self.env['wika.approval.setting'].search([('model_id', '=', model_id.id)], limit=1)
 
-        if user.branch_id.id==self.branch_id.id and model_wika_id:
+        if user.branch_id.id == self.branch_id.id and model_wika_id:
             groups_line = self.env['wika.approval.setting.line'].search(
-                [('branch_id', '=', self.branch_id.id), ('sequence',  '=', self.step_approve), ('approval_id', '=', model_wika_id.id )], limit=1)
+                [('branch_id', '=', self.branch_id.id), ('sequence', '=', self.step_approve),
+                 ('approval_id', '=', model_wika_id.id)], limit=1)
             groups_id = groups_line.groups_id
 
             for x in groups_id.users:
@@ -175,11 +179,11 @@ class PurchaseOrderInherit(models.Model):
                 self.step_approve += 1
 
             self.env['wika.po.approval.line'].create({'user_id': self._uid,
-                'groups_id' :groups_id.id,
-                'date': datetime.now(),
-                'note': 'Approve',
-                'purchase_id': self.id
-                })
+                                                      'groups_id': groups_id.id,
+                                                      'date': datetime.now(),
+                                                      'note': 'Approve',
+                                                      'purchase_id': self.id
+                                                      })
         else:
             raise ValidationError('User Akses Anda tidak berhak Approve!')
 
@@ -198,13 +202,14 @@ class PurchaseOrderInherit(models.Model):
         # groups_id  = self.env['res.groups'].search([('id','=',groups_line.groups_id.id)])
         user = self.env['res.users'].search([('id', '=', self._uid)], limit=1)
         cek = False
-        model_id = self.env['ir.model'].search([('model','=', 'purchase.order')], limit=1)
+        model_id = self.env['ir.model'].search([('model', '=', 'purchase.order')], limit=1)
         if model_id:
-            model_wika_id = self.env['wika.approval.setting'].search([('model_id','=',  model_id.id)], limit=1)
+            model_wika_id = self.env['wika.approval.setting'].search([('model_id', '=', model_id.id)], limit=1)
 
-        if user.branch_id.id==self.branch_id.id and model_wika_id:
+        if user.branch_id.id == self.branch_id.id and model_wika_id:
             groups_line = self.env['wika.approval.setting.line'].search(
-                [('branch_id', '=', self.branch_id.id), ('sequence',  '=', self.step_approve), ('approval_id', '=', model_wika_id.id )], limit=1)
+                [('branch_id', '=', self.branch_id.id), ('sequence', '=', self.step_approve),
+                 ('approval_id', '=', model_wika_id.id)], limit=1)
             groups_id = groups_line.groups_id
             for x in groups_id.users:
                 if x.id == self._uid:
@@ -243,6 +248,7 @@ class PurchaseOrderDocumentLine(models.Model):
         ('verified', 'Verified')
     ], string='Status')
 
+
 class PurchaseOrderApprovalLine(models.Model):
     _name = 'wika.po.approval.line'
 
@@ -251,3 +257,21 @@ class PurchaseOrderApprovalLine(models.Model):
     groups_id = fields.Many2one('res.groups', string='Groups')
     date = fields.Datetime(string='Date')
     note = fields.Char(string='Note')
+# -*- coding: utf-8 -*-
+
+# from odoo import models, fields, api
+
+
+# class wika_purchase(models.Model):
+#     _name = 'wika_purchase.wika_purchase'
+#     _description = 'wika_purchase.wika_purchase'
+
+#     name = fields.Char()
+#     value = fields.Integer()
+#     value2 = fields.Float(compute="_value_pc", store=True)
+#     description = fields.Text()
+#
+#     @api.depends('value')
+#     def _value_pc(self):
+#         for record in self:
+#             record.value2 = float(record.value) / 100
