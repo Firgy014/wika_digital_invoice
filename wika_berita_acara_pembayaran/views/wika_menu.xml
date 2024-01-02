@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <data noupdate="1">
+    
+        <menuitem id="wika_berita_acara_pembayaran_menu_root" name="Berita Acara Pembayaran"/>
+        
+        <menuitem id="main_menu_wika_berita_acara_pembayaran" name="BAP"   
+            parent="wika_berita_acara_pembayaran_menu_root" 
+            action="wika_berita_acara_pembayaran.action_window" sequence="1"/>
+
+        <menuitem id="main_menu_reject" name="REJECT" parent="wika_berita_acara_pembayaran_menu_root" 
+            action="action_reject_wizard" sequence="2"/>
+
+    </data>
+    
+
+</odoo>
