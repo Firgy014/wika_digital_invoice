@@ -20,7 +20,7 @@
     'version': '0.1',
 
     # any module necessary for this one to work correctly
-    'depends': ['base', 'purchase', 'project', 'branch'],
+    'depends': ['base', 'purchase', 'project', 'branch', 'web'],
 
     # always loaded
     'data': [
@@ -31,6 +31,10 @@
         'views/wizard.xml',
         'views/action.xml',
         'views/menu.xml',
+        'views/assets.xml',
+
+        'wizard/wika_reject_reason.xml',
+
     ],
     # only loaded in demonstration mode
     'demo': [
