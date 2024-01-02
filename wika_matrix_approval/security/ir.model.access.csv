@@ -1,11 +1,10 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
-access_wika_matrix_approval,Matrix Approval,model_wika_matrix_approval,,1,1,1,1
-access_wika_matrix_approval_line,Matrix Approval Line,model_wika_matrix_approval_line,,1,1,1,1
-
 access_wika_purchase_order_approval_history,Approved Purchase Orders,model_wika_purchase_order_approval_history,,1,1,1,1
 
 access_wika_approval_setting,Approval Setting,model_wika_approval_setting,,1,1,1,1
 access_wika_approval_setting_line,Approval Setting Line,model_wika_approval_setting_line,,1,1,1,1
+
+access_reject_wizard,Reject Wizard,model_reject_wizard,,1,1,1,1
 
 access_wika_document_setting,Document Setting,model_wika_document_setting,,1,1,1,1
 

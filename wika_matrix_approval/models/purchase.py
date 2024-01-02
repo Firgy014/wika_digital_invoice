@@ -1,6 +1,6 @@
 from odoo import api, fields, models, _
 from datetime import datetime
-from odoo.exceptions import AccessError
+from odoo.exceptions import AccessError, ValidationError
 import pytz
 
 class PurchaseOrderApprovalHistory(models.Model):
@@ -32,16 +32,18 @@ class PurchaseOrderInherit(models.Model):
     document_ids = fields.One2many('wika.po.document.line', 'purchase_id', string='Purchase Order Document Lines')
     history_approval_ids = fields.One2many('wika.po.approval.line', 'purchase_id', string='Purchase Order Approval Lines')
     sap_doc_number = fields.Char(string='SAP Doc Number')
+    step_approve = fields.Integer(string='Step Approve')
 
     def _get_matrix_approval_group(self):
-        model_id = self.env['ir.model'].sudo().search([('name', '=', 'matrix.approval')], limit=1)
-        group_id = self.env['res.groups'].sudo().search([
-            ('model_access.model_id', '=', model_id.id)
-        ])
-        if group_id:
-            return group_id
-        else:
-            return False
+    #     model_id = self.env['ir.model'].sudo().search([('name', '=', 'matrix.approval')], limit=1)
+    #     group_id = self.env['res.groups'].sudo().search([
+    #         ('model_access.model_id', '=', model_id.id)
+    #     ])
+    #     if group_id:
+    #         return group_id
+    #     else:
+    #         return False
+        return None
 
     @api.onchange('partner_id')
     def _onchange_visibility(self):
@@ -102,11 +104,10 @@ class PurchaseOrderInherit(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
-        jkt_tz = pytz.timezone('Asia/Jakarta')
+        # jkt_tz = pytz.timezone('Asia/Jakarta')
         model_model = self.env['ir.model'].sudo()
-        approval_model = self.env['wika.matrix.approval'].sudo()
         document_setting_model = self.env['wika.document.setting'].sudo()
-        approval_setting_model = self.env['wika.approval.setting'].sudo()
+        # approval_setting_model = self.env['wika.approval.setting'].sudo()
         model_id = model_model.search([('model', '=', 'purchase.order')], limit=1)
         for vals in vals_list:
             res = super(PurchaseOrderInherit, self).create(vals)
@@ -116,8 +117,8 @@ class PurchaseOrderInherit(models.Model):
             doc_setting_id = document_setting_model.search([('model_id', '=', model_id.id)])
 
             # Get Approval Setting
-            approval_list = []
-            appr_setting_id = approval_setting_model.search([('model_id', '=', model_id.id)])
+            # approval_list = []
+            # appr_setting_id = approval_setting_model.search([('model_id', '=', model_id.id)])
 
             if doc_setting_id:
                 for document_line in doc_setting_id:
@@ -130,26 +131,104 @@ class PurchaseOrderInherit(models.Model):
             else:
                 raise AccessError("Either approval and/or document settings are not found. Please configure it first in the settings menu.")
             
-            for group in res.env.user.groups_id:
-                for menu in group.menu_access:
-                    if 'Purchase' in menu.name: 
-                        if len(menu.parent_path) > 4:
-                            po_approval_group = group
+            # for group in res.env.user.groups_id:
+            #     for menu in group.menu_access:
+            #         if 'Purchase' in menu.name: 
+            #             if len(menu.parent_path) > 4:
+            #                 po_approval_group = group
 
-            if appr_setting_id:
-                for approval_line in appr_setting_id:
-                    approval_list.append((0,0, {
-                        'purchase_id': res.id,
-                        'user_id': res.env.user.id,
-                        'groups_id': po_approval_group.id,
-                        'date': datetime.now(),
-                        'note': f'Approved by {res.env.user.name} while creating a Purchase Order with reference: {res.name} at {datetime.now(jkt_tz).strftime("%d-%m-%Y")}.'
-                    }))
-                res.history_approval_ids = approval_list
-            else:
-                raise AccessError("Either approval and/or document settings are not found. Please configure it first in the settings menu.")
+            # if appr_setting_id:
+            #     for approval_line in appr_setting_id:
+            #         approval_list.append((0,0, {
+            #             'purchase_id': res.id,
+            #             'user_id': res.env.user.id,
+            #             'groups_id': po_approval_group.id,
+            #             'date': datetime.now(),
+            #             'note': f'Approved by {res.env.user.name} while creating a Purchase Order with reference: {res.name} at {datetime.now(jkt_tz).strftime("%d-%m-%Y")}.'
+            #         }))
+            #     res.history_approval_ids = approval_list
+            # else:
+            #     raise AccessError("Either approval and/or document settings are not found. Please configure it first in the settings menu.")
 
         return res
+
+    def action_approve(self):
+        user = self.env['res.users'].search([('id','=',self._uid)], limit=1)
+        cek = False
+        model_id = self.env['ir.model'].search([('model','=', 'purchase.order')], limit=1)
+        if model_id:
+            model_wika_id = self.env['wika.approval.setting'].search([('model_id','=',  model_id.id)], limit=1)
+
+        if user.branch_id.id==self.branch_id.id and model_wika_id:
+            groups_line = self.env['wika.approval.setting.line'].search(
+                [('branch_id', '=', self.branch_id.id), ('sequence',  '=', self.step_approve), ('approval_id', '=', model_wika_id.id )], limit=1)
+            groups_id = groups_line.groups_id
+
+            for x in groups_id.users:
+                if x.id == self._uid:
+                    cek = True
+
+        if cek == True:
+            if model_wika_id.total_approve == self.step_approve:
+                self.state = 'approved'
+            else:
+                self.step_approve += 1
+
+            self.env['wika.po.approval.line'].create({'user_id': self._uid,
+                'groups_id' :groups_id.id,
+                'date': datetime.now(),
+                'note': 'Approve',
+                'purchase_id': self.id
+                })
+        else:
+            raise ValidationError('User Akses Anda tidak berhak Approve!')
+
+    # def action_reject(self):
+    #     action = self.env.ref('wika_matrix_approval.action_reject_wizard').read()[0]
+    #     return action
+
+    def action_reject(self):
+        # stage_sekarang = self.stage_id
+        # if self.stage_id.name == 'Proses Approval':
+        #
+        #     groups_line = self.env['loan.stage.line'].search([('stage_id', '=', stage_sekarang.id),('sequence','=',self.step_approve)],limit=1)
+        # else:
+        #     groups_line = self.env['loan.stage.line'].search(
+        #         [('stage_id', '=', stage_sekarang.id), ('sequence', '=', self.step_approve-1)], limit=1)
+        # groups_id  = self.env['res.groups'].search([('id','=',groups_line.groups_id.id)])
+        user = self.env['res.users'].search([('id', '=', self._uid)], limit=1)
+        cek = False
+        model_id = self.env['ir.model'].search([('model','=', 'purchase.order')], limit=1)
+        if model_id:
+            model_wika_id = self.env['wika.approval.setting'].search([('model_id','=',  model_id.id)], limit=1)
+
+        if user.branch_id.id==self.branch_id.id and model_wika_id:
+            groups_line = self.env['wika.approval.setting.line'].search(
+                [('branch_id', '=', self.branch_id.id), ('sequence',  '=', self.step_approve), ('approval_id', '=', model_wika_id.id )], limit=1)
+            groups_id = groups_line.groups_id
+            for x in groups_id.users:
+                if x.id == self._uid:
+                    cek = True
+
+        if cek == True:
+            action = {
+                'name': ('Reject Reason'),
+                'type': "ir.actions.act_window",
+                'res_model': "reject.wizard",
+                'view_type': "form",
+                'target': 'new',
+                'view_mode': "form",
+                'context': {'groups_id': groups_id.id},
+                'view_id': self.env.ref('wika_matrix_approval.reject_wizard_form').id,
+            }
+            return action
+        else:
+            raise ValidationError('User Akses Anda tidak berhak Reject!')
+
+    def action_submit(self):
+        self.state = 'uploaded'
+        self.step_approve += 1
+
 
 class PurchaseOrderDocumentLine(models.Model):
     _name = 'wika.po.document.line'

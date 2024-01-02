@@ -32,6 +32,9 @@
         'views/action.xml',
         'views/menu.xml',
         'views/assets.xml',
+
+        'wizard/wika_reject_reason.xml',
+
     ],
     # only loaded in demonstration mode
     'demo': [
