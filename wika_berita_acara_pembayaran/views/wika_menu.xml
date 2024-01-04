@@ -9,8 +9,8 @@
             parent="wika_berita_acara_pembayaran_menu_root" 
             action="wika_berita_acara_pembayaran.action_window" sequence="1"/>
 
-        <menuitem id="main_menu_reject" name="REJECT" parent="wika_berita_acara_pembayaran_menu_root" 
-            action="action_reject_wizard" sequence="2"/>
+        <!-- <menuitem id="main_menu_wika_payment_request" name="Payment Request" parent="wika_berita_acara_pembayaran_menu_root" 
+            action="wika_payment_request.action_window" sequence="2"/> -->
 
     </data>
     
