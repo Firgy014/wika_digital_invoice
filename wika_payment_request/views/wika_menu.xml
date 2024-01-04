@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <data>
+
+        <menuitem
+            id="wika_payement_request_menu"
+            name="Pengajuan Pembayaran"
+            action="wika_payment_request.action_window"
+            parent="wika_berita_acara_pembayaran.wika_berita_acara_pembayaran_menu_root"
+            sequence="20"/>
+    </data>
+    
+
+</odoo>

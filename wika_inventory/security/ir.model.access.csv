@@ -1,0 +1,5 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_wika_picking_document_line,Picking Document Line,model_wika_picking_document_line,,1,1,1,1
+access_wika_picking_approval_line,Picking Approval Line,model_wika_picking_approval_line,,1,1,1,1
+
+access_reject_wizard_picking,Reject Wizard Picking,model_reject_wizard_picking,,1,1,1,1

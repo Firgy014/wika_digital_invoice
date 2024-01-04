@@ -2,7 +2,7 @@
 <odoo>
     <data>
         <!-- Main menu -->
-        <menuitem id="menu_doc" name="Backup Doc" sequence="25" web_icon="wika_purchase,static/description/icon.jpg"/>
+        <menuitem id="menu_doc" name="PO" sequence="2" web_icon="wika_purchase,static/description/icon.jpg"/>
 
         <!-- New Purchase Menu -->
         <menuitem id="menu_purchase_wika_orders" name="Purchase Orders" parent="wika_purchase.menu_doc" action="action_wika_purchase_order" sequence="2"/>
