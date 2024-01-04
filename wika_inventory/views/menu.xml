@@ -1,9 +1,9 @@
 <odoo>
     <data>
+        <menuitem id="menu_gr_ses" name="GR/SES" sequence="2" web_icon="wika_inventory,static/description/icon.png"/>
 
         <!-- New Stock Menu -->
-        <menuitem id="menu_picking_wika" name="Wika" parent="stock.menu_stock_root" sequence="98"/>
-        <menuitem id="menu_picking_wika_stock" name="Transfers" parent="wika_inventory.menu_picking_wika" action="action_wika_stock_picking" sequence="2"/>
+        <menuitem id="menu_picking_wika_stock" parent="menu_gr_ses" name="GR/SES" action="action_wika_stock_picking" sequence="3"/>
 
     </data>
 </odoo>

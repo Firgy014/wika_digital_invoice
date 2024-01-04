@@ -4,7 +4,7 @@
     
         <!-- Stock Picking Action -->
         <record id="action_wika_stock_picking" model="ir.actions.act_window">
-            <field name="name">Wika Transfers</field>
+            <field name="name">GR/SES</field>
             <field name="res_model">stock.picking</field>
             <field name="view_mode">tree,form</field>
             <field name="domain">[('state','in',('waits', 'uploaded', 'approved'))]</field>

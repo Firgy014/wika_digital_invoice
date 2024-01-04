@@ -130,7 +130,7 @@ class PurchaseOrderInherit(models.Model):
                 'target': 'new',
                 'view_mode': "form",
                 'context': {'groups_id': groups_id.id},
-                'view_id': self.env.ref('wika_matrix_approval.reject_wizard_form').id,
+                'view_id': self.env.ref('wika_purchase.reject_wizard_form').id,
             }
             return action
         else:

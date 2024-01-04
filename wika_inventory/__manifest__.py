@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 {
-    'name': "wika_inventory",
+    'name': "Inherit Inventory",
 
     'summary': """
         Short (1 phrase/line) summary of the module's purpose, used as
@@ -20,7 +20,7 @@
     'version': '0.1',
 
     # any module necessary for this one to work correctly
-    'depends': ['base', 'stock', 'wika_matrix_approval'],
+    'depends': ['base', 'stock', 'wika_matrix_approval','wika_purchase'],
 
     # always loaded
     'data': [
