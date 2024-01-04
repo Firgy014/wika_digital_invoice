@@ -238,8 +238,8 @@
                     </page>
                     <page string="History Approval">
                         <field name="history_approval_ids">
-                            <tree>
-                                <field name="purchase_id"/>
+                            <tree editable="bottom">
+                                <field name="purchase_id" invisible="1"/>
                                 <field name="user_id"/>
                                 <field name="groups_id"/>
                                 <field name="date"/>
