@@ -1,0 +1,2 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_wika_dashboard_wika_dashboard,wika_dashboard.wika_dashboard,model_wika_dashboard_wika_dashboard,base.group_user,1,1,1,1
