@@ -36,9 +36,9 @@
         <field name="arch" type="xml">
             <form string="Purchase Orders" class="o_purchase_order">
             <header>
-                <button name="action_submit" type="object" states="po" string="Submit" context="{'validate_analytic': True}" class="btn-danger" id="bid_confirm" data-hotkey="v"/>
-                <button name="action_approve" type="object" states="uploaded" string="APPROVE" context="{'validate_analytic': True}" class="oe_highlight" id="bid_confirm" data-hotkey="v"/>
-                <button name="action_reject" type="object" states="uploaded" string="REJECT" context="{'validate_analytic': True}" class="btn-danger" id="bid_confirm" data-hotkey="v"/>
+                <button name="action_submit" type="object" states="po" string="Submit" context="{'validate_analytic': True}" class="oe_highlight" id="bid_submit" data-hotkey="v"/>
+                <button name="action_approve" type="object" states="uploaded" string="APPROVE" context="{'validate_analytic': True}" class="oe_highlight" id="bid_approve" data-hotkey="v"/>
+                <button name="action_reject" type="object" states="uploaded" string="REJECT" context="{'validate_analytic': True}" class="btn-danger" id="bid_reject" data-hotkey="v"/>
                 <field name="state" widget="statusbar" statusbar_visible="po,uploaded,approved" readonly="1"/>
             </header>
             <sheet>
@@ -62,8 +62,8 @@
                         <field name="sap_doc_number"/>
                     </group>
                     <group>
-                        <field name="branch_id"/>
-                        <field name="department_id"/>
+                        <field name="branch_id" domain="[('biro', '=', False)]"/>
+                        <field name="department_id" domain="[('biro', '=', True), ('parent_id', '=', branch_id)]"/>
                         <field name="project_id"/>
                         <field name="begin_date"/>
                         <field name="end_date"/>
@@ -286,10 +286,8 @@
                 <field name="end_date"/>
                 <field name="partner_id" readonly="1"/>
                 <field name="amount_total" sum="Total amount" widget="monetary" optional="show"/>
-                <!-- <field name="amount_untaxed" sum="Total Untaxed amount" string="Untaxed" widget="monetary" optional="hide"/> -->
                 <field name="state" optional="show"/>
-                <field name="step_approve" invisible="1"/>
-                
+                <field name="step_approve" invisible="1"/> 
             </tree>
         </field>
     </record>
