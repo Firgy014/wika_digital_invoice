@@ -16,7 +16,6 @@ class PurchaseOrderApprovalHistory(models.Model):
 class PurchaseOrderInherit(models.Model):
     _inherit = 'purchase.order'
 
-    # approval_history_ids = fields.One2many('wika.po.approval.line', 'purchase_id', string='Approved Lines')
     is_visible_button = fields.Boolean('Show Operation Buttons', default=True)
     branch_id = fields.Many2one('res.branch', string='Divisi')
     department_id = fields.Many2one('res.branch', string='Department')

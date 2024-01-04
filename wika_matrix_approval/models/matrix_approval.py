@@ -37,13 +37,6 @@ class WikaApprovalSetting(models.Model):
 
     def set_fields_readonly(self):
         for field_name, field in self.env['wika.approval.setting.line']._fields.items():
-            # print(type(field_name))
-            # print(field_name)
-            # print(type(field))
-            # print(field)
-            # print("dirdirdir")
-            # print(dir(field))
-            # errorin
             if not field.related:
                 self[field_name].readonly = True
 

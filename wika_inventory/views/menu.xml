@@ -1,0 +1,9 @@
+<odoo>
+    <data>
+
+        <!-- New Stock Menu -->
+        <menuitem id="menu_picking_wika" name="Wika" parent="stock.menu_stock_root" sequence="98"/>
+        <menuitem id="menu_picking_wika_stock" name="Transfers" parent="wika_inventory.menu_picking_wika" action="action_wika_stock_picking" sequence="2"/>
+
+    </data>
+</odoo>
