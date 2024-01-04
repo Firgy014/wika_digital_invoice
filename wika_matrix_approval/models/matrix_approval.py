@@ -15,7 +15,7 @@ class WikaApprovalSetting(models.Model):
         ('confirm', 'Confirm')
     ], string='Status')
     setting_line_ids = fields.One2many('wika.approval.setting.line', 'approval_id', string='Lines')
-    total_approve = fields.Integer(string='Total Approve')
+    total_approve = fields.Integer(string='Total Approve', compute = 'compute_total_approve')
 
     @api.model
     def _default_name(self):
@@ -50,8 +50,9 @@ class WikaApprovalSetting(models.Model):
 class WikaApprovalSettingLine(models.Model):
     _name = 'wika.approval.setting.line'
     _description = 'Matrix Approval Setting Line'
-
+    
     approval_id = fields.Many2one('wika.approval.setting', string='Approval Setting')
+    branch_id = fields.Many2one('res.branch', string='Branch', related = 'approval_id.branch_id')
     sequence = fields.Integer(string='Sequence/Step')
     user_id = fields.Many2one('res.users', string='Approver/User')
     groups_id = fields.Many2one('res.groups', string='Role/Groups')

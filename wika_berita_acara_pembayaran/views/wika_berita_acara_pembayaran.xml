@@ -92,12 +92,12 @@
             <field name="arch" type="xml">
                 <form string="Berita Acara Pembayaran Form">
                     <header>
-                        <button name="action_approve" type="object" string="APPROVE" states="draft" class="btn-success"/>
+                        <button name="action_approve" type="object" string="APPROVE" states="upload" class="btn-success"/>
                         <button name="action_cancel" type="object" string="CANCEL" states="approve"/>
                         <button name="action_submit" type="object" string="SUBMIT" states="draft"/>
                         <!-- <button name="action_reject" type="object" string="REJECT" states="approve" class="btn-danger"/> -->
-                        <button name="%(wika_berita_acara_pembayaran.action_reject_wizard)d" type="action" string="REJECT" states="approve" class="btn-danger"/>
-                        <field name="state" widget="statusbar" statusbar_visible="draft,approve,reject"/>
+                        <button name="%(wika_berita_acara_pembayaran.action_reject_wizard)d" type="action" string="REJECT" states="upload" class="btn-danger"/>
+                        <field name="state" widget="statusbar" statusbar_visible="draft,upload,approve"/>
                     </header>
                     <sheet>
                         <group>
@@ -117,7 +117,7 @@
                             <page string="List BAP">
                                 <group>   
                                     <field name="bap_ids" mode="tree,kanban" nolabel="1"  colspan="2">
-                                        <tree string="List BAP">
+                                        <tree string="List BAP" editable ='bottom'>
                                             <field name="picking_id"/>
                                             <field name="product_id"/>
                                             <field name="qty"/>
@@ -126,17 +126,6 @@
                                             <field name="unit_price"/>
                                             <field name="sub_total"/>
                                         </tree>
-                                        <form string='List BAP'>
-                                            <group>
-                                                <field name="picking_id"/>
-                                                <field name="product_id"/>
-                                                <field name="qty"/>
-                                                <field name="tax_ids"/>
-                                                <field name="currency_id"/>
-                                                <field name="unit_price"/>
-                                                <field name="sub_total"/>
-                                            </group>
-                                        </form>
                                     </field>    
                                 </group>
                             </page>
@@ -144,6 +133,7 @@
                                 <group>
                                     <field name="document_ids" mode="tree,kanban" nolabel="1"  colspan="2">
                                         <tree string="List Document">
+                                            <field name="document_id"/>
                                             <field name="document"/>
                                             <field name="filename" invisible="1"/>
                                             <field name="state"/>
