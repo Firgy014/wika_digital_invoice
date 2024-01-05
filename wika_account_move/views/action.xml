@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <data>
+    
+        <record id="action_wika_account_move" model="ir.actions.act_window">
+            <field name="name">Pembuatan Invoice</field>
+            <field name="res_model">account.move</field>
+            <field name="view_mode">tree,form</field>
+            <field name="view_ids" eval="[(5, 0, 0),
+                (0, 0, {'view_mode': 'tree', 'view_id': ref('account.view_in_invoice_bill_tree')}),
+                (0, 0, {'view_mode': 'form', 'view_id': ref('wika_account_move.view_wika_account_move_form_inherit')}),
+            ]"/>
+        </record>
+
+    
+    </data>
+    
+
+</odoo>

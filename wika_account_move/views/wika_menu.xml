@@ -1,0 +1,19 @@
+<odoo>
+    <data>
+
+        <menuitem
+            id="menu_wika_account_move"
+            name="Wika"
+            parent="account.menu_finance"
+            sequence="200"/>        
+
+        <menuitem
+            action="account.action_move_in_invoice_type"
+            id="sub_menu_wika_account_move"
+            name="Pembuatan Invoice"
+            parent="menu_wika_account_move"
+            sequence="10"/>
+
+    </data>
+    
+</odoo>
