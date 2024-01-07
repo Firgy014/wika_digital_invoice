@@ -13,7 +13,6 @@ class PickingInherit(models.Model):
         ('uploaded', 'Uploaded'), 
         ('approved', 'Approved')
     ], string='Status')
-    # pick_type = fields.Char(string='Type')
     pick_type = fields.Selection([
         ('ses', 'SES'), 
         ('gr', 'GR')

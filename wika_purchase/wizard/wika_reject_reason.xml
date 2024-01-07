@@ -9,8 +9,6 @@
                         <field name="reject_reason"/>
                     </group>
                     <footer>
-                        <!-- <button name="action_cancel" type="object" string="Cancel" class="btn-primary"/>
-						<button string="Discard" special="cancel" class="btn-secondary"/> -->
                         <button name="ok" type="object" string="Simpan" class="oe_highlight"/>
                         or
                         <button string="Cancel" special="cancel" class="btn-default"/>
