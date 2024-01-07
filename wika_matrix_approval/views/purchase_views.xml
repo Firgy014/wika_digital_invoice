@@ -251,9 +251,17 @@
                         <field name="document_ids">
                             <tree editable="top">
                                 <field name="document_id"/>
-                                <field name="document" widget="binary_button"/>
+                                <field name="document" widget="binary_button" filename="filename"/>
+                                <field name="filename" invisible="1"/>
                                 <field name="state"/>
                             </tree>
+                            <!-- <form string='List Document'>
+                                <group>
+                                    <field name="document" filename="filename"/>
+                                    <field name="filename" invisible="1"/>
+                                    <field name="state"/>
+                                </group>
+                            </form> -->
                         </field>
                     </page>
                 </notebook>

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <record id="inherit_documents_list" model="ir.ui.view">
+            <field name="name">documents.list.inherit.wika</field>
+            <field name="model">documents.document</field>
+            <field name="inherit_id" ref="documents.documents_view_list"/>
+            <field name="arch" type="xml">
+                <xpath expr="//field[@name='partner_id']" position="after">
+                    <field name="purchase_id" string="Purchase" attrs="{'invisible': [('is_po_doc', '=', False)]}"/>
+                </xpath>
+                <xpath expr="//field[@name='create_date']" position="after">
+                    <field name="is_po_doc" invisible="1"/>
+                </xpath>
+            </field>
+        </record>
+
+        <record id="documents_document_search_view_inherit_wika" model="ir.ui.view">
+            <field name="name">Document search view Inherit Wika</field>
+            <field name="model">documents.document</field>
+            <field name="inherit_id" ref="documents.document_view_search"/>
+            <field name="arch" type="xml">
+                <xpath expr="//filter[@name='my_favorites_filter']" position="after">
+                    <filter string="Purchase Orders Docs" name="custom_filter_purchase_documents" domain="[('purchase_id', '!=', False)]"/>
+                    <separator/>
+                </xpath>
+            </field>
+        </record>
+
+    </data>
+</odoo>

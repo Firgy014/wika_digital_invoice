@@ -103,10 +103,8 @@ class PurchaseOrderInherit(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
-        # jkt_tz = pytz.timezone('Asia/Jakarta')
         model_model = self.env['ir.model'].sudo()
         document_setting_model = self.env['wika.document.setting'].sudo()
-        # approval_setting_model = self.env['wika.approval.setting'].sudo()
         model_id = model_model.search([('model', '=', 'purchase.order')], limit=1)
         for vals in vals_list:
             res = super(PurchaseOrderInherit, self).create(vals)
@@ -114,10 +112,6 @@ class PurchaseOrderInherit(models.Model):
             # Get Document Setting
             document_list = []
             doc_setting_id = document_setting_model.search([('model_id', '=', model_id.id)])
-
-            # Get Approval Setting
-            # approval_list = []
-            # appr_setting_id = approval_setting_model.search([('model_id', '=', model_id.id)])
 
             if doc_setting_id:
                 for document_line in doc_setting_id:
@@ -129,29 +123,13 @@ class PurchaseOrderInherit(models.Model):
                 res.document_ids = document_list
             else:
                 raise AccessError("Either approval and/or document settings are not found. Please configure it first in the settings menu.")
-            
-            # for group in res.env.user.groups_id:
-            #     for menu in group.menu_access:
-            #         if 'Purchase' in menu.name: 
-            #             if len(menu.parent_path) > 4:
-            #                 po_approval_group = group
-
-            # if appr_setting_id:
-            #     for approval_line in appr_setting_id:
-            #         approval_list.append((0,0, {
-            #             'purchase_id': res.id,
-            #             'user_id': res.env.user.id,
-            #             'groups_id': po_approval_group.id,
-            #             'date': datetime.now(),
-            #             'note': f'Approved by {res.env.user.name} while creating a Purchase Order with reference: {res.name} at {datetime.now(jkt_tz).strftime("%d-%m-%Y")}.'
-            #         }))
-            #     res.history_approval_ids = approval_list
-            # else:
-            #     raise AccessError("Either approval and/or document settings are not found. Please configure it first in the settings menu.")
 
         return res
 
+
+
     def action_approve(self):
+        documents_model = self.env['documents.document'].sudo()
         user = self.env['res.users'].search([('id','=',self._uid)], limit=1)
         cek = False
         model_id = self.env['ir.model'].search([('model','=', 'purchase.order')], limit=1)
@@ -170,11 +148,34 @@ class PurchaseOrderInherit(models.Model):
         if cek == True:
             if model_wika_id.total_approve == self.step_approve:
                 self.state = 'approved'
+                folder_id = self.env['documents.folder'].sudo().search([('name', '=', 'Purchase')], limit=1)
+                if folder_id:
+                    facet_id = self.env['documents.facet'].sudo().search([
+                        ('name', '=', 'Kontrak'),
+                        ('folder_id', '=', folder_id.id)
+                    ], limit=1)
+                    for doc in self.document_ids.filtered(lambda x: x.state == 'uploaded'):
+                        doc.state = 'verified'
+                        attachment_id = self.env['ir.attachment'].sudo().create({
+                            'name': doc.filename,
+                            'datas': doc.document,
+                            'res_model': 'documents.document',
+                        })
+                        if attachment_id:
+                            documents_model.create({
+                                'attachment_id': attachment_id.id,
+                                'folder_id': folder_id.id,
+                                'tag_ids': facet_id.tag_ids.ids,
+                                'partner_id': doc.purchase_id.partner_id.id,
+                                'purchase_id': self.id,
+                                'is_po_doc': True
+                            })
+                            
             else:
                 self.step_approve += 1
 
             self.env['wika.po.approval.line'].create({'user_id': self._uid,
-                'groups_id' :groups_id.id,
+                'groups_id': groups_id.id,
                 'date': datetime.now(),
                 'note': 'Approve',
                 'purchase_id': self.id
@@ -182,19 +183,8 @@ class PurchaseOrderInherit(models.Model):
         else:
             raise ValidationError('User Akses Anda tidak berhak Approve!')
 
-    # def action_reject(self):
-    #     action = self.env.ref('wika_matrix_approval.action_reject_wizard').read()[0]
-    #     return action
 
     def action_reject(self):
-        # stage_sekarang = self.stage_id
-        # if self.stage_id.name == 'Proses Approval':
-        #
-        #     groups_line = self.env['loan.stage.line'].search([('stage_id', '=', stage_sekarang.id),('sequence','=',self.step_approve)],limit=1)
-        # else:
-        #     groups_line = self.env['loan.stage.line'].search(
-        #         [('stage_id', '=', stage_sekarang.id), ('sequence', '=', self.step_approve-1)], limit=1)
-        # groups_id  = self.env['res.groups'].search([('id','=',groups_line.groups_id.id)])
         user = self.env['res.users'].search([('id', '=', self._uid)], limit=1)
         cek = False
         model_id = self.env['ir.model'].search([('model','=', 'purchase.order')], limit=1)
@@ -228,6 +218,29 @@ class PurchaseOrderInherit(models.Model):
         self.state = 'uploaded'
         self.step_approve += 1
 
+    def _get_doc_tags_ids(self, model_name):
+        tags_ids = list()
+        tags_model = self.env['documents.tag'].sudo()
+        facet_model = self.env['documents.facet'].sudo()
+        facet_id = facet_model.search([('name', '=', model_name)], limit=1)
+        
+        if facet_id:
+            tags_id = tags_model.create({
+                'name': f'{model_name} Documents',
+                'facet_id': facet_id.id
+            })
+            tags_ids.append(tags_id)
+            return tags_ids
+
+        else:
+            facet_id = facet_model.create({'name':model_name})
+            tags_id = tags_model.create({
+                'name': f'{model_name} Documents',
+                'facet_id': facet_id.id
+            })
+            tags_ids.append(tags_id)
+            return tags_ids
+
 
 class PurchaseOrderDocumentLine(models.Model):
     _name = 'wika.po.document.line'
@@ -241,6 +254,11 @@ class PurchaseOrderDocumentLine(models.Model):
         ('uploaded', 'Uploaded'),
         ('verified', 'Verified')
     ], string='Status')
+
+    @api.onchange('document')
+    def onchange_document_upload(self):
+        if self.document:
+            self.state = 'uploaded'
 
 class PurchaseOrderApprovalLine(models.Model):
     _name = 'wika.po.approval.line'

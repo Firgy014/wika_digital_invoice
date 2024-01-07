@@ -229,14 +229,6 @@
                             <field name="picking_type_id" string="Picking Type" attrs="{'readonly': False}"/>      
                             <field name="company_id" string="Company" attrs="{'readonly': False}"/>
                         </group>
-                        <!-- <field name="document_ids">
-                            <tree editable="top">
-                                <field name="picking_id"/>
-                                <field name="document_id"/>
-                                <field name="document" widget="binary_button"/>
-                                <field name="state"/>
-                            </tree>
-                        </field> -->
                     </page>
 
                 </notebook>

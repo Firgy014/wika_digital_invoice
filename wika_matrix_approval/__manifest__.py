@@ -20,7 +20,7 @@
     'version': '0.1',
 
     # any module necessary for this one to work correctly
-    'depends': ['base', 'purchase', 'project', 'branch', 'web'],
+    'depends': ['base', 'purchase', 'project', 'branch', 'web', 'documents'],
 
     # always loaded
     'data': [
@@ -28,6 +28,7 @@
         'views/matrix_approval_views.xml',
         'views/document_setting_views.xml',
         'views/purchase_views.xml',
+        'views/documents_document_views.xml',
         'views/wizard.xml',
         'views/action.xml',
         'views/menu.xml',
