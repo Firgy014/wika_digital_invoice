@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <data>
+        <!-- tree -->
+        <record id="wika_payment_request_view_tree" model="ir.ui.view">
+            <field name="name">wika.payment.request.view.tree</field>
+            <field name="model">wika.payment.request</field>
+            <field name="arch" type="xml">
+                <tree string="Payement Request">
+                    <field name="branch_id"/>
+                    <field name="department_id"/>
+                    <field name="project_id"/>
+                    <field name="name"/>
+                    <field name="date"/>
+                </tree>
+            </field>
+        </record>
+
+        <!-- form -->
+        <record id="wika_payment_request_view_form" model="ir.ui.view">
+            <field name="name">wika.payment.request.view.form</field>
+            <field name="model">wika.payment.request</field>
+            <field name="arch" type="xml">
+                <form string="Payment Request">
+                    <header>
+                        <button name="action_submit" type="object" string="SUBMIT" states="draft" class="btn-primary"/>
+                        <button name="action_request" type="object" string="REQUEST" states="upload" class="btn-primary"/>
+                        <button name="action_approve" type="object" string="APPROVE" states="request" class="btn-success"/>
+                        <button name="action_cancel" type="object" string="CANCEL" states="request"/>
+                        <button name="%(wika_payment_request.action_reject_pr_wizard)d" type="action" string="REJECT" states="request" class="btn-danger"/>
+                        <field name="state" widget="statusbar" statusbar_visible="draft,upload,request,approve"/>
+                    </header>
+                    <sheet>
+                        <div class="oe_title">
+                            <h1>
+                                <field name="name"/>
+                            </h1>
+                        </div>
+                        <group>
+                            <group>
+                                <field name="date"/>
+                                <field name="total"/>
+                                <field name="step_approve"/>
+                            </group>
+                            <group>
+                                <field name="branch_id"/>
+                                <field name="department_id"/>
+                                <field name="project_id" />
+                            </group>
+                        </group>
+                        <notebook>
+                            <page string="List Invoice">
+                                <group>   
+                                    <field name="invoice_ids" mode="tree" nolabel="1"  colspan="2"></field>    
+                                </group>
+                            </page>
+                            <page string="List Document">
+                                <group>
+                                    <field name="document_ids" mode="tree,kanban" nolabel="1"  colspan="2">
+                                        <tree string="List Document">
+                                            <field name="document_id"/>
+                                            <field name="document"/>
+                                            <field name="filename" invisible="1"/>
+                                            <field name="state"/>
+                                        </tree>
+                                        <form string='List Document'>
+                                            <group>
+                                                <field name="document" filename="filename"/>
+                                                <field name="filename" invisible="1"/>
+                                                <field name="state"/>
+                                            </group>
+                                        </form>
+                                    </field>
+                                </group>
+                            </page>
+                            <page string="List Approval">
+                                <group>
+                                    <field name="history_approval_ids" mode="tree" nolabel="1"  colspan="2">
+                                        <tree string="List Approval">
+                                            <field name="user_id"/>
+                                            <field name="groups_id"/>
+                                            <field name="date"/>
+                                            <field name="note"/>
+                                        </tree>
+                                        <form string='List Approval'>
+                                            <group>
+                                                <field name="user_id"/>
+                                                <field name="groups_id"/>
+                                                <field name="date"/>
+                                                <field name="note"/>
+                                            </group>
+                                        </form>
+                                    </field>
+                                </group>
+                            </page>
+                        </notebook>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+        
+        <!-- action -->
+        <record id="wika_payment_request.action_window" model="ir.actions.act_window">
+            <field name="name">Payment Request</field>
+            <field name="res_model">wika.payment.request</field>
+            <field name="view_mode">tree,form</field>
+        </record>
+    
+    </data>
+    
+
+</odoo>

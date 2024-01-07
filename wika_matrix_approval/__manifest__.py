@@ -27,14 +27,9 @@
         'security/ir.model.access.csv',
         'views/matrix_approval_views.xml',
         'views/document_setting_views.xml',
-        'views/purchase_views.xml',
-        'views/documents_document_views.xml',
-        'views/wizard.xml',
         'views/action.xml',
         'views/menu.xml',
         'views/assets.xml',
-
-        'wizard/wika_reject_reason.xml',
 
     ],
     # only loaded in demonstration mode
