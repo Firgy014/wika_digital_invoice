@@ -1,0 +1,39 @@
+<odoo>
+    <data>
+        <!-- explicit list view definition -->
+
+        <record model="ir.ui.view" id="wika_integration.list">
+            <field name="name">wika_integration list</field>
+            <field name="model">wika.integration</field>
+            <field name="arch" type="xml">
+                <tree editable="bottom">
+                    <field name="name"/>
+                    <field name="app" required="1"/>
+                    <field name="url"/>
+                    <field name="app_secret"/>
+                </tree>
+            </field>
+        </record>
+
+        <!-- actions opening views on models -->
+        <record model="ir.actions.act_window" id="wika_integration_action_window">
+            <field name="name">Wika Intergration</field>
+            <field name="res_model">wika.integration</field>
+            <field name="context">{}</field>
+            <field name="domain">[]</field>
+            <field name="limit">80</field>
+            <field name="view_mode">tree</field>
+        </record>
+
+        <menuitem name="App Setting" id="wika_app_setting_menu"
+                  parent="base.menu_administration"
+                  sequence="2" groups="base.group_system"/>
+
+        <menuitem name="WiKA Integration" id="wika_integration_menu"
+                  action="wika_integration_action_window"
+                  parent="wika_integration.wika_app_setting_menu"
+                  sequence="1"/>
+
+
+    </data>
+</odoo>
