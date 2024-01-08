@@ -1,0 +1,116 @@
+<odoo>
+    <data>
+      <record model="ir.ui.view" id="loan_bcg_list_view">
+            <field name="name">loan_bcg list view</field>
+            <field name="model">loan.bcg</field>
+            <field name="arch" type="xml">
+                <tree>
+                        <field name="date_period"/>
+                        <field name="loan_item"/>
+                        <field name="loan_kriteria"/>
+                        <field name="loan_jenis"/>
+                        <field name="loan_bank"/>
+                        <field name="loan_plafon"/>
+                        <field name="loan_prognosa"/>
+                        <field name="loan_tgl_pembukaan"/>
+                        <field name="loan_tgl_jatuh_tempo"/>
+                        <field name="loan_pembayaran"/>
+                        <field name="loan_kd_divisi"/>
+                        <field name="loan_count_swift"/>
+                        <field name="loan_count_spk"/>
+                        <field name="loan_interest_rate"/>
+                        <field name="loan_der"/>
+                        <field name="loan_cr"/>
+                        <field name="loan_dscr"/>
+                        <field name="loan_gearing_ratio"/>
+                        <field name="loan_iscr"/>
+                </tree>
+            </field>
+        </record>
+        <record model="ir.ui.view" id="loan_bcg_form_view">
+            <field name="name">loan_bcg form</field>
+            <field name="model">loan.bcg</field>
+            <field name="type">form</field>
+            <field name="arch" type="xml">
+                <form string="Loan BCG Integration">
+                    <sheet>
+                        <group col="4">
+                            <field name="loan_kriteria"/>
+                            <field name="loan_jenis"/>
+                            <field name="loan_bank"/>
+                            <field name="loan_plafon"/>
+                            <field name="loan_prognosa"/>
+                            <field name="loan_tgl_pembukaan"/>
+                            <field name="loan_tgl_jatuh_tempo"/>
+                            <field name="loan_pembayaran"/>
+                            <field name="loan_kd_divisi"/>
+                            <field name="loan_count_swift"/>
+                            <field name="loan_count_spk"/>
+                            <field name="loan_interest_rate"/>
+                            <field name="loan_der"/>
+                            <field name="loan_cr"/>
+                            <field name="loan_dscr"/>
+                            <field name="loan_gearing_ratio"/>
+                            <field name="loan_iscr"/>
+                        </group>
+
+                    </sheet>
+                </form>
+            </field>
+        </record>
+          <record id="loan_bcg_action_window" model="ir.actions.act_window">
+            <field name="name">Loan BCG Integration</field>
+            <field name="res_model">loan.bcg</field>
+            <field name="view_type">form</field>
+            <field name="view_mode">tree,form</field>
+        </record>
+
+
+        <menuitem
+            name="Loan BCG Integration"
+            action="loan_bcg_action_window"
+            id="loan_bcg_menu2"
+            parent="wika_integration.wika_app_setting_menu"
+            sequence="3"/>
+
+
+         <record id="generateloan_form_view" model="ir.ui.view">
+            <field name="name">Generate LOAN</field>
+            <field name="model">generate.loanbcg</field>
+            <field name="arch" type="xml">
+                <form string="Generate Loan BCG">
+                    <sheet>
+                        <group col="4">
+                            <field name="tanggal"  required="1"/>
+                        </group>
+                        <footer>
+                             <button string="Generate"
+                                    class="btn-primary"
+                                    name="get_loan"
+                                    type="object"/>
+                            <button string="Cancel"
+                                    class="btn-default"
+                                    special="cancel"/>
+                        </footer>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+        <record id="laporan_action_generateloan" model="ir.actions.act_window">
+            <field name="name">Generate LOAN</field>
+            <field name="res_model">generate.loanbcg</field>
+            <field name="context">{}</field>
+            <field name="domain">[]</field>
+            <field name="view_type">form</field>
+            <field name="view_mode">form</field>
+            <field name="target">new</field>
+        </record>
+
+        <menuitem name="Generate Loan"
+              parent="wika_integration.wika_app_setting_menu"
+              id="generate_loanbcg_menu"
+              sequence="4"
+              action="laporan_action_generateloan"/>
+
+    </data>
+</odoo>
