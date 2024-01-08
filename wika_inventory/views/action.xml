@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+    
+        <!-- Stock Picking Action -->
+        <record id="action_wika_stock_picking" model="ir.actions.act_window">
+            <field name="name">GR/SES</field>
+            <field name="res_model">stock.picking</field>
+            <field name="view_mode">tree,form</field>
+            <field name="domain">[('state','in',('waits', 'uploaded', 'approved'))]</field>
+            <field name="view_ids" eval="[(5, 0, 0),
+                (0, 0, {'view_mode': 'tree', 'view_id': ref('wika_inventory.stock_picking_tree_wika')}),
+                (0, 0, {'view_mode': 'form', 'view_id': ref('wika_inventory.stock_picking_form_wika')}),
+            ]"/>
+            <field name="context">{'default_state':'waits'}</field>
+        </record>
+
+    </data>
+</odoo>

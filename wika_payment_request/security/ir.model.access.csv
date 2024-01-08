@@ -1,0 +1,5 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_wika_payment_request, Wika Payment Request,model_wika_payment_request,,1,1,1,1
+access_wika_pr_document_line, Wika PR Document Line,model_wika_pr_document_line,,1,1,1,1
+access_wika_pr_approval_line, Wika PR Approval Line,model_wika_pr_approval_line,,1,1,1,1
+access_reject_wizard_pr, Reject Wizard,model_reject_wizard_pr,,1,1,1,1

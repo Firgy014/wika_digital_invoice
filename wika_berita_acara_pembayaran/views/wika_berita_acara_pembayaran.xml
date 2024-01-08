@@ -1,0 +1,185 @@
+<odoo>
+    <data>
+
+        <!-- search view -->
+        <record id="wika_berita_acara_pembayaran_view_search" model="ir.ui.view">
+            <field name="name">wika.berita.acara.pembayaran.search</field>
+            <field name="model">wika.berita.acara.pembayaran</field>
+            <field name="arch" type="xml">
+                <search string="Search BAP">
+                    <!-- <field name="name" string="Nomor PO 1" filter_domain="['|', ('name', 'ilike', self), ('po_id', 'ilike', self)"/> -->
+                    <field name="name"/>
+                    <filter name="po_id" string="Nomor PO" domain="[('po_id', '=', uid)]"/>
+                    <group string="Group By">
+                        <filter name="name" string="Nomor PO" context="{'group_by': 'po_id'}"/>
+                    </group>
+                    <searchpanel>
+                        <field name="department_id" icon="fa-signal" enable_counters="1"/>
+                    </searchpanel>
+                </search>
+            </field>
+        </record>
+
+        <!-- kanban -->
+        <record id="wika_berita_acara_pembayaran_view_kanban" model="ir.ui.view">
+            <field name="name">wika.berita.acara.pembayaran.view.kanban</field>
+            <field name="model">wika.berita.acara.pembayaran</field>
+            <field name="arch" type="xml">
+                <kanban>
+                    <templates>
+                        <t t-name="kanban-box">
+                            <div class="oe_kanban_global_click">
+                                <div class="oe_kanban_details">
+                                    <field name="name"/>
+                                </div>
+                            </div>
+                        </t>
+                    </templates>
+                </kanban>
+            </field>
+        </record>
+
+        <!-- calendar -->
+        <record id="wika_berita_acara_pembayaran_view_calendar" model="ir.ui.view">
+            <field name="name">wika.berita.acara.pembayaran.view.calendar</field>
+            <field name="model">wika.berita.acara.pembayaran</field>
+            <field name="arch" type="xml">
+                <calendar string="Service Request"
+                    date_start="start_date"
+                    date_stop="end_date"
+                    event_open_popup="true"
+                    mode="month"
+                    quick_add="False">
+                <field name="name"/>
+            </calendar>
+            </field>
+        </record>
+
+        <!-- pivot -->
+        <record id="wika_berita_acara_pembayaran_view_pivot" model="ir.ui.view">
+            <field name="name">wika.berita.acara.pembayaran.view.pivot</field>
+            <field name="model">wika.berita.acara.pembayaran</field>
+            <field name="arch" type="xml">
+                <pivot string="Pivot" disable_linking="true">
+                    <field name="partner_id"/>
+                    <field name="po_id"/>
+                    <field name="branch_id"/>
+                    <field name="department_id"/>
+                    <field name="project_id" />
+                </pivot>
+            </field>
+        </record>
+
+        <!-- tree view -->
+        <record id="wika_berita_acara_pembayaran_view_tree" model="ir.ui.view">
+            <field name="name">wika.berita.acara.pembayaran.view.tree</field>
+            <field name="model">wika.berita.acara.pembayaran</field>
+            <field name="arch" type="xml">
+                <tree string="Berita Acara Pembayaran List">
+                    <field name="branch_id"/>
+                    <field name="department_id"/>
+                    <field name="project_id"/>
+                    <field name="name"/>
+                    <field name="partner_id"/>
+                </tree>
+            </field>
+        </record>
+
+        <!-- form view -->
+        <record id="wika_berita_acara_pembayaran_view_form" model="ir.ui.view">
+            <field name="name">wika.berita.acara.pembayaran.view.form</field>
+            <field name="model">wika.berita.acara.pembayaran</field>
+            <field name="arch" type="xml">
+                <form string="Berita Acara Pembayaran Form">
+                    <header>
+                        <button name="action_approve" type="object" string="APPROVE" states="upload" class="btn-success"/>
+                        <button name="action_cancel" type="object" string="CANCEL" states="approve"/>
+                        <button name="action_submit" type="object" string="SUBMIT" states="draft"/>
+                        <!-- <button name="action_reject" type="object" string="REJECT" states="approve" class="btn-danger"/> -->
+                        <button name="%(wika_berita_acara_pembayaran.action_reject_wizard)d" type="action" string="REJECT" states="upload" class="btn-danger"/>
+                        <field name="state" widget="statusbar" statusbar_visible="draft,upload,approve"/>
+                    </header>
+                    <sheet>
+                        <group>
+                            <group>
+                                <field name="partner_id"/>
+                                <field name="po_id"/>
+                                <field name="step_approve"/>
+                                
+                            </group>
+                            <group>
+                                <field name="branch_id"/>
+                                <field name="department_id"/>
+                                <field name="project_id" />
+                            </group>
+                        </group>
+                        <notebook>
+                            <page string="List BAP">
+                                <group>   
+                                    <field name="bap_ids" mode="tree,kanban" nolabel="1"  colspan="2">
+                                        <tree string="List BAP" editable ='bottom'>
+                                            <field name="picking_id"/>
+                                            <field name="product_id"/>
+                                            <field name="qty"/>
+                                            <field name="tax_ids"/>
+                                            <field name="currency_id"/>
+                                            <field name="unit_price"/>
+                                            <field name="sub_total"/>
+                                        </tree>
+                                    </field>    
+                                </group>
+                            </page>
+                            <page string="List Document">
+                                <group>
+                                    <field name="document_ids" mode="tree,kanban" nolabel="1"  colspan="2">
+                                        <tree string="List Document">
+                                            <field name="document_id"/>
+                                            <field name="document"/>
+                                            <field name="filename" invisible="1"/>
+                                            <field name="state"/>
+                                        </tree>
+                                        <form string='List Document'>
+                                            <group>
+                                                <field name="document" filename="filename"/>
+                                                <field name="filename" invisible="1"/>
+                                                <field name="state"/>
+                                            </group>
+                                        </form>
+                                    </field>
+                                </group>
+                            </page>
+                            <page string="List Approval">
+                                <group>
+                                    <field name="history_approval_ids" mode="tree,kanban" nolabel="1"  colspan="2">
+                                        <tree string="List Approval">
+                                            <field name="user_id"/>
+                                            <field name="groups_id"/>
+                                            <field name="datetime"/>
+                                            <field name="note"/>
+                                        </tree>
+                                        <form string='List Approval'>
+                                            <group>
+                                                <field name="user_id"/>
+                                                <field name="groups_id"/>
+                                                <field name="datetime"/>
+                                                <field name="note"/>
+                                            </group>
+                                        </form>
+                                    </field>
+                                </group>
+                            </page>
+                        </notebook>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+        
+        <!-- action -->
+        <record id="wika_berita_acara_pembayaran.action_window" model="ir.actions.act_window">
+            <field name="name">BAP</field>
+            <field name="res_model">wika.berita.acara.pembayaran</field>
+            <field name="view_mode">tree,form,kanban,calendar,pivot</field>
+        </record>
+
+    </data>
+</odoo>
