@@ -1,4 +1,6 @@
 from odoo import fields, models, api
+from odoo.exceptions import AccessError, ValidationError
+from datetime import datetime
 
 class WikaInheritedAccountMove(models.Model):
     _inherit = 'account.move'
@@ -10,6 +12,95 @@ class WikaInheritedAccountMove(models.Model):
     pr_id = fields.Many2one('wika.payment.request', string='Payment Request')
     document_ids = fields.One2many('wika.invoice.document.line', 'invoice_id', string='Document Line')
     history_approval_ids = fields.One2many('wika.invoice.approval.line', 'invoice_id', string='History Approval Line')
+    reject_reason_account = fields.Text(string='Reject Reason')
+    step_approve = fields.Integer(string='Step Approve')
+    state = fields.Selection(
+        selection=[
+            ('draft', 'Draft'),
+            ('upload', 'Upload'),
+            ('request', 'Request'),
+            ('reject', 'Reject'),
+            ('posted', 'Posted'),
+            ('cancel', 'Cancelled'),
+            ('reject', 'Reject'),
+        ],
+        string='Status',
+        required=True,
+        readonly=True,
+        copy=False,
+        tracking=True,
+        default='draft',
+    )
+
+    def action_submit(self):
+        self.write({'state': 'upload'})
+        self.step_approve += 1
+
+    def action_request(self):
+        self.write({'state': 'request'})
+    
+    def action_post(self):
+        user = self.env['res.users'].search([('id','=',self._uid)], limit=1)
+        print("TESTTTTTTTTTTTTTT", user)
+        cek = False
+        model_id = self.env['ir.model'].search([('model','=', 'account.move')], limit=1)
+        if model_id:
+            model_wika_id = self.env['wika.approval.setting'].search([('model_id','=',  model_id.id)], limit=1)
+
+        if user.branch_id.id==self.branch_id.id and model_wika_id:
+            groups_line = self.env['wika.approval.setting.line'].search(
+                [('branch_id', '=', self.branch_id.id), ('sequence',  '=', self.step_approve), ('approval_id', '=', model_wika_id.id )], limit=1)
+            groups_id = groups_line.groups_id
+
+            for x in groups_id.users:
+                if x.id == self._uid:
+                    cek = True
+
+        if cek == True:
+            if model_wika_id.total_approve == self.step_approve:
+                self.state = 'approved'
+            else:
+                self.step_approve += 1
+
+            self.env['wika.invoice.approval.line'].create({'user_id': self._uid,
+                'groups_id' :groups_id.id,
+                'date': datetime.now(),
+                'note': 'Approve',
+                'invoice_id': self.id
+                })
+        else:
+            raise ValidationError('User Akses Anda tidak berhak Approve!')
+
+    def action_reject(self):
+        user = self.env['res.users'].search([('id', '=', self._uid)], limit=1)
+        cek = False
+        model_id = self.env['ir.model'].search([('model','=', 'account.move')], limit=1)
+        if model_id:
+            model_wika_id = self.env['wika.approval.setting'].search([('model_id','=',  model_id.id)], limit=1)
+
+        if user.branch_id.id==self.branch_id.id and model_wika_id:
+            groups_line = self.env['wika.approval.setting.line'].search(
+                [('branch_id', '=', self.branch_id.id), ('sequence',  '=', self.step_approve), ('approval_id', '=', model_wika_id.id )], limit=1)
+            groups_id = groups_line.groups_id
+            for x in groups_id.users:
+                if x.id == self._uid:
+                    cek = True
+
+        if cek == True:
+            action = {
+                'name': ('Reject Reason'),
+                'type': "ir.actions.act_window",
+                'res_model': "reject.wizard.account.move",
+                'view_type': "form",
+                'target': 'new',
+                'view_mode': "form",
+                'context': {'groups_id': groups_id.id},
+                'view_id': self.env.ref('wika_account_move.reject_wizard_form').id,
+            }
+            return action
+        else:
+            raise ValidationError('User Akses Anda tidak berhak Reject!')
+
 
 class WikaInvoiceDocumentLine(models.Model):
     _name = 'wika.invoice.document.line'

@@ -25,7 +25,12 @@ class WikaPaymentRequest(models.Model):
     total = fields.Integer(string='Total', compute='compute_total')
     step_approve = fields.Integer(string='Step Approve')
     reject_reason_pr = fields.Text(string='Reject Reason')
-
+    # invoice_ids = fields.Many2many(
+    #     'account.move',  # Ganti dengan nama model invoice line yang sesuai
+    #     'pr_id',
+    #     domain="[('pr_id', '=', False), ('move_type', '=', 'in_invoice')]"
+    #     # Ganti 'your.invoice.line.model' dengan nama model invoice line yang sesuai
+    # )
     @api.model
     def create(self, vals):
         vals['name'] = self.env['ir.sequence'].next_by_code('wika.payment.request')
