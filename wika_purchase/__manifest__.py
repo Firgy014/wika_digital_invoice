@@ -20,12 +20,13 @@
     'version': '0.1',
 
     # any module necessary for this one to work correctly
-    'depends': ['base','purchase','wika_matrix_approval','wika_activity'],
+    'depends': ['base', 'purchase', 'stock', 'wika_matrix_approval', 'wika_activity'],
 
     # always loaded
     'data': [
         'security/ir.model.access.csv',
         'views/purchase_views.xml',
+        'data/documents_folder_data.xml',
         'views/wizard.xml',
         'views/action.xml',
         'views/menu.xml',

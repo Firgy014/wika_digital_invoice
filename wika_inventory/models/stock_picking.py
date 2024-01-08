@@ -23,6 +23,7 @@ class PickingInherit(models.Model):
     document_ids = fields.One2many('wika.picking.document.line', 'picking_id', string='List Document')
     history_approval_ids = fields.One2many('wika.picking.approval.line', 'picking_id', string='List Log')
     step_approve = fields.Integer(string='Step Approve')
+    po_count = fields.Integer(string='Purchase Orders', compute='_compute_po_count')
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -48,7 +49,6 @@ class PickingInherit(models.Model):
                 raise AccessError("Either approval and/or document settings are not found. Please configure it first in the settings menu.")
 
         return res
-
 
     def action_approve(self):
         user = self.env['res.users'].search([('id','=',self._uid)], limit=1)
@@ -115,3 +115,11 @@ class PickingInherit(models.Model):
     def action_submit_pick(self):
         self.state = 'uploaded'
         self.step_approve += 1
+
+    def get_po(self):
+        return None
+
+    def _compute_po_count(self):
+        for record in self:
+            record.po_count = self.env['purchase.order'].search_count(
+                [('id', '=', self.purchase_id.id)])

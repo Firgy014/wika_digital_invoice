@@ -2,6 +2,7 @@ from odoo import api, fields, models, _
 from datetime import datetime
 from odoo.exceptions import AccessError, ValidationError
 import pytz
+from odoo.http import request
 
 
 class PurchaseOrderApprovalHistory(models.Model):
@@ -35,6 +36,7 @@ class PurchaseOrderInherit(models.Model):
                                            string='Purchase Order Approval Lines')
     sap_doc_number = fields.Char(string='SAP Doc Number')
     step_approve = fields.Integer(string='Step Approve')
+    picking_count = fields.Integer(string='Picking', compute='_compute_picking_count')
 
 
     @api.model_create_multi
@@ -118,7 +120,6 @@ class PurchaseOrderInherit(models.Model):
         else:
             raise ValidationError('User Akses Anda tidak berhak Approve!')
 
-
     def action_reject(self):
         user = self.env['res.users'].search([('id', '=', self._uid)], limit=1)
         cek = False
@@ -174,6 +175,39 @@ class PurchaseOrderInherit(models.Model):
                     'user_id': x.id,
                     'summary': """Need Approval Document PO """
                 })
+
+    def get_picking(self):
+        self.ensure_one()
+        action = self.env['ir.actions.act_window'].sudo().search([('name', '=', 'GR/SES')], limit=1)
+        action_id = action.id if action else None
+        menu = self.env['ir.ui.menu'].sudo().search([('name', '=', 'GR/SES')], limit=1)
+        menu_id = menu.id if menu else None
+        # view_id = self.env['ir.ui.view'].search([('id', '=', 'purchase_order_tree_wika')])
+        view_id = self.env.ref('wika_purchase.purchase_order_tree_wika')
+
+
+        print("VIEW_____________ID", view_id)
+
+
+        return {
+            'type': 'ir.actions.act_window',
+            'name': 'GR/SES',
+            'view_mode': 'tree',
+            'res_model': 'stock.picking',
+            'domain': [('purchase_id', '=', self.id)],
+            'view_ids': [(view_id.id, 'tree')],
+            # 'view_id': view_id.id
+            # 'context': "{'create': False}"
+        }
+
+        # print(action_id)
+        # print(menu_id)
+        # return request.redirect(f'/web#action={action_id}&menu_id={menu_id}')
+
+    def _compute_picking_count(self):
+        for record in self:
+            record.picking_count = self.env['stock.picking'].search_count(
+                [('purchase_id', '=', self.id)])
 
 class PurchaseOrderDocumentLine(models.Model):
     _name = 'wika.po.document.line'
