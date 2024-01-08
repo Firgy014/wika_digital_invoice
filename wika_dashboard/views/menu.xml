@@ -1,0 +1,10 @@
+<odoo>
+    <data>
+        <menuitem id="menu_board_wika" name="Dashboard" sequence="1" web_icon="wika_dashboard,static/description/icon.png"/>
+        <menuitem id="dashboard_todo_menu"
+                  name="To Do List" sequence="1"
+                  parent="menu_board_wika"
+        action="todo_mail_activity_action"/>
+
+    </data>
+</odoo>

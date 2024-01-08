@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
-    <data noupdate="1">
-    
+    <data>
+
+        <!-- form -->
         <record id="view_wika_account_move_form_inherit" model="ir.ui.view">
             <field name="name">wika.account.move.inherit.view.form</field>
             <field name="model">account.move</field>
@@ -10,24 +11,17 @@
             <field name="arch" type="xml">
                 <xpath expr="//field[@name='partner_id']" position="after">
                     <field name="bap_id"/>
-                </xpath>
-                <xpath expr="//field[@name='bap_id']" position="after">
-                    <field name="branch_id"/>
-                </xpath>
-                <xpath expr="//field[@name='branch_id']" position="after">
-                    <field name="department_id"/>
-                </xpath>
-                <xpath expr="//field[@name='department_id']" position="after">
-                    <field name="project_id"/>
-                </xpath>
-                <xpath expr="//field[@name='project_id']" position="after">
                     <field name="pr_id"/>
                 </xpath>
-                
-                <xpath expr="//notebook/page[@name='invoice_line_ids']" position="after">
+                <xpath expr="//field[@name='invoice_date']" position="after">
+                    <field name="branch_id"/>
+                    <field name="department_id"/>
+                    <field name="project_id"/>
+                </xpath>
+                <xpath expr="//notebook/page[@name='other_info']" position="after">
                     <page string="List Document">
                         <field name="document_ids">
-                            <tree editable="top">
+                            <tree>
                                 <field name="document_id"/>
                                 <field name="document"/>
                                 <field name="filename" invisible="1"/>
@@ -35,11 +29,19 @@
                             </tree>
                         </field>
                     </page>
+                    <page string="List Approval">
+                        <field name="history_approval_ids">
+                            <tree string="List Approval">
+                                <field name="user_id"/>
+                                <field name="groups_id"/>
+                                <field name="date"/>
+                                <field name="note"/>
+                            </tree>
+                        </field>
+                    </page>
                 </xpath>
             </field>
         </record>
-    
     </data>
     
-
 </odoo>
