@@ -20,18 +20,18 @@
     'version': '0.1',
 
     # any module necessary for this one to work correctly
-    'depends': ['base', 'purchase', 'project', 'branch', 'web'],
+    'depends': ['base', 'purchase', 'project', 'branch', 'web', 'documents'],
 
     # always loaded
     'data': [
         'security/ir.model.access.csv',
         'views/matrix_approval_views.xml',
         'views/document_setting_views.xml',
-        'views/purchase_views.xml',
-        'views/wizard.xml',
+        'views/documents_document_views.xml',
         'views/action.xml',
         'views/menu.xml',
         'views/assets.xml',
+
     ],
     # only loaded in demonstration mode
     'demo': [

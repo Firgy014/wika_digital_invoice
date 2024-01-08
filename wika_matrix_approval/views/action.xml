@@ -1,21 +1,8 @@
 <?xml version='1.0' encoding='utf-8'?>
 <odoo>
     <data>
-        <record id="action_purchase_approval_history" model="ir.actions.act_window">
-            <field name="name">Purchase Order Approval History</field>
-            <field name="type">ir.actions.act_window</field>
-            <field name="res_model">wika.purchase.order.approval.history</field>
-            <field name="view_mode">tree,form</field>
-            <field name="help" type="html">
-                <p class="o_view_nocontent_smiling_face">
-                    No PO Approval History 
-                </p>
-                <p>
-                    Create New PO Approval History.
-                </p>
-            </field>
-        </record>
 
+        <!-- Approval Setting Actions -->
         <record id="action_wika_approval_setting_line_tree" model="ir.actions.act_window">
             <field name="name">Approval</field>
             <field name="res_model">wika.approval.setting</field>
@@ -23,12 +10,14 @@
             <field name="view_id" ref="wika_approval_setting_tree_view"/>
         </record>
 
+        <!-- Document Setting Actions -->
         <record id="action_wika_document_setting_tree" model="ir.actions.act_window">
             <field name="name">Document</field>
             <field name="res_model">wika.document.setting</field>
             <field name="view_mode">tree,form</field>
             <field name="view_id" ref="document_setting_tree_view"/>
         </record>
+
 
     </data>
     

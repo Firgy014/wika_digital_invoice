@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 {
-    'name': "wika_payment_request",
+    'name': "Inherit Inventory",
 
     'summary': """
         Short (1 phrase/line) summary of the module's purpose, used as
@@ -20,18 +20,19 @@
     'version': '0.1',
 
     # any module necessary for this one to work correctly
-    'depends': ['base', 'branch', 'project', 'purchase', 'stock', 'product', 'account', 'wika_matrix_approval', 'wika_berita_acara_pembayaran',],
+    'depends': ['base', 'stock', 'wika_matrix_approval','wika_purchase'],
 
     # always loaded
     'data': [
         'security/ir.model.access.csv',
         'views/views.xml',
+        'views/stock_picking_views.xml',
+        'views/action.xml',
+        'views/menu.xml',
         'views/templates.xml',
+
         'wizard/wika_reject_reason.xml',
-        'views/wika_payment_request.xml',
-        'views/sequence_data.xml',
-        'wizard/wika_reject_reason.xml',
-        'views/wika_menu.xml',
+
     ],
     # only loaded in demonstration mode
     'demo': [

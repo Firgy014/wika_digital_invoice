@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <data>
-
         <record id="wika_approval_setting_tree_view" model="ir.ui.view">
             <field name="name">wika.approval.setting.tree</field>
             <field name="model">wika.approval.setting</field>
@@ -25,7 +24,7 @@
                         <field name="project_id"/>
                         <field name="model_id"/>
                         <field name="state"/>
-                        <field name="total_approve"/>     
+                        <field name="total_approve"/>
                     </group>
                     <notebook>
                         <page string="Setting Lines">
