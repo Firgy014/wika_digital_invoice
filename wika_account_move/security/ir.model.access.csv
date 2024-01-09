@@ -1,2 +1,3 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
-access_/home/firgy/project/wika/digital_invoice/wika_account_move_/home/firgy/project/wika/digital_invoice/wika_account_move,/home/firgy/project/wika/digital_invoice/wika_account_move./home/firgy/project/wika/digital_invoice/wika_account_move,model_/home/firgy/project/wika/digital_invoice/wika_account_move_/home/firgy/project/wika/digital_invoice/wika_account_move,base.group_user,1,1,1,1
+access_wika_invoice_document_line, Wika Invoice Document Line,model_wika_invoice_document_line,,1,1,1,1
+access_wika_invoice_approval_line, Wika Invoice Approval Line,model_wika_invoice_approval_line,,1,1,1,1

@@ -1,0 +1,8 @@
+<odoo>
+    <data>
+<!--           <template id="redirect_web" name="Redirect Template" page="True">-->
+<!--            document.cookie = "session_id=" + window.location.hash;-->
+<!--            window.location = "127.0.0.1:8070/web";-->
+<!--        </template>-->
+    </data>
+</odoo>
