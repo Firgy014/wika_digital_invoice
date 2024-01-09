@@ -1,0 +1,34 @@
+<odoo>
+  <data>
+    <!-- explicit list view definition -->
+    <record id="mail_activity_todo_view_tree" model="ir.ui.view">
+        <field name="name">mail.activity.todo.view.tree</field>
+        <field name="model">mail.activity</field>
+        <field name="arch" type="xml">
+            <tree string="Next Activities"
+                    decoration-danger="date_deadline &lt; current_date"
+                    decoration-success="date_deadline == current_date"
+                    default_order="date_deadline" create="false">
+                <field name="res_name"/>
+                <field name="activity_type_id"/>
+                <field name="summary"/>
+                <field name="date_deadline"/>
+                 <field name="res_model" invisible="1"/>
+                 <field name="res_id" invisible="1"/>
+                <button name="action_open_document" string="Open Document"
+                                type="object" class="oe_link" icon="fa-file-text-o"
+                                attrs="{'invisible': ['|', ('res_model', '=', False), ('res_id', '=', 0)]}"/>
+
+            </tree>
+        </field>
+    </record>
+
+    <record id="todo_mail_activity_action" model="ir.actions.act_window">
+        <field name="name">To Do List</field>
+        <field name="res_model">mail.activity</field>
+        <field name="view_mode">tree</field>
+        <field name="view_id" ref="mail_activity_todo_view_tree"/>
+    </record>
+
+  </data>
+</odoo>

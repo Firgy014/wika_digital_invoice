@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 {
-    'name': "wika_payment_request",
+    'name': "WiKA Integration",
 
     'summary': """
         Short (1 phrase/line) summary of the module's purpose, used as
@@ -10,27 +10,25 @@
         Long description of module's purpose
     """,
 
-    'author': "My Company",
-    'website': "https://www.yourcompany.com",
+    'author': "Matrica",
+    'website': "http://www.yourcompany.com",
 
     # Categories can be used to filter modules in modules listing
-    # Check https://github.com/odoo/odoo/blob/16.0/odoo/addons/base/data/ir_module_category_data.xml
+    # Check https://github.com/odoo/odoo/blob/master/odoo/addons/base/module/module_data.xml
     # for the full list
     'category': 'Uncategorized',
     'version': '0.1',
 
     # any module necessary for this one to work correctly
-    'depends': ['base', 'branch', 'project', 'purchase', 'stock', 'product', 'account', 'wika_matrix_approval', 'wika_berita_acara_pembayaran',],
+    'depends': ['base','inherit_for_api'],
 
     # always loaded
     'data': [
         'security/ir.model.access.csv',
-        'views/views.xml',
+        'data/scheduler.xml',
+        'views/wika_integration_views.xml',
+        # 'views/loan_bcg_views.xml',
         'views/templates.xml',
-        'views/wika_payment_request.xml',
-        'views/sequence_data.xml',
-        'wizard/wika_reject_reason.xml',
-        'views/wika_menu.xml',
     ],
     # only loaded in demonstration mode
     'demo': [
