@@ -9,21 +9,46 @@
             <field name="model">account.move</field>
             <field name="inherit_id" ref="account.view_move_form"/>
             <field name="arch" type="xml">
+                <!-- state -->
+                <xpath expr="//field[@name='state']" position="attributes">
+                    <attribute name="statusbar_visible">draft,upload,approve</attribute>
+                </xpath>
+
+                <!-- button -->
+                <xpath expr="/form/header/button[@name='action_invoice_sent']" position="before">
+                    <button name="action_submit" string="SUBMIT" type="object" class="oe_highlight" 
+                    attrs="{'invisible': ['|', ('state', '=', 'upload'), 
+                        ('state', '=', 'approve')]}"/>
+                    <button name="action_approve" string="APPROVE" type="object" class="oe_highlight" 
+                    attrs="{'invisible': ['|', ('state', '=', 'draft'), 
+                        ('state', '=', 'approve')]}"/>
+                     <button name="action_reject" string="REJECT" type="object" class="oe_highlight" 
+                    attrs="{'invisible': ['|', ('state', '=', 'draft'), 
+                        ('state', '=', 'approve') ]}"/>
+                </xpath>
+                <xpath expr="/form/header/button[@name='action_post']" position="attributes">
+                    <attribute name="invisible">1</attribute>
+                </xpath>
+                <xpath expr="/form/header/button[2]" position="attributes">
+                    <attribute name="invisible">1</attribute>
+                </xpath>
+                <!-- field -->
                 <xpath expr="//field[@name='partner_id']" position="after">
                     <field name="bap_id"/>
                     <field name="pr_id"/>
                 </xpath>
                 <xpath expr="//field[@name='invoice_date']" position="after">
-                    <field name="branch_id"/>
-                    <field name="department_id"/>
+                    <field name="branch_id" domain="[('biro', '=', False)]"/>
+                    <field name="department_id" domain="[('biro', '=', True), ('parent_id', '=', branch_id)]"/>
                     <field name="project_id"/>
+                    <field name="step_approve"/>
                 </xpath>
                 <xpath expr="//notebook/page[@name='other_info']" position="after">
                     <page string="List Document">
                         <field name="document_ids">
-                            <tree>
+                            <tree editable="top">
                                 <field name="document_id"/>
-                                <field name="document"/>
+                                <field name="document" widget="binary_button" filename="filename"/>
                                 <field name="filename" invisible="1"/>
                                 <field name="state"/>
                             </tree>
