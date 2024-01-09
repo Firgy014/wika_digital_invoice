@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
-    <data noupdate="1">
+    <data>
     
         <menuitem id="wika_berita_acara_pembayaran_menu_root" sequence="3" name="Invoice"  web_icon="wika_berita_acara_pembayaran,static/description/icon.png"/>
         
