@@ -16,21 +16,22 @@ class partner(models.Model):
     # ____________ ORM disini ____________ 
     _inherit = 'res.partner'
 
-    def name_get(self):
-        res = []
-        for record in self:
-            tit = "[%s] %s" % (record.kode_nasabah_baru, record.name)
-            res.append((record.id, tit))
-        return res
-
-    def name_search(self, name, args=None, operator='ilike', limit=1000):
-        args = args or []
-        if name:
-            # Be sure name_search is symetric to name_get
-            args = ['|', '|', ('ref', operator, name), ('kode_nasabah_baru', operator, name),
-                    ('name', operator, name)] + args
-        categories = self.search(args, limit=limit)
-        return categories.name_get()
+    # def name_get(self):
+    #     res = []
+    #     for record in self:
+    #         tit = "[%s] %s" % (record.kode_nasabah_baru, record.name)
+    #         res.append((record.id, tit))
+    #     return res
+    #
+    # @api.model
+    # def _name_search(self, name='', args=None, operator='ilike', limit=100, name_get_uid=None):
+    #     args = args or []
+    #     if name:
+    #         # Be sure name_search is symetric to name_get
+    #         args = ['|', '|', ('ref', operator, name), ('kode_nasabah_baru', operator, name),
+    #                 ('name', operator, name)] + args
+    #     categories = self.search(args, limit=limit)
+    #     return categories.name_get()
 
     tipe_faktur = fields.Boolean(string='Tipe Faktur')
     name_cp = fields.Char(string='Nama Kontak')  # option: size=40, translate=False)
