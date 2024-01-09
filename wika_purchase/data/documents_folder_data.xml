@@ -1,0 +1,27 @@
+<odoo>
+    <record id="documents_facet_kontrak" model="documents.facet">
+        <field name="name">Kontrak</field>
+    </record>
+
+    <record id="documents_tag_1st_contract" model="documents.tag">
+        <field name="name">Kontrak Pertama</field>
+        <field name="facet_id" ref="wika_purchase.documents_facet_kontrak"/>
+    </record>
+
+    <record id="documents_tag_2nd_contract" model="documents.tag">
+        <field name="name">Kontrak Kedua</field>
+        <field name="facet_id" ref="wika_purchase.documents_facet_kontrak"/>
+    </record>
+
+    <!-- Update documents_facet_kontrak with tag_ids -->
+    <record id="documents_facet_kontrak" model="documents.facet">
+        <field name="tag_ids" eval="[(6, 0, [ref('wika_purchase.documents_tag_1st_contract'), ref('wika_purchase.documents_tag_2nd_contract')])]"/>
+    </record>
+
+    <record id="documents_folder_purchases" model="documents.folder">
+        <field name="name">Purchase</field>
+        <field name="facet_ids" eval="[(4, ref('wika_purchase.documents_facet_kontrak'))]"/>
+        <field name="group_ids" eval="[(6, 0, [ref('base.group_user')])]"/>
+        <field name="read_group_ids" eval="[(6, 0, [ref('base.group_user')])]"/>
+    </record>
+</odoo>
