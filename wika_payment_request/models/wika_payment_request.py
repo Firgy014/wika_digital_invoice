@@ -6,6 +6,7 @@ from odoo.exceptions import UserError, ValidationError,Warning
 class WikaPaymentRequest(models.Model):
     _name = 'wika.payment.request'
     _description = 'Wika Payment Request'
+    _inherit = ['mail.thread']
 
     name = fields.Char(string='Nomor Payment Request', readonly=True ,default='/')
     date = fields.Date(string='Tanggal Payement Request')
@@ -25,6 +26,12 @@ class WikaPaymentRequest(models.Model):
     total = fields.Integer(string='Total', compute='compute_total')
     step_approve = fields.Integer(string='Step Approve')
     reject_reason_pr = fields.Text(string='Reject Reason')
+    message_follower_ids = fields.One2many(
+        'mail.followers', 'res_id', string='Followers', groups='base.group_user')
+    activity_ids = fields.One2many(
+        'mail.activity', 'res_id', 'Activities',
+        auto_join=True,
+        groups="base.group_user",)
 
     @api.model
     def create(self, vals):
@@ -65,6 +72,24 @@ class WikaPaymentRequest(models.Model):
             raise UserError('Tidak bisa submit karena ada dokumen yang belum diverifikasi!')
         self.write({'state': 'upload'})
         self.step_approve += 1
+        model_id = self.env['ir.model'].search([('model', '=', 'wika.payment.request')], limit=1)
+        model_wika_id = self.env['wika.approval.setting'].search([('model_id', '=', model_id.id)], limit=1)
+        user = self.env['res.users'].search([('branch_id', '=', self.branch_id.id)])
+        if model_wika_id:
+            groups_line = self.env['wika.approval.setting.line'].search([
+                ('branch_id', '=', self.branch_id.id),
+                ('sequence', '=', self.step_approve),
+                ('approval_id', '=', model_wika_id.id)
+            ], limit=1)
+            groups_id = groups_line.groups_id
+        for x in groups_id.users:
+            activity_ids = self.env['mail.activity'].create({
+                    'activity_type_id': 4,
+                    'res_model_id': self.env['ir.model'].sudo().search([('model', '=', 'wika.payment.request')], limit=1).id,
+                    'res_id': self.id,
+                    'user_id': x.id,
+                    'summary': """ Need Approval Document PO """
+                })
         
     def action_request(self):
         self.write({'state': 'request'})
