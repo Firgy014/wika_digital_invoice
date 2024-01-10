@@ -1,6 +1,6 @@
 from odoo import models, fields, api
 from datetime import datetime, timedelta
-from odoo.exceptions import UserError, ValidationError,Warning
+from odoo.exceptions import UserError, ValidationError,Warning, AccessError
 
 
 class WikaPaymentRequest(models.Model):
@@ -68,8 +68,8 @@ class WikaPaymentRequest(models.Model):
                 raise AccessError("Data dokumen tidak ada!")
 
     def action_submit(self):
-        if any (doc.state != 'verif'  for doc in self.document_ids):
-            raise UserError('Tidak bisa submit karena ada dokumen yang belum diverifikasi!')
+        # if any (doc.state != 'verif'  for doc in self.document_ids):
+        #     raise UserError('Tidak bisa submit karena ada dokumen yang belum diverifikasi!')
         self.write({'state': 'upload'})
         self.step_approve += 1
         model_id = self.env['ir.model'].search([('model', '=', 'wika.payment.request')], limit=1)
@@ -116,6 +116,11 @@ class WikaPaymentRequest(models.Model):
                 self.state = 'approve'
             else:
                 self.step_approve += 1
+
+            for invoice_id in self.invoice_ids.ids:
+                invoice = self.env['account.move'].browse(invoice_id)
+                pr_id = self.env['wika.payment.request'].search([('id', '=', self.id)], limit=1)
+                invoice.write({'pr_id': pr_id.id}) 
 
             audit_log_obj = self.env['wika.pr.approval.line'].create({'user_id': self._uid,
                 'groups_id' :groups_id.id,

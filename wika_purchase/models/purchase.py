@@ -67,6 +67,7 @@ class PurchaseOrderInherit(models.Model):
 
     def action_approve(self):
         user = self.env['res.users'].search([('id', '=', self._uid)], limit=1)
+        documents_model = self.env['documents.document'].sudo()
         cek = False
         model_id = self.env['ir.model'].search([('model', '=', 'purchase.order')], limit=1)
         if model_id:

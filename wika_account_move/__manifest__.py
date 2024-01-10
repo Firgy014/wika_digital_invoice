@@ -27,6 +27,7 @@
         'security/ir.model.access.csv',
         'views/views.xml',
         'views/wika_account_move.xml',
+        'data/documents_folder_data.xml',
         'views/action.xml',
         'views/wika_menu.xml',
         'views/templates.xml',

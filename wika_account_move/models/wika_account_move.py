@@ -62,7 +62,7 @@ class WikaInheritedAccountMove(models.Model):
     
     def action_approve(self):
         user = self.env['res.users'].search([('id','=',self._uid)], limit=1)
-        print("TESTTTTTTTTTTTTTT", user)
+        documents_model = self.env['documents.document'].sudo()
         cek = False
         model_id = self.env['ir.model'].search([('model','=', 'account.move')], limit=1)
         if model_id:
@@ -80,6 +80,29 @@ class WikaInheritedAccountMove(models.Model):
         if cek == True:
             if model_wika_id.total_approve == self.step_approve:
                 self.state = 'approve'
+                folder_id = self.env['documents.folder'].sudo().search([('name', '=', 'Account Move')], limit=1)
+                # print("TESTTTTTTTTTTTTTTTTTTTTT", folder_id)
+                if folder_id:
+                    facet_id = self.env['documents.facet'].sudo().search([
+                        ('name', '=', 'Vendor Bills'),
+                        ('folder_id', '=', folder_id.id)
+                    ], limit=1)
+                    # print("TESTTTTTTTTTERRRRRRR", facet_id)
+                    for doc in self.document_ids.filtered(lambda x: x.state == 'uploaded'):
+                        doc.state = 'verif'
+                        attachment_id = self.env['ir.attachment'].sudo().create({
+                            'name': doc.filename,
+                            'datas': doc.document,
+                            'res_model': 'documents.document',
+                        })
+                        # print("SSSIIIIUUUUUUUUUUUUUUUUUU", attachment_id)
+                        if attachment_id:
+                            documents_model.create({
+                                'attachment_id': attachment_id.id,
+                                'folder_id': folder_id.id,
+                                'tag_ids': facet_id.tag_ids.ids,
+                                # 'partner_id': doc.purchase_id.partner_id.id,
+                            })
             else:
                 self.step_approve += 1
 
@@ -159,6 +182,17 @@ class WikaInvoiceDocumentLine(models.Model):
         ('verif', 'Verif'),
     ], string='Status', default='waiting')
 
+    @api.depends('document')
+    def _compute_state(self):
+        for rec in self:
+            if rec.document:
+                rec.state = 'uploaded'
+
+    @api.onchange('document')
+    def _onchange_document(self):
+        if self.document:
+            self.state = 'uploaded'
+            
 class WikaInvoiceApprovalLine(models.Model):
     _name = 'wika.invoice.approval.line'
     _description = 'Wika Approval Line'
