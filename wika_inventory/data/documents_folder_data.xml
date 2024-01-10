@@ -1,0 +1,27 @@
+<odoo>
+    <record id="documents_facet_transfer" model="documents.facet">
+        <field name="name">Transfer</field>
+    </record>
+
+    <record id="documents_tag_1st_transfer" model="documents.tag">
+        <field name="name">Transfer Pertama</field>
+        <field name="facet_id" ref="wika_inventory.documents_facet_transfer"/>
+    </record>
+
+    <record id="documents_tag_2nd_transfer" model="documents.tag">
+        <field name="name">Transfer Kedua</field>
+        <field name="facet_id" ref="wika_inventory.documents_facet_transfer"/>
+    </record>
+
+    <!-- Update documents_facet_transfer with tag_ids -->
+    <record id="documents_facet_transfer" model="documents.facet">
+        <field name="tag_ids" eval="[(6, 0, [ref('wika_inventory.documents_tag_1st_transfer'), ref('wika_inventory.documents_tag_2nd_transfer')])]"/>
+    </record>
+
+    <record id="documents_folder_picking" model="documents.folder">
+        <field name="name">GR/SES</field>
+        <field name="facet_ids" eval="[(4, ref('wika_inventory.documents_facet_transfer'))]"/>
+        <field name="group_ids" eval="[(6, 0, [ref('base.group_user')])]"/>
+        <field name="read_group_ids" eval="[(6, 0, [ref('base.group_user')])]"/>
+    </record>
+</odoo>

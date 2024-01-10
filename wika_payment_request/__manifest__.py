@@ -31,7 +31,6 @@
         'wizard/wika_reject_reason.xml',
         'views/wika_payment_request.xml',
         'views/sequence_data.xml',
-        'wizard/wika_reject_reason.xml',
         'views/wika_menu.xml',
     ],
     # only loaded in demonstration mode
