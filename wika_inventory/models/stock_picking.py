@@ -1,4 +1,4 @@
-from odoo import models, fields, api
+from odoo import models, fields, api, _
 from datetime import datetime
 from odoo.exceptions import AccessError, ValidationError
 
@@ -52,6 +52,7 @@ class PickingInherit(models.Model):
 
     def action_approve(self):
         user = self.env['res.users'].search([('id','=',self._uid)], limit=1)
+        documents_model = self.env['documents.document'].sudo()
         cek = False
         model_id = self.env['ir.model'].search([('model','=', 'stock.picking')], limit=1)
         if model_id:
@@ -69,6 +70,28 @@ class PickingInherit(models.Model):
         if cek == True:
             if model_wika_id.total_approve == self.step_approve:
                 self.state = 'approved'
+                folder_id = self.env['documents.folder'].sudo().search([('name', '=', 'GR/SES')], limit=1)
+                if folder_id:
+                    facet_id = self.env['documents.facet'].sudo().search([
+                        ('name', '=', 'Transfer'),
+                        ('folder_id', '=', folder_id.id)
+                    ], limit=1)
+                    for doc in self.document_ids.filtered(lambda x: x.state == 'uploaded'):
+                        doc.state = 'verified'
+                        attachment_id = self.env['ir.attachment'].sudo().create({
+                            'name': doc.filename,
+                            'datas': doc.document,
+                            'res_model': 'documents.document',
+                        })
+                        if attachment_id:
+                            documents_model.create({
+                                'attachment_id': attachment_id.id,
+                                'folder_id': folder_id.id,
+                                'tag_ids': facet_id.tag_ids.ids,
+                                'partner_id': doc.purchase_id.partner_id.id,
+                                'purchase_id': self.id,
+                                'is_po_doc': True
+                            })
             else:
                 self.step_approve += 1
 
@@ -116,8 +139,21 @@ class PickingInherit(models.Model):
         self.state = 'uploaded'
         self.step_approve += 1
 
-    def get_po(self):
-        return None
+    def get_purchase(self):
+        self.ensure_one()
+        view_id = self.env.ref("wika_purchase.purchase_order_tree_wika", raise_if_not_found=False)
+            
+        return {
+            'name': _('Purchase Orders'),
+            'type': 'ir.actions.act_window',
+            'view_mode': 'tree',
+            'res_model': 'purchase.order',
+            'view_id': view_id.id,
+            'target': 'main',
+            'res_id': self.id,
+            'domain': [('picking_id', '=', self.id)],  
+            'context': {'default_picking_id': self.id},
+        }
 
     def _compute_po_count(self):
         for record in self:

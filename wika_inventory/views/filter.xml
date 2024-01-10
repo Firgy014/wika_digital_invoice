@@ -1,0 +1,170 @@
+<odoo>
+    <data>
+        <record id="wika_view_picking_internal_search" model="ir.ui.view">
+            <field name="name">wika.stock.picking.internal.search</field>
+            <field name="model">stock.picking</field>
+            <field name="inherit_id" ref="stock.view_picking_internal_search"/>
+            <field name="arch" type="xml">
+
+                <!-- search fields  -->
+                <xpath expr="//field[@name='product_id']" position="before">
+                    <field name="branch_id" string="Divisi"/>
+                </xpath>
+                <xpath expr="//field[@name='branch_id']" position="after">
+                    <field name="branch_id" string="Department"/>
+                </xpath>
+                <xpath expr="//field[@name='branch_id']" position="after">
+                    <field name="project_id" string="Project"/>
+                </xpath>
+                <xpath expr="//field[@name='project_id']" position="after">
+                    <field name="purchase_id" string="Nomor PO"/>
+                </xpath>
+                <xpath expr="//field[@name='purchase_id']" position="after">
+                    <field name="pick_type" string="Type"/>
+                </xpath>
+                <xpath expr="//field[@name='partner_id']" position="replace">
+                    <field name="partner_id" string="Vendor"/>
+                </xpath>
+
+                <!-- hidden search fields -->
+                <xpath expr="//field[@name='name']" position="replace">
+                    <field name="name" invisible="1" string="Transfer" filter_domain="['|', ('name', 'ilike', self), ('origin', 'ilike', self)]"/>
+                </xpath>
+                <xpath expr="//field[@name='origin']" position="replace">
+                    <field name="origin" invisible="1"/>
+                </xpath>
+                <xpath expr="//field[@name='picking_type_id']" position="replace">
+                    <field name="picking_type_id" invisible="1"/>
+                </xpath>
+                <xpath expr="//field[@name='move_line_ids']" position="replace">
+                    <field name="move_line_ids" invisible="1" string="Package" filter_domain="['|', ('move_line_ids.package_id.name', 'ilike', self), ('move_line_ids.result_package_id.name', 'ilike', self)]" groups="stock.group_tracking_lot"/>
+                </xpath>
+
+                <!-- new filters and hide existing -->
+                <xpath expr="//filter[@name='to_do_transfers']" position="replace">
+                    <filter name="to_do_transfers" invisible="1" string="To Do" domain="[('user_id', 'in', [uid, False])]"/>
+                </xpath>                
+                <xpath expr="//filter[@name='my_transfers']" position="replace">
+                    <filter string="Uploaded" name="state_uploaded" domain="[('state', '=', 'uploaded')]"/>
+                </xpath>
+                <xpath expr="//filter[@name='starred']" position="replace">
+                    <filter string="Approved" name="state_approved" domain="[('state', '=', 'approved')]"/>
+                </xpath>
+
+                <!-- hide existing filters -->
+                <xpath expr="//filter[@name='draft']" position="replace">
+                    <filter name="draft" invisible="1" string="Draft" domain="[('state', '=', 'draft')]" help="Draft Moves"/>
+                </xpath>
+                <xpath expr="//filter[@name='waiting']" position="replace">
+                    <filter name="waiting" invisible="1" string="Waiting" domain="[('state', 'in', ('confirmed', 'waiting'))]" help="Waiting Moves"/>
+                </xpath>
+                <xpath expr="//filter[@name='available']" position="replace">
+                    <filter name="available" invisible="1" string="Ready" domain="[('state', '=', 'assigned')]" help="Assigned Moves"/>
+                </xpath>
+                <xpath expr="//filter[@name='done']" position="replace">
+                    <filter name="done" invisible="1" string="Done" domain="[('state', '=', 'done')]" help="Pickings already processed"/>
+                </xpath>
+                <xpath expr="//filter[@name='cancel']" position="replace">
+                    <filter name="cancel" invisible="1" string="Cancelled" domain="[('state', '=', 'cancel')]" help="Cancelled Moves"/>
+                </xpath>
+                <xpath expr="//filter[@name='late']" position="replace">
+                    <filter name="late" invisible="1" string="Late" help="Deadline exceed or/and by the scheduled"
+                        domain="[('state', 'in', ('assigned', 'waiting', 'confirmed')), '|', '|', ('has_deadline_issue', '=', True), ('date_deadline', '&lt;', current_date), ('scheduled_date', '&lt;', current_date)]"/>
+                </xpath>
+                <xpath expr="//filter[@name='planning_issues']" position="replace">
+                    <filter string="Planning Issues" invisible="1" name="planning_issues" help="Transfers that are late on scheduled time or one of pickings will be late"
+                        domain="['|', ('delay_alert_date', '!=', False), '&amp;', ('scheduled_date','&lt;', time.strftime('%Y-%m-%d %H:%M:%S')), ('state', 'in', ('assigned', 'waiting', 'confirmed'))]"/>
+                </xpath>
+                <xpath expr="//filter[@name='backorder']" position="replace">
+                    <filter name="backorder" invisible="1" string="Backorders" domain="[('backorder_id', '!=', False), ('state', 'in', ('assigned', 'waiting', 'confirmed'))]" help="Remaining parts of picking partially processed"/>
+                </xpath>
+                <xpath expr="//filter[@name='activities_exception']" position="replace">
+                    <filter string="Warnings" invisible="1" name="activities_exception" domain="[('activity_exception_decoration', '!=', False)]"/>
+                </xpath>
+
+                <!-- hide existing group_bys and add new group bys -->
+                <xpath expr="//filter[@name='status']" position="before">
+                    <filter string="Divisi" name="divisi" domain="[]" context="{'group_by': 'branch_id'}"/>
+                </xpath>
+                <xpath expr="//filter[@name='divisi']" position="after">
+                    <filter string="Department" name="department" domain="[]" context="{'group_by': 'branch_id'}"/>
+                </xpath>
+                <xpath expr="//filter[@name='department']" position="after">
+                    <filter string="Project" name="project" domain="[]" context="{'group_by': 'project_id'}"/>
+                </xpath>
+                <xpath expr="//filter[@name='project']" position="after">
+                    <filter string="Nomor PO" name="nomor_po" domain="[]" context="{'group_by': 'purchase_id'}"/>
+                </xpath>
+                <xpath expr="//filter[@name='nomor_po']" position="after">
+                    <filter string="Type" name="type" domain="[]" context="{'group_by': 'pick_type'}"/>
+                </xpath>
+                <xpath expr="//filter[@name='type']" position="after">
+                    <filter string="Vendor" name="vendor" domain="[]" context="{'group_by': 'partner_id'}"/>
+                </xpath>
+
+                <!-- hide existing group_bys -->
+                <xpath expr="//filter[@name='expected_date']" position="replace">
+                    <filter string="Scheduled Date" invisible="1" name="expected_date" domain="[]" context="{'group_by': 'scheduled_date'}"/>
+                </xpath>
+                <xpath expr="//filter[@name='origin']" position="replace">
+                    <filter string="Source Document" invisible="1" name="origin" domain="[]" context="{'group_by': 'origin'}"/>
+                </xpath>
+                <xpath expr="//filter[@name='picking_type']" position="replace">
+                    <filter string="Operation Type" invisible="1" name="picking_type" domain="[]" context="{'group_by': 'picking_type_id'}"/>
+                </xpath>
+
+            </field>
+        </record>
+    </data>
+</odoo>
+
+
+        <!-- <record id="view_picking_internal_search" model="ir.ui.view">
+            <field name="name">stock.picking.internal.search</field>
+            <field name="model">stock.picking</field>
+            <field name="arch" type="xml">
+                <search string="Picking Lists">
+                    <field name="name" string="Transfer" filter_domain="['|', ('name', 'ilike', self), ('origin', 'ilike', self)]"/>
+                    <field name="partner_id" filter_domain="[('partner_id', 'child_of', self)]"/>
+                    <field name="origin"/>
+                    <field name="product_id"/>
+                    <field name="picking_type_id"/>
+                    <field name="move_line_ids"
+                        string="Package"
+                        filter_domain="['|', ('move_line_ids.package_id.name', 'ilike', self), ('move_line_ids.result_package_id.name', 'ilike', self)]"
+                        groups="stock.group_tracking_lot"/>
+                    <filter name="to_do_transfers" string="To Do" domain="[('user_id', 'in', [uid, False])]"/>
+                    <filter name="my_transfers" string="My Transfers" domain="[('user_id', '=', uid)]"/>
+                    <filter string="Starred" name="starred" domain="[('priority', '=', '1')]"/>
+                    <separator/>
+                    <filter name="draft" string="Draft" domain="[('state', '=', 'draft')]" help="Draft Moves"/>
+                    <filter name="waiting" string="Waiting" domain="[('state', 'in', ('confirmed', 'waiting'))]" help="Waiting Moves"/>
+                    <filter name="available" string="Ready" domain="[('state', '=', 'assigned')]" help="Assigned Moves"/>
+                    <filter name="done" string="Done" domain="[('state', '=', 'done')]" help="Pickings already processed"/>
+                    <filter name="cancel" string="Cancelled" domain="[('state', '=', 'cancel')]" help="Cancelled Moves"/>
+                    <separator/>
+                    <filter name="late" string="Late" help="Deadline exceed or/and by the scheduled"
+                        domain="[('state', 'in', ('assigned', 'waiting', 'confirmed')), '|', '|', ('has_deadline_issue', '=', True), ('date_deadline', '&lt;', current_date), ('scheduled_date', '&lt;', current_date)]"/> 
+                    <filter string="Planning Issues" name="planning_issues" help="Transfers that are late on scheduled time or one of pickings will be late"
+                        domain="['|', ('delay_alert_date', '!=', False), '&amp;', ('scheduled_date','&lt;', time.strftime('%Y-%m-%d %H:%M:%S')), ('state', 'in', ('assigned', 'waiting', 'confirmed'))]"/>
+                    <separator/>
+                    <filter name="backorder" string="Backorders" domain="[('backorder_id', '!=', False), ('state', 'in', ('assigned', 'waiting', 'confirmed'))]" help="Remaining parts of picking partially processed"/>
+                    <separator/>
+                    <filter invisible="1" string="Late Activities" name="activities_overdue"
+                        domain="[('my_activity_date_deadline', '&lt;', context_today().strftime('%Y-%m-%d'))]"
+                        help="Show all records which has next action date is before today"/>
+                    <filter invisible="1" string="Today Activities" name="activities_today"
+                        domain="[('my_activity_date_deadline', '=', context_today().strftime('%Y-%m-%d'))]"/>
+                    <filter invisible="1" string="Future Activities" name="activities_upcoming_all"
+                        domain="[('my_activity_date_deadline', '&gt;', context_today().strftime('%Y-%m-%d'))]"/>
+                    <separator/>
+                    <filter string="Warnings" name="activities_exception" domain="[('activity_exception_decoration', '!=', False)]"/>
+                    <group expand="0" string="Group By">
+                        <filter string="Status" name="status" domain="[]" context="{'group_by': 'state'}"/>
+                        <filter string="Scheduled Date" name="expected_date" domain="[]" context="{'group_by': 'scheduled_date'}"/>
+                        <filter string="Source Document" name="origin" domain="[]" context="{'group_by': 'origin'}"/>
+                        <filter string="Operation Type" name="picking_type" domain="[]" context="{'group_by': 'picking_type_id'}"/>
+                    </group>
+                </search>
+            </field>
+        </record> -->

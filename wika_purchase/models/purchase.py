@@ -67,6 +67,7 @@ class PurchaseOrderInherit(models.Model):
 
     def action_approve(self):
         user = self.env['res.users'].search([('id', '=', self._uid)], limit=1)
+        documents_model = self.env['documents.document'].sudo()
         cek = False
         model_id = self.env['ir.model'].search([('model', '=', 'purchase.order')], limit=1)
         if model_id:
@@ -178,31 +179,20 @@ class PurchaseOrderInherit(models.Model):
 
     def get_picking(self):
         self.ensure_one()
-        action = self.env['ir.actions.act_window'].sudo().search([('name', '=', 'GR/SES')], limit=1)
-        action_id = action.id if action else None
-        menu = self.env['ir.ui.menu'].sudo().search([('name', '=', 'GR/SES')], limit=1)
-        menu_id = menu.id if menu else None
-        # view_id = self.env['ir.ui.view'].search([('id', '=', 'purchase_order_tree_wika')])
-        view_id = self.env.ref('wika_purchase.purchase_order_tree_wika')
-
-
-        print("VIEW_____________ID", view_id)
-
-
+        view_id = self.env.ref("wika_inventory.stock_picking_tree_wika", raise_if_not_found=False)
+        
         return {
+            'name': _('GR/SES'),
             'type': 'ir.actions.act_window',
-            'name': 'GR/SES',
             'view_mode': 'tree',
             'res_model': 'stock.picking',
-            'domain': [('purchase_id', '=', self.id)],
-            'view_ids': [(view_id.id, 'tree')],
-            # 'view_id': view_id.id
-            # 'context': "{'create': False}"
+            'view_id': view_id.id,
+            'target': 'main',
+            'res_id': self.id,
+            'domain': [('purchase_id', '=', self.id)],  
+            'context': {'default_purchase_id': self.id},
         }
 
-        # print(action_id)
-        # print(menu_id)
-        # return request.redirect(f'/web#action={action_id}&menu_id={menu_id}')
 
     def _compute_picking_count(self):
         for record in self:
