@@ -32,6 +32,7 @@
                 <xpath expr="/form/header/button[2]" position="attributes">
                     <attribute name="invisible">1</attribute>
                 </xpath>
+
                 <!-- field -->
                 <xpath expr="//field[@name='partner_id']" position="after">
                     <field name="bap_id"/>
@@ -43,6 +44,10 @@
                     <field name="project_id"/>
                     <field name="step_approve"/>
                 </xpath>
+                <!-- <xpath expr="//field[@name='name']" position="attributes">
+                    <attribute name="invisible">1</attribute>
+                </xpath> -->
+                
                 <xpath expr="//notebook/page[@name='other_info']" position="after">
                     <page string="List Document">
                         <field name="document_ids">

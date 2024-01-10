@@ -26,6 +26,7 @@
     'data': [
         'security/ir.model.access.csv',
         'views/views.xml',
+        'data/documents_folder_data.xml',
         'wizard/wika_reject_reason.xml',
         'views/templates.xml',
         'views/wika_berita_acara_pembayaran.xml',

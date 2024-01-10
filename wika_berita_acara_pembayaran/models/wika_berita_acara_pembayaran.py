@@ -69,6 +69,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
                 ('approval_id', '=', model_wika_id.id)
             ], limit=1)
             groups_id = groups_line.groups_id
+
         for x in groups_id.users:
             activity_ids = self.env['mail.activity'].create({
                     'activity_type_id': 4,
@@ -80,6 +81,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
 
     def action_approve(self):
         user = self.env['res.users'].search([('id','=',self._uid)], limit=1)
+        documents_model = self.env['documents.document'].sudo()
         cek = False
         model_id = self.env['ir.model'].search([('model','=', 'wika.berita.acara.pembayaran')], limit=1)
         if model_id:
@@ -98,6 +100,29 @@ class WikaBeritaAcaraPembayaran(models.Model):
         if cek == True:
             if model_wika_id.total_approve == self.step_approve:
                 self.state = 'approve'
+                folder_id = self.env['documents.folder'].sudo().search([('name', '=', 'BAP')], limit=1)
+                # print("TESTTTTTTTTTTTTTTTTTTTTT", folder_id)
+                if folder_id:
+                    facet_id = self.env['documents.facet'].sudo().search([
+                        ('name', '=', 'Wika BAP'),
+                        ('folder_id', '=', folder_id.id)
+                    ], limit=1)
+                    # print("TESTTTTTTTTTERRRRRRR", facet_id)
+                    for doc in self.document_ids.filtered(lambda x: x.state == 'uploaded'):
+                        doc.state = 'verif'
+                        attachment_id = self.env['ir.attachment'].sudo().create({
+                            'name': doc.filename,
+                            'datas': doc.document,
+                            'res_model': 'documents.document',
+                        })
+                        # print("SSSIIIIUUUUUUUUUUUUUUUUUU", attachment_id)
+                        if attachment_id:
+                            documents_model.create({
+                                'attachment_id': attachment_id.id,
+                                'folder_id': folder_id.id,
+                                'tag_ids': facet_id.tag_ids.ids,
+                                # 'partner_id': doc.purchase_id.partner_id.id,
+                            })
             else:
                 self.step_approve += 1
 
@@ -133,7 +158,7 @@ class WikaBeritaAcaraPembayaranLine(models.Model):
     currency_id = fields.Many2one('res.currency', string='Currency')
     unit_price = fields.Monetary(string='Unit Price')
     sub_total = fields.Monetary(string='Subtotal' , compute= 'compute_sub_total')
-
+    
     @api.depends('qty', 'unit_price')
     def compute_sub_total(self):
         for record in self:
@@ -152,6 +177,17 @@ class WikaBabDocumentLine(models.Model):
         ('verif', 'Verif'),
     ], string='Status', default='waiting')
 
+    @api.depends('document')
+    def _compute_state(self):
+        for rec in self:
+            if rec.document:
+                rec.state = 'uploaded'
+
+    @api.onchange('document')
+    def _onchange_document(self):
+        if self.document:
+            self.state = 'uploaded'
+            
 class WikaBabApprovalLine(models.Model):
     _name = 'wika.bap.approval.line'
 
