@@ -1,18 +1,25 @@
-# -*- coding: utf-8 -*-
+from odoo import api, fields, models
 
-# from odoo import models, fields, api
+class InheritMailActivity(models.Model):
+    _inherit = "mail.activity"
 
-
-# class wika_dashboard(models.Model):
-#     _name = 'wika_dashboard.wika_dashboard'
-#     _description = 'wika_dashboard.wika_dashboard'
-
-#     name = fields.Char()
-#     value = fields.Integer()
-#     value2 = fields.Float(compute="_value_pc", store=True)
-#     description = fields.Text()
-#
-#     @api.depends('value')
-#     def _value_pc(self):
-#         for record in self:
-#             record.value2 = float(record.value) / 100
+    def action_open_document(self):
+        """ Opens the related record based on the model and ID """
+        self.ensure_one()
+        if self.res_model == 'purchase.order':
+            return {
+                'res_id': self.res_id,
+                'res_model': self.res_model,
+                'target': 'current',
+                'type': 'ir.actions.act_window',
+                'view_mode': 'form',
+                'view_id': self.env.ref('wika_purchase.purchase_order_form_wika').id,
+            }
+        else:
+            return {
+                'res_id': self.res_id,
+                'res_model': self.res_model,
+                'target': 'current',
+                'type': 'ir.actions.act_window',
+                'view_mode': 'form'
+            }
