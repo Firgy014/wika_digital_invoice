@@ -19,7 +19,7 @@
                 <field name="project_id"/>
                 <field name="partner_id" string="Vendor"/>
                 <field name="date"/>
-                <field name="purchase_id" string="Nomor PO"/>
+                <field name="po_id" string="Nomor PO"/>
                 <field name="state"/>
                 <field name="company_id" invisible="1"/>
             </tree>
@@ -78,7 +78,7 @@
                 <group>
                     <group>
                         <field name="partner_id" string="Receive From"/>
-                        <field name="purchase_id" string="Nomor PO" attrs="{'readonly': False}"/>
+                        <field name="po_id" string="Nomor PO" attrs="{'readonly': False}"/>
                         <field name="pick_type"/>
                         <field name="start_date" string="Period Start" attrs="{'invisible': [('pick_type', '=', 'gr')]}"/>
                         <field name="end_date" string="Period End" attrs="{'invisible': [('pick_type', '=', 'gr')]}"/>

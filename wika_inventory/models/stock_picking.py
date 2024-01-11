@@ -8,11 +8,12 @@ class PickingInherit(models.Model):
     branch_id = fields.Many2one('res.branch', string='Divisi')
     department_id = fields.Many2one('res.branch', string='Department')
     project_id = fields.Many2one('project.project', string='Project')
+    po_id = fields.Many2one('purchase.order', string='Nomor PO')
     state = fields.Selection(selection_add=[
         ('waits', 'Waiting'), 
         ('uploaded', 'Uploaded'), 
         ('approved', 'Approved')
-    ], string='Status')
+    ], string='Status', default='waits')
     pick_type = fields.Selection([
         ('ses', 'SES'), 
         ('gr', 'GR')
@@ -31,6 +32,11 @@ class PickingInherit(models.Model):
         document_setting_model = self.env['wika.document.setting'].sudo()
         model_id = model_model.search([('model', '=', 'stock.picking')], limit=1)
         for vals in vals_list:
+            vals['state'] = 'waits'
+            if 'move_ids_without_package' in vals:
+                for move_vals in vals['move_ids_without_package']:
+                    move_vals[2]['company_id'] = 1 if move_vals[2]['company_id'] is False else move_vals[2]['company_id']
+
             res = super(PickingInherit, self).create(vals)
             
             # Get Document Setting
@@ -47,7 +53,8 @@ class PickingInherit(models.Model):
                 res.document_ids = document_list
             else:
                 raise AccessError("Either approval and/or document settings are not found. Please configure it first in the settings menu.")
-
+        
+        res.state = 'waits'
         return res
 
     def action_approve(self):
@@ -151,11 +158,10 @@ class PickingInherit(models.Model):
             'view_id': view_id.id,
             'target': 'main',
             'res_id': self.id,
-            'domain': [('picking_id', '=', self.id)],  
-            'context': {'default_picking_id': self.id},
+            'domain': [('id', '=', self.po_id.id)],  
         }
 
     def _compute_po_count(self):
         for record in self:
             record.po_count = self.env['purchase.order'].search_count(
-                [('id', '=', self.purchase_id.id)])
+                [('id', '=', record.po_id.id)])
