@@ -5,12 +5,24 @@ class PickingDocument(models.Model):
 
     picking_id = fields.Many2one('stock.picking', string='Picking')
     document_id = fields.Many2one('wika.document.setting', string='Document')
-    document = fields.Binary(string='Upload File')
+    document = fields.Binary(attachment=True, store=True, string='Upload File')
+    filename = fields.Char(string='File Name')
     state = fields.Selection([
         ('waiting', 'Waiting'),
         ('uploaded', 'Uploaded'),
-        ('verified', 'Verified'),
+        ('verified', 'Verified')
     ], string='Status')
+
+    @api.onchange('document')
+    def onchange_document_upload(self):
+        if self.document:
+            self.state = 'uploaded'
+
+    @api.constrains('document', 'filename')
+    def _check_attachment_format(self):
+        for record in self:
+            if record.filename and not record.filename.lower().endswith('.pdf'):
+                raise ValidationError('Tidak dapat mengunggah file selain ekstensi PDF!')
 
 class PickingApproval(models.Model):
     _name = "wika.picking.approval.line"

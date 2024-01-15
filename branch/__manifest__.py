@@ -20,7 +20,7 @@ operating Unit for POS,operating Unit for Sales,operating Unit for Purchase,oper
 operating-Unit Operation for POS,operating-Unit Operation for Sales,operating-Unit operation for Purchase,operating-Unit operation for all, operating-Unit operation for Accounting,operating-Unit Operation for invoicing,operating-Unit operation for Payment order,operating-Unit operation for point of sales,operating-Unit operation for voucher,operating-Unit operation for All Accounting reports,operating-Unit operation Accounting filter.
     """,
     'website': 'http://www.wijayakarya.co.id',
-    'depends': ['base','account'],
+    'depends': ['base','account','project'],
     'data': ['views/branch_views.xml',
             'views/menu.xml',
             'views/res_users_views.xml',
