@@ -77,12 +77,12 @@ class WikaBeritaAcaraPembayaran(models.Model):
 
         for x in groups_id.users:
             activity_ids = self.env['mail.activity'].create({
-                    'activity_type_id': 4,
-                    'res_model_id': self.env['ir.model'].sudo().search([('model', '=', 'wika.berita.acara.pembayaran')], limit=1).id,
-                    'res_id': self.id,
-                    'user_id': x.id,
-                    'summary': """ Need Approval Document PO """
-                })
+                'activity_type_id': 4,
+                'res_model_id': self.env['ir.model'].sudo().search([('model', '=', 'wika.berita.acara.pembayaran')], limit=1).id,
+                'res_id': self.id,
+                'user_id': x.id,
+                'summary': """ Need Approval Document PO """
+            })
 
         for record in self:
             if any(not line.document for line in record.document_ids):
@@ -136,7 +136,8 @@ class WikaBeritaAcaraPembayaran(models.Model):
                                 'attachment_id': attachment_id.id,
                                 'folder_id': folder_id.id,
                                 'tag_ids': facet_id.tag_ids.ids,
-                                # 'partner_id': doc.purchase_id.partner_id.id,
+                                # 'partner_id': doc.bap_id.partner_id.id,
+                                # 'bap_id' : self.id
                             })
             else:
                 self.step_approve += 1
