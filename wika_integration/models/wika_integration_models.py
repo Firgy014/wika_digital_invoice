@@ -26,7 +26,7 @@ class wika_integration(models.Model):
                                ('HC', 'HC')])
     app_secret = fields.Char(string="Secret Key Application")
     url = fields.Char(string="URL")
-
+    payload = fields.Text(string="Payload")
     _sql_constraints = [
         ('app_name_unique', 'unique (name)', 'Nama harus unik!')
     ]
