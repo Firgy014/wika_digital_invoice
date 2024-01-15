@@ -20,14 +20,14 @@
     'version': '0.1',
 
     # any module necessary for this one to work correctly
-    'depends': ['base','inherit_for_api'],
+    'depends': ['base','inherit_for_api','base_setup'],
 
     # always loaded
     'data': [
         'security/ir.model.access.csv',
-        'data/scheduler.xml',
+        'data/data_url.xml',
         'views/wika_integration_views.xml',
-        # 'views/loan_bcg_views.xml',
+        'views/res_config_setting_views.xml',
         'views/templates.xml',
     ],
     # only loaded in demonstration mode
