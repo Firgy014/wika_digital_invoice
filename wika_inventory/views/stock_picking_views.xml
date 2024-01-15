@@ -71,25 +71,28 @@
                 </div>
                 <div class="oe_title">
                     <h1 class="d-flex">
-                        <field name="priority" widget="priority" class="me-3" attrs="{'invisible': [('name','=','/')]}"/>
-                        <field name="name" attrs="{'invisible': [('name','=','/')]}"/>
+                        <field name="priority" widget="priority" class="me-3" attrs="{'invisible': [('name','=','/')]}" />
+                        <field name="name" attrs="{
+                            'invisible': [('name','=','/')],
+                            'readonly': [('state', 'in', ['uploaded', 'approved'])]
+                        }"/>
                     </h1>
                 </div>
                 <group>
                     <group>
-                        <field name="partner_id" string="Receive From"/>
-                        <field name="po_id" string="Nomor PO" attrs="{'readonly': False}"/>
-                        <field name="pick_type"/>
-                        <field name="start_date" string="Period Start" attrs="{'invisible': [('pick_type', '=', 'gr')]}"/>
-                        <field name="end_date" string="Period End" attrs="{'invisible': [('pick_type', '=', 'gr')]}"/>
+                        <field name="partner_id" string="Receive From" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
+                        <field name="po_id" string="Nomor PO" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
+                        <field name="pick_type" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
+                        <field name="start_date" string="Period Start" attrs="{'invisible': [('pick_type', '=', 'gr')], 'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
+                        <field name="end_date" string="Period End" attrs="{'invisible': [('pick_type', '=', 'gr')], 'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
                     </group>
                     <group>
-                        <field name="branch_id" string="Divisi" domain="[('biro', '=', False)]"/>
-                        <field name="department_id" string="Dept" domain="[('biro', '=', True), ('parent_id', '=', branch_id)]"/>
-                        <field name="project_id" string="Project"/>
+                        <field name="branch_id" string="Divisi" domain="[('biro', '=', False)]" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
+                        <field name="department_id" string="Dept" domain="[('biro', '=', True), ('parent_id', '=', branch_id)]" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
+                        <field name="project_id" string="Project" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
                         <label for="scheduled_date"/>
                         <div class="o_row">
-                            <field name="scheduled_date" string="Date" attrs="{'required': [('id', '!=', False)]}"
+                            <field name="scheduled_date" string="Date" attrs="{'required': [('id', '!=', False)], 'readonly': [('state', 'in', ['uploaded', 'approved'])]}"
                                 decoration-warning="state not in ('done', 'cancel') and scheduled_date &lt; now"
                                 decoration-danger="state not in ('done', 'cancel') and scheduled_date &lt; current_date"
                                 decoration-bf="state not in ('done', 'cancel') and (scheduled_date &lt; current_date or scheduled_date &lt; now)"/>
@@ -207,7 +210,7 @@
                     </page>
 
                     <page string="History Approval">
-                        <field name="history_approval_ids">
+                        <field name="history_approval_ids" attrs="{'readonly': [('state', 'in', ('uploaded', 'approved'))]}">
                             <tree>
                                 <field name="picking_id"/>
                                 <field name="user_id"/>
@@ -223,7 +226,8 @@
                             <tree editable="top">
                                 <field name="picking_id"/>
                                 <field name="document_id"/>
-                                <field name="document" widget="binary_button"/>
+                                <field name="document" widget="binary_button" filename="filename"/>
+                                <field name="filename" invisible="1"/>
                                 <field name="state"/>
                             </tree>
                         </field>
@@ -231,8 +235,8 @@
 
                     <page string="Picking Mandatories">
                         <group>
-                            <field name="location_id" string="Origin Location"/>
-                            <field name="location_dest_id" string="Destination Location"/>
+                            <field name="location_id" string="Origin Location" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
+                            <field name="location_dest_id" string="Destination Location" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
                             <field name="picking_type_id" string="Picking Type" attrs="{'readonly': False}"/>      
                             <field name="company_id" string="Company" attrs="{'readonly': False}"/>
                         </group>
