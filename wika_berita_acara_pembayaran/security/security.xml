@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <data>
+        
+        <record id="wika_berita_acara_pembayaran_category" model="res.groups">
+            <field name="name">Sales Manager</field>
+            <field name="description">BAP</field>
+            <field name="sequence">17</field>
+        </record>
+        
+        <!-- category users -->
+        <record id="group_berita_acara_pembayaran_users" model="res.groups">
+            <field name="name">BAP</field>
+            <field name="category_id" ref="wika_berita_acara_pembayaran_category"/>
+        </record>
+
+        <!-- category manager -->
+        <record id="group_berita_acara_pembayaran_manager" model="res.groups">
+            <field name="name">BAP</field>
+            <field name="implied_ids" eval="[(4, ref('berita_acara_pembayaran_users'))]"/>
+            <field name="category_id" ref="module_wika_berita_acara_pembayaran_category"/>
+        </record>
+
+        <!-- <record id="record_rule_sale_order_no_delete" model="ir.rule">
+            <field name="name">No Delete Sale Order in Done State</field>
+            <field name="model_id" ref="model_sale_order"/>
+            <field name="domain_force">[('state', '!=', 'upload')]</field>
+            <field name="groups" eval="[(4, ref('group_sale_manager'))]"/>
+            <field name="perm_unlink" eval="0"/>
+        </record> -->
+    </data>
+    
+
+</odoo>

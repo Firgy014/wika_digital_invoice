@@ -1,6 +1,6 @@
 from odoo import models, fields, api
 from datetime import datetime, timedelta
-from odoo.exceptions import UserError, ValidationError,Warning
+from odoo.exceptions import UserError, ValidationError, Warning, AccessError
 
 class WikaBeritaAcaraPembayaran(models.Model):
     _name = 'wika.berita.acara.pembayaran'
@@ -8,17 +8,21 @@ class WikaBeritaAcaraPembayaran(models.Model):
     _inherit = ['mail.thread']
 
     name = fields.Char(string='Nomor BAP', readonly=True, default='/')
-    branch_id = fields.Many2one('res.branch', string='Divisi')
+    branch_id = fields.Many2one('res.branch', string='Divisi', required=True)
     department_id = fields.Many2one('res.branch', string='Department')
     project_id = fields.Many2one('project.project', string='Project')
-    po_id = fields.Many2one('purchase.order', string='Nomor PO', domain="[('state', '=', 'purchase')]")
-    partner_id = fields.Many2one('res.partner', string='Vendor')
-    bap_ids = fields.One2many('wika.berita.acara.pembayaran.line', 'bap_id', string='List BAP')
+    po_id = fields.Many2one('purchase.order', string='Nomor PO', required=True, domain="[('state', '=', 'purchase')]")
+    partner_id = fields.Many2one('res.partner', string='Vendor', required=True)
+    bap_ids = fields.One2many('wika.berita.acara.pembayaran.line', 'bap_id', string='List BAP', required=True)
     document_ids = fields.One2many('wika.bap.document.line', 'bap_id', string='List Document')
     history_approval_ids = fields.One2many('wika.bap.approval.line', 'bap_id', string='List Approval')
     start_date = fields.Datetime('Start Date')
     end_date = fields.Datetime('End Date')
-    state = fields.Selection([('draft', 'Draft'), ('upload', 'Upload'), ('approve', 'Approve'), ('reject', 'Reject')], string='Status', readonly=True, default='draft')
+    state = fields.Selection([
+        ('draft', 'Draft'), 
+        ('upload', 'Upload'), 
+        ('approve', 'Approve'), 
+        ('reject', 'Reject')], string='Status', readonly=True, default='draft')
     reject_reason = fields.Text(string='Reject Reason')
     step_approve = fields.Integer(string='step approve')
     message_follower_ids = fields.One2many(
@@ -27,6 +31,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
         'mail.activity', 'res_id', 'Activities',
         auto_join=True,
         groups="base.group_user",)
+    bap_date = fields.Datetime(string='Tanggal BAP', required=True)
 
     @api.onchange('partner_id')
     def _onchange_(self):
@@ -78,6 +83,16 @@ class WikaBeritaAcaraPembayaran(models.Model):
                     'user_id': x.id,
                     'summary': """ Need Approval Document PO """
                 })
+
+        for record in self:
+            if any(not line.document for line in record.document_ids):
+                raise ValidationError('Document belum di unggah, mohon unggah file terlebih dahulu!')
+
+    # @api.constrains('document_ids')
+    # def _check_documents(self):
+    #     for record in self:
+    #         if any(not line.document for line in record.document_ids):
+    #             raise ValidationError('Dokumen belum diunggah. Mohon unggah file terlebih dahulu sebelum melanjutkan.')
 
     def action_approve(self):
         user = self.env['res.users'].search([('id','=',self._uid)], limit=1)
@@ -147,16 +162,22 @@ class WikaBeritaAcaraPembayaran(models.Model):
     def onchange_po(self):
         self.partner_id = self.po_id.partner_id.id
 
+    def unlink(self):
+        for record in self:
+            if record.state in ('upload', 'approve'):
+                raise ValidationError('Tidak dapat menghapus ketika status Berita Acara Pembayaran (BAP) dalam keadaan Upload atau Approve')
+        return super(WikaBeritaAcaraPembayaran, self).unlink()
+        
 class WikaBeritaAcaraPembayaranLine(models.Model):
     _name = 'wika.berita.acara.pembayaran.line'
 
     bap_id = fields.Many2one('wika.berita.acara.pembayaran', string='')
-    picking_id = fields.Many2one('stock.picking', string='NO GR/SES')
-    product_id = fields.Many2one('product.product', string='Product')
-    qty = fields.Integer(string='Quantity')
-    tax_ids = fields.Many2many('account.tax', string='Tax')
-    currency_id = fields.Many2one('res.currency', string='Currency')
-    unit_price = fields.Monetary(string='Unit Price')
+    picking_id = fields.Many2one('stock.picking', string='NO GR/SES', required=True)
+    product_id = fields.Many2one('product.product', string='Product', required=True)
+    qty = fields.Integer(string='Quantity', required=True)
+    tax_ids = fields.Many2many('account.tax', string='Tax', required=True)
+    currency_id = fields.Many2one('res.currency', string='Currency', required=True)
+    unit_price = fields.Monetary(string='Unit Price', required=True)
     sub_total = fields.Monetary(string='Subtotal' , compute= 'compute_sub_total')
     
     @api.depends('qty', 'unit_price')
@@ -164,12 +185,18 @@ class WikaBeritaAcaraPembayaranLine(models.Model):
         for record in self:
             record.sub_total = record.qty * record.unit_price
 
+    @api.constrains('picking_id')
+    def _check_picking_id(self):
+        for record in self:
+            if not record.picking_id:
+                raise ValidationError('Field "NO GR/SES" harus diisi. Tidak boleh kosong!')
+
 class WikaBabDocumentLine(models.Model):
     _name = 'wika.bap.document.line'
 
     bap_id = fields.Many2one('wika.berita.acara.pembayaran', string='')
     document_id = fields.Many2one('wika.document.setting', string='Document')
-    document = fields.Binary(string="Upload File", attachment=True, store=True)
+    document = fields.Binary(string="Upload File", attachment=True, store=True, required=True)
     filename = fields.Char(string="File Name")
     state = fields.Selection([
         ('waiting', 'Waiting'),
@@ -187,12 +214,18 @@ class WikaBabDocumentLine(models.Model):
     def _onchange_document(self):
         if self.document:
             self.state = 'uploaded'
-            
+    
+    @api.constrains('document', 'filename')
+    def _check_attachment_format(self):
+        for record in self:
+            if record.filename and not record.filename.lower().endswith('.pdf'):
+                raise ValidationError('Tidak dapat mengunggah file selain berformat PDF!')
+
 class WikaBabApprovalLine(models.Model):
     _name = 'wika.bap.approval.line'
 
     bap_id = fields.Many2one('wika.berita.acara.pembayaran', string='')
-    user_id = fields.Many2one('res.users', string='User')
-    groups_id = fields.Many2one('res.groups', string='Groups')
-    datetime = fields.Datetime('Date')
-    note = fields.Char('Note')
+    user_id = fields.Many2one('res.users', string='User', readonly=True)
+    groups_id = fields.Many2one('res.groups', string='Groups', readonly=True)
+    datetime = fields.Datetime('Date', readonly=True)
+    note = fields.Char('Note', readonly=True)
