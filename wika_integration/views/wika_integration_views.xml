@@ -11,6 +11,7 @@
                     <field name="app" required="1"/>
                     <field name="url"/>
                     <field name="app_secret"/>
+                     <field name="payload"/>
                 </tree>
             </field>
         </record>
