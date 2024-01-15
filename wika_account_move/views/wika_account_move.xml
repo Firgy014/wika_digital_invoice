@@ -35,19 +35,26 @@
 
                 <!-- field -->
                 <xpath expr="//field[@name='partner_id']" position="after">
-                    <field name="bap_id"/>
-                    <field name="pr_id"/>
+                    <field name="bap_id" attrs="{'readonly': [('state', 'in', ['upload', 'approve'])]}"/>
+                    <field name="pr_id" attrs="{'readonly': [('state', 'in', ['upload', 'approve'])]}"/>
                 </xpath>
                 <xpath expr="//field[@name='invoice_date']" position="after">
-                    <field name="branch_id" domain="[('biro', '=', False)]"/>
-                    <field name="department_id" domain="[('biro', '=', True), ('parent_id', '=', branch_id)]"/>
-                    <field name="project_id"/>
-                    <field name="step_approve"/>
+                    <field name="branch_id" domain="[('biro', '=', False)]" 
+                        attrs="{'readonly': [('state', 'in', ['upload', 'approve'])]}"/>
+                    <field name="department_id" domain="[('biro', '=', True), ('parent_id', '=', branch_id)]" 
+                        attrs="{'readonly': [('state', 'in', ['upload', 'approve'])]}"/>
+                    <field name="project_id" attrs="{'readonly': [('state', 'in', ['upload', 'approve'])]}"/>
+                    <field name="step_approve" invisible="1"/>
                 </xpath>
-                <!-- <xpath expr="//field[@name='name']" position="attributes">
-                    <attribute name="invisible">1</attribute>
-                </xpath> -->
-                
+                <xpath expr="//field[@name='pr_id']" position="after">
+                    <field name="ref" attrs="{'readonly': [('state', 'in', ['upload', 'approve'])]}"/>
+                </xpath>
+                <xpath expr="//field[@name='date']" position="after">
+                    <field name="payment_reference" attrs="{'readonly': [('state', 'in', ['upload', 'approve'])]}"/>
+                </xpath> 
+                <xpath expr="//field[@name='partner_bank_id']" position="after">
+                    <field name="invoice_date_due" attrs="{'readonly': [('state', 'in', ['upload', 'approve'])]}"/>
+                </xpath>   
                 <xpath expr="//notebook/page[@name='other_info']" position="after">
                     <page string="List Document">
                         <field name="document_ids">

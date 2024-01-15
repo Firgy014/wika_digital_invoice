@@ -51,6 +51,7 @@ class WikaInheritedAccountMove(models.Model):
                 ('approval_id', '=', model_wika_id.id)
             ], limit=1)
             groups_id = groups_line.groups_id
+            
         for x in groups_id.users:
             activity_ids = self.env['mail.activity'].create({
                     'activity_type_id': 4,
@@ -59,7 +60,11 @@ class WikaInheritedAccountMove(models.Model):
                     'user_id': x.id,
                     'summary': """ Need Approval Document PO """
                 })
-    
+
+        for record in self:
+            if any(not line.document for line in record.document_ids):
+                raise ValidationError('Document belum di unggah, mohon unggah file terlebih dahulu!')
+
     def action_approve(self):
         user = self.env['res.users'].search([('id','=',self._uid)], limit=1)
         documents_model = self.env['documents.document'].sudo()
@@ -168,6 +173,12 @@ class WikaInheritedAccountMove(models.Model):
             else:
                 raise AccessError("Data dokumen tidak ada!")
 
+    def unlink(self):
+        for record in self:
+            if record.state in ('upload', 'approve'):
+                raise ValidationError('Tidak dapat menghapus ketika status Vendor Bils dalam keadaan Upload atau Approve')
+        return super(WikaInheritedAccountMove, self).unlink()
+
 class WikaInvoiceDocumentLine(models.Model):
     _name = 'wika.invoice.document.line'
     _description = 'Invoice Document Line'
@@ -192,6 +203,12 @@ class WikaInvoiceDocumentLine(models.Model):
     def _onchange_document(self):
         if self.document:
             self.state = 'uploaded'
+
+    @api.constrains('document', 'filename')
+    def _check_attachment_format(self):
+        for record in self:
+            if record.filename and not record.filename.lower().endswith('.pdf'):
+                raise ValidationError('Tidak dapat mengunggah file selain berformat PDF!')
             
 class WikaInvoiceApprovalLine(models.Model):
     _name = 'wika.invoice.approval.line'
