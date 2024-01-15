@@ -1,0 +1,13 @@
+<odoo>
+    <record id="url_gr_ses" model="wika.integration">
+        <field name="name">URL GR</field>
+        <field name="app">SAP</field>
+        <field name="url">https://fioridev.wika.co.id/ywikamm009/goods-movement-outb?sap-client=110</field>
+    </record>
+
+    <record id="url_po" model="wika.integration">
+        <field name="name">URL PO</field>
+        <field name="app">SAP</field>
+        <field name="url">https://api.wika.co.id/</field>
+    </record>
+</odoo>

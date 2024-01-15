@@ -20,7 +20,7 @@
     'version': '0.1',
 
     # any module necessary for this one to work correctly
-    'depends': ['base','branch','project', 'purchase','stock','product', 'account', 'wika_matrix_approval', 'mail'],
+    'depends': ['base','branch','project', 'purchase','stock','product', 'account', 'wika_matrix_approval', 'mail', 'ks_binary_file_preview'],
 
     # always loaded
     'data': [
