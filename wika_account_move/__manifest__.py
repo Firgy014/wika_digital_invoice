@@ -27,10 +27,11 @@
         'security/ir.model.access.csv',
         'views/views.xml',
         'views/wika_account_move.xml',
+        'data/documents_folder_data.xml',
         'views/action.xml',
         'views/wika_menu.xml',
         'views/templates.xml',
-        # 'views/sequence_data.xml',
+        'wizard/wika_reject_reason.xml',
     ],
     # only loaded in demonstration mode
     'demo': [

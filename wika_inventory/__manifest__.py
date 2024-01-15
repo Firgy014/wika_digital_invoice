@@ -26,11 +26,12 @@
     'data': [
         'security/ir.model.access.csv',
         'views/views.xml',
+        'data/documents_folder_data.xml',
+        'views/filter.xml',
         'views/stock_picking_views.xml',
         'views/action.xml',
         'views/menu.xml',
         'views/templates.xml',
-
         'wizard/wika_reject_reason.xml',
 
     ],

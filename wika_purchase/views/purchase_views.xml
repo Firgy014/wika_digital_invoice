@@ -44,7 +44,7 @@
             <sheet>
                 <div name="button_box" position="inside">
                     <button class="oe_stat_button" type="object" name="get_picking"
-                        icon="fa-arrow">
+                        icon="fa-arrow-up">
                         <field string= "GR/SES" name="picking_count" widget="statinfo"/>
                     </button>
                 </div>
@@ -269,6 +269,9 @@
                                 </group>
                             </form> -->
                         </field>
+                    </page>
+                    <page string="Activities" groups="base.group_no_one">
+                        <field name="activity_ids"/>
                     </page>
                 </notebook>
             </sheet>

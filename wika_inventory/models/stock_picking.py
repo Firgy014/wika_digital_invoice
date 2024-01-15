@@ -1,4 +1,4 @@
-from odoo import models, fields, api
+from odoo import models, fields, api, _
 from datetime import datetime
 from odoo.exceptions import AccessError, ValidationError
 
@@ -8,11 +8,12 @@ class PickingInherit(models.Model):
     branch_id = fields.Many2one('res.branch', string='Divisi')
     department_id = fields.Many2one('res.branch', string='Department')
     project_id = fields.Many2one('project.project', string='Project')
+    po_id = fields.Many2one('purchase.order', string='Nomor PO')
     state = fields.Selection(selection_add=[
         ('waits', 'Waiting'), 
         ('uploaded', 'Uploaded'), 
         ('approved', 'Approved')
-    ], string='Status')
+    ], string='Status', default='waits')
     pick_type = fields.Selection([
         ('ses', 'SES'), 
         ('gr', 'GR')
@@ -31,6 +32,11 @@ class PickingInherit(models.Model):
         document_setting_model = self.env['wika.document.setting'].sudo()
         model_id = model_model.search([('model', '=', 'stock.picking')], limit=1)
         for vals in vals_list:
+            vals['state'] = 'waits'
+            if 'move_ids_without_package' in vals:
+                for move_vals in vals['move_ids_without_package']:
+                    move_vals[2]['company_id'] = 1 if move_vals[2]['company_id'] is False else move_vals[2]['company_id']
+
             res = super(PickingInherit, self).create(vals)
             
             # Get Document Setting
@@ -47,11 +53,13 @@ class PickingInherit(models.Model):
                 res.document_ids = document_list
             else:
                 raise AccessError("Either approval and/or document settings are not found. Please configure it first in the settings menu.")
-
+        
+        res.state = 'waits'
         return res
 
     def action_approve(self):
         user = self.env['res.users'].search([('id','=',self._uid)], limit=1)
+        documents_model = self.env['documents.document'].sudo()
         cek = False
         model_id = self.env['ir.model'].search([('model','=', 'stock.picking')], limit=1)
         if model_id:
@@ -69,6 +77,28 @@ class PickingInherit(models.Model):
         if cek == True:
             if model_wika_id.total_approve == self.step_approve:
                 self.state = 'approved'
+                folder_id = self.env['documents.folder'].sudo().search([('name', '=', 'GR/SES')], limit=1)
+                if folder_id:
+                    facet_id = self.env['documents.facet'].sudo().search([
+                        ('name', '=', 'Transfer'),
+                        ('folder_id', '=', folder_id.id)
+                    ], limit=1)
+                    for doc in self.document_ids.filtered(lambda x: x.state == 'uploaded'):
+                        doc.state = 'verified'
+                        attachment_id = self.env['ir.attachment'].sudo().create({
+                            'name': doc.filename,
+                            'datas': doc.document,
+                            'res_model': 'documents.document',
+                        })
+                        if attachment_id:
+                            documents_model.create({
+                                'attachment_id': attachment_id.id,
+                                'folder_id': folder_id.id,
+                                'tag_ids': facet_id.tag_ids.ids,
+                                'partner_id': doc.purchase_id.partner_id.id,
+                                'purchase_id': self.id,
+                                'is_po_doc': True
+                            })
             else:
                 self.step_approve += 1
 
@@ -116,10 +146,22 @@ class PickingInherit(models.Model):
         self.state = 'uploaded'
         self.step_approve += 1
 
-    def get_po(self):
-        return None
+    def get_purchase(self):
+        self.ensure_one()
+        view_id = self.env.ref("wika_purchase.purchase_order_tree_wika", raise_if_not_found=False)
+            
+        return {
+            'name': _('Purchase Orders'),
+            'type': 'ir.actions.act_window',
+            'view_mode': 'tree',
+            'res_model': 'purchase.order',
+            'view_id': view_id.id,
+            'target': 'main',
+            'res_id': self.id,
+            'domain': [('id', '=', self.po_id.id)],  
+        }
 
     def _compute_po_count(self):
         for record in self:
             record.po_count = self.env['purchase.order'].search_count(
-                [('id', '=', self.purchase_id.id)])
+                [('id', '=', record.po_id.id)])

@@ -1,0 +1,46 @@
+<odoo>
+    <record id="documents_facet_account_move" model="documents.facet">
+        <field name="name">Vendor Bills</field>
+    </record>
+
+    <record id="documents_tag_kontrak" model="documents.tag">
+        <field name="name">Kontrak</field>
+        <field name="facet_id" ref="wika_account_move.documents_facet_account_move"/>
+    </record>
+
+    <record id="documents_tag_gr_ses" model="documents.tag">
+        <field name="name">GR/SES</field>
+        <field name="facet_id" ref="wika_account_move.documents_facet_account_move"/>
+    </record>
+
+    <record id="documents_tag_bap" model="documents.tag">
+        <field name="name">BAP</field>
+        <field name="facet_id" ref="wika_account_move.documents_facet_account_move"/>
+    </record>
+
+    <record id="documents_tag_invoice" model="documents.tag">
+        <field name="name">Invoice</field>
+        <field name="facet_id" ref="wika_account_move.documents_facet_account_move"/>
+    </record>
+    
+    <record id="documents_tag_faktur_pajak" model="documents.tag">
+        <field name="name">Faktur Pajak</field>
+        <field name="facet_id" ref="wika_account_move.documents_facet_account_move"/>
+    </record>
+
+    <!-- Update documents_facet_kontrak with tag_ids -->
+    <record id="documents_facet_account_move" model="documents.facet">
+        <field name="tag_ids" eval="[(6, 0, [ref('wika_account_move.documents_tag_kontrak'), 
+            ref('wika_account_move.documents_tag_gr_ses'), 
+            ref('wika_account_move.documents_tag_bap'), 
+            ref('wika_account_move.documents_tag_invoice'), 
+            ref('wika_account_move.documents_tag_faktur_pajak')])]"/>
+    </record>
+
+    <record id="documents_folder_wika_account_move" model="documents.folder">
+        <field name="name">Invoice</field>
+        <field name="facet_ids" eval="[(4, ref('wika_account_move.documents_facet_account_move'))]"/>
+        <field name="group_ids" eval="[(6, 0, [ref('base.group_user')])]"/>
+        <field name="read_group_ids" eval="[(6, 0, [ref('base.group_user')])]"/>
+    </record>
+</odoo>
