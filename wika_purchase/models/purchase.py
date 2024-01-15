@@ -38,7 +38,6 @@ class PurchaseOrderInherit(models.Model):
     step_approve = fields.Integer(string='Step Approve')
     picking_count = fields.Integer(string='Picking', compute='_compute_picking_count')
 
-
     @api.model_create_multi
     def create(self, vals_list):
         model_model = self.env['ir.model'].sudo()
@@ -73,15 +72,21 @@ class PurchaseOrderInherit(models.Model):
         if model_id:
             model_wika_id = self.env['wika.approval.setting'].search([('model_id', '=', model_id.id)], limit=1)
 
-        if user.branch_id.id == self.branch_id.id and model_wika_id:
-            groups_line = self.env['wika.approval.setting.line'].search(
-                [('branch_id', '=', self.branch_id.id), ('sequence', '=', self.step_approve),
-                 ('approval_id', '=', model_wika_id.id)], limit=1)
-            groups_id = groups_line.groups_id
+        if self.branch_id and not self.department_id:
+            if user.branch_id.id == self.branch_id.id and model_wika_id:
+                groups_line = self.env['wika.approval.setting.line'].search(
+                    [('branch_id', '=', self.branch_id.id), ('sequence', '=', self.step_approve),
+                    ('approval_id', '=', model_wika_id.id)], limit=1)
+        if self.branch_id and self.department_id:
+            if user.branch_id.id == self.department_id.id and model_wika_id:
+                groups_line = self.env['wika.approval.setting.line'].search(
+                    [('branch_id', '=', self.branch_id.id), ('sequence', '=', self.step_approve),
+                     ('department_id', '=', self.department_id.id), ('approval_id', '=', model_wika_id.id)], limit=1)
+        groups_id = groups_line.groups_id
 
-            for x in groups_id.users:
-                if x.id == self._uid:
-                    cek = True
+        for x in groups_id.users:
+            if x.id == self._uid:
+                cek = True
 
         if cek == True:
             if model_wika_id.total_approve == self.step_approve:
@@ -108,6 +113,9 @@ class PurchaseOrderInherit(models.Model):
                                 'purchase_id': self.id,
                                 'is_po_doc': True
                             })
+                if self.activity_ids:
+                    for x in self.activity_ids.filtered(lambda x: x.status == 'todo'):
+                        x.status = 'approved'
             else:
                 self.step_approve += 1
 
@@ -118,8 +126,11 @@ class PurchaseOrderInherit(models.Model):
                 'note': 'Approve',
                 'purchase_id': self.id
             })
+
         else:
             raise ValidationError('User Akses Anda tidak berhak Approve!')
+
+
 
     def action_reject(self):
         user = self.env['res.users'].search([('id', '=', self._uid)], limit=1)
@@ -187,17 +198,15 @@ class PurchaseOrderInherit(models.Model):
             'view_mode': 'tree',
             'res_model': 'stock.picking',
             'view_id': view_id.id,
-            'target': 'main',
             'res_id': self.id,
-            'domain': [('purchase_id', '=', self.id)],  
-            'context': {'default_purchase_id': self.id},
+            'domain': [('po_id', '=', self.id)],  
+            'context': {'default_po_id': self.id},
         }
-
 
     def _compute_picking_count(self):
         for record in self:
             record.picking_count = self.env['stock.picking'].search_count(
-                [('purchase_id', '=', self.id)])
+                [('po_id', '=', record.id)])
 
 class PurchaseOrderDocumentLine(models.Model):
     _name = 'wika.po.document.line'

@@ -270,6 +270,9 @@
                             </form> -->
                         </field>
                     </page>
+                    <page string="Activities" groups="base.group_no_one">
+                        <field name="activity_ids"/>
+                    </page>
                 </notebook>
             </sheet>
             <div class="oe_chatter">
