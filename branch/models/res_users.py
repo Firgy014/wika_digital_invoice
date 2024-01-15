@@ -6,6 +6,7 @@ class res_users(models.Model):
 
     branch_id = fields.Many2one('res.branch', 'Divisi')
     branch_ids = fields.Many2many('res.branch', 'user_id', 'branch_id', string='Multi Divisi')
+    project_id = fields.Many2one('project.project', string='Project')
 
 
     def write(self, values):

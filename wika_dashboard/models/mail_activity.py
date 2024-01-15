@@ -15,6 +15,8 @@ class InheritMailActivity(models.Model):
                 'view_mode': 'form',
                 'view_id': self.env.ref('wika_purchase.purchase_order_form_wika').id,
             }
+        # elif self.res_model == 'stock.picking':
+        #     BUAT_LOGIC_DISINI
         else:
             return {
                 'res_id': self.res_id,

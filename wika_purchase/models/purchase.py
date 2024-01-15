@@ -15,12 +15,11 @@ class PurchaseOrderApprovalHistory(models.Model):
     date = fields.Datetime(string='Date')
     note = fields.Text(string='Note')
 
-
 class PurchaseOrderInherit(models.Model):
     _inherit = 'purchase.order'
 
     is_visible_button = fields.Boolean('Show Operation Buttons', default=True)
-    branch_id = fields.Many2one('res.branch', string='Divisi')
+    branch_id = fields.Many2one('res.branch', string='Divisi', required=True)
     department_id = fields.Many2one('res.branch', string='Department')
     project_id = fields.Many2one('project.project', string='Project')
     state = fields.Selection(selection_add=[
@@ -29,14 +28,16 @@ class PurchaseOrderInherit(models.Model):
         ('approved', 'Approved')
     ])
     po_type = fields.Char(string='Purchasing Doc Type')
-    begin_date = fields.Date(string='Tgl Mulai Kontrak')
-    end_date = fields.Date(string='Tgl Akhir Kontrak')
+    begin_date = fields.Date(string='Tgl Mulai Kontrak', required=True)
+    end_date = fields.Date(string='Tgl Akhir Kontrak', required=True)
     document_ids = fields.One2many('wika.po.document.line', 'purchase_id', string='Purchase Order Document Lines')
     history_approval_ids = fields.One2many('wika.po.approval.line', 'purchase_id',
                                            string='Purchase Order Approval Lines')
-    sap_doc_number = fields.Char(string='SAP Doc Number')
+    sap_doc_number = fields.Char(string='Nomor Kontrak', required=True)
     step_approve = fields.Integer(string='Step Approve')
     picking_count = fields.Integer(string='Picking', compute='_compute_picking_count')
+    kurs = fields.Float(string='Kurs')
+    # currency_name = fields.Char(string='Currenc')
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -59,8 +60,7 @@ class PurchaseOrderInherit(models.Model):
                     }))
                 res.document_ids = document_list
             else:
-                raise AccessError(
-                    "Either approval and/or document settings are not found. Please configure it first in the settings menu.")
+                raise AccessError("Either approval and/or document settings are not found. Please configure it first in the settings menu.")
 
         return res
 
@@ -82,6 +82,11 @@ class PurchaseOrderInherit(models.Model):
                 groups_line = self.env['wika.approval.setting.line'].search(
                     [('branch_id', '=', self.branch_id.id), ('sequence', '=', self.step_approve),
                      ('department_id', '=', self.department_id.id), ('approval_id', '=', model_wika_id.id)], limit=1)
+        # if self.branch_id and self.project_id:
+        #     if user.branch_id.id == self.department_id.id and model_wika_id:
+        #         groups_line = self.env['wika.approval.setting.line'].search(
+        #             [('branch_id', '=', self.branch_id.id), ('sequence', '=', self.step_approve),
+        #              ('department_id', '=', self.department_id.id), ('approval_id', '=', model_wika_id.id)], limit=1)
         groups_id = groups_line.groups_id
 
         for x in groups_id.users:
@@ -130,8 +135,6 @@ class PurchaseOrderInherit(models.Model):
         else:
             raise ValidationError('User Akses Anda tidak berhak Approve!')
 
-
-
     def action_reject(self):
         user = self.env['res.users'].search([('id', '=', self._uid)], limit=1)
         cek = False
@@ -168,25 +171,29 @@ class PurchaseOrderInherit(models.Model):
     def action_submit(self):
         self.state = 'uploaded'
         self.step_approve += 1
-        model_id = self.env['ir.model'].search([('model', '=', 'purchase.order')], limit=1)
-        model_wika_id = self.env['wika.approval.setting'].search([('model_id', '=', model_id.id)], limit=1)
-        user = self.env['res.users'].search([('branch_id', '=', self.branch_id.id)])
+        if self.document_ids.document != False:
+            model_id = self.env['ir.model'].search([('model', '=', 'purchase.order')], limit=1)
+            model_wika_id = self.env['wika.approval.setting'].search([('model_id', '=', model_id.id)], limit=1)
+            user = self.env['res.users'].search([('branch_id', '=', self.branch_id.id)])
 
-        if model_wika_id:
-            groups_line = self.env['wika.approval.setting.line'].search([
-                ('branch_id', '=', self.branch_id.id),
-                ('sequence', '=', self.step_approve),
-                ('approval_id', '=', model_wika_id.id)
-            ], limit=1)
-            groups_id = groups_line.groups_id
-        for x in groups_id.users:
-            activity_ids = self.env['mail.activity'].create({
+            if model_wika_id:
+                groups_line = self.env['wika.approval.setting.line'].search([
+                    ('branch_id', '=', self.branch_id.id),
+                    ('sequence', '=', self.step_approve),
+                    ('approval_id', '=', model_wika_id.id)
+                ], limit=1)
+                groups_id = groups_line.groups_id
+            for x in groups_id.users:
+                activity_ids = self.env['mail.activity'].create({
                     'activity_type_id': 4,
                     'res_model_id': self.env['ir.model'].sudo().search([('model', '=', 'purchase.order')], limit=1).id,
                     'res_id': self.id,
                     'user_id': x.id,
                     'summary': """Need Approval Document PO """
                 })
+
+        elif self.document_ids.document == False:
+            raise ValidationError('Anda belum mengunggah dokumen yang diperlukan!')
 
     def get_picking(self):
         self.ensure_one()
@@ -208,6 +215,25 @@ class PurchaseOrderInherit(models.Model):
             record.picking_count = self.env['stock.picking'].search_count(
                 [('po_id', '=', record.id)])
 
+    # @api.onchange('currency_id')
+    # def onchange_currency_id(self):
+    #     for line in self.order_line:
+    #         if self.currency_id.name == 'IDR':
+    #             line.update({
+    #                 'price_unit': False,
+    #                 'price_subtotal': False,
+    #             })
+    #         else:
+    #             line.update({
+    #                 'price_unit': True,
+    #                 'price_subtotal': True,
+    #             })
+
+class PurchaseOrderLineInherit(models.Model):
+    _inherit = 'purchase.order.line'
+
+    currency_name = fields.Char(string='Currency Name', related='order_id.currency_id.name')
+
 class PurchaseOrderDocumentLine(models.Model):
     _name = 'wika.po.document.line'
     _description = 'List Document PO'
@@ -226,6 +252,13 @@ class PurchaseOrderDocumentLine(models.Model):
     def onchange_document_upload(self):
         if self.document:
             self.state = 'uploaded'
+
+    @api.constrains('document', 'filename')
+    def _check_attachment_format(self):
+        for record in self:
+            if record.filename and not record.filename.lower().endswith('.pdf'):
+                raise ValidationError('Tidak dapat mengunggah file selain ekstensi PDF!')
+
 
 class PurchaseOrderApprovalLine(models.Model):
     _name = 'wika.po.approval.line'
