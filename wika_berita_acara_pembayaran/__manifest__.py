@@ -20,12 +20,13 @@
     'version': '0.1',
 
     # any module necessary for this one to work correctly
-    'depends': ['base','branch','project', 'purchase','stock','product', 'account', 'wika_matrix_approval'],
+    'depends': ['base','branch','project', 'purchase','stock','product', 'account', 'wika_matrix_approval', 'mail'],
 
     # always loaded
     'data': [
         'security/ir.model.access.csv',
         'views/views.xml',
+        'data/documents_folder_data.xml',
         'wizard/wika_reject_reason.xml',
         'views/templates.xml',
         'views/wika_berita_acara_pembayaran.xml',

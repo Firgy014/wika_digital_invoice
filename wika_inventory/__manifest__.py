@@ -32,7 +32,6 @@
         'views/action.xml',
         'views/menu.xml',
         'views/templates.xml',
-
         'wizard/wika_reject_reason.xml',
 
     ],
