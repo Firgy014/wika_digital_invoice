@@ -35,12 +35,15 @@ class ResConfigSettings(models.TransientModel):
             raise UserError(_("Connection Failed. Please Check Your Internet Connection."))
         if txt['data']:
             txt_data = txt['data']
-
             for data in txt_data:
                 vals = []
                 print (data)
                 isi = data['isi']
                 for hasil in isi:
+                    if hasil['LOEKZ'] == 'L':
+                        state = 'cancel'
+                    else:
+                        state = 'po'
                     if data['jenis']=='JASA':
                         prod = self.env['product.product'].sudo().search([
                             ('default_code', '=', hasil['SRVPOS'])], limit=1)
@@ -59,7 +62,7 @@ class ResConfigSettings(models.TransientModel):
                         ('name', '=', hasil['MWSKZ'])], limit=1)
                     if not tax:
                         return "Kode Pajak  : %s tidak ditemukan" % hasil['MWSKZ']
-                    curr=self.env['account.currency'].sudo().search([
+                    curr=self.env['res.currency'].sudo().search([
                         ('name', '=', hasil['WAERS'])], limit=1)
                     if not curr:
                         return "Kode Currency  : %s tidak ditemukan" % hasil['WAERS']
@@ -101,6 +104,10 @@ class ResConfigSettings(models.TransientModel):
                         'taxes_id':[(6, 0, [x.id for x in tax])]
 
                     }))
+                    tgl_mulai=hasil['BEDAT_X']
+                    po_type = hasil['BSART']
+
+
                 po_create= self.env['purchase.order'].sudo().create({
                     'name': data['EBELN'],
                     'partner_id': vendor.id if vendor else False,
@@ -109,10 +116,10 @@ class ResConfigSettings(models.TransientModel):
                     'department_id':department_id,
                     'order_line':vals,
                     'currency_id': curr.id,
-                    'begin_date':data['BEDAT_X'],
-                    'vendor_ref':data['IDNLF'],
-                    'po_type':data['BSART'],
-                    'state':'po'
+                    'begin_date':tgl_mulai,
+                    'end_date': tgl_mulai,
+                    'po_type':po_type,
+                    'state':state,
                 })
 
         else:
