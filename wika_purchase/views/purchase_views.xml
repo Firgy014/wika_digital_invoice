@@ -298,12 +298,11 @@
 
     <!-- core tree modified -->
     <record id="purchase_order_tree_wika" model="ir.ui.view">
-        <field name="name">purchase.order.tree</field>
+        <field name="name">purchase.order.tree.wika</field>
         <field name="model">purchase.order</field>
         <field name="priority" eval="1"/>
         <field name="arch" type="xml">
-            <tree string="Purchase Order"
-                    decoration-muted="state=='cancel'" sample="1">
+            <tree string="Purchase Order" decoration-muted="state=='cancel'" sample="1" create="false">
                 <field name="priority" optional="show" widget="priority" nolabel="1"/>
                 <field name="branch_id"/>
                 <field name="department_id" string="Dept"/>

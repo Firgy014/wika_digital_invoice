@@ -74,19 +74,24 @@ class PurchaseOrderInherit(models.Model):
 
         if self.branch_id and not self.department_id:
             if user.branch_id.id == self.branch_id.id and model_wika_id:
-                groups_line = self.env['wika.approval.setting.line'].search(
-                    [('branch_id', '=', self.branch_id.id), ('sequence', '=', self.step_approve),
-                    ('approval_id', '=', model_wika_id.id)], limit=1)
-        if self.branch_id and self.department_id:
-            if user.branch_id.id == self.department_id.id and model_wika_id:
-                groups_line = self.env['wika.approval.setting.line'].search(
-                    [('branch_id', '=', self.branch_id.id), ('sequence', '=', self.step_approve),
-                     ('department_id', '=', self.department_id.id), ('approval_id', '=', model_wika_id.id)], limit=1)
-        # if self.branch_id and self.project_id:
-        #     if user.branch_id.id == self.department_id.id and model_wika_id:
-        #         groups_line = self.env['wika.approval.setting.line'].search(
-        #             [('branch_id', '=', self.branch_id.id), ('sequence', '=', self.step_approve),
-        #              ('department_id', '=', self.department_id.id), ('approval_id', '=', model_wika_id.id)], limit=1)
+                groups_line = self.env['wika.approval.setting.line'].search([
+                    ('branch_id', '=', self.branch_id.id),
+                    ('sequence', '=', self.step_approve),
+                    ('approval_id', '=', model_wika_id.id)
+                ], limit=1)
+
+        if self.branch_id and self.department_id and model_wika_id:
+            if user.project_id.id == self.project_id.id:
+                if user.branch_id.id == self.branch_id.id and user.department_id.id == self.department_id.id:
+                    groups_line = self.env['wika.approval.setting.line'].search([
+                        ('branch_id', '=', self.branch_id.id),
+                        ('department_id', '=', self.department_id.id),
+                        ('project_id', '=', self.project_id.id),
+                        ('sequence', '=', self.step_approve),
+                        ('approval_id', '=', model_wika_id.id)
+                    ], limit=1)
+
+        # Get group
         groups_id = groups_line.groups_id
 
         for x in groups_id.users:
@@ -214,20 +219,6 @@ class PurchaseOrderInherit(models.Model):
         for record in self:
             record.picking_count = self.env['stock.picking'].search_count(
                 [('po_id', '=', record.id)])
-
-    # @api.onchange('currency_id')
-    # def onchange_currency_id(self):
-    #     for line in self.order_line:
-    #         if self.currency_id.name == 'IDR':
-    #             line.update({
-    #                 'price_unit': False,
-    #                 'price_subtotal': False,
-    #             })
-    #         else:
-    #             line.update({
-    #                 'price_unit': True,
-    #                 'price_subtotal': True,
-    #             })
 
 class PurchaseOrderLineInherit(models.Model):
     _inherit = 'purchase.order.line'
