@@ -9,7 +9,7 @@
             <field name="name">Purchase Orders</field>
             <field name="res_model">purchase.order</field>
             <field name="view_mode">tree,form</field>
-            <field name="domain">[('state','in',('po', 'uploaded', 'approved'))]</field>
+            <field name="domain">[('state','in',('po', 'uploaded', 'approved','cancel'))]</field>
             <field name="view_ids" eval="[(5, 0, 0),
                 (0, 0, {'view_mode': 'tree', 'view_id': ref('wika_purchase.purchase_order_tree_wika')}),
                 (0, 0, {'view_mode': 'form', 'view_id': ref('wika_purchase.purchase_order_form_wika')}),

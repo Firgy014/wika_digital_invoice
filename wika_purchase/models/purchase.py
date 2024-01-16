@@ -29,11 +29,11 @@ class PurchaseOrderInherit(models.Model):
     ])
     po_type = fields.Char(string='Purchasing Doc Type')
     begin_date = fields.Date(string='Tgl Mulai Kontrak', required=True)
-    end_date = fields.Date(string='Tgl Akhir Kontrak', required=True)
+    end_date = fields.Date(string='Tgl Akhir Kontrak')
     document_ids = fields.One2many('wika.po.document.line', 'purchase_id', string='Purchase Order Document Lines')
     history_approval_ids = fields.One2many('wika.po.approval.line', 'purchase_id',
                                            string='Purchase Order Approval Lines')
-    sap_doc_number = fields.Char(string='Nomor Kontrak', required=True)
+    sap_doc_number = fields.Char(string='Nomor Kontrak')
     step_approve = fields.Integer(string='Step Approve')
     picking_count = fields.Integer(string='Picking', compute='_compute_picking_count')
     kurs = fields.Float(string='Kurs')
@@ -77,6 +77,10 @@ class PurchaseOrderInherit(models.Model):
                 groups_line = self.env['wika.approval.setting.line'].search(
                     [('branch_id', '=', self.branch_id.id), ('sequence', '=', self.step_approve),
                     ('approval_id', '=', model_wika_id.id)], limit=1)
+                groups_id = groups_line.groups_id
+                for x in groups_id.users:
+                    if x.id == self._uid:
+                        cek = True
         if self.branch_id and self.department_id:
             if user.branch_id.id == self.department_id.id and model_wika_id:
                 groups_line = self.env['wika.approval.setting.line'].search(
@@ -87,11 +91,11 @@ class PurchaseOrderInherit(models.Model):
         #         groups_line = self.env['wika.approval.setting.line'].search(
         #             [('branch_id', '=', self.branch_id.id), ('sequence', '=', self.step_approve),
         #              ('department_id', '=', self.department_id.id), ('approval_id', '=', model_wika_id.id)], limit=1)
-        groups_id = groups_line.groups_id
+                groups_id = groups_line.groups_id
 
-        for x in groups_id.users:
-            if x.id == self._uid:
-                cek = True
+                for x in groups_id.users:
+                    if x.id == self._uid:
+                        cek = True
 
         if cek == True:
             if model_wika_id.total_approve == self.step_approve:
@@ -171,6 +175,10 @@ class PurchaseOrderInherit(models.Model):
     def action_submit(self):
         self.state = 'uploaded'
         self.step_approve += 1
+        if not self.sap_doc_number:
+            raise ValidationError('Anda belum mengisi Nomor Kontrak!')
+        if not self.end_date:
+            raise ValidationError('Anda belum mengisi Tanggal Akhir Kontrak!')
         if self.document_ids.document != False:
             model_id = self.env['ir.model'].search([('model', '=', 'purchase.order')], limit=1)
             model_wika_id = self.env['wika.approval.setting'].search([('model_id', '=', model_id.id)], limit=1)
@@ -183,15 +191,17 @@ class PurchaseOrderInherit(models.Model):
                     ('approval_id', '=', model_wika_id.id)
                 ], limit=1)
                 groups_id = groups_line.groups_id
-            for x in groups_id.users:
-                activity_ids = self.env['mail.activity'].create({
-                    'activity_type_id': 4,
-                    'res_model_id': self.env['ir.model'].sudo().search([('model', '=', 'purchase.order')], limit=1).id,
-                    'res_id': self.id,
-                    'user_id': x.id,
-                    'summary': """Need Approval Document PO """
-                })
-
+                if groups_id:
+                    for x in groups_id.users:
+                        activity_ids = self.env['mail.activity'].create({
+                            'activity_type_id': 4,
+                            'res_model_id': self.env['ir.model'].sudo().search([('model', '=', 'purchase.order')], limit=1).id,
+                            'res_id': self.id,
+                            'user_id': x.id,
+                            'summary': """Need Approval Document PO """
+                        })
+                else:
+                    raise ValidationError('Data Konfigurasi Approval Belum tersedia! Silahkan Hubungi Admin!')
         elif self.document_ids.document == False:
             raise ValidationError('Anda belum mengunggah dokumen yang diperlukan!')
 

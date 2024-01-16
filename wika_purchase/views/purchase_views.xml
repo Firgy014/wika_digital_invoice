@@ -61,7 +61,7 @@
                         />
                         <field name="partner_ref" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
                         <field name="currency_id" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
-                        <field name="kurs" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
+                        <field name="kurs" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])],'invisible': [('currency_id', '=', 13)]}"/>
                         <field name="id" invisible="1"/>
                         <field name="company_id" invisible="1"/>
                         <field name="currency_id" invisible="1" groups="!base.group_multi_currency"/>
@@ -139,7 +139,7 @@
                                 <field name="price_subtotal"/>
                                 <field name="price_total" invisible="1"/>
                                 <!-- <field name="currency_name" invisible="1"/> -->
-                                <field name="currency_name"/>
+                                <field name="currency_name" invisible="1"/>
                                 <field name="currency_id"/>
                                 <field name="price_tax" invisible="1"/>
                             </tree>
@@ -310,7 +310,6 @@
                 <field name="project_id"/>
                 <field name="currency_id"/>
                 <field name="po_type" string="PO Type"/>
-                <field name="name" string="Reference" readonly="1" decoration-info="state in ('draft','sent')"/>
                 <field name="sap_doc_number"/>
                 <field name="begin_date"/>
                 <field name="end_date"/>
