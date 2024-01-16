@@ -7,7 +7,8 @@ class WikaApprovalSetting(models.Model):
     _description = 'Matrix Approval Setting'
 
     name = fields.Char(string='Approval Name', required=True, copy=False, readonly=True, index=True, default=lambda self: self._default_name())
-    branch_id = fields.Many2one('res.branch', string='Branch')
+    branch_id = fields.Many2one('res.branch', string='Divisi')
+    department_id = fields.Many2one('res.branch', string='Department')
     project_id = fields.Many2one('project.project', string='Project')
     model_id = fields.Many2one('ir.model', string='Akses Menu')
     state = fields.Selection([
@@ -45,7 +46,8 @@ class WikaApprovalSettingLine(models.Model):
     _description = 'Matrix Approval Setting Line'
 
     approval_id = fields.Many2one('wika.approval.setting', string='Approval Setting')
-    branch_id = fields.Many2one('res.branch', string='Branch', related='approval_id.branch_id')
+    branch_id = fields.Many2one('res.branch', string='Divisi', related='approval_id.branch_id')
+    department_id = fields.Many2one('res.branch', string='Department', related='approval_id.department_id')
     project_id = fields.Many2one('project.project', string='Project', related='approval_id.project_id')
     sequence = fields.Integer(string='Sequence/Step')
     user_id = fields.Many2one('res.users', string='Approver/User')
