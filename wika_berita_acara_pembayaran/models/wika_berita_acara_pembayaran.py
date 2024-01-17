@@ -1,6 +1,6 @@
 from odoo import models, fields, api
 from datetime import datetime, timedelta
-from odoo.exceptions import UserError, ValidationError,Warning
+from odoo.exceptions import UserError, ValidationError, Warning, AccessError
 
 class WikaBeritaAcaraPembayaran(models.Model):
     _name = 'wika.berita.acara.pembayaran'
