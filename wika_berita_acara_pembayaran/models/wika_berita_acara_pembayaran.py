@@ -215,13 +215,6 @@ class WikaBabDocumentLine(models.Model):
             if record.filename and not record.filename.lower().endswith('.pdf'):
                 raise ValidationError('Tidak dapat mengunggah file selain berformat PDF!')
 
-    # @api.model
-    # def create(self, vals):
-    #     record = super(WikaBabDocumentLine, self).create(vals)
-    #     if record.document:
-    #         record.write({'state': 'uploaded'})
-    #     return record
-
 class WikaBabApprovalLine(models.Model):
     _name = 'wika.bap.approval.line'
 

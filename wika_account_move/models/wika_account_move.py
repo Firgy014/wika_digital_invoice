@@ -220,15 +220,10 @@ class WikaInvoiceDocumentLine(models.Model):
     ], string='Status', default='waiting')
 
 
-    # @api.onchange('document')
-    # def onchange_document(self):
-    #     if self.document:
-    #         self.state = 'uploaded'
-
-    def write(self, vals):
-        if 'document' in vals:
-            vals['state'] = 'uploaded' if vals['document'] else 'waiting'
-        return super(WikaInvoiceDocumentLine, self).write(vals)
+    @api.onchange('document')
+    def onchange_document(self):
+        if self.document:
+            self.state = 'uploaded'
 
     @api.constrains('document', 'filename')
     def _check_attachment_format(self):
