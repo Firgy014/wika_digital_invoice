@@ -1,9 +1,6 @@
 from odoo import api, fields, models, _
 from datetime import datetime
 from odoo.exceptions import AccessError, ValidationError
-import pytz
-from odoo.http import request
-
 
 class PurchaseOrderApprovalHistory(models.Model):
     _name = 'wika.purchase.order.approval.history'
@@ -88,7 +85,6 @@ class PurchaseOrderInherit(models.Model):
                     if x.id == self._uid:
                         cek = True
 
-
         # SUSUNAN APPROVAL
         # 1. base on project
         # 2. base on project & divisi
@@ -100,11 +96,15 @@ class PurchaseOrderInherit(models.Model):
                 print("-------------2-----------")
                 if user.branch_id.id == self.branch_id.id and user.department_id.id == self.department_id.id:
                     print("-------------3-----------")
-                    print("STEP",self.branch_id.id)
+                    print("DIVISI",self.branch_id.id)
+                    print("DIVISI",self.branch_id.name)
+                    print("DEPARTEMEN",self.department_id.id)
+                    print("DEPARTEMEN",self.department_id.name)
+                    print("PROYEK",self.project_id.id)
+                    print("PROYEK",self.project_id.name)
                     print("STEP",self.step_approve)
-                    print("STEP",self.step_approve)
-                    print("STEP",self.step_approve)
-                    print("STEP",self.step_approve)
+                    print("MODEL",model_wika_id.id)
+                    print("MODEL",model_wika_id.name)
                     groups_line = self.env['wika.approval.setting.line'].search([
                         ('branch_id', '=', self.branch_id.id),
                         ('department_id', '=', self.department_id.id),
@@ -113,6 +113,8 @@ class PurchaseOrderInherit(models.Model):
                         ('approval_id', '=', model_wika_id.id)
                     ], limit=1)
 
+                    print("APPROVAL_LINE?", groups_line)
+                    # test_leveeell
                     # Get group
                     groups_id = groups_line.groups_id
                     print("==GROUPS_LINE==", groups_line)
@@ -263,15 +265,21 @@ class PurchaseOrderDocumentLine(models.Model):
     @api.onchange('document')
     def onchange_document_upload(self):
         if self.document:
-            self.state = 'uploaded'
-
-    @api.constrains('document', 'filename')
-    def _check_attachment_format(self):
-        for record in self:
-            if record.filename and not record.filename.lower().endswith('.pdf'):
+            if self.filename and not self.filename.lower().endswith('.pdf'):
                 self.document = False
+                self.filename = False
                 self.state = 'waiting'
-                raise ValidationError('Tidak dapat mengunggah file selain ekstensi PDF!')
+                raise ValidationError('Tidak dapat mengunggah file selain ekstensi PDF!')
+            elif self.filename.lower().endswith('.pdf'):
+                self.state = 'uploaded'
+
+    # @api.constrains('document', 'filename')
+    # def _check_attachment_format(self):
+    #     for record in self:
+    #         if record.filename and not record.filename.lower().endswith('.pdf'):
+    #             # self.document = False
+    #             # self.state = 'waiting'
+    #             raise ValidationError('Tidak dapat mengunggah file selain ekstensi PDF!')
 
 class PurchaseOrderApprovalLine(models.Model):
     _name = 'wika.po.approval.line'

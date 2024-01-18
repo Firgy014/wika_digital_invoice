@@ -6,7 +6,7 @@
                   parent="menu_board_wika"
         action="todo_mail_activity_action"/>
 
-        <menuitem id="menu_dashboard_document" name="Dashboard Documents" parent="wika_dashboard.menu_board_wika" sequence="10" action="action_dashboard_document"/>
+        <!-- <menuitem id="menu_dashboard_document" name="Dashboard Documents" parent="wika_dashboard.menu_board_wika" sequence="10" action="action_dashboard_document"/> -->
 
     </data>
 </odoo>
