@@ -52,14 +52,14 @@ class WikaInheritedAccountMove(models.Model):
             ], limit=1)
             groups_id = groups_line.groups_id
             
-        for x in groups_id.users:
-            activity_ids = self.env['mail.activity'].create({
-                    'activity_type_id': 4,
-                    'res_model_id': self.env['ir.model'].sudo().search([('model', '=', 'account.move')], limit=1).id,
-                    'res_id': self.id,
-                    'user_id': x.id,
-                    'summary': """ Need Approval Document PO """
-                })
+            for x in groups_id.users:
+                activity_ids = self.env['mail.activity'].create({
+                        'activity_type_id': 4,
+                        'res_model_id': self.env['ir.model'].sudo().search([('model', '=', 'account.move')], limit=1).id,
+                        'res_id': self.id,
+                        'user_id': x.id,
+                        'summary': """ Need Approval Document Invoice """
+                    })
 
         for record in self:
             if any(not line.document for line in record.document_ids):
