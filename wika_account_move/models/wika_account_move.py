@@ -85,14 +85,14 @@ class WikaInheritedAccountMove(models.Model):
         if cek == True:
             if model_wika_id.total_approve == self.step_approve:
                 self.state = 'approve'
-                folder_id = self.env['documents.folder'].sudo().search([('name', '=', 'Account Move')], limit=1)
-                # print("TESTTTTTTTTTTTTTTTTTTTTT", folder_id)
+                folder_id = self.env['documents.folder'].sudo().search([('name', '=', 'Invoice')], limit=1)
+                print("TESTTTTTTTTTTTTTTTTTTTTT", folder_id)
                 if folder_id:
                     facet_id = self.env['documents.facet'].sudo().search([
                         ('name', '=', 'Vendor Bills'),
                         ('folder_id', '=', folder_id.id)
                     ], limit=1)
-                    # print("TESTTTTTTTTTERRRRRRR", facet_id)
+                    print("TESTTTTTTTTTERRRRRRR", facet_id)
                     for doc in self.document_ids.filtered(lambda x: x.state == 'uploaded'):
                         doc.state = 'verif'
                         attachment_id = self.env['ir.attachment'].sudo().create({
@@ -100,13 +100,13 @@ class WikaInheritedAccountMove(models.Model):
                             'datas': doc.document,
                             'res_model': 'documents.document',
                         })
-                        # print("SSSIIIIUUUUUUUUUUUUUUUUUU", attachment_id)
+                        print("SSSIIIIUUUUUUUUUUUUUUUUUU", attachment_id)
                         if attachment_id:
                             documents_model.create({
                                 'attachment_id': attachment_id.id,
                                 'folder_id': folder_id.id,
                                 'tag_ids': facet_id.tag_ids.ids,
-                                # 'partner_id': doc.purchase_id.partner_id.id,
+                                'partner_id': doc.invoice_id.partner_id.id,
                             })
             else:
                 self.step_approve += 1
@@ -185,7 +185,7 @@ class WikaInheritedAccountMove(models.Model):
 
         for move in self:
             move_has_name = move.name and move.name != '/'
-            if move_has_name or move.state != 'upload':
+            if move_has_name or move.state != 'draft':
                 if not move.posted_before and not move._sequence_matches_date():
                     if move._get_last_sequence(lock=False):
                         # The name does not match the date and the move is not the first in the period:
@@ -219,16 +219,16 @@ class WikaInvoiceDocumentLine(models.Model):
         ('verif', 'Verif'),
     ], string='Status', default='waiting')
 
-    @api.depends('document')
-    def _compute_state(self):
-        for rec in self:
-            if rec.document:
-                rec.state = 'uploaded'
 
-    @api.onchange('document')
-    def _onchange_document(self):
-        if self.document:
-            self.state = 'uploaded'
+    # @api.onchange('document')
+    # def onchange_document(self):
+    #     if self.document:
+    #         self.state = 'uploaded'
+
+    def write(self, vals):
+        if 'document' in vals:
+            vals['state'] = 'uploaded' if vals['document'] else 'waiting'
+        return super(WikaInvoiceDocumentLine, self).write(vals)
 
     @api.constrains('document', 'filename')
     def _check_attachment_format(self):

@@ -5,4 +5,4 @@ from datetime import datetime
 class InheritAccountMove(models.Model):
     _inherit = 'account.move'
     
-    pr_id = fields.Many2one('wika.payment.request', string='Payment Request', required=True)
+    pr_id = fields.Many2one('wika.payment.request', string='Payment Request')
