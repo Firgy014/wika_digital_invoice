@@ -11,7 +11,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
     branch_id = fields.Many2one('res.branch', string='Divisi', required=True)
     department_id = fields.Many2one('res.branch', string='Department')
     project_id = fields.Many2one('project.project', string='Project')
-    po_id = fields.Many2one('purchase.order', string='Nomor PO', required=True, domain="[('state', '=', 'purchase')]")
+    po_id = fields.Many2one('purchase.order', string='Nomor PO', required=True, domain="[('state', '=', 'approved')]")
     partner_id = fields.Many2one('res.partner', string='Vendor', required=True)
     bap_ids = fields.One2many('wika.berita.acara.pembayaran.line', 'bap_id', string='List BAP', required=True)
     document_ids = fields.One2many('wika.bap.document.line', 'bap_id', string='List Document')
@@ -75,14 +75,14 @@ class WikaBeritaAcaraPembayaran(models.Model):
             ], limit=1)
             groups_id = groups_line.groups_id
 
-        for x in groups_id.users:
-            activity_ids = self.env['mail.activity'].create({
-                'activity_type_id': 4,
-                'res_model_id': self.env['ir.model'].sudo().search([('model', '=', 'wika.berita.acara.pembayaran')], limit=1).id,
-                'res_id': self.id,
-                'user_id': x.id,
-                'summary': """ Need Approval Document PO """
-            })
+            for x in groups_id.users:
+                activity_ids = self.env['mail.activity'].create({
+                    'activity_type_id': 4,
+                    'res_model_id': self.env['ir.model'].sudo().search([('model', '=', 'wika.berita.acara.pembayaran')], limit=1).id,
+                    'res_id': self.id,
+                    'user_id': x.id,
+                    'summary': """ Need Approval Document BAP """
+                })
 
         for record in self:
             if any(not line.document for line in record.document_ids):

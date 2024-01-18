@@ -173,8 +173,6 @@ class PurchaseOrderInherit(models.Model):
             raise ValidationError('User Akses Anda tidak berhak Reject!')
 
     def action_submit(self):
-        self.state = 'uploaded'
-        self.step_approve += 1
         if not self.sap_doc_number:
             raise ValidationError('Anda belum mengisi Nomor Kontrak!')
         if not self.end_date:
@@ -191,18 +189,19 @@ class PurchaseOrderInherit(models.Model):
                     ('approval_id', '=', model_wika_id.id)
                 ], limit=1)
                 groups_id = groups_line.groups_id
-                if groups_id:
-                    for x in groups_id.users:
-                        activity_ids = self.env['mail.activity'].create({
-                            'activity_type_id': 4,
-                            'res_model_id': self.env['ir.model'].sudo().search([('model', '=', 'purchase.order')], limit=1).id,
-                            'res_id': self.id,
-                            'user_id': x.id,
-                            'summary': """Need Approval Document PO """
-                        })
-                else:
-                    raise ValidationError('Data Konfigurasi Approval Belum tersedia! Silahkan Hubungi Admin!')
+                for x in groups_id.users:
+                    self.env['mail.activity'].create({
+                        'activity_type_id': 4,
+                        'res_model_id': self.env['ir.model'].sudo().search([('model', '=', 'purchase.order')], limit=1).id,
+                        'res_id': self.id,
+                        'user_id': x.id,
+                        'summary': """Need Approval Document PO"""
+                    })
+                self.state = 'uploaded'
+                self.step_approve += 1
+
         elif self.document_ids.document == False:
+            self.document_ids.state = 'waiting'
             raise ValidationError('Anda belum mengunggah dokumen yang diperlukan!')
 
     def get_picking(self):
@@ -261,14 +260,21 @@ class PurchaseOrderDocumentLine(models.Model):
     @api.onchange('document')
     def onchange_document_upload(self):
         if self.document:
-            self.state = 'uploaded'
+            if self.filename and not self.filename.lower().endswith('.pdf'):
+                self.document = False
+                self.filename = False
+                self.state = 'waiting'
+                raise ValidationError('Tidak dapat mengunggah file selain ekstensi PDF!')
+            elif self.filename.lower().endswith('.pdf'):
+                self.state = 'uploaded'
 
-    @api.constrains('document', 'filename')
-    def _check_attachment_format(self):
-        for record in self:
-            if record.filename and not record.filename.lower().endswith('.pdf'):
-                raise ValidationError('Tidak dapat mengunggah file selain ekstensi PDF!')
-
+    # @api.constrains('document', 'filename')
+    # def _check_attachment_format(self):
+    #     for record in self:
+    #         if record.filename and not record.filename.lower().endswith('.pdf'):
+    #             # self.document = False
+    #             # self.state = 'waiting'
+    #             raise ValidationError('Tidak dapat mengunggah file selain ekstensi PDF!')
 
 class PurchaseOrderApprovalLine(models.Model):
     _name = 'wika.po.approval.line'
