@@ -5,6 +5,7 @@ class res_users(models.Model):
     _inherit = 'res.users'
 
     branch_id = fields.Many2one('res.branch', 'Divisi')
+    department_id = fields.Many2one('res.branch', 'Department')
     branch_ids = fields.Many2many('res.branch', 'user_id', 'branch_id', string='Multi Divisi')
     project_id = fields.Many2one('project.project', string='Project')
 

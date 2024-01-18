@@ -29,9 +29,10 @@
         'views/wika_account_move.xml',
         'data/documents_folder_data.xml',
         'views/action.xml',
-        'views/wika_menu.xml',
+        'views/filter.xml',
         'views/templates.xml',
         'wizard/wika_reject_reason.xml',
+        'views/wika_menu.xml',
     ],
     # only loaded in demonstration mode
     'demo': [

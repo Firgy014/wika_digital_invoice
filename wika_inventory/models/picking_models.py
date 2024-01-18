@@ -1,4 +1,5 @@
 from odoo import fields, api, models
+from odoo.exceptions import AccessError, ValidationError
 
 class PickingDocument(models.Model):
     _name = "wika.picking.document.line"
@@ -16,13 +17,13 @@ class PickingDocument(models.Model):
     @api.onchange('document')
     def onchange_document_upload(self):
         if self.document:
-            self.state = 'uploaded'
-
-    @api.constrains('document', 'filename')
-    def _check_attachment_format(self):
-        for record in self:
-            if record.filename and not record.filename.lower().endswith('.pdf'):
-                raise ValidationError('Tidak dapat mengunggah file selain ekstensi PDF!')
+            if self.filename and not self.filename.lower().endswith('.pdf'):
+                self.document = False
+                self.filename = False
+                self.state = 'waiting'
+                raise ValidationError('Tidak dapat mengunggah file selain ekstensi PDF!')
+            elif self.filename.lower().endswith('.pdf'):
+                self.state = 'uploaded'
 
 class PickingApproval(models.Model):
     _name = "wika.picking.approval.line"
