@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+
+        <record id="view_dashboard_document_list" model="ir.ui.view">
+            <field name="name">wika.dashboard.document.list</field>
+            <field name="model">wika.dashboard.document</field>
+            <field name="arch" type="xml">
+                <tree>
+                    <field name="name"/>
+                    <!-- <field name="document_id"/> -->
+                    <field name="folder_id"/>
+                    <field name="count"/>
+                </tree>
+            </field>
+        </record>
+
+        <record id="view_dashboard_document_form" model="ir.ui.view">
+            <field name="name">wika.dashboard.document.form</field>
+            <field name="model">wika.dashboard.document</field>
+            <field name="arch" type="xml">
+                <form>
+                    <field name="name"/>
+                    <field name="folder_id"/>
+                    <field name="count"/>
+                </form>
+            </field>
+        </record>
+
+        <record id="view_dashboard_document_kanban" model="ir.ui.view">
+            <field name="name">wika.dashboard.document.kanban</field>
+            <field name="model">wika.dashboard.document</field>
+            <field name="arch" type="xml">
+                <kanban>
+                    <templates>
+                        <t t-name="kanban-box">
+                            <div class="oe_kanban_global_click" style="background-color: #ccffeb;">
+                                <div class="o_kanban_card_content">
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <strong><field name="name" style="color: #050538; font-weight: bold; font-size: 18px;"/></strong>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <field name="folder_id" invisible="1"/>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <field name="count" style="font-size: 15px;"/>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </t>
+                    </templates>
+                </kanban>
+            </field>
+        </record>
+
+    </data>
+</odoo>

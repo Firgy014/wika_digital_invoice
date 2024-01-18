@@ -9,6 +9,7 @@
                 <group name="preferences" position="before">
                     <group string='Allowed Branches'>
                         <field name="branch_id"/>
+                        <field name="department_id"/>
                         <field name="project_id"/>
                     </group>
                     <field name="branch_ids" nolabel="1" widget="many2many_tags "/>

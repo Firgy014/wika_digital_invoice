@@ -5,11 +5,11 @@ from datetime import datetime
 class WikaInheritedAccountMove(models.Model):
     _inherit = 'account.move'
     
-    bap_id = fields.Many2one('wika.berita.acara.pembayaran', string='BAP')
-    branch_id = fields.Many2one('res.branch', string='Divisi')
-    department_id = fields.Many2one('res.branch', string='Department')
-    project_id = fields.Many2one('project.project', string='Project')
-    document_ids = fields.One2many('wika.invoice.document.line', 'invoice_id', string='Document Line')
+    bap_id = fields.Many2one('wika.berita.acara.pembayaran', string='BAP', required=True)
+    branch_id = fields.Many2one('res.branch', string='Divisi', required=True)
+    department_id = fields.Many2one('res.branch', string='Department', required=True)
+    project_id = fields.Many2one('project.project', string='Project', required=True, readonly=True)
+    document_ids = fields.One2many('wika.invoice.document.line', 'invoice_id', string='Document Line', required=True)
     history_approval_ids = fields.One2many('wika.invoice.approval.line', 'invoice_id', string='History Approval Line')
     reject_reason_account = fields.Text(string='Reject Reason')
     step_approve = fields.Integer(string='Step Approve')
@@ -51,6 +51,7 @@ class WikaInheritedAccountMove(models.Model):
                 ('approval_id', '=', model_wika_id.id)
             ], limit=1)
             groups_id = groups_line.groups_id
+            
         for x in groups_id.users:
             activity_ids = self.env['mail.activity'].create({
                     'activity_type_id': 4,
@@ -59,7 +60,11 @@ class WikaInheritedAccountMove(models.Model):
                     'user_id': x.id,
                     'summary': """ Need Approval Document PO """
                 })
-    
+
+        for record in self:
+            if any(not line.document for line in record.document_ids):
+                raise ValidationError('Document belum di unggah, mohon unggah file terlebih dahulu!')
+
     def action_approve(self):
         user = self.env['res.users'].search([('id','=',self._uid)], limit=1)
         documents_model = self.env['documents.document'].sudo()
@@ -80,14 +85,14 @@ class WikaInheritedAccountMove(models.Model):
         if cek == True:
             if model_wika_id.total_approve == self.step_approve:
                 self.state = 'approve'
-                folder_id = self.env['documents.folder'].sudo().search([('name', '=', 'Account Move')], limit=1)
-                # print("TESTTTTTTTTTTTTTTTTTTTTT", folder_id)
+                folder_id = self.env['documents.folder'].sudo().search([('name', '=', 'Invoice')], limit=1)
+                print("TESTTTTTTTTTTTTTTTTTTTTT", folder_id)
                 if folder_id:
                     facet_id = self.env['documents.facet'].sudo().search([
                         ('name', '=', 'Vendor Bills'),
                         ('folder_id', '=', folder_id.id)
                     ], limit=1)
-                    # print("TESTTTTTTTTTERRRRRRR", facet_id)
+                    print("TESTTTTTTTTTERRRRRRR", facet_id)
                     for doc in self.document_ids.filtered(lambda x: x.state == 'uploaded'):
                         doc.state = 'verif'
                         attachment_id = self.env['ir.attachment'].sudo().create({
@@ -95,13 +100,13 @@ class WikaInheritedAccountMove(models.Model):
                             'datas': doc.document,
                             'res_model': 'documents.document',
                         })
-                        # print("SSSIIIIUUUUUUUUUUUUUUUUUU", attachment_id)
+                        print("SSSIIIIUUUUUUUUUUUUUUUUUU", attachment_id)
                         if attachment_id:
                             documents_model.create({
                                 'attachment_id': attachment_id.id,
                                 'folder_id': folder_id.id,
                                 'tag_ids': facet_id.tag_ids.ids,
-                                # 'partner_id': doc.purchase_id.partner_id.id,
+                                'partner_id': doc.invoice_id.partner_id.id,
                             })
             else:
                 self.step_approve += 1
@@ -168,6 +173,38 @@ class WikaInheritedAccountMove(models.Model):
             else:
                 raise AccessError("Data dokumen tidak ada!")
 
+    def unlink(self):
+        for record in self:
+            if record.state in ('upload', 'approve'):
+                raise ValidationError('Tidak dapat menghapus ketika status Vendor Bils dalam keadaan Upload atau Approve')
+        return super(WikaInheritedAccountMove, self).unlink()
+        
+    @api.depends('posted_before', 'state', 'journal_id', 'date')
+    def _compute_name(self):
+        self = self.sorted(lambda m: (m.date, m.ref or '', m.id))
+
+        for move in self:
+            move_has_name = move.name and move.name != '/'
+            if move_has_name or move.state != 'draft':
+                if not move.posted_before and not move._sequence_matches_date():
+                    if move._get_last_sequence(lock=False):
+                        # The name does not match the date and the move is not the first in the period:
+                        # Reset to draft
+                        move.name = False
+                        continue
+                else:
+                    if move_has_name and move.posted_before or not move_has_name and move._get_last_sequence(lock=False):
+                        # The move either
+                        # - has a name and was posted before, or
+                        # - doesn't have a name, but is not the first in the period
+                        # so we don't recompute the name
+                        continue
+            if move.date and (not move_has_name or not move._sequence_matches_date()):
+                move._set_next_sequence()
+
+        self.filtered(lambda m: not m.name and not move.quick_edit_mode).name = '/'
+        self._inverse_name()
+        
 class WikaInvoiceDocumentLine(models.Model):
     _name = 'wika.invoice.document.line'
     _description = 'Invoice Document Line'
@@ -182,16 +219,17 @@ class WikaInvoiceDocumentLine(models.Model):
         ('verif', 'Verif'),
     ], string='Status', default='waiting')
 
-    @api.depends('document')
-    def _compute_state(self):
-        for rec in self:
-            if rec.document:
-                rec.state = 'uploaded'
 
     @api.onchange('document')
-    def _onchange_document(self):
+    def onchange_document(self):
         if self.document:
             self.state = 'uploaded'
+
+    @api.constrains('document', 'filename')
+    def _check_attachment_format(self):
+        for record in self:
+            if record.filename and not record.filename.lower().endswith('.pdf'):
+                raise ValidationError('Tidak dapat mengunggah file selain berformat PDF!')
             
 class WikaInvoiceApprovalLine(models.Model):
     _name = 'wika.invoice.approval.line'

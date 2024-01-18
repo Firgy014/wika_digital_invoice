@@ -9,7 +9,7 @@ class WikaPaymentRequest(models.Model):
     _inherit = ['mail.thread']
 
     name = fields.Char(string='Nomor Payment Request', readonly=True ,default='/')
-    date = fields.Date(string='Tanggal Payement Request')
+    date = fields.Date(string='Tanggal Payement Request', required=True)
     state = fields.Selection([
         ('draft', 'Draft'),
         ('upload', 'upload'),
@@ -17,10 +17,10 @@ class WikaPaymentRequest(models.Model):
         ('approve', 'Approve'),
         ('reject', 'Reject'),
     ], readonly=True, string='status', default='draft')
-    branch_id = fields.Many2one('res.branch', string='Divisi')
-    department_id = fields.Many2one('res.branch', string='Department')
-    project_id = fields.Many2one('project.project', string='Project')
-    invoice_ids = fields.Many2many('account.move', string='Invoice')
+    branch_id = fields.Many2one('res.branch', string='Divisi', required=True)
+    department_id = fields.Many2one('res.branch', string='Department', required=True)
+    project_id = fields.Many2one('project.project', string='Project', required=True)
+    invoice_ids = fields.Many2many('account.move', string='Invoice', required=True)
     document_ids = fields.One2many('wika.pr.document.line', 'pr_id', string='Document Line')
     history_approval_ids = fields.One2many('wika.pr.approval.line', 'pr_id', string='Approval Line')
     total = fields.Integer(string='Total', compute='compute_total')
@@ -82,6 +82,7 @@ class WikaPaymentRequest(models.Model):
                 ('approval_id', '=', model_wika_id.id)
             ], limit=1)
             groups_id = groups_line.groups_id
+
         for x in groups_id.users:
             activity_ids = self.env['mail.activity'].create({
                     'activity_type_id': 4,
@@ -90,6 +91,10 @@ class WikaPaymentRequest(models.Model):
                     'user_id': x.id,
                     'summary': """ Need Approval Document PO """
                 })
+        
+        for record in self:
+            if any(not line.document for line in record.document_ids):
+                raise ValidationError('Document belum di unggah, mohon unggah file terlebih dahulu!')
         
     def action_request(self):
         self.write({'state': 'request'})
@@ -138,6 +143,12 @@ class WikaPaymentRequest(models.Model):
         action = self.env.ref('wika_payment_request.action_reject_pr_wizard').read()[0]
         return action
 
+    def unlink(self):
+        for record in self:
+            if record.state in ('upload', 'request', 'approve'):
+                raise ValidationError('Tidak dapat menghapus ketika status Payment Request dalam keadaan Upload atau Approve')
+        return super(WikaPaymentRequest, self).unlink()
+
 class WikaPrDocumentLine(models.Model):
     _name = 'wika.pr.document.line'
     _description = 'PR Document Line'
@@ -162,6 +173,12 @@ class WikaPrDocumentLine(models.Model):
     def _onchange_document(self):
         if self.document:
             self.state = 'uploaded'
+
+    @api.constrains('document', 'filename')
+    def _check_attachment_format(self):
+        for record in self:
+            if record.filename and not record.filename.lower().endswith('.pdf'):
+                raise ValidationError('Tidak dapat mengunggah file selain berformat PDF!')
             
 class WikaPrApprovalLine(models.Model):
     _name = 'wika.pr.approval.line'

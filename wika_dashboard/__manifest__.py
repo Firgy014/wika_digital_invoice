@@ -20,12 +20,14 @@
     'version': '0.1',
 
     # any module necessary for this one to work correctly
-    'depends': ['base','mail','wika_activity'],
+    'depends': ['base','mail','web','wika_activity','documents'],
 
     # always loaded
     'data': [
-        # 'security/ir.model.access.csv',
+        'security/ir.model.access.csv',
         'views/dashboard_todo_views.xml',
+        'views/dashboard_document_views.xml',
+        'views/action.xml',
         'views/menu.xml',
         'views/templates.xml',
     ],
@@ -33,4 +35,9 @@
     'demo': [
         'demo/demo.xml',
     ],
+    'assets': {
+        'web.assets_backend': [
+            'wika_dashboard/static/src/js/dashboard.js',
+        ],
+    },
 }
