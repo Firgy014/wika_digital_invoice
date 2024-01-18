@@ -31,7 +31,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
         'mail.activity', 'res_id', 'Activities',
         auto_join=True,
         groups="base.group_user",)
-    bap_date = fields.Datetime(string='Tanggal BAP', required=True)
+    bap_date = fields.Date(string='Tanggal BAP', required=True)
 
     @api.onchange('partner_id')
     def _onchange_(self):
@@ -136,8 +136,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
                                 'attachment_id': attachment_id.id,
                                 'folder_id': folder_id.id,
                                 'tag_ids': facet_id.tag_ids.ids,
-                                # 'partner_id': doc.bap_id.partner_id.id,
-                                # 'bap_id' : self.id
+                                'partner_id': doc.bap_id.partner_id.id,
                             })
             else:
                 self.step_approve += 1
@@ -205,14 +204,8 @@ class WikaBabDocumentLine(models.Model):
         ('verif', 'Verif'),
     ], string='Status', default='waiting')
 
-    @api.depends('document')
-    def _compute_state(self):
-        for rec in self:
-            if rec.document:
-                rec.state = 'uploaded'
-
     @api.onchange('document')
-    def _onchange_document(self):
+    def onchange_document(self):
         if self.document:
             self.state = 'uploaded'
     

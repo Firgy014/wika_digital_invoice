@@ -20,7 +20,8 @@
     'version': '0.1',
 
     # any module necessary for this one to work correctly
-    'depends': ['base', 'branch', 'project', 'purchase', 'stock', 'product', 'account', 'wika_matrix_approval', 'wika_berita_acara_pembayaran', 'mail'],
+    'depends': ['base', 'branch', 'project', 'purchase', 'stock', 'product', 'account', 'wika_matrix_approval', 
+        'wika_berita_acara_pembayaran', 'mail'],
 
     # always loaded
     'data': [
