@@ -157,14 +157,14 @@ class PickingInherit(models.Model):
                     ('approval_id', '=', model_wika_id.id)
                 ], limit=1)
                 groups_id = groups_line.groups_id
-            for x in groups_id.users:
-                self.env['mail.activity'].create({
-                    'activity_type_id': 4,
-                    'res_model_id': self.env['ir.model'].sudo().search([('model', '=', 'stock.picking')], limit=1).id,
-                    'res_id': self.id,
-                    'user_id': x.id,
-                    'summary': """Need Approval Document GR/SES"""
-                })
+                for x in groups_id.users:
+                    activity_ids = self.env['mail.activity'].create({
+                        'activity_type_id': 4,
+                        'res_model_id': self.env['ir.model'].sudo().search([('model', '=', 'stock.picking')], limit=1).id,
+                        'res_id': self.id,
+                        'user_id': x.id,
+                        'summary': """Need Approval Document GR/SES"""
+                    })
 
         elif self.document_ids.document == False:
             raise ValidationError('Anda belum mengunggah dokumen yang diperlukan!')

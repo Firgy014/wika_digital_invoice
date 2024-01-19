@@ -20,7 +20,14 @@
     'version': '0.1',
 
     # any module necessary for this one to work correctly
-    'depends': ['base', 'purchase', 'stock', 'wika_matrix_approval', 'wika_activity'],
+    'depends': [
+        'base',
+        'purchase',
+        'stock',
+        'product',
+        'wika_matrix_approval',
+        'wika_activity'
+    ],
 
     # always loaded
     'data': [
