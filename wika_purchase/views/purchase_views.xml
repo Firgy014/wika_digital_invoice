@@ -38,6 +38,7 @@
                         <field name="company_id" invisible="1"/>
                         <field name="currency_id" invisible="1" groups="!base.group_multi_currency"/>
                         <field name="po_type" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
+                        <field name="sap_doc_number" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
                         <field name="signatory_name" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
                         <field name="position" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
                         <field name="address" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
@@ -236,7 +237,7 @@
                         </field>
                     </page>
                     <page string="List Document">
-                        <field name="document_ids">
+                        <field name="document_ids" attrs="{'readonly': [('state', 'in', ('uploaded', 'approved'))]}">
                             <tree editable="top">
                                 <field name="document_id"/>
                                 <field name="document" widget="binary_button" filename="filename"/>
@@ -246,7 +247,7 @@
                         </field>
                     </page>
                     <page string="Potongan Lain-lain">
-                        <field name="price_cut_ids">
+                        <field name="price_cut_ids" attrs="{'readonly': [('state', 'in', ('uploaded', 'approved'))]}">
                             <tree editable="top">
                                 <field name="purchase_id" invisible="1"/>
                                 <field name="product_id"/>
@@ -274,8 +275,8 @@
         <field name="model">purchase.order</field>
         <field name="priority" eval="1"/>
         <field name="arch" type="xml">
-            <!-- <tree string="Purchase Order" decoration-muted="state=='cancel'" sample="1" create="false"> -->
-            <tree string="Purchase Order" decoration-muted="state=='cancel'" sample="1">
+            <tree string="Purchase Order" decoration-muted="state=='cancel'" sample="1" create="false">
+            <!-- <tree string="Purchase Order" decoration-muted="state=='cancel'" sample="1"> -->
                 <field name="priority" optional="show" widget="priority" nolabel="1"/>
                 <field name="branch_id"/>
                 <field name="department_id" string="Dept"/>

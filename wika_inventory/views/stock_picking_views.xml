@@ -6,7 +6,8 @@
         <field name="name">stock.picking.tree.wika</field>
         <field name="model">stock.picking</field>
         <field name="arch" type="xml">
-            <tree string="Picking list" multi_edit="1" sample="1">
+            <tree string="Picking list" multi_edit="1" sample="1" create="false">
+            <!-- <tree string="Picking list" multi_edit="1" sample="1"> -->
                 <header>
                     <button name="do_unreserve" type="object" string="Unreserve"/>
                     <button name="action_assign" type="object" string="Check Availability"/>
@@ -118,7 +119,7 @@
                     <page string="Operations" name="operations">
                         <field name="move_ids_without_package" mode="tree,kanban"
                             widget="stock_move_one2many"
-                            attrs="{'readonly': ['&amp;', ('state', '=', 'done'), ('is_locked', '=', True)]}"
+                            attrs="{'readonly': ['&amp;', ('state', 'in', ('done', 'uploaded', 'approved')), ('is_locked', '=', True)]}"
                             context="{'default_company_id': company_id, 'default_date': scheduled_date, 'default_date_deadline': date_deadline, 'picking_type_code': picking_type_code, 'default_picking_id': id, 'form_view_ref':'stock.view_move_form', 'address_in_id': partner_id, 'default_picking_type_id': picking_type_id, 'default_location_id': location_id, 'default_location_dest_id': location_dest_id, 'default_partner_id': partner_id}"
                             add-label="Add a Product">
                             <tree decoration-danger="not parent.immediate_transfer and state != 'done' and quantity_done > reserved_availability and show_reserved_availability" decoration-muted="scrapped == True or state == 'cancel' or (state == 'done' and is_locked == True)" string="Stock Moves" editable="bottom">
@@ -222,7 +223,7 @@
                     </page>
 
                     <page string="List Document">
-                        <field name="document_ids">
+                        <field name="document_ids" attrs="{'readonly': [('state', 'in', ('uploaded', 'approved'))]}">
                             <tree editable="top">
                                 <field name="picking_id"/>
                                 <field name="document_id"/>
@@ -237,8 +238,8 @@
                         <group>
                             <field name="location_id" string="Origin Location" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
                             <field name="location_dest_id" string="Destination Location" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
-                            <field name="picking_type_id" string="Picking Type" attrs="{'readonly': False}"/>      
-                            <field name="company_id" string="Company" attrs="{'readonly': False}"/>
+                            <field name="picking_type_id" string="Picking Type" attrs="{'readonly': [('state', 'in', ('uploaded', 'approved'))]}"/>      
+                            <field name="company_id" string="Company" attrs="{'readonly': [('state', 'in', ('uploaded', 'approved'))]}"/>
                         </group>
                     </page>
 
