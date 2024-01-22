@@ -1,0 +1,16 @@
+<odoo>
+ 
+    <!-- action report Invoice -->
+
+    <record id="report_wika_account_move_action" model="ir.actions.report">
+        <field name="name">Report Invoice(PDF)</field>
+        <field name="model">account.move</field>
+        <field name="report_type">qweb-html</field>
+        <field name="report_name">wika_account_move.report_invoice</field>
+        <field name="report_file">wika_account_move.report_wika_account_move_action</field>
+        <field name="print_report_name">'Wika Account Move - %s' % (object.name)</field>
+        <field name="binding_model_id" ref="model_account_move"/>
+        <field name="binding_view_types">form</field>
+    </record>
+ 
+</odoo>   

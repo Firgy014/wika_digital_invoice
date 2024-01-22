@@ -167,7 +167,10 @@ class WikaBeritaAcaraPembayaran(models.Model):
             if record.state in ('upload', 'approve'):
                 raise ValidationError('Tidak dapat menghapus ketika status Berita Acara Pembayaran (BAP) dalam keadaan Upload atau Approve')
         return super(WikaBeritaAcaraPembayaran, self).unlink()
-        
+    
+    def action_print_bap(self):
+        return self.env.ref('wika_berita_acara_pembayaran.report_wika_berita_acara_pembayaran_action').report_action(self)   
+
 class WikaBeritaAcaraPembayaranLine(models.Model):
     _name = 'wika.berita.acara.pembayaran.line'
 

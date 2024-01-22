@@ -16,6 +16,7 @@
 
                 <!-- button -->
                 <xpath expr="/form/header/button[@name='action_invoice_sent']" position="before">
+                    <button name="action_print_invoice" string="Print" type="object" class="oe_highlight"/>
                     <button name="action_submit" string="SUBMIT" type="object" class="oe_highlight" 
                     attrs="{'invisible': ['|', ('state', '=', 'upload'), 
                         ('state', '=', 'approve')]}"/>

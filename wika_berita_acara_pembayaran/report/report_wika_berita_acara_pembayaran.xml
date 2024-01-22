@@ -1,0 +1,461 @@
+<odoo>
+
+    <!-- Report Template Header -->
+
+    <template id="header_session">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <!-- <style>
+                    .page {
+                        width: 100%;
+                        text-align: center;
+                    }
+
+                    .center-align {
+                        text-align: center;
+                    }
+
+                    .table-container {
+                        margin-top: 20px;
+                    }
+
+                    .data-table {
+                        width: 100%;
+                        border-collapse: collapse;
+                    }
+
+                    .data-table th,
+                    .data-table td {
+                        border: 1px solid #dddddd;
+                        text-align: center; /* Ubah menjadi center untuk seluruh kolom */
+                        padding: 8px;
+                    }
+
+                    .data-table th {
+                        background-color: #f2f2f2;
+                    }
+                </style> -->
+                <div class="header">
+                    <h2 class="text-center">Berita Acara Pembayaran</h2>
+                    <div style="text-align: center;">
+                        <strong>Nomor :</strong> <span t-field="o.bap_date"/>
+                    </div>
+                    <br/>
+                    <br/>
+                    <table class="table table-bordered" style="width:100%">
+                        <tr>
+                            <td>Pada hari ini</td>
+                            <td>
+                                <t t-esc="o.bap_date"/>
+                            </td>
+                            <td>Tanggal</td>
+                            <td>
+                                <t t-esc="o.bap_date"/>
+                            </td>
+                            <td>Bulan</td>
+                            <td>
+                                <t t-esc="o.bap_date"/>
+                            </td>
+                            <td>Tahun</td>
+                            <td>
+                                <t t-esc="o.bap_date"/>
+                            </td>
+                            <td>yang bertanda - tangan dibawah ini</td>
+                            <td>
+                                <t t-esc="o.bap_date"/>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </t>
+        </t>
+    </template>
+
+    <!-- Report Template Body -->
+
+    <template id="body_session">
+        <div class="page">
+            <div class="d-flex justify-content-center">
+                <table class="table table-bordered" style="width:100%">
+                    <tbody>
+                        <tr style="text-align: left;">
+                            <td rowspan="2">1</td>
+                            <td>Nama</td>
+                            <td>:</td>
+                            <td>DKHCMR</td>
+                        </tr>
+                        <tr style="text-align: left;">
+                            <td>Jabatan</td>
+                            <td>:</td>
+                            <td>
+                                <p>
+                                    Manajer Proyek ............ (nama proyeknya) dalam hal ini bertindak untuk dan atas nama PT WIJAYA KARYA (Persero) Tbk.
+                                    yang berkedudukan di, …........................ (alamat lokasi proyek) , dalam berita acara ini disebut sebagai PIHAK PERTAMA
+                                </p>
+                            </td>
+                        </tr>
+                        <tr style="text-align: left;">
+                            <td rowspan="2">2</td>
+                            <td>Nama</td>
+                            <td>:</td>
+                            <td>DKHCMR</td>
+                        </tr>
+                        <tr style="text-align: left;">
+                            <td>Jabatan</td>
+                            <td>:</td>
+                            <td>
+                                <p>
+                                    Dalam hal ini bertindak untuk atas nama yang berkedudukan di...... berita acara ini disebut sebagai PIHAK KEDUA
+                                </p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th colspan="4" style="text-align: left;">Sehubungan dengan:</th>
+                        </tr>
+                        <tr style="text-align: left;">
+                            <td rowspan="2">1</td>
+                            <td>Pekerjaan</td>
+                            <td>:</td>
+                            <td>DKHCMR</td>
+                        </tr>
+                        <tr style="text-align: left;">
+                            <td>Proyek</td>
+                            <td>:</td>
+                            <td>DKHCMR</td>
+                        </tr>
+                        <tr style="text-align: left;">
+                            <td rowspan="4">2</td>
+                            <td>Tanggal kontrak</td>
+                            <td>:</td>
+                            <td>DKHCMR</td>
+                        </tr>
+                        <tr style="text-align: left;">
+                            <td>No PO</td>
+                            <td>:</td>
+                            <td>DKHCMR</td>
+                        </tr>
+                        <tr style="text-align: left;">
+                            <td>Nomor Kontrak</td>
+                            <td>:</td>
+                            <td>DKHCMR</td>
+                        </tr>
+                        <tr style="text-align: left;">
+                            <td >Nomor nilai kontrak</td>
+                            <td>:</td>
+                            <td>DKHCMR</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div>
+                <!-- Teks di atas tabel -->
+                <p style="text-align: left;">
+                    Kedua belah pihak telah sepakat bahwa PIHAK KEDUA secara penuh berhak menerima dari PIHAK KESATU dengan rincian sebagai berikut:
+                </p>
+            </div>
+
+            <div class="d-flex justify-content-start">
+                <!-- Tabel -->
+                <table class="table table-bordered" style="width:70%">
+                    <tbody>
+                        <tr style="text-align: left;">
+                            <td>1.</td>
+                            <td><strong>NILAI PRESTASI</strong></td>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                        </tr>
+
+                        <tr style="text-align: left;">
+                            <td>1.1</td>
+                            <td>Yang lalu</td>
+                            <th>:</th>
+                            <th>x</th>
+                            <th>Rp.</th>
+                            <th>=</th>
+                            <th>Rp.</th>
+                        </tr>
+
+                        <tr style="text-align: left;">
+                            <td>1.2</td>
+                            <td>Saat ini</td>
+                            <th>:</th>
+                            <th>x</th>
+                            <th>Rp.</th>
+                            <th>=</th>
+                            <th>Rp.</th>
+                        </tr>
+
+                        <tr style="text-align: left;">
+                            <td>1.3</td>
+                            <td>S/d Saat ini</td>
+                            <th>:</th>
+                            <th>x</th>
+                            <th>Rp.</th>
+                            <th>=</th>
+                            <th>Rp.</th>
+                        </tr>
+                        
+                        <tr style="text-align: left;">
+                            <td>2.</td>
+                            <td><strong>POTONGAN UANG MUKA</strong></td>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                        </tr>
+
+                        <tr style="text-align: left;">
+                            <td>2.1</td>
+                            <td>Yang lalu</td>
+                            <th>:</th>
+                            <th>x</th>
+                            <th>Rp.</th>
+                            <th>=</th>
+                            <th>Rp.</th>
+                        </tr>
+
+                        <tr style="text-align: left;">
+                            <td>2.2</td>
+                            <td>Saat ini</td>
+                            <th>:</th>
+                            <th>x</th>
+                            <th>Rp.</th>
+                            <th>=</th>
+                            <th>Rp.</th>
+                        </tr>
+
+                        <tr style="text-align: left;">
+                            <td>2.3</td>
+                            <td>S/d Saat ini</td>
+                            <th>:</th>
+                            <th>x</th>
+                            <th>Rp.</th>
+                            <th>=</th>
+                            <th>Rp.</th>
+                        </tr>
+                        <tr style="text-align: left;">
+                            <td>3.</td>
+                            <td><strong>POTONGAN RETENSI</strong></td>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                        </tr>
+
+                        <tr style="text-align: left;">
+                            <td>3.1</td>
+                            <td>Yang lalu</td>
+                            <th>:</th>
+                            <th>x</th>
+                            <th>Rp.</th>
+                            <th>=</th>
+                            <th>Rp.</th>
+                        </tr>
+
+                        <tr style="text-align: left;">
+                            <td>3.2</td>
+                            <td>Saat ini</td>
+                            <th>:</th>
+                            <th>x</th>
+                            <th>Rp.</th>
+                            <th>=</th>
+                            <th>Rp.</th>
+                        </tr>
+
+                        <tr style="text-align: left;">
+                            <td>3.3</td>
+                            <td>S/d Saat ini</td>
+                            <th>:</th>
+                            <th>x</th>
+                            <th>Rp.</th>
+                            <th>=</th>
+                            <th>Rp.</th>
+                        </tr>
+
+                        <tr style="text-align: left;">
+                            <td>4.</td>
+                            <td><strong>JUMLAH TAGIHAN NETTO</strong></td>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th>=</th>
+                            <th>Rp.</th>
+                        </tr>
+
+                        <tr style="text-align: left;">
+                            <td>5.</td>
+                            <td><strong>PPN</strong></td>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th>=</th>
+                            <th>Rp.</th>
+                        </tr>
+
+                        <tr style="text-align: left;">
+                            <td rowspan="3">6.</td>
+                            <td><strong>POTONGAN LAIN-LAIN</strong></td>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th>=</th>
+                            <th>Rp.</th>
+                        </tr>
+
+                        <tr style="text-align: left;">
+                            <td>PPH</td>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th>=</th>
+                            <th>Rp.</th>
+                        </tr>
+
+                        <tr style="text-align: left;">
+                            <td>.......(dll)</td>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th>=</th>
+                            <th>Rp.</th>
+                        </tr>
+
+                        <tr style="text-align: left;">
+                            <td rowspan="5">7.</td>
+                            <td><strong>PEMBAYARAN</strong></td>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                        </tr>
+                        <tr style="text-align: left;">
+                            <td>PIHAK KEDUA berhak menerima pembayaran dari PIHAK KESATU sebesar</td>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th>=</th>
+                            <th>Rp.</th>
+                        </tr>
+                        <tr style="text-align: left;">
+                            <th></th>
+                            <th></th>
+                            <th>Jumlah Tagihan</th>
+                            <th></th>
+                            <th>:</th>
+                            <th>Rp.</th>
+                        </tr>
+                        <tr style="text-align: left;">
+                            <th></th>
+                            <th></th>
+                            <th>Dibulatkan</th>
+                            <th></th>
+                            <th>:</th>
+                            <th>Rp.</th>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div>
+                <p style="text-align: center;">
+                    Terbilang : Terbilang (w)
+                </p>
+                <br/>
+                <p style="text-align: left;">
+                    Demikian Berita Acara ini dibuat dengan sebenarnya untuk dapat dipergunakan sebagaimana mestinya.
+                </p>
+            </div>
+            <div class="d-flex justify-content-center">
+                <!-- Tabel -->
+                <table class="table table-bordered" style="width:70%">
+                    <tbody>
+                        <tr style="text-align: left;">
+                            <td><strong>PIHAK KEDUA</strong></td>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <td><strong>PIHAK KESATU</strong></td>
+                        </tr>
+                        <tr style="text-align: left;">
+                            <td>...........................................</td>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <td>PT WIJAYA KARYA (Persero) Tbk.</td>
+                        </tr>
+                        <tr style="text-align: left;">
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <td>...........................................</td>
+                        </tr>
+                        <tr>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                        </tr>
+                        <tr>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                        </tr>
+                        <tr>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                        </tr>
+                        <tr style="text-align: left;">
+                            <td>...........................................</td>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <td>...........................................</td>
+                        </tr>
+                        <tr style="text-align: left;">
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <td>Manager</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </template>
+
+    <template id="report_bap">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <div t-if="report_type == 'html'">
+                    <div>
+                        <t t-call="wika_berita_acara_pembayaran.header_session"/>
+                    </div>
+                    <div style="margin-top:150px">
+                        <t t-call="wika_berita_acara_pembayaran.body_session"/>
+                    </div>
+                </div>
+                <div t-else="">
+                    <t t-call="wika_berita_acara_pembayaran.header_session"/>
+                    <t t-call="web.external_layout">
+                        <t t-call="wika_berita_acara_pembayaran.body_session"/>
+                    </t>
+                </div>
+            </t>
+        </t>
+    </template>
+
+</odoo>
