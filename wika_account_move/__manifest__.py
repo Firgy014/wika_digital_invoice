@@ -28,6 +28,8 @@
         'views/views.xml',
         'views/wika_account_move.xml',
         'data/documents_folder_data.xml',
+        'report/report_action.xml',
+        'report/report_wika_account_move.xml',
         'views/action.xml',
         'views/filter.xml',
         'views/templates.xml',
