@@ -275,8 +275,8 @@
         <field name="model">purchase.order</field>
         <field name="priority" eval="1"/>
         <field name="arch" type="xml">
-            <tree string="Purchase Order" decoration-muted="state=='cancel'" sample="1" create="false">
-            <!-- <tree string="Purchase Order" decoration-muted="state=='cancel'" sample="1"> -->
+            <!-- <tree string="Purchase Order" decoration-muted="state=='cancel'" sample="1" create="false"> -->
+            <tree string="Purchase Order" decoration-muted="state=='cancel'" sample="1">
                 <field name="priority" optional="show" widget="priority" nolabel="1"/>
                 <field name="branch_id"/>
                 <field name="department_id" string="Dept"/>

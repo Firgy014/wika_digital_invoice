@@ -78,51 +78,15 @@ class PurchaseOrderInherit(models.Model):
                     if x.id == self._uid:
                         cek = True
 
-
-        # if self.branch_id and self.department_id and model_wika_id:
-        #     print("-------------1-----------")
-        #     if user.project_id.id == self.project_id.id:
-        #         print("-------------2-----------")
-        #         if user.branch_id.id == self.branch_id.id and user.department_id.id == self.department_id.id:
-        #             print("-------------3-----------")
-        #             print("DIVISI",self.branch_id.id)
-        #             print("DIVISI",self.branch_id.name)
-        #             print("DEPARTEMEN",self.department_id.id)
-        #             print("DEPARTEMEN",self.department_id.name)
-        #             print("PROYEK",self.project_id.id)
-        #             print("PROYEK",self.project_id.name)
-        #             print("STEP",self.step_approve)
-        #             print("MODEL",model_wika_id.id)
-        #             print("MODEL",model_wika_id.name)
-        #             groups_line = self.env['wika.approval.setting.line'].search([
-        #                 ('branch_id', '=', self.branch_id.id),
-        #                 ('department_id', '=', self.department_id.id),
-        #                 ('project_id', '=', self.project_id.id),
-        #                 ('sequence', '=', self.step_approve),
-        #                 ('approval_id', '=', model_wika_id.id)
-        #             ], limit=1)
-
-        # SUSUNAN APPROVAL
+        # -=-=- SUSUNAN APPROVAL -=-=-
         # 1. base on project
         # 2. base on project & divisi
         # 3. base on divisi & department
                         
         if self.project_id and self.branch_id and self.department_id and model_wika_id:
-            print("-------------SATU-----------")
             if user.project_id.id == self.project_id.id:
-                print("-------------DUA-----------")
                 if user.project_id.id == self.project_id.id and user.branch_id.id == self.branch_id.id:
-                    print("-------------TIGA-----------")
                     if user.branch_id.id == self.branch_id.id and user.department_id.id == self.department_id.id:
-                        print("DIVISI",self.branch_id.id)
-                        print("DIVISI",self.branch_id.name)
-                        print("DEPARTEMEN",self.department_id.id)
-                        print("DEPARTEMEN",self.department_id.name)
-                        print("PROYEK",self.project_id.id)
-                        print("PROYEK",self.project_id.name)
-                        print("STEP",self.step_approve)
-                        print("MODEL",model_wika_id.id)
-                        print("MODEL",model_wika_id.name)
                         groups_line = self.env['wika.approval.setting.line'].search([
                             ('branch_id', '=', self.branch_id.id),
                             ('department_id', '=', self.department_id.id),
@@ -131,18 +95,13 @@ class PurchaseOrderInherit(models.Model):
                             ('approval_id', '=', model_wika_id.id)
                         ], limit=1)
 
-                        print("APPROVAL_LINE?", groups_line)
-                        # test_leveeell
                         # Get group
                         groups_id = groups_line.groups_id
-                        print("==GROUPS_LINE==", groups_line)
-                        print("==GROUPS_ID==", groups_id)
 
                         for x in groups_id.users:
                             if x.id == self._uid:
                                 cek = True
 
-        print("==CEK==", cek)
         if cek == True:
             if model_wika_id.total_approve == self.step_approve:
                 self.state = 'approved'

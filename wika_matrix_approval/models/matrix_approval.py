@@ -47,7 +47,7 @@ class WikaApprovalSettingLine(models.Model):
 
     approval_id = fields.Many2one('wika.approval.setting', string='Approval Setting')
     branch_id = fields.Many2one('res.branch', string='Divisi', related='approval_id.branch_id')
-    department_id = fields.Many2one('res.branch', string='Department', related='approval_id.department_id')
+    department_id = fields.Many2one('res.branch', string='Department', related='approval_id.department_id', readonly=False)
     project_id = fields.Many2one('project.project', string='Project', related='approval_id.project_id')
     sequence = fields.Integer(string='Sequence/Step')
     user_id = fields.Many2one('res.users', string='Approver/User')
