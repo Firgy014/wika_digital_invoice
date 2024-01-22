@@ -5,6 +5,7 @@ from odoo.exceptions import AccessError, ValidationError
 class PickingInherit(models.Model):
     _inherit = "stock.picking"
 
+    partner_id = fields.Many2one('res.partner', string='Receive From', required=True)
     branch_id = fields.Many2one('res.branch', string='Divisi', required=True)
     department_id = fields.Many2one('res.branch', string='Department')
     project_id = fields.Many2one('project.project', string='Project')
@@ -143,31 +144,33 @@ class PickingInherit(models.Model):
             raise ValidationError('User Akses Anda tidak berhak Reject!')
 
     def action_submit_pick(self):
-        self.state = 'uploaded'
-        self.step_approve += 1
-        if self.document_ids.document != False:
-            model_id = self.env['ir.model'].search([('model', '=', 'stock.picking')], limit=1)
-            model_wika_id = self.env['wika.approval.setting'].search([('model_id', '=', model_id.id)], limit=1)
-            user = self.env['res.users'].search([('branch_id', '=', self.branch_id.id)])
+        if self.document_ids:
+            for doc_line in self.document_ids:
+                if doc_line.document != False:
+                    model_id = self.env['ir.model'].search([('model', '=', 'stock.picking')], limit=1)
+                    model_wika_id = self.env['wika.approval.setting'].search([('model_id', '=', model_id.id)], limit=1)
+                    user = self.env['res.users'].search([('branch_id', '=', self.branch_id.id)])
 
-            if model_wika_id:
-                groups_line = self.env['wika.approval.setting.line'].search([
-                    ('branch_id', '=', self.branch_id.id),
-                    ('sequence', '=', self.step_approve),
-                    ('approval_id', '=', model_wika_id.id)
-                ], limit=1)
-                groups_id = groups_line.groups_id
-            for x in groups_id.users:
-                self.env['mail.activity'].create({
-                    'activity_type_id': 4,
-                    'res_model_id': self.env['ir.model'].sudo().search([('model', '=', 'stock.picking')], limit=1).id,
-                    'res_id': self.id,
-                    'user_id': x.id,
-                    'summary': """Need Approval Document GR/SES"""
-                })
+                    if model_wika_id:
+                        groups_line = self.env['wika.approval.setting.line'].search([
+                            ('branch_id', '=', self.branch_id.id),
+                            ('sequence', '=', self.step_approve),
+                            ('approval_id', '=', model_wika_id.id)
+                        ], limit=1)
+                        groups_id = groups_line.groups_id
+                        for x in groups_id.users:
+                            activity_ids = self.env['mail.activity'].create({
+                                'activity_type_id': 4,
+                                'res_model_id': self.env['ir.model'].sudo().search([('model', '=', 'stock.picking')], limit=1).id,
+                                'res_id': self.id,
+                                'user_id': x.id,
+                                'summary': """Need Approval Document GR/SES"""
+                            })
+                        self.state = 'uploaded'
+                        self.step_approve += 1
 
-        elif self.document_ids.document == False:
-            raise ValidationError('Anda belum mengunggah dokumen yang diperlukan!')
+                elif doc_line.document == False:
+                    raise ValidationError('Anda belum mengunggah dokumen yang diperlukan!')
 
     def get_purchase(self):
         self.ensure_one()

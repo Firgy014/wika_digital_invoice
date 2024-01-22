@@ -3,3 +3,5 @@ access_reject_wizard,Reject Wizard,model_reject_wizard,,1,1,1,1
 
 access_wika_po_document_line,Purchase Order Document Line,model_wika_po_document_line,,1,1,1,1
 access_wika_po_approval_line,Purchase Order Approval Line,model_wika_po_approval_line,,1,1,1,1
+
+access_wika_po_pricecut_line,Purchase Order Price Cut Line,model_wika_po_pricecut_line,,1,1,1,1
