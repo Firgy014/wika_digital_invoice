@@ -25,6 +25,11 @@ class PickingDocument(models.Model):
             elif self.filename.lower().endswith('.pdf'):
                 self.state = 'uploaded'
 
+        else:
+            self.document = False
+            self.filename = False
+            self.state = 'waiting'
+
 class PickingApproval(models.Model):
     _name = "wika.picking.approval.line"
 

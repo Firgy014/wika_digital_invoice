@@ -2,16 +2,6 @@ from odoo import api, fields, models, _
 from datetime import datetime
 from odoo.exceptions import AccessError, ValidationError
 
-class PurchaseOrderApprovalHistory(models.Model):
-    _name = 'wika.purchase.order.approval.history'
-    _description = 'List of Approved Orders'
-
-    purchase_order_id = fields.Many2one('purchase.order', string='Purchase Order')
-    user_id = fields.Many2one('res.users', string='User')
-    group_id = fields.Many2one('res.groups', string='Group')
-    date = fields.Datetime(string='Date')
-    note = fields.Text(string='Note')
-
 class PurchaseOrderInherit(models.Model):
     _inherit = 'purchase.order'
 
@@ -34,9 +24,12 @@ class PurchaseOrderInherit(models.Model):
     step_approve = fields.Integer(string='Step Approve')
     picking_count = fields.Integer(string='Picking', compute='_compute_picking_count')
     kurs = fields.Float(string='Kurs')
-    unit_price_idr = fields.Float(string='Unit Price IDR')
-    subtotal_idr = fields.Float(string='Subtotal IDR')
-    currency_name = fields.Char(string='Currency Name', related='currency_id.name')
+    currency_name = fields.Char(string='Currency Name', related='currency_id.name', readonly=False)
+    signatory_name = fields.Char(string='Nama Penanda Tangan')
+    position = fields.Char(string='Jabatan')
+    address = fields.Char(string='Alamat')
+    job = fields.Char(string='Pekerjaan')
+    price_cut_ids = fields.One2many('wika.po.pricecut.line', 'purchase_id', string='Other Price Cut')
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -85,46 +78,30 @@ class PurchaseOrderInherit(models.Model):
                     if x.id == self._uid:
                         cek = True
 
-        # SUSUNAN APPROVAL
+        # -=-=- SUSUNAN APPROVAL -=-=-
         # 1. base on project
         # 2. base on project & divisi
         # 3. base on divisi & department
-
-        if self.branch_id and self.department_id and model_wika_id:
-            print("-------------1-----------")
+                        
+        if self.project_id and self.branch_id and self.department_id and model_wika_id:
             if user.project_id.id == self.project_id.id:
-                print("-------------2-----------")
-                if user.branch_id.id == self.branch_id.id and user.department_id.id == self.department_id.id:
-                    print("-------------3-----------")
-                    print("DIVISI",self.branch_id.id)
-                    print("DIVISI",self.branch_id.name)
-                    print("DEPARTEMEN",self.department_id.id)
-                    print("DEPARTEMEN",self.department_id.name)
-                    print("PROYEK",self.project_id.id)
-                    print("PROYEK",self.project_id.name)
-                    print("STEP",self.step_approve)
-                    print("MODEL",model_wika_id.id)
-                    print("MODEL",model_wika_id.name)
-                    groups_line = self.env['wika.approval.setting.line'].search([
-                        ('branch_id', '=', self.branch_id.id),
-                        ('department_id', '=', self.department_id.id),
-                        ('project_id', '=', self.project_id.id),
-                        ('sequence', '=', self.step_approve),
-                        ('approval_id', '=', model_wika_id.id)
-                    ], limit=1)
+                if user.project_id.id == self.project_id.id and user.branch_id.id == self.branch_id.id:
+                    if user.branch_id.id == self.branch_id.id and user.department_id.id == self.department_id.id:
+                        groups_line = self.env['wika.approval.setting.line'].search([
+                            ('branch_id', '=', self.branch_id.id),
+                            ('department_id', '=', self.department_id.id),
+                            ('project_id', '=', self.project_id.id),
+                            ('sequence', '=', self.step_approve),
+                            ('approval_id', '=', model_wika_id.id)
+                        ], limit=1)
 
-                    print("APPROVAL_LINE?", groups_line)
-                    # test_leveeell
-                    # Get group
-                    groups_id = groups_line.groups_id
-                    print("==GROUPS_LINE==", groups_line)
-                    print("==GROUPS_ID==", groups_id)
+                        # Get group
+                        groups_id = groups_line.groups_id
 
-                    for x in groups_id.users:
-                        if x.id == self._uid:
-                            cek = True
+                        for x in groups_id.users:
+                            if x.id == self._uid:
+                                cek = True
 
-        print("==CEK==", cek)
         if cek == True:
             if model_wika_id.total_approve == self.step_approve:
                 self.state = 'approved'
@@ -201,32 +178,33 @@ class PurchaseOrderInherit(models.Model):
             raise ValidationError('User Akses Anda tidak berhak Reject!')
 
     def action_submit(self):
-        if self.document_ids.document != False:
-            model_id = self.env['ir.model'].search([('model', '=', 'purchase.order')], limit=1)
-            model_wika_id = self.env['wika.approval.setting'].search([('model_id', '=', model_id.id)], limit=1)
-            user = self.env['res.users'].search([('branch_id', '=', self.branch_id.id)])
+        if self.document_ids:
+            for doc_line in self.document_ids:
+                if doc_line.document != False:
+                    model_id = self.env['ir.model'].search([('model', '=', 'purchase.order')], limit=1)
+                    model_wika_id = self.env['wika.approval.setting'].search([('model_id', '=', model_id.id)], limit=1)
+                    user = self.env['res.users'].search([('branch_id', '=', self.branch_id.id)])
 
-            if model_wika_id:
-                groups_line = self.env['wika.approval.setting.line'].search([
-                    ('branch_id', '=', self.branch_id.id),
-                    ('sequence', '=', self.step_approve),
-                    ('approval_id', '=', model_wika_id.id)
-                ], limit=1)
-                groups_id = groups_line.groups_id
-                for x in groups_id.users:
-                    self.env['mail.activity'].create({
-                        'activity_type_id': 4,
-                        'res_model_id': self.env['ir.model'].sudo().search([('model', '=', 'purchase.order')], limit=1).id,
-                        'res_id': self.id,
-                        'user_id': x.id,
-                        'summary': """Need Approval Document PO"""
-                    })
-                self.state = 'uploaded'
-                self.step_approve += 1
+                    if model_wika_id:
+                        groups_line = self.env['wika.approval.setting.line'].search([
+                            ('branch_id', '=', self.branch_id.id),
+                            ('sequence', '=', self.step_approve),
+                            ('approval_id', '=', model_wika_id.id)
+                        ], limit=1)
+                        groups_id = groups_line.groups_id
+                        for x in groups_id.users:
+                            activity_ids = self.env['mail.activity'].create({
+                                'activity_type_id': 4,
+                                'res_model_id': self.env['ir.model'].sudo().search([('model', '=', 'purchase.order')], limit=1).id,
+                                'res_id': self.id,
+                                'user_id': x.id,
+                                'summary': """Need Approval Document GR/SES"""
+                            })
+                        self.state = 'uploaded'
+                        self.step_approve += 1
 
-        elif self.document_ids.document == False:
-            self.document_ids.state = 'waiting'
-            raise ValidationError('Anda belum mengunggah dokumen yang diperlukan!')
+                elif doc_line.document == False:
+                    raise ValidationError('Anda belum mengunggah dokumen yang diperlukan!')
 
     def get_picking(self):
         self.ensure_one()
@@ -247,6 +225,12 @@ class PurchaseOrderInherit(models.Model):
         for record in self:
             record.picking_count = self.env['stock.picking'].search_count(
                 [('po_id', '=', record.id)])
+
+class PurchaseOrderLineInherit(models.Model):
+    _inherit = 'purchase.order.line'
+
+    unit_price_idr = fields.Float(string='Unit Price IDR')
+    subtotal_idr = fields.Float(string='Subtotal IDR')
 
 class PurchaseOrderDocumentLine(models.Model):
     _name = 'wika.po.document.line'
@@ -273,6 +257,11 @@ class PurchaseOrderDocumentLine(models.Model):
             elif self.filename.lower().endswith('.pdf'):
                 self.state = 'uploaded'
 
+        else:
+            self.document = False
+            self.filename = False
+            self.state = 'waiting'
+
     # @api.constrains('document', 'filename')
     # def _check_attachment_format(self):
     #     for record in self:
@@ -290,3 +279,11 @@ class PurchaseOrderApprovalLine(models.Model):
     groups_id = fields.Many2one('res.groups', string='Groups')
     date = fields.Datetime(string='Date')
     note = fields.Char(string='Note')
+
+class PriceCutLine(models.Model):
+    _name = 'wika.po.pricecut.line'
+    _description = 'Price Cut Line'
+    
+    purchase_id = fields.Many2one('purchase.order', string='Purchase')
+    product_id = fields.Many2one('product.product', string='Product')
+    amount = fields.Float(string='Amount')
