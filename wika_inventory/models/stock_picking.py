@@ -26,12 +26,19 @@ class PickingInherit(models.Model):
     history_approval_ids = fields.One2many('wika.picking.approval.line', 'picking_id', string='List Log')
     step_approve = fields.Integer(string='Step Approve')
     po_count = fields.Integer(string='Purchase Orders', compute='_compute_po_count')
+    active = fields.Boolean('Active')
 
     @api.model_create_multi
     def create(self, vals_list):
         model_model = self.env['ir.model'].sudo()
         document_setting_model = self.env['wika.document.setting'].sudo()
         model_id = model_model.search([('model', '=', 'stock.picking')], limit=1)
+        approval_id = self.env['wika.approval.setting'].sudo().search([('model_id', '=', model_id.id)], limit=1)
+        approval_line_id = self.env['wika.approval.setting.line'].sudo().search([('approval_id', '=', approval_id.id)], limit=1)
+
+        if approval_line_id:
+            first_user = approval_line_id.groups_id.users[0]
+        
         for vals in vals_list:
             vals['state'] = 'waits'
             if 'move_ids_without_package' in vals:
@@ -52,6 +59,16 @@ class PickingInherit(models.Model):
                         'state': 'waiting'
                     }))
                 res.document_ids = document_list
+
+                # Create todo activity
+                self.env['mail.activity'].create({
+                    'activity_type_id': 4,
+                    'res_model_id': model_id.id,
+                    'res_id': res.id,
+                    'user_id': first_user.id,
+                    'summary': f"The required documents of {model_id.name} is not uploaded yet. Please upload it immediately!"
+                })
+
             else:
                 raise AccessError("Either approval and/or document settings are not found. Please configure it first in the settings menu.")
         
@@ -152,23 +169,28 @@ class PickingInherit(models.Model):
                     user = self.env['res.users'].search([('branch_id', '=', self.branch_id.id)])
 
                     if model_wika_id:
+                        self.state = 'uploaded'
+                        self.step_approve += 1
+
                         groups_line = self.env['wika.approval.setting.line'].search([
                             ('branch_id', '=', self.branch_id.id),
                             ('sequence', '=', self.step_approve),
                             ('approval_id', '=', model_wika_id.id)
                         ], limit=1)
                         groups_id = groups_line.groups_id
+                        
                         for x in groups_id.users:
-                            activity_ids = self.env['mail.activity'].create({
+                            self.env['mail.activity'].create({
                                 'activity_type_id': 4,
                                 'res_model_id': self.env['ir.model'].sudo().search([('model', '=', 'stock.picking')], limit=1).id,
                                 'res_id': self.id,
                                 'user_id': x.id,
                                 'summary': """Need Approval Document GR/SES"""
                             })
-                        self.state = 'uploaded'
-                        self.step_approve += 1
 
+                    else:
+                        raise ValidationError('Approval Setting untuk menu Purchase Orders tidak ditemukan. Silakan hubungi Administrator!')
+                    
                 elif doc_line.document == False:
                     raise ValidationError('Anda belum mengunggah dokumen yang diperlukan!')
 
