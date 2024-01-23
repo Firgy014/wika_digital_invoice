@@ -20,7 +20,7 @@
     'version': '0.1',
 
     # any module necessary for this one to work correctly
-    'depends': ['base','branch','project', 'purchase','stock','product', 'account', 'wika_matrix_approval'],
+    'depends': ['base','branch','project', 'purchase','stock','product', 'account', 'wika_matrix_approval', 'wika_purchase'],
 
     # always loaded
     'data': [
@@ -30,6 +30,7 @@
         'wizard/wika_reject_reason.xml',
         'views/templates.xml',
         'views/wika_berita_acara_pembayaran.xml',
+        'views/wika_outstanding_bap.xml',
         'report/report_action.xml',
         'report/report_wika_berita_acara_pembayaran.xml',
         'views/sequence_data.xml',

@@ -38,7 +38,7 @@
                 <div class="header">
                     <h2 class="text-center">Berita Acara Pembayaran</h2>
                     <div style="text-align: center;">
-                        <strong>Nomor :</strong> <span t-field="o.bap_date"/>
+                        <strong>Nomor :</strong> <span t-field="o.name"/>
                     </div>
                     <br/>
                     <br/>
@@ -61,9 +61,6 @@
                                 <t t-esc="o.bap_date"/>
                             </td>
                             <td>yang bertanda - tangan dibawah ini</td>
-                            <td>
-                                <t t-esc="o.bap_date"/>
-                            </td>
                         </tr>
                     </table>
                 </div>
@@ -82,15 +79,16 @@
                             <td rowspan="2">1</td>
                             <td>Nama</td>
                             <td>:</td>
-                            <td>DKHCMR</td>
+                            <td><t t-esc="o.signatory_name"/></td>
                         </tr>
                         <tr style="text-align: left;">
                             <td>Jabatan</td>
                             <td>:</td>
                             <td>
                                 <p>
-                                    Manajer Proyek ............ (nama proyeknya) dalam hal ini bertindak untuk dan atas nama PT WIJAYA KARYA (Persero) Tbk.
-                                    yang berkedudukan di, …........................ (alamat lokasi proyek) , dalam berita acara ini disebut sebagai PIHAK PERTAMA
+                                    Manajer Proyek <strong><t t-esc="o.project_id.name"/></strong> dalam hal ini bertindak untuk dan atas nama PT WIJAYA KARYA<br></br>
+                                    (Persero) Tbk. yang berkedudukan di, <strong><t t-esc="o.project_id.lokasi"/></strong>, dalam berita acara ini disebut<br></br>
+                                    sebagai PIHAK PERTAMA
                                 </p>
                             </td>
                         </tr>
@@ -98,14 +96,15 @@
                             <td rowspan="2">2</td>
                             <td>Nama</td>
                             <td>:</td>
-                            <td>DKHCMR</td>
+                            <td><t t-esc="o.signatory_name"/></td>
                         </tr>
                         <tr style="text-align: left;">
                             <td>Jabatan</td>
                             <td>:</td>
                             <td>
                                 <p>
-                                    Dalam hal ini bertindak untuk atas nama yang berkedudukan di...... berita acara ini disebut sebagai PIHAK KEDUA
+                                    <strong><t t-esc="o.position"/></strong> Dalam hal ini bertindak untuk atas nama<br></br>
+                                    yang berkedudukan di, <strong><t t-esc="o.address"/></strong> berita acara ini disebut sebagai PIHAK KEDUA
                                 </p>
                             </td>
                         </tr>
@@ -116,23 +115,23 @@
                             <td rowspan="2">1</td>
                             <td>Pekerjaan</td>
                             <td>:</td>
-                            <td>DKHCMR</td>
+                            <td><t t-esc="o.job"/></td>
                         </tr>
                         <tr style="text-align: left;">
                             <td>Proyek</td>
                             <td>:</td>
-                            <td>DKHCMR</td>
+                            <td><t t-esc="o.project_id.name"/></td>
                         </tr>
                         <tr style="text-align: left;">
                             <td rowspan="4">2</td>
                             <td>Tanggal kontrak</td>
                             <td>:</td>
-                            <td>DKHCMR</td>
+                            <td><t t-esc="o.project_id.name"/></td>
                         </tr>
                         <tr style="text-align: left;">
-                            <td>No PO</td>
+                            <td>Nomor PO</td>
                             <td>:</td>
-                            <td>DKHCMR</td>
+                            <td><t t-esc="o.po_id.name"/></td>
                         </tr>
                         <tr style="text-align: left;">
                             <td>Nomor Kontrak</td>

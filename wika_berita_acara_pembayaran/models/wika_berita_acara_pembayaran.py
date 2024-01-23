@@ -2,6 +2,11 @@ from odoo import models, fields, api
 from datetime import datetime, timedelta
 from odoo.exceptions import UserError, ValidationError, Warning, AccessError
 
+class WikaStockMoveInherited(models.Model):
+    _inherit = 'stock.move'
+    _rec_name = 'reference'
+    
+
 class WikaBeritaAcaraPembayaran(models.Model):
     _name = 'wika.berita.acara.pembayaran'
     _description = 'Berita Acara Pembayaran'
@@ -11,7 +16,8 @@ class WikaBeritaAcaraPembayaran(models.Model):
     branch_id = fields.Many2one('res.branch', string='Divisi', required=True)
     department_id = fields.Many2one('res.branch', string='Department')
     project_id = fields.Many2one('project.project', string='Project')
-    po_id = fields.Many2one('purchase.order', string='Nomor PO', required=True, domain="[('state', '=', 'purchase')]")
+    po_id = fields.Many2one('purchase.order', string='Nomor PO', required=True)
+    # po_id = fields.Many2one('purchase.order', string='Nomor PO', required=True, domain="[('state', '=', 'purchase')]")
     partner_id = fields.Many2one('res.partner', string='Vendor', required=True)
     bap_ids = fields.One2many('wika.berita.acara.pembayaran.line', 'bap_id', string='List BAP', required=True)
     document_ids = fields.One2many('wika.bap.document.line', 'bap_id', string='List Document')
@@ -32,7 +38,21 @@ class WikaBeritaAcaraPembayaran(models.Model):
         auto_join=True,
         groups="base.group_user",)
     bap_date = fields.Date(string='Tanggal BAP', required=True)
+    bap_type = fields.Selection([
+        ('progress', 'Progress'),
+        ('uang muka', 'Uang Muka'),], string='Jenis BAP', default='progress')
+    price_cut_ids = fields.One2many('wika.bap.pricecut.line', 'po_id')
+    signatory_name = fields.Char(string='Nama Penanda Tangan', related="po_id.signatory_name")
+    position = fields.Char(string='Jabatan', related="po_id.position")
+    address = fields.Char(string='Alamat', related="po_id.address")
+    job = fields.Char(string='Pekerjaan', related="po_id.job")
+    # move_ids_without_package = fields.One2many(
+    #     'stock.move', 'picking_id', string="Stock moves not in package", compute='_compute_move_without_package',
+    #     inverse='_set_move_without_package', compute_sudo=True)
+    # # move_line_ids = fields.One2many('stock.move', 'picking_id', string='Move Line')
 
+    narration = fields.Html(string='Terms and Conditions', store=True, readonly=False,)
+    tax_totals = fields.Char(string="Invoice Totals")
     @api.onchange('partner_id')
     def _onchange_(self):
         if self.partner_id:
@@ -175,13 +195,14 @@ class WikaBeritaAcaraPembayaranLine(models.Model):
     _name = 'wika.berita.acara.pembayaran.line'
 
     bap_id = fields.Many2one('wika.berita.acara.pembayaran', string='')
-    picking_id = fields.Many2one('stock.picking', string='NO GR/SES', required=True)
+    picking_id = fields.Many2one('stock.move', string='NO GR/SES', required=True)
     product_id = fields.Many2one('product.product', string='Product', required=True)
     qty = fields.Integer(string='Quantity', required=True)
     tax_ids = fields.Many2many('account.tax', string='Tax', required=True)
     currency_id = fields.Many2one('res.currency', string='Currency', required=True)
     unit_price = fields.Monetary(string='Unit Price', required=True)
     sub_total = fields.Monetary(string='Subtotal' , compute= 'compute_sub_total')
+    untaxed_amount = fields.Monetary('untaxed amount')
     
     @api.depends('qty', 'unit_price')
     def compute_sub_total(self):
@@ -226,3 +247,12 @@ class WikaBabApprovalLine(models.Model):
     groups_id = fields.Many2one('res.groups', string='Groups', readonly=True)
     datetime = fields.Datetime('Date', readonly=True)
     note = fields.Char('Note', readonly=True)
+
+class WikaPriceCutLine(models.Model):
+    _name = 'wika.bap.pricecut.line'
+    _description = 'Wika Price Cut Line'    
+    
+    po_id = fields.Many2one('wika.berita.acara.pembayaran', string='')
+    product_id = fields.Many2one('product.product', string='Product')
+    amount = fields.Float(string='Amount')
+    

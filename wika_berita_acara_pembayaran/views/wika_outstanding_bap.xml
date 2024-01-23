@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <data>
+
+        <!-- tree view -->
+        <record id="wika_outstanding_bap_view_tree" model="ir.ui.view">
+            <field name="name">wika.outstanding.bap.view.tree</field>
+            <field name="model">wika.outstanding.bap</field>
+            <field name="arch" type="xml">
+                <tree string="">
+                    <field name="purchase_id"/>
+                    <field name="project_id"/>
+                    <field name="branch_id"/>
+                    <field name="po_line"/>
+                    <field name="product_id"/>
+                    <field name="qty"/>
+                    <field name="unit_price"/>
+                    <field name="sub_total"/>
+                    <field name="picking_id"/>
+                    <field name="no_gr"/>
+                    <field name="qty_process"/>
+                    <field name="no_bap"/>
+                </tree>
+            </field>
+        </record>
+
+        <!-- action -->
+        <record id="wika_outstanding_bap_action" model="ir.actions.act_window">
+            <field name="name">Outstanding BAP</field>
+            <field name="res_model">wika.outstanding.bap</field>
+            <field name="view_mode">tree</field>
+        </record>
+    </data>
+    
+
+</odoo>
