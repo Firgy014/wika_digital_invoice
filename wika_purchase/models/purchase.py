@@ -26,16 +26,25 @@ class PurchaseOrderInherit(models.Model):
     kurs = fields.Float(string='Kurs')
     currency_name = fields.Char(string='Currency Name', related='currency_id.name', readonly=False)
     signatory_name = fields.Char(string='Nama Penanda Tangan')
+    vendor_signatory_name = fields.Char(string='Nama Penanda Tangan Vendor')
     position = fields.Char(string='Jabatan')
+    vendor_position = fields.Char(string='Jabatan Vendor')
     address = fields.Char(string='Alamat')
     job = fields.Char(string='Pekerjaan')
     price_cut_ids = fields.One2many('wika.po.pricecut.line', 'purchase_id', string='Other Price Cut')
+    active = fields.Boolean(string='Active')
 
     @api.model_create_multi
     def create(self, vals_list):
         model_model = self.env['ir.model'].sudo()
         document_setting_model = self.env['wika.document.setting'].sudo()
         model_id = model_model.search([('model', '=', 'purchase.order')], limit=1)
+        approval_id = self.env['wika.approval.setting'].sudo().search([('model_id', '=', model_id.id)], limit=1)
+        approval_line_id = self.env['wika.approval.setting.line'].sudo().search([('approval_id', '=', approval_id.id)], limit=1)
+
+        if approval_line_id:
+            first_user = approval_line_id.groups_id.users[0]
+
         for vals in vals_list:
             res = super(PurchaseOrderInherit, self).create(vals)
 
@@ -51,6 +60,16 @@ class PurchaseOrderInherit(models.Model):
                         'state': 'waiting'
                     }))
                 res.document_ids = document_list
+
+                # Create todo activity
+                self.env['mail.activity'].create({
+                    'activity_type_id': 4,
+                    'res_model_id': model_id.id,
+                    'res_id': res.id,
+                    'user_id': first_user.id,
+                    'summary': f"The required documents of {model_id.name} is not uploaded yet. Please upload it immediately!"
+                })
+
             else:
                 raise AccessError("Either approval and/or document settings are not found. Please configure it first in the settings menu.")
 
@@ -137,7 +156,7 @@ class PurchaseOrderInherit(models.Model):
                 'user_id': self._uid,
                 'groups_id': groups_id.id,
                 'date': datetime.now(),
-                'note': 'Approve',
+                'note': 'Approved',
                 'purchase_id': self.id
             })
 
@@ -178,33 +197,42 @@ class PurchaseOrderInherit(models.Model):
             raise ValidationError('User Akses Anda tidak berhak Reject!')
 
     def action_submit(self):
-        if self.document_ids:
-            for doc_line in self.document_ids:
-                if doc_line.document != False:
-                    model_id = self.env['ir.model'].search([('model', '=', 'purchase.order')], limit=1)
-                    model_wika_id = self.env['wika.approval.setting'].search([('model_id', '=', model_id.id)], limit=1)
-                    user = self.env['res.users'].search([('branch_id', '=', self.branch_id.id)])
+        if self.signatory_name and self.vendor_signatory_name and self.position and self.vendor_position and self.end_date and self.sap_doc_number:
+            if self.document_ids:
+                for doc_line in self.document_ids:
+                    if doc_line.document != False:
+                        model_id = self.env['ir.model'].search([('model', '=', 'purchase.order')], limit=1)
+                        model_wika_id = self.env['wika.approval.setting'].search([('model_id', '=', model_id.id)], limit=1)
+                        user = self.env['res.users'].search([('branch_id', '=', self.branch_id.id)])
 
-                    if model_wika_id:
-                        groups_line = self.env['wika.approval.setting.line'].search([
-                            ('branch_id', '=', self.branch_id.id),
-                            ('sequence', '=', self.step_approve),
-                            ('approval_id', '=', model_wika_id.id)
-                        ], limit=1)
-                        groups_id = groups_line.groups_id
-                        for x in groups_id.users:
-                            activity_ids = self.env['mail.activity'].create({
-                                'activity_type_id': 4,
-                                'res_model_id': self.env['ir.model'].sudo().search([('model', '=', 'purchase.order')], limit=1).id,
-                                'res_id': self.id,
-                                'user_id': x.id,
-                                'summary': """Need Approval Document GR/SES"""
-                            })
-                        self.state = 'uploaded'
-                        self.step_approve += 1
+                        if model_wika_id:
+                            self.state = 'uploaded'
+                            self.step_approve += 1
 
-                elif doc_line.document == False:
-                    raise ValidationError('Anda belum mengunggah dokumen yang diperlukan!')
+                            groups_line = self.env['wika.approval.setting.line'].search([
+                                ('branch_id', '=', self.branch_id.id),
+                                ('sequence', '=', self.step_approve),
+                                ('approval_id', '=', model_wika_id.id)
+                            ], limit=1)
+                            groups_id = groups_line.groups_id
+
+                            for x in groups_id.users:
+                                self.env['mail.activity'].create({
+                                    'activity_type_id': 4,
+                                    'res_model_id': self.env['ir.model'].sudo().search([('model', '=', 'purchase.order')], limit=1).id,
+                                    'res_id': self.id,
+                                    'user_id': x.id,
+                                    'summary': """Need Approval Document PO"""
+                                })
+                        else:
+                            raise ValidationError('Approval Setting untuk menu Purchase Orders tidak ditemukan. Silakan hubungi Administrator!')
+
+                    elif doc_line.document == False:
+                        raise ValidationError('Anda belum mengunggah dokumen yang diperlukan!')
+        
+        else:
+            raise ValidationError('Mohon untuk diisi terlebih dahulu Nama Penanda Tangan, Jabatan, Nama Penanda Tangan Vendor, Jabatan Vendor, Tgl Akhir Kontrak dan Nomor Kontrak.')
+
 
     def get_picking(self):
         self.ensure_one()
