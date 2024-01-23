@@ -19,7 +19,7 @@ class PurchaseOrderInherit(models.Model):
     end_date = fields.Date(string='Tgl Akhir Kontrak', required=True)
     document_ids = fields.One2many('wika.po.document.line', 'purchase_id', string='Purchase Order Document Lines')
     history_approval_ids = fields.One2many('wika.po.approval.line', 'purchase_id',
-                                           string='Purchase Order Approval Lines')
+        string='Purchase Order Approval Lines')
     sap_doc_number = fields.Char(string='Nomor Kontrak', required=True)
     step_approve = fields.Integer(string='Step Approve')
     picking_count = fields.Integer(string='Picking', compute='_compute_picking_count')

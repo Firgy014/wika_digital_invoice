@@ -115,8 +115,13 @@
                     <sheet>
                         <group>
                             <group>
-                                <field name="partner_id" attrs="{'readonly': [('state', 'in', ['upload', 'approve'])]}"/>
                                 <field name="po_id" attrs="{'readonly': [('state', 'in', ['upload', 'approve'])]}"/>
+                                <field name="partner_id" attrs="{'readonly': [('state', 'in', ['upload', 'approve'])]}"/>
+                                <field name="bap_type" attrs="{'readonly': [('state', 'in', ['upload', 'approve'])]}"/>
+                                <field name="signatory_name" attrs="{'readonly': [('state', 'in', ['upload', 'approve'])]}"/>
+                                <field name="position" attrs="{'readonly': [('state', 'in', ['upload', 'approve'])]}"/>
+                                <field name="address" attrs="{'readonly': [('state', 'in', ['upload', 'approve'])]}"/>
+                                <field name="job" attrs="{'readonly': [('state', 'in', ['upload', 'approve'])]}"/>
                                 <field name="step_approve" invisible="1"/>
                             </group>
                             <group>
@@ -130,10 +135,11 @@
                         </group>
                         <notebook>
                             <page string="List BAP">
-                                <group>   
-                                    <field name="bap_ids" mode="tree,kanban" nolabel="1"  colspan="2" 
-                                        attrs="{'readonly': [('state', 'in', ['upload', 'approve'])]}">
-                                        <tree string="List BAP" editable ='bottom'>
+                                <group>
+                                    <field name="bap_ids" mode="tree,kanban" nolabel="1" colspan="2"
+                                        attrs="{'readonly': [('state', 'in', ['upload', 'approve'])], 
+                                            'invisible': [('bap_type', '!=', 'progress')]}">
+                                        <tree string="List BAP" editable="bottom">
                                             <field name="picking_id"/>
                                             <field name="product_id"/>
                                             <field name="qty"/>
@@ -142,8 +148,25 @@
                                             <field name="unit_price"/>
                                             <field name="sub_total"/>
                                         </tree>
-                                    </field>    
+                                    </field>
                                 </group>
+                                <field name="price_cut_ids" attrs="{'invisible': [('bap_type', '=', 'progress')]}" 
+                                    mode="tree,kanban" nolabel="1" colspan="2">
+                                    <tree editable="top">
+                                        <field name="po_id" invisible="1"/>
+                                        <field name="product_id"/>
+                                        <field name="amount"/>
+                                    </tree>
+                                </field>
+                            </page>
+                            <page string="Potongan Lain-lain" attrs="{'invisible': [('bap_type', '=', 'uang muka')]}">
+                                <field name="price_cut_ids">
+                                    <tree editable="top">
+                                        <field name="po_id" invisible="1"/>
+                                        <field name="product_id"/>
+                                        <field name="amount"/>
+                                    </tree>
+                                </field>
                             </page>
                             <page string="List Document">
                                 <group>
