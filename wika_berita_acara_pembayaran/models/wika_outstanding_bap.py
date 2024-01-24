@@ -1,4 +1,4 @@
-from odoo import models, fields
+from odoo import models, fields, api
 from odoo.exceptions import UserError, ValidationError, Warning, AccessError
 
 class WikaOutstandingBap(models.Model):
@@ -18,3 +18,11 @@ class WikaOutstandingBap(models.Model):
     no_gr = fields.Char(string='Nomor GR')
     qty_process = fields.Integer(string='Quantity Proses')
     no_bap = fields.Char(string='Nomor BAP')
+    
+    @api.model
+    def init(self):
+        cr = self.env.cr
+        cr.execute("SELECT * FROM purchase_order WHERE active = true")
+        result = cr.fetchone()
+        print("BERHASILLLLLLLLLLLLLLLL")
+        print("BERHASILLLLLLLLLLLLLLLL", result)
