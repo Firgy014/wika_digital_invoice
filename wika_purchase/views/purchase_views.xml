@@ -6,7 +6,7 @@
         <field name="name">purchase.order.form.wika</field>
         <field name="model">purchase.order</field>
         <field name="arch" type="xml">
-            <form string="Purchase Orders" class="o_purchase_order">
+            <form string="Purchase Orders" class="o_purchase_order"  create="0">
             <header>
                 <button name="get_gr" type="object" states="po,uploaded,approved" string="Get GR" groups="base.group_no_one"/>
                 <button name="action_submit" type="object" states="po" string="SUBMIT" context="{'validate_analytic': True}" class="oe_highlight" id="bid_submit" data-hotkey="v"/>
@@ -109,7 +109,6 @@
                                 <field name="product_packaging_id" attrs="{'invisible': [('product_id', '=', False)]}" context="{'default_product_id': product_id, 'tree_view_ref':'product.product_packaging_tree_view', 'form_view_ref':'product.product_packaging_form_view'}" groups="product.group_stock_packaging" optional="show"/>
                                 <field name="price_unit" attrs="{'readonly': [('qty_invoiced', '!=', 0)]}"/>
                                 <field name="unit_price_idr" attrs="{'column_invisible': [('parent.currency_name', '=', 'IDR')]}"/>
-                                <button name="action_purchase_history" type="object" icon="fa-history" title="Purchase History" attrs="{'invisible': [('id', '=', False)]}"/>
                                 <field name="taxes_id" widget="many2many_tags" domain="[('type_tax_use','=','purchase'), ('company_id', '=', parent.company_id), ('country_id', '=', parent.tax_country_id)]" context="{'default_type_tax_use': 'purchase', 'search_view_ref': 'account.account_tax_view_search'}" options="{'no_create': True}" optional="show"/>
                                 <field name="price_subtotal"/>
                                 <field name="subtotal_idr" attrs="{'column_invisible': [('parent.currency_name', '=', 'IDR')]}"/>
@@ -287,7 +286,7 @@
         <field name="priority" eval="1"/>
         <field name="arch" type="xml">
             <!-- <tree string="Purchase Order" decoration-muted="state=='cancel'" sample="1" create="false"> -->
-            <tree string="Purchase Order" decoration-muted="state=='cancel'" sample="1">
+            <tree string="Purchase Order" decoration-muted="state=='cancel'" sample="1" create="0">
                 <field name="priority" optional="show" widget="priority" nolabel="1"/>
                 <field name="branch_id"/>
 <!--
@@ -296,7 +295,7 @@
                 <field name="project_id"/>
                 <field name="currency_id"/>
                 <field name="po_type" string="PO Type"/>
-                <field name="name" string="Reference" readonly="1" decoration-info="state in ('draft','sent')"/>
+                <field name="name" string="Nomor PO"  decoration-info="state in ('po','uploaded')"/>
                 <field name="sap_doc_number"/>
                 <field name="begin_date"/>
                 <field name="end_date"/>

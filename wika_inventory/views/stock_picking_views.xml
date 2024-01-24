@@ -32,7 +32,7 @@
     <record id="stock_picking_form_wika" model="ir.ui.view">
         <field name="name">stock.picking.form.wika</field>
         <field name="model">stock.picking</field>
-        <field eval="12" name="priority"/>
+        <field eval="1" name="priority"/>
         <field name="arch" type="xml">
             <form string="Transfer" js_class="picking_form">
             <field name="is_locked" invisible="1"/>
