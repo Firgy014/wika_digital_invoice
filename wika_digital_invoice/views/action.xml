@@ -1,0 +1,22 @@
+<odoo>
+    <!-- <record id="action_wika_digital_invoice_kanban" model="ir.actions.act_window">
+        <field name="name">Digital Invoice Overview</field>
+        <field name="res_model">wika.digital.invoice</field>
+        <field name="view_mode">kanban,tree,form</field>
+        <field name="view_id" ref="wika_digital_invoice.wika_digital_invoice_kanban"/>
+    </record> -->
+
+    <record id="action_wika_digital_invoice_overview" model="ir.actions.act_window">
+        <field name="name">Digital Invoice Overview</field>
+        <field name="res_model">wika.digital.invoice</field>
+        <field name="view_mode">kanban,form</field>
+        <!-- <field name="domain">[('state','in',('po', 'uploaded', 'approved'))]</field> -->
+        <!-- <field name="context">{'default_state':'po'}</field> -->
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'view_mode': 'kanban', 'view_id': ref('wika_digital_invoice.wika_digital_invoice_kanban')}),
+            (0, 0, {'view_mode': 'form', 'view_id': ref('wika_digital_invoice.wika_digital_invoice_form')}),
+        ]"/>
+
+    </record>
+
+</odoo>

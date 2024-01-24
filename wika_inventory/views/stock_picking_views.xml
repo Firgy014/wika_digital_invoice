@@ -6,8 +6,8 @@
         <field name="name">stock.picking.tree.wika</field>
         <field name="model">stock.picking</field>
         <field name="arch" type="xml">
-            <tree string="Picking list" multi_edit="1" sample="1" create="false">
-            <!-- <tree string="Picking list" multi_edit="1" sample="1"> -->
+            <!-- <tree string="Picking list" multi_edit="1" sample="1" create="false"> -->
+            <tree string="Picking list" multi_edit="1" sample="1">
                 <header>
                     <button name="do_unreserve" type="object" string="Unreserve"/>
                     <button name="action_assign" type="object" string="Check Availability"/>
