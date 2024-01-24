@@ -17,11 +17,11 @@
                                 <div class="o_kanban_card_header_title">
                                     <div class="o_primary" t-if="!selection_mode">
                                         <a type="object" name="get_stock_picking_action_picking_type">
-                                            <field name="status"/>
+                                            <field name="name"/>
                                         </a>
                                     </div>
                                     <div class="o_primary" t-if="selection_mode">
-                                        <field name="status"/>
+                                        <field name="name"/>
                                     </div>
                                     <!-- <div class="o_secondary"><field class="o_secondary"  name="warehouse_id" readonly="1" groups="stock.group_stock_multi_warehouses"/></div> -->
                                 </div>
@@ -128,7 +128,7 @@
             <form string="Digital Invoice Overview">
                 <sheet>
                     <group>
-                        <field name="name" invisible="1"/>
+                        <field name="name" readonly="1"/>
                         <field name="status"/>
                         <field name="model"/>
                         <field name="purchase_id" attrs="{'invisible': [('model', 'in', ['init','grses','bap','inv','pr'])]}"/>
