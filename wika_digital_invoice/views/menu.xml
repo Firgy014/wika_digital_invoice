@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem id="main_menu_digital_invoice_overview" name="Overview"
+              parent="wika_dashboard.menu_board_wika" sequence="12"
+              action="action_wika_digital_invoice_overview"
+    />
+</odoo>
