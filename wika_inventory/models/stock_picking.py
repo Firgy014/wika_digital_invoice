@@ -73,6 +73,7 @@ class PickingInherit(models.Model):
                 raise AccessError("Either approval and/or document settings are not found. Please configure it first in the settings menu.")
         
         res.state = 'waits'
+        res.active = True
         return res
 
     def action_approve(self):

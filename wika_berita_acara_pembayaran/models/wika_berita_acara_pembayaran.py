@@ -17,6 +17,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
     department_id = fields.Many2one('res.branch', string='Department')
     project_id = fields.Many2one('project.project', string='Project')
     po_id = fields.Many2one('purchase.order', string='Nomor PO', required=True)
+    product_id = fields.Many2one('product.product', string='Product', required=True, related='po_id.product_id')
     # po_id = fields.Many2one('purchase.order', string='Nomor PO', required=True, domain="[('state', '=', 'purchase')]")
     partner_id = fields.Many2one('res.partner', string='Vendor', required=True)
     bap_ids = fields.One2many('wika.berita.acara.pembayaran.line', 'bap_id', string='List BAP', required=True)
@@ -46,6 +47,13 @@ class WikaBeritaAcaraPembayaran(models.Model):
     position = fields.Char(string='Jabatan', related="po_id.position")
     address = fields.Char(string='Alamat', related="po_id.address")
     job = fields.Char(string='Pekerjaan', related="po_id.job")
+    vendor_signatory_name = fields.Char(string='Nama Penanda Tangan Vendor', related="po_id.vendor_signatory_name")
+    vendor_position = fields.Char(string='Jabatan Vendor', related="po_id.vendor_position")
+    begin_date = fields.Date(string='Tgl Mulai Kontrak', required=True, related="po_id.begin_date")
+    sap_doc_number = fields.Char(string='Nomor Kontrak', required=True, related="po_id.sap_doc_number")
+    amount_total = fields.Monetary(string='Total', related="po_id.amount_total")
+    currency_id = fields.Many2one('res.currency', string='Currency', required=True)
+
     # move_ids_without_package = fields.One2many(
     #     'stock.move', 'picking_id', string="Stock moves not in package", compute='_compute_move_without_package',
     #     inverse='_set_move_without_package', compute_sudo=True)
@@ -53,6 +61,24 @@ class WikaBeritaAcaraPembayaran(models.Model):
 
     narration = fields.Html(string='Terms and Conditions', store=True, readonly=False,)
     tax_totals = fields.Char(string="Invoice Totals")
+
+    # @api.onchange('po_id')
+    # def _onchange_po_id(self):
+    #     # Filter domain untuk bap_ids berdasarkan nilai po_id
+    #     domain = [('product_id.purchase_id', '=', self.po_id.id)] if self.po_id else []
+    #     return {'domain': {'bap_ids': domain}}
+
+    # @api.onchange('po_id')
+    # def onchange_po_id(self):
+    #     for rec in self:
+    #         if rec.po_id:
+    #             for line in rec.bap_ids:
+    #                 find_c = self.env["purchase.order.line"].search([('order_id', '=', rec.po_id.id), ('product_id', '=', line.product_id.id)])
+
+    #                 if find_c:
+    #                     return {'domain': {'bap_ids': [('product_id', '=', find_c.product_id.id)]}}
+    #         return {'domain': {'bap_ids': []}}
+
     @api.onchange('partner_id')
     def _onchange_(self):
         if self.partner_id:
@@ -214,6 +240,15 @@ class WikaBeritaAcaraPembayaranLine(models.Model):
         for record in self:
             if not record.picking_id:
                 raise ValidationError('Field "NO GR/SES" harus diisi. Tidak boleh kosong!')
+
+    @api.onchange('po_id')
+    def _onchange_po_id(self):
+        if self.po_id:
+            # Filter domain untuk product_id berdasarkan nilai po_id
+            return {'domain': {'product_id': [('purchase_order_id', '=', self.po_id.id)]}}
+        else:
+            # Reset domain jika po_id dihapus
+            return {'domain': {'product_id': []}}
 
 class WikaBabDocumentLine(models.Model):
     _name = 'wika.bap.document.line'
