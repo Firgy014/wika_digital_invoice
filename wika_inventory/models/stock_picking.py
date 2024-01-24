@@ -6,6 +6,7 @@ class PickingInherit(models.Model):
     _inherit = "stock.picking"
 
     partner_id = fields.Many2one('res.partner', string='Receive From', required=True)
+    purchase_id = fields.Many2one('purchase.order', string='Purchase Order', store=True)
     branch_id = fields.Many2one('res.branch', string='Divisi', required=True)
     department_id = fields.Many2one('res.branch', string='Department')
     project_id = fields.Many2one('project.project', string='Project')
@@ -26,7 +27,7 @@ class PickingInherit(models.Model):
     history_approval_ids = fields.One2many('wika.picking.approval.line', 'picking_id', string='List Log')
     step_approve = fields.Integer(string='Step Approve')
     po_count = fields.Integer(string='Purchase Orders', compute='_compute_po_count')
-    active = fields.Boolean('Active')
+    active = fields.Boolean(default=True)
 
     @api.model_create_multi
     def create(self, vals_list):

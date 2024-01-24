@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="wika_digital_invoice_kanban" model="ir.ui.view">
+        <field name="name">wika.digital.invoice.kanban</field>
+        <field name="model">wika.digital.invoice</field>
+        <field name="arch" type="xml">
+            <kanban class="oe_background_grey o_kanban_dashboard o_emphasize_colors o_stock_kanban" create="true" group_create="false">
+                <field name="color"/>
+                <field name="picking_code" readonly="1"/>
+                <field name="count_picking_waits"/>
+                <field name="count_picking_uploaded"/>
+                <field name="count_picking_approved"/>
+                <templates>
+                    <t t-name="kanban-box">
+                        <div t-if="['waiting', 'uploaded', 'approved'].indexOf(record.picking_code.raw_value) > -1" t-attf-class="#{!selection_mode ? kanban_color(record.color.raw_value) : ''}" name="wika_digital_invoice">
+                            <div t-attf-class="o_kanban_card_header">
+                                <div class="o_kanban_card_header_title">
+                                    <div class="o_primary" t-if="!selection_mode">
+                                        <a type="object" name="get_stock_picking_action_picking_type">
+                                            <field name="name"/>
+                                        </a>
+                                    </div>
+                                    <div class="o_primary" t-if="selection_mode">
+                                        <field name="name"/>
+                                    </div>
+                                    <!-- <div class="o_secondary"><field class="o_secondary"  name="warehouse_id" readonly="1" groups="stock.group_stock_multi_warehouses"/></div> -->
+                                </div>
+                                <div class="o_kanban_manage_button_section" t-if="!selection_mode">
+                                    <a class="o_kanban_manage_toggle_button" href="#"><i class="fa fa-ellipsis-v" role="img" aria-label="Manage" title="Manage"/></a>
+                                </div>
+                            </div>
+                            <div class="container o_kanban_card_content" t-if="!selection_mode">
+                                <div class="row">
+                                    <div class="col-6 o_kanban_primary_left">
+                                        <button class="btn btn-primary" name="get_action_picking_tree_ready" type="object">
+                                            <span t-if="record.picking_code.raw_value == 'waiting'"><t t-esc="record.count_picking_waits.value"/> To Upload</span>
+                                            <span t-elif="record.picking_code.raw_value == 'uploaded'"><t t-esc="record.count_picking_uploaded.value"/> To Approve</span>
+                                            <span t-elif="record.picking_code.raw_value == 'approved'"><t t-esc="record.count_picking_approved.value"/> Approved and Finished
+                                            </span>
+                                        </button>
+                                    </div>
+                                    <div class="col-6 o_kanban_primary_right">
+                                        <!-- <div t-if="record.count_picking_ready.raw_value > 0" class="row">
+                                        </div> -->
+
+                                        <div t-if="record.count_picking_waits.raw_value > 0" class="row">
+                                            <div class="col-12">
+                                                <a name="get_action_picking_tree_waiting" type="object">
+                                                    <field name="count_picking_waits"/>
+                                                    Waiting
+                                                </a>
+                                            </div>
+                                        </div>
+
+                                        <div t-if="record.count_picking_uploaded.raw_value > 0" class="row">
+                                            <div class="col-12">
+                                                <a class="oe_kanban_stock_picking_type_list" name="get_action_picking_tree_late" type="object">
+                                                    <field name="count_picking_uploaded"/>
+                                                    Uploaded
+                                                </a>
+                                            </div>
+                                        </div>
+
+                                        <div t-if="record.count_picking_approved.raw_value > 0" class="row" name="picking_type_backorder_count">
+                                            <div class="col-12">
+                                                <a class="oe_kanban_stock_picking_type_list" name="get_action_picking_tree_backorder" type="object">
+                                                    <field name="count_picking_approved"/>
+                                                    Approved
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="container o_kanban_card_manage_pane dropdown-menu" role="menu">
+                                <div class="row">
+                                    <div class="col-6 o_kanban_card_manage_section o_kanban_manage_view">
+                                        <div role="menuitem" class="o_kanban_card_manage_title">
+                                            <span t-if="record.picking_code.raw_value == 'internal'">Transfers</span>
+                                            <span t-else="">View</span>
+                                        </div>
+                                        <div role="menuitem">
+                                            <a name="get_stock_picking_action_picking_type" type="object">All</a>
+                                        </div>
+                                        <div role="menuitem">
+                                            <a name="get_action_picking_tree_ready" type="object">Ready</a>
+                                        </div>
+                                        <div role="menuitem">
+                                            <a name="get_action_picking_tree_waiting" type="object">Waiting</a>
+                                        </div>
+                                        <div role="menuitem">
+                                            <a name="get_action_picking_type_operations" type="object">Operations</a>
+                                        </div>
+                                    </div>
+                                    <div class="col-6 o_kanban_card_manage_section o_kanban_manage_new">
+                                        <div role="menuitem" class="o_kanban_card_manage_title">
+                                            <span>New</span>
+                                        </div>
+                                        <div role="menuitem">
+                                            <a name="%(stock.action_picking_form)d" type="action" context="{'default_immediate_transfer': True}">Immediate Transfer</a>
+                                        </div>
+                                        <div role="menuitem">
+                                            <a name="%(stock.action_picking_form)d" type="action">Planned Transfer</a>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div t-if="widget.editable" class="o_kanban_card_manage_settings row">
+                                    <div class="col-8" role="menuitem" aria-haspopup="true">
+                                        <ul class="oe_kanban_colorpicker" data-field="color" role="menu"/>
+                                    </div>
+                                    <div role="menuitem" class="col-4">
+                                        <a class="dropdown-item" role="menuitem" type="edit">Configuration</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <record id="wika_digital_invoice_form" model="ir.ui.view">
+        <field name="name">wika.digital.invoice.form</field>
+        <field name="model">wika.digital.invoice</field>
+        <field name="arch" type="xml">
+            <form string="Digital Invoice Overview">
+                <sheet>
+                    <group>
+                        <field name="name" readonly="1"/>
+                        <field name="status"/>
+                        <field name="model"/>
+                        <field name="purchase_id" attrs="{'invisible': [('model', 'in', ['init','grses','bap','inv','pr'])]}"/>
+                        <field name="picking_id" attrs="{'invisible': [('model', 'in', ['init','po','bap','inv','pr'])]}"/>
+                        <field name="bap_id" attrs="{'invisible': [('model', 'in', ['init','po','grses','inv','pr'])]}"/>
+                        <field name="invoice_id" attrs="{'invisible': [('model', 'in', ['init','po','grses','bap','pr'])]}"/>
+                        <field name="payment_id" attrs="{'invisible': [('model', 'in', ['init','po','grses','bap','inv'])]}"/>
+                        <field name="color" invisible="1" attrs="{'invisible': [('model', 'in', ['init','grses','bap','inv','pr'])]}"/>
+                        <field name="picking_code" invisible="1" attrs="{'invisible': [('model', 'in', ['init','grses','bap','inv','pr'])]}"/>
+                        
+                        <field name="count_picking" invisible="1"/>
+                        <field name="count_picking_waits" invisible="1"/>
+                        <field name="count_picking_uploaded" invisible="1"/>
+                        <field name="count_picking_approved" invisible="1"/>
+
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+</odoo>

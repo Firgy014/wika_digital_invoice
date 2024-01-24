@@ -50,6 +50,10 @@
                 <xpath expr="//filter[@name='starred']" position="replace">
                     <filter string="Approved" name="state_approved" domain="[('state', '=', 'approved')]"/>
                 </xpath>
+                <xpath expr="//filter[@name='state_approved']" position="after">
+                    <separator/>
+                    <filter string="Archived" name="archived" domain="[('active', '=', False)]"/>
+                </xpath>
 
                 <!-- hide existing filters -->
                 <xpath expr="//filter[@name='draft']" position="replace">
