@@ -4,3 +4,5 @@ access_wika_berita_acara_pembayaran_line, Berita Acara Pembayaran Line,model_wik
 access_wika_bap_document_line, Document Line,model_wika_bap_document_line,,1,1,1,1
 access_wika_bap_approval_line, Approval History Line,model_wika_bap_approval_line,,1,1,1,1
 access_reject_wizard, Reject Wizard,model_reject_wizard,,1,1,1,1
+access_wika_bap_pricecut_line, Wika BAP Pricecut Line,model_wika_bap_pricecut_line,,1,1,1,1
+access_wika_outstanding_bap, Wika Outstanding BAP,model_wika_outstanding_bap,,1,1,1,1

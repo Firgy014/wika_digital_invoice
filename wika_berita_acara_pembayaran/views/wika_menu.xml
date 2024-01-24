@@ -8,9 +8,10 @@
         <menuitem id="main_menu_wika_berita_acara_pembayaran" name="BAP"   
             parent="wika_berita_acara_pembayaran_menu_root" 
             action="wika_berita_acara_pembayaran.action_window" sequence="1"/>
-
-        <!-- <menuitem id="main_menu_wika_payment_request" name="Payment Request" parent="wika_berita_acara_pembayaran_menu_root" 
-            action="wika_payment_request.action_window" sequence="2"/> -->
+        
+        <menuitem id="main_menu_wika_outstanding_bap" name="Outstanding BAP"
+            parent="wika_berita_acara_pembayaran_menu_root" 
+            action="wika_outstanding_bap_action" sequence="2"/>
 
     </data>
     

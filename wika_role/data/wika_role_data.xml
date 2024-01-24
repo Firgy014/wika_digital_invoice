@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Define User Groups -->
+    <record id="group_kasie_kom" model="res.groups">
+        <field name="name">Kasie Kom</field>
+        <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
+    </record>
+
+    <record id="group_kasie_ka" model="res.groups">
+        <field name="name">Kasie KA</field>
+        <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
+    </record>
+
+    <record id="group_mp" model="res.groups">
+        <field name="name">MP</field>
+        <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
+    </record>
+
+    <record id="group_mko" model="res.groups">
+        <field name="name">MKO</field>
+        <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
+    </record>
+
+    <record id="group_koord_akt" model="res.groups">
+        <field name="name">Koord Akt</field>
+        <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
+    </record>
+
+    <record id="group_mko_2" model="res.groups">
+        <field name="name">MKO</field>
+        <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
+    </record>
+
+    <record id="group_staf_ppp" model="res.groups">
+        <field name="name">Staf PPP</field>
+        <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
+    </record>
+
+    <record id="group_koord_ppp" model="res.groups">
+        <field name="name">Koord PPP</field>
+        <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
+    </record>
+
+    <record id="group_mppp" model="res.groups">
+        <field name="name">MPPP</field>
+        <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
+    </record>
+
+    <record id="group_koord_ka" model="res.groups">
+        <field name="name">Koord KA</field>
+        <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
+    </record>
+
+    <record id="group_svp_operasi" model="res.groups">
+        <field name="name">SVP Operasi</field>
+        <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
+    </record>
+
+    <record id="group_accounting_tax_pusat" model="res.groups">
+        <field name="name">Accounting &amp; Tax Pusat</field>
+        <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
+    </record>
+
+    <record id="group_sm_accounting_tax" model="res.groups">
+        <field name="name">SM Accounting &amp; Tax</field>
+        <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
+    </record>
+
+    <record id="group_staf_fungsi" model="res.groups">
+        <field name="name">Staf Fungsi</field>
+        <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
+    </record>
+
+    <record id="group_sm_fungsi" model="res.groups">
+        <field name="name">SM Fungsi</field>
+        <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
+    </record>
+
+    <record id="group_svp_fungsi" model="res.groups">
+        <field name="name">SVP Fungsi</field>
+        <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
+    </record>
+
+    <record id="group_svp_finance" model="res.groups">
+        <field name="name">SVP Finance</field>
+        <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
+    </record>
+
+    <record id="group_treasury_pusat" model="res.groups">
+        <field name="name">Treasury Pusat</field>
+        <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
+    </record>
+
+    <record id="group_sm_treasury" model="res.groups">
+        <field name="name">SM Treasury</field>
+        <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
+    </record>
+
+</odoo>

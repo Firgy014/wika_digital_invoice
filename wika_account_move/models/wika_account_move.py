@@ -204,7 +204,10 @@ class WikaInheritedAccountMove(models.Model):
 
         self.filtered(lambda m: not m.name and not move.quick_edit_mode).name = '/'
         self._inverse_name()
-        
+    
+    def action_print_invoice(self):
+        return self.env.ref('wika_account_move.report_wika_account_move_action').report_action(self)   
+
 class WikaInvoiceDocumentLine(models.Model):
     _name = 'wika.invoice.document.line'
     _description = 'Invoice Document Line'

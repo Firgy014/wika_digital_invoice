@@ -42,6 +42,8 @@
                         <field name="sap_doc_number" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
                         <field name="signatory_name" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
                         <field name="position" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
+                        <field name="vendor_signatory_name" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
+                        <field name="vendor_position" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
                         <field name="address" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
                         <field name="job" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
                         <field name="currency_name" invisible="1"/>
@@ -237,14 +239,23 @@
                         </field>
                     </page>
                     <page string="List Document">
-                        <field name="document_ids" attrs="{'readonly': [('state', 'in', ('uploaded', 'approved'))]}">
-                            <tree editable="top">
-                                <field name="document_id"/>
-                                <field name="document" widget="binary_button" filename="filename"/>
-                                <field name="filename" invisible="1"/>
-                                <field name="state"/>
-                            </tree>
-                        </field>
+                        <group>
+                            <field name="document_ids" attrs="{'readonly': [('state', 'in', ('uploaded', 'approved'))]}">
+                                <tree string="List Document" editable="top">
+                                    <field name="document_id"/>
+                                    <field name="document" widget="binary_button" filename="filename"/>
+                                    <field name="filename" invisible="1"/>
+                                    <field name="state"/>
+                                </tree>
+                                <form string="List Document">
+                                    <group>
+                                        <field name="document" string="Purchase Orders Document Preview" widget="pdf_viewer" filename="filename"/>
+                                        <field name="filename" invisible="1"/>
+                                        <field name="state" invisible="1"/>                       
+                                    </group>
+                                </form>
+                            </field>
+                        </group>
                     </page>
                     <page string="Potongan Lain-lain">
                         <field name="price_cut_ids" attrs="{'readonly': [('state', 'in', ('uploaded', 'approved'))]}">
@@ -275,8 +286,8 @@
         <field name="model">purchase.order</field>
         <field name="priority" eval="1"/>
         <field name="arch" type="xml">
-            <tree string="Purchase Order" decoration-muted="state=='cancel'" sample="1" create="false">
-            <!-- <tree string="Purchase Order" decoration-muted="state=='cancel'" sample="1"> -->
+            <!-- <tree string="Purchase Order" decoration-muted="state=='cancel'" sample="1" create="false"> -->
+            <tree string="Purchase Order" decoration-muted="state=='cancel'" sample="1">
                 <field name="priority" optional="show" widget="priority" nolabel="1"/>
                 <field name="branch_id"/>
 <!--
