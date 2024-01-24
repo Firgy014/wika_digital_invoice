@@ -151,7 +151,16 @@
                                             <field name="sub_total"/>
                                         </tree>
                                     </field>
+                                    <group>
+                                        <field colspan="2" name="notes" nolabel="1" placeholder="Define your terms and conditions ..."/>
+                                    </group>
+                                    <group class="oe_subtotal_footer oe_right">
+                                        <field name="total_amount"/>
+                                        <field name="total_tax"/>
+                                        <field name="grand_total"/>                                   
+                                    </group>
                                 </group>
+                                <div class="clearfix"/>
                                 <field name="price_cut_ids" attrs="{'invisible': [('bap_type', '=', 'progress')]}" 
                                     mode="tree,kanban" nolabel="1" colspan="2">
                                     <tree editable="top">
