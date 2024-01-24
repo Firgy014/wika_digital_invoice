@@ -32,7 +32,7 @@ class PurchaseOrderInherit(models.Model):
     address = fields.Char(string='Alamat')
     job = fields.Char(string='Pekerjaan')
     price_cut_ids = fields.One2many('wika.po.pricecut.line', 'purchase_id', string='Other Price Cut')
-    active = fields.Boolean(string='Active')
+    active = fields.Boolean(default=True)
 
     @api.model_create_multi
     def create(self, vals_list):

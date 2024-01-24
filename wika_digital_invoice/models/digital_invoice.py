@@ -13,7 +13,7 @@ class DigitalInvoiceOverview(models.Model):
     _description = 'Digital Invoice'
 
     # Master records
-    name = fields.Char(string='Name')
+    name = fields.Char(string='Name', compute='_compute_name')
     status = fields.Selection([
         ('waiting', 'Waiting'),
         ('uploaded', 'Uploaded'),
@@ -91,6 +91,15 @@ class DigitalInvoiceOverview(models.Model):
                 record[field] = count.get(record.id, 0)
 
     def get_action_picking_tree_ready(self):
-        print("GET ACTION PICKING TREE READY")
+        # print("GET ACTION PICKING TREE READY")
         return None
     
+    def _compute_name(self):
+        for record in self:
+            if record.status:
+                if record.status == 'waiting':
+                    record.name = 'Waiting'
+                elif record.status == 'uploaded':
+                    record.name = 'Uploaded'
+                elif record.status == 'approved':
+                    record.name = 'Approved'
