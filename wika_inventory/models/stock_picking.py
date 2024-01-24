@@ -34,12 +34,12 @@ class PickingInherit(models.Model):
         model_id = model_model.search([('model', '=', 'stock.picking')], limit=1)
         for vals in vals_list:
             vals['state'] = 'waits'
-            if 'move_ids_without_package' in vals:
-                for move_vals in vals['move_ids_without_package']:
-                    move_vals[2]['company_id'] = 1 if move_vals[2]['company_id'] is False else move_vals[2]['company_id']
+            # if 'move_ids_without_package' in vals:
+            #     for move_vals in vals['move_ids_without_package']:
+            #         move_vals[2]['company_id'] = 1 if move_vals[2]['company_id'] is False else move_vals[2]['company_id']
 
             res = super(PickingInherit, self).create(vals)
-            
+
             # Get Document Setting
             document_list = []
             doc_setting_id = document_setting_model.search([('model_id', '=', model_id.id)])
@@ -54,7 +54,7 @@ class PickingInherit(models.Model):
                 res.document_ids = document_list
             else:
                 raise AccessError("Either approval and/or document settings are not found. Please configure it first in the settings menu.")
-        
+
         res.state = 'waits'
         return res
 

@@ -35,101 +35,415 @@ class ResConfigSettings(models.TransientModel):
             raise UserError(_("Connection Failed. Please Check Your Internet Connection."))
         if txt['data']:
             txt_data = txt['data']
-            for data in txt_data:
-                vals = []
-                print (data)
-                isi = data['isi']
-                for hasil in isi:
-                    print ("------------------------")
-                    if hasil['LOEKZ'] == 'L':
-                        state = 'cancel'
+            print (len(txt_data))
+            # if len(txt_data)>4:
+            #     for data in txt_data:
+            #         vals = []
+            #         isi = data['isi']
+            #         for hasil in isi:
+            #             print ("------------------------")
+            #             if hasil['LOEKZ'] == 'L':
+            #                 state = 'cancel'
+            #             else:
+            #                 state = 'po'
+            #             print (type(hasil['BRTWR']))
+            #             if data['jenis']=='JASA':
+            #                 prod = self.env['product.product'].sudo().search([
+            #                     ('default_code', '=', hasil['SRVPOS'])], limit=1)
+            #                 price= float(hasil['BRTWR'])
+            #                 qty=float(hasil['MENGE'])
+            #                 price_unit= float(price/qty)*100
+            #             else:
+            #                 prod = self.env['product.product'].sudo().search([
+            #                     ('default_code', '=', hasil['MATNR'])], limit=1)
+            #                 qty = float(hasil['MENGE'])
+            #                 price_unit= float(hasil['NETPR'])*100
+            #             print (prod)
+            #             if not prod:
+            #                 return "Material/Service  : %s tidak ditemukan" % (hasil['SRVPOS'],hasil['MATNR'])
+            #             tax= self.env['account.tax'].sudo().search([
+            #                 ('name', '=', hasil['MWSKZ'])], limit=1)
+            #             print(tax)
+            #             if not tax:
+            #                 return "Kode Pajak  : %s tidak ditemukan" % hasil['MWSKZ']
+            #             curr=self.env['res.currency'].sudo().search([
+            #                 ('name', '=', hasil['WAERS'])], limit=1)
+            #             print(curr)
+            #             if not curr:
+            #                 continue
+            #                 #return "Kode Currency  : %s tidak ditemukan" % hasil['WAERS']
+            #             vendor = self.env['res.partner'].sudo().search([
+            #                 ('sap_code', '=', hasil['LIFNR'])], limit=1)
+            #             if not vendor:
+            #                 print ("lllllllllllllllll")
+            #                 continue
+            #                 #return "Vendor  : %s tidak ditemukan" % hasil['LIFNR']
+            #
+            #             print ("vendor",vendor)
+            #             uom= self.env['uom.uom'].sudo().search([
+            #                 ('name', '=' ,hasil['MEINS'])] ,limit=1)
+            #             if not uom:
+            #                 uom = self.env['uom.uom'].sudo().create({
+            #                     'name': hasil['MEINS'],'category_id':1})
+            #             project  = self.env['project.project'].sudo().search([
+            #                 ('sap_code', '=' ,data['PRCTR']), ('company_id', '=', 1)] ,limit=1)
+            #             print (project)
+            #             if project:
+            #                 profit_center=project.id
+            #                 branch_id = project.branch_id.id
+            #                 department_id = None
+            #             if not project:
+            #                 branch = self.env['res.branch'].sudo().search([
+            #                     ('sap_code', '=', data['PRCTR']), ('company_id', '=', 1)], limit=1)
+            #                 if branch and branch.biro == True:
+            #                     department_id= branch.id
+            #                     branch_id=branch.parent_id.id
+            #                     profit_center=None
+            #                 if branch and branch.biro == False:
+            #                     department_id = None
+            #                     branch_id = branch.id
+            #                     profit_center = None
+            #                 if not branch:
+            #                     return "Kode Profit Center : %s tidak ditemukan" % data['PRCTR']
+            #             print (profit_center)
+            #             vals.append((0,0, {
+            #                 'sequence':int(hasil['EBELP']),
+            #                 'product_id': prod.id if prod else False,
+            #                 'product_qty':qty,
+            #                 'product_uom':uom.id,
+            #                 'price_unit':price_unit,
+            #                 'taxes_id':[(6, 0, [x.id for x in tax])]
+            #
+            #             }))
+            #             tgl_mulai=hasil['BEDAT_X']
+            #             po_type = hasil['BSART']
+            #             tgl_create_sap = hasil['AEDAT_X']
+            #
+            #             print (vals)
+            #         if not vals:
+            #             continue
+            #         else:
+            #             po_create= self.env['purchase.order'].sudo().create({
+            #                 'name': data['EBELN'],
+            #                 'partner_id': vendor.id if vendor else False,
+            #                 'project_id':profit_center,
+            #                 'branch_id':branch_id,
+            #                 'department_id':department_id,
+            #                 'order_line':vals,
+            #                 'currency_id': curr.id,
+            #                 'begin_date':tgl_mulai,
+            #                 'po_type':data['jenis'],
+            #                 'state':state,
+            #                 'tgl_create_sap':tgl_create_sap
+            #
+            #             })
+            # else:
+            #
+            #
+            #     for data in txt_data['isi']:
+            #         vals = []
+            #
+            #         print(data)
+            #         if data['LOEKZ'] == 'L':
+            #             state = 'cancel'
+            #         else:
+            #             state = 'po'
+            #         print(state)
+            #         # po_exist  = self.env['purchase.order'].sudo().search([
+            #         #     ('name', '=' ,txt_data['EBELN']),('state','!=','cancel'),('tgl_create_sap','=',data['AEDAT_X'])] ,limit=1)
+            #         # print("po_exist")
+            #         # if po_exist:
+            #         #     print ("masukkkkk")
+            #         #     po_exist.write({'state': 'cancel'})
+            #         #     break
+            #         if txt_data['jenis'] == 'JASA':
+            #             prod = self.env['product.product'].sudo().search([
+            #                 ('default_code', '=', data['SRVPOS'])], limit=1)
+            #             price = float(data['BRTWR'])
+            #             qty = float(data['MENGE'])
+            #             price_unit = float(price / qty) * 100
+            #         else:
+            #             prod = self.env['product.product'].sudo().search([
+            #                 ('default_code', '=', data['MATNR'])], limit=1)
+            #             qty = float(data['MENGE'])
+            #             price_unit = float(data['NETPR']) * 100
+            #         print(prod)
+            #         if not prod:
+            #             return "Material/Service  : %s tidak ditemukan" % (data['SRVPOS'], data['MATNR'])
+            #         tax = self.env['account.tax'].sudo().search([
+            #             ('name', '=', data['MWSKZ'])], limit=1)
+            #         print(tax)
+            #         if not tax:
+            #             return "Kode Pajak  : %s tidak ditemukan" % data['MWSKZ']
+            #         curr = self.env['res.currency'].sudo().search([
+            #             ('name', '=', data['WAERS'])], limit=1)
+            #         print(curr)
+            #
+            #         if not curr:
+            #             break
+            #             # return "Kode Currency  : %s tidak ditemukan" % hasil['WAERS']
+            #         vendor = self.env['res.partner'].sudo().search([
+            #             ('sap_code', '=', data['LIFNR'])], limit=1)
+            #         if not vendor:
+            #             print("lllllllllllllllll")
+            #             return "Vendor  : %s tidak ditemukan" % data['LIFNR']
+            #
+            #         print("vendor", vendor)
+            #         uom = self.env['uom.uom'].sudo().search([
+            #             ('name', '=', data['MEINS'])], limit=1)
+            #         if not uom:
+            #             uom = self.env['uom.uom'].sudo().create({
+            #                 'name': data['MEINS'], 'category_id': 1})
+            #         project = self.env['project.project'].sudo().search([
+            #             ('sap_code', '=', txt_data['PRCTR']), ('company_id', '=', 1)], limit=1)
+            #         print(project)
+            #         if project:
+            #             profit_center = project.id
+            #             branch_id = project.branch_id.id
+            #             department_id = None
+            #         if not project:
+            #             branch = self.env['res.branch'].sudo().search([
+            #                 ('sap_code', '=', txt_data['PRCTR']), ('company_id', '=', 1)], limit=1)
+            #             if branch and branch.biro == True:
+            #                 department_id = branch.id
+            #                 branch_id = branch.parent_id.id
+            #                 profit_center = None
+            #             if branch and branch.biro == False:
+            #                 department_id = None
+            #                 branch_id = branch.id
+            #                 profit_center = None
+            #             if not branch:
+            #                 return "Kode Profit Center : %s tidak ditemukan" % txt_data['PRCTR']
+            #         vals.append((0, 0, {
+            #             'sequence': int(data['EBELP']),
+            #             'product_id': prod.id if prod else False,
+            #             'product_qty': qty,
+            #             'product_uom': uom.id,
+            #             'price_unit': price_unit,
+            #             'taxes_id': [(6, 0, [x.id for x in tax])]
+            #
+            #         }))
+            #         tgl_mulai = data['BEDAT_X']
+            #         po_type = data['BSART']
+            #         tgl_create_sap = data['AEDAT_X']
+            #
+            #     po_create = self.env['purchase.order'].sudo().create({
+            #         'name': txt_data['EBELN'],
+            #         'partner_id': vendor.id if vendor else False,
+            #         'project_id': profit_center,
+            #         'branch_id': branch_id,
+            #         'department_id': department_id,
+            #         'order_line': vals,
+            #         'currency_id': curr.id,
+            #         'begin_date': tgl_mulai,
+            #         'po_type': txt_data['jenis'],
+            #         'state': state,
+            #         'tgl_create_sap':tgl_create_sap
+            #     })
+            if len(txt_data) > 4:
+                for data in txt_data:
+                    vals = []
+                    isi = data['isi']
+                    for hasil in isi:
+                        print("------------------------")
+                        if hasil['LOEKZ'] == 'L':
+                            continue
+                            #state = 'cancel'
+                        else:
+                            state = 'po'
+                        print(type(hasil['BRTWR']))
+                        if data['jenis'] == 'JASA':
+                            prod = self.env['product.product'].sudo().search([
+                                ('default_code', '=', hasil['SRVPOS'])], limit=1)
+                            price = float(hasil['BRTWR'])
+                            qty = float(hasil['MENGE'])
+                            price_unit = float(price / qty) * 100
+                        else:
+                            prod = self.env['product.product'].sudo().search([
+                                ('default_code', '=', hasil['MATNR'])], limit=1)
+                            qty = float(hasil['MENGE'])
+                            price_unit = float(hasil['NETPR']) * 100
+                        print(prod)
+                        if not prod:
+                            return "Material/Service  : %s tidak ditemukan" % (hasil['SRVPOS'], hasil['MATNR'])
+                        tax = self.env['account.tax'].sudo().search([
+                            ('name', '=', hasil['MWSKZ'])], limit=1)
+                        print(tax)
+                        if not tax:
+                            return "Kode Pajak  : %s tidak ditemukan" % hasil['MWSKZ']
+                        curr = self.env['res.currency'].sudo().search([
+                            ('name', '=', hasil['WAERS'])], limit=1)
+                        print(curr)
+                        if not curr:
+                            continue
+                            # return "Kode Currency  : %s tidak ditemukan" % hasil['WAERS']
+                        vendor = self.env['res.partner'].sudo().search([
+                            ('sap_code', '=', hasil['LIFNR'])], limit=1)
+                        if not vendor:
+                            print("lllllllllllllllll")
+                            continue
+                            # return "Vendor  : %s tidak ditemukan" % hasil['LIFNR']
+
+                        print("vendor", vendor)
+                        uom = self.env['uom.uom'].sudo().search([
+                            ('name', '=', hasil['MEINS'])], limit=1)
+                        if not uom:
+                            uom = self.env['uom.uom'].sudo().create({
+                                'name': hasil['MEINS'], 'category_id': 1})
+                        project = self.env['project.project'].sudo().search([
+                            ('sap_code', '=', data['PRCTR']), ('company_id', '=', 1)], limit=1)
+                        print(project)
+                        if project:
+                            profit_center = project.id
+                            branch_id = project.branch_id.id
+                            department_id = None
+                        if not project:
+                            branch = self.env['res.branch'].sudo().search([
+                                ('sap_code', '=', data['PRCTR']), ('company_id', '=', 1)], limit=1)
+                            if branch and branch.biro == True:
+                                department_id = branch.id
+                                branch_id = branch.parent_id.id
+                                profit_center = None
+                            if branch and branch.biro == False:
+                                department_id = None
+                                branch_id = branch.id
+                                profit_center = None
+                            if not branch:
+                                return "Kode Profit Center : %s tidak ditemukan" % data['PRCTR']
+                        print(profit_center)
+                        vals.append((0, 0, {
+                            'sequence': int(hasil['EBELP']),
+                            'product_id': prod.id if prod else False,
+                            'product_qty': qty,
+                            'product_uom': uom.id,
+                            'price_unit': price_unit,
+                            'taxes_id': [(6, 0, [x.id for x in tax])]
+
+                        }))
+                        tgl_mulai = hasil['BEDAT_X']
+                        po_type = hasil['BSART']
+                        tgl_create_sap = hasil['AEDAT_X']
+
+                        print(vals)
+                    if not vals:
+                        continue
+                    else:
+                        po_create = self.env['purchase.order'].sudo().create({
+                            'name': data['EBELN'],
+                            'partner_id': vendor.id if vendor else False,
+                            'project_id': profit_center,
+                            'branch_id': branch_id,
+                            'department_id': department_id,
+                            'order_line': vals,
+                            'currency_id': curr.id,
+                            'begin_date': tgl_mulai,
+                            'po_type': data['jenis'],
+                            'state': state,
+                            'tgl_create_sap': tgl_create_sap
+
+                        })
+            else:
+
+                for data in txt_data['isi']:
+                    vals = []
+
+                    print(data)
+                    if data['LOEKZ'] == 'L':
+                        continue
+                        #state = 'cancel'
                     else:
                         state = 'po'
-                    print (state)
-                    if data['jenis']=='JASA':
+                    print(state)
+                    # po_exist  = self.env['purchase.order'].sudo().search([
+                    #     ('name', '=' ,txt_data['EBELN']),('state','!=','cancel'),('tgl_create_sap','=',data['AEDAT_X'])] ,limit=1)
+                    # print("po_exist")
+                    # if po_exist:
+                    #     print ("masukkkkk")
+                    #     po_exist.write({'state': 'cancel'})
+                    #     break
+                    if txt_data['jenis'] == 'JASA':
                         prod = self.env['product.product'].sudo().search([
-                            ('default_code', '=', hasil['SRVPOS'])], limit=1)
-                        price= float(hasil['BRTWR'])
-                        qty=float(hasil['MENGE'])
-                        price_unit= float(price/qty)*100
+                            ('default_code', '=', data['SRVPOS'])], limit=1)
+                        price = float(data['BRTWR'])
+                        qty = float(data['MENGE'])
+                        price_unit = float(price / qty) * 100
                     else:
                         prod = self.env['product.product'].sudo().search([
-                            ('default_code', '=', hasil['MATNR'])], limit=1)
-                        qty = float(hasil['MENGE'])
-                        price_unit= float(hasil['NETPR'])*100
-                    print (prod)
+                            ('default_code', '=', data['MATNR'])], limit=1)
+                        qty = float(data['MENGE'])
+                        price_unit = float(data['NETPR']) * 100
+                    print(prod)
                     if not prod:
-                        return "Material/Service  : %s tidak ditemukan" % (hasil['SRVPOS'],hasil['MATNR'])
-                    tax= self.env['account.tax'].sudo().search([
-                        ('name', '=', hasil['MWSKZ'])], limit=1)
+                        return "Material/Service  : %s tidak ditemukan" % (data['SRVPOS'], data['MATNR'])
+                    tax = self.env['account.tax'].sudo().search([
+                        ('name', '=', data['MWSKZ'])], limit=1)
                     print(tax)
                     if not tax:
-                        return "Kode Pajak  : %s tidak ditemukan" % hasil['MWSKZ']
-                    curr=self.env['res.currency'].sudo().search([
-                        ('name', '=', hasil['WAERS'])], limit=1)
+                        return "Kode Pajak  : %s tidak ditemukan" % data['MWSKZ']
+                    curr = self.env['res.currency'].sudo().search([
+                        ('name', '=', data['WAERS'])], limit=1)
                     print(curr)
-                    if not curr:
-                        break
-                        #return "Kode Currency  : %s tidak ditemukan" % hasil['WAERS']
-                    vendor = self.env['res.partner'].sudo().search([
-                        ('sap_code', '=', hasil['LIFNR'])], limit=1)
-                    if not vendor:
-                        print ("lllllllllllllllll")
-                        break
-                        #return "Vendor  : %s tidak ditemukan" % hasil['LIFNR']
 
-                    print ("vendor",vendor)
-                    uom= self.env['uom.uom'].sudo().search([
-                        ('name', '=' ,hasil['MEINS'])] ,limit=1)
+
+                    vendor = self.env['res.partner'].sudo().search([
+                        ('sap_code', '=', data['LIFNR'])], limit=1)
+                    if not vendor:
+                        print("lllllllllllllllll")
+                        return "Vendor  : %s tidak ditemukan" % data['LIFNR']
+
+                    print("vendor", vendor)
+                    uom = self.env['uom.uom'].sudo().search([
+                        ('name', '=', data['MEINS'])], limit=1)
                     if not uom:
                         uom = self.env['uom.uom'].sudo().create({
-                            'name': hasil['MEINS'],'category_id':1})
-                    project  = self.env['project.project'].sudo().search([
-                        ('sap_code', '=' ,data['PRCTR']), ('company_id', '=', 1)] ,limit=1)
-                    print (project)
+                            'name': data['MEINS'], 'category_id': 1})
+                    project = self.env['project.project'].sudo().search([
+                        ('sap_code', '=', txt_data['PRCTR']), ('company_id', '=', 1)], limit=1)
+                    print(project)
                     if project:
-                        profit_center=project.id
+                        profit_center = project.id
                         branch_id = project.branch_id.id
                         department_id = None
                     if not project:
                         branch = self.env['res.branch'].sudo().search([
-                            ('sap_code', '=', data['PRCTR']), ('company_id', '=', 1)], limit=1)
+                            ('sap_code', '=', txt_data['PRCTR']), ('company_id', '=', 1)], limit=1)
                         if branch and branch.biro == True:
-                            department_id= branch.id
-                            branch_id=branch.parent_id.id
-                            profit_center=None
+                            department_id = branch.id
+                            branch_id = branch.parent_id.id
+                            profit_center = None
                         if branch and branch.biro == False:
                             department_id = None
                             branch_id = branch.id
                             profit_center = None
                         if not branch:
-                            return "Kode Profit Center : %s tidak ditemukan" % data['PRCTR']
-                    print (profit_center)
-                    vals.append((0,0, {
+                            return "Kode Profit Center : %s tidak ditemukan" % txt_data['PRCTR']
+                    vals.append((0, 0, {
+                        'sequence': int(data['EBELP']),
                         'product_id': prod.id if prod else False,
-                        'product_qty':qty,
-                        'product_uom':uom.id,
-                        'price_unit':price_unit,
-                        'taxes_id':[(6, 0, [x.id for x in tax])]
+                        'product_qty': qty,
+                        'product_uom': uom.id,
+                        'price_unit': price_unit,
+                        'taxes_id': [(6, 0, [x.id for x in tax])]
 
                     }))
-                    tgl_mulai=hasil['BEDAT_X']
-                    po_type = hasil['BSART']
-
-
-                po_create= self.env['purchase.order'].sudo().create({
-                    'name': data['EBELN'],
-                    'partner_id': vendor.id if vendor else False,
-                    'project_id':profit_center,
-                    'branch_id':branch_id,
-                    'department_id':department_id,
-                    'order_line':vals,
-                    'currency_id': curr.id,
-                    'begin_date':tgl_mulai,
-                    'po_type':po_type,
-                    'state':state,
-                })
-
+                    print ("okeeeeeeeeeeeeeeeeeee")
+                    tgl_mulai = data['BEDAT_X']
+                    po_type = data['BSART']
+                    tgl_create_sap = data['AEDAT_X']
+                if vals:
+                    po_create = self.env['purchase.order'].sudo().create({
+                        'name': txt_data['EBELN'],
+                        'partner_id': vendor.id if vendor else False,
+                        'project_id': profit_center,
+                        'branch_id': branch_id,
+                        'department_id': department_id,
+                        'order_line': vals,
+                        'currency_id': curr.id,
+                        'begin_date': tgl_mulai,
+                        'po_type': txt_data['jenis'],
+                        'state': state,
+                        'tgl_create_sap': tgl_create_sap
+                    })
 
         else:
             raise UserError(_("Data PO Tidak Tersedia!"))

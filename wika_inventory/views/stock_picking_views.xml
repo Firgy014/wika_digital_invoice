@@ -14,7 +14,8 @@
                 </header>
                 <field name="priority" optional="show" widget="priority" nolabel="1"/>
                 <field name="pick_type"/>
-                <field name="no_gr_ses"/>
+                <field name="name"/>
+                <!--<field name="no_gr_ses"/>-->
                 <field name="branch_id"/>
                 <field name="department_id"/>
                 <field name="project_id"/>
