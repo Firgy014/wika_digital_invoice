@@ -105,6 +105,6 @@
         <field name="view_mode">kanban,tree,form</field>
     </record>
 
-    <menuitem id="sub_menu_custom_dashboard_board" parent="main_menu_custom_dashboard"
-              action="action_custom_dashboard_board" name="Dashboards" sequence="1"/>
+    <!-- <menuitem id="sub_menu_custom_dashboard_board" parent="main_menu_custom_dashboard"
+              action="action_custom_dashboard_board" name="Dashboards" sequence="1"/> -->
 </odoo>

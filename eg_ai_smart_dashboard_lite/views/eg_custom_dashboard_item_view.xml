@@ -199,8 +199,8 @@
     </record>
 
     <!-- <menuitem id="main_menu_custom_dashboard" name="Smart Dashboard"/> -->
-    <menuitem id="main_menu_custom_dashboard" name="Dashboard"
-              parent="wika_dashboard.menu_board_wika" sequence="-1"/>
-    <menuitem id="sub_menu_custom_dashboard" parent="main_menu_custom_dashboard"
-              action="action_eg_custom_dashboard_item" name="Dashboard Items" sequence="2"/>
+    <!-- <menuitem id="main_menu_custom_dashboard" name="Dashboard"
+              parent="wika_dashboard.menu_board_wika" sequence="-1"/> -->
+    <!-- <menuitem id="sub_menu_custom_dashboard" parent="main_menu_custom_dashboard"
+              action="action_eg_custom_dashboard_item" name="Dashboard Items" sequence="2"/> -->
 </odoo>

@@ -114,7 +114,7 @@ class PickingInherit(models.Model):
                                 'attachment_id': attachment_id.id,
                                 'folder_id': folder_id.id,
                                 'tag_ids': facet_id.tag_ids.ids,
-                                'partner_id': doc.purchase_id.partner_id.id,
+                                'partner_id': self.env.user.partner_id.id,
                                 'purchase_id': self.id,
                                 'is_po_doc': True
                             })
