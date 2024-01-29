@@ -6,8 +6,9 @@
         <field name="name">purchase.order.form.wika</field>
         <field name="model">purchase.order</field>
         <field name="arch" type="xml">
-            <form string="Purchase Orders" class="o_purchase_order">
+            <form string="Purchase Orders" class="o_purchase_order"  create="0">
             <header>
+                <button name="get_gr" type="object" states="po,uploaded,approved" string="Get GR" groups="base.group_no_one"/>
                 <button name="action_submit" type="object" states="po" string="SUBMIT" context="{'validate_analytic': True}" class="oe_highlight" id="bid_submit" data-hotkey="v"/>
                 <button name="action_approve" type="object" states="uploaded" string="APPROVE" context="{'validate_analytic': True}" class="oe_highlight" id="bid_approve" data-hotkey="v"/>
                 <button name="action_reject" type="object" states="uploaded" string="REJECT" context="{'validate_analytic': True}" class="btn-danger" id="bid_reject" data-hotkey="v"/>
@@ -31,30 +32,43 @@
                         <field name="partner_id" widget="res_partner_many2one" context="{'res_partner_search_mode': 'supplier', 'show_vat': True}"
                             placeholder="Name, TIN, Email, or Reference" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"
                         />
+                       <field name="check_biro" invisible="1"/>
+
                         <field name="partner_ref" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
                         <field name="currency_id" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
-                        <field name="kurs" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
+                        <field name="kurs" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])],'invisible': [('currency_name', '=', 'IDR')]}"/>
                         <field name="id" invisible="1"/>
                         <field name="company_id" invisible="1"/>
                         <field name="currency_id" invisible="1" groups="!base.group_multi_currency"/>
                         <field name="po_type" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
-                        <field name="sap_doc_number" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
-                        <field name="signatory_name" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
-                        <field name="position" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
-                        <field name="vendor_signatory_name" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
-                        <field name="vendor_position" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
-                        <field name="address" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
-                        <field name="job" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
+                        <field name="transaction_type" readonly="1" string="Transaction Type"/>
+
                         <field name="currency_name" invisible="1"/>
+                        <field name="tgl_create_sap" invisible="1"/>
+
                     </group>
                     <group>
                         <field name="branch_id" domain="[('biro', '=', False)]" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
-                        <field name="department_id" domain="[('biro', '=', True), ('parent_id', '=', branch_id)]" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
+                        <field name="department_id" domain="[('biro', '=', True), ('parent_id', '=', branch_id)]" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])], 'invisible': [('check_biro', '=', False)]}"/>
                         <field name="project_id" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
                         <field name="begin_date" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
                         <field name="end_date" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
                     </group>
+                     <group>
+                        <field name="vendor_signatory_name" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
+                        <field name="vendor_position" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
+                        <field name="address" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
+                        <field name="job" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
+
+                    </group>
+                    <group>
+                        <field name="sap_doc_number" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
+                        <field name="signatory_name" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
+                        <field name="position" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
+
+                    </group>
                 </group>
+
                 <notebook>
                     <page string="Products" name="products">
                         <field name="tax_country_id" invisible="1"/>
@@ -62,7 +76,7 @@
                             widget="section_and_note_one2many"
                             mode="tree,kanban"
                             context="{'default_state': 'po'}"
-                            attrs="{'readonly': [('state', 'in', ('done', 'cancel', 'uploaded', 'approved'))]}">
+                            readonly="1">
                             <tree string="Purchase Order Lines" editable="bottom">
                                 <control>
                                     <create name="add_product_control" string="Add a product"/>
@@ -76,7 +90,7 @@
                                 <field name="product_uom" invisible="1" groups="!uom.group_uom"/>
                                 <field name="product_uom_category_id" invisible="1"/>
                                 <field name="invoice_lines" invisible="1"/>
-                                <field name="sequence" widget="handle"/>
+                                <field name="sequence"/>
                                 <field
                                     name="product_id"
                                     attrs="{
@@ -104,14 +118,10 @@
                                     force_save="1" optional="show"/>
                                 <field name="product_packaging_qty" attrs="{'invisible': ['|', ('product_id', '=', False), ('product_packaging_id', '=', False)]}" groups="product.group_stock_packaging" optional="show"/>
                                 <field name="product_packaging_id" attrs="{'invisible': [('product_id', '=', False)]}" context="{'default_product_id': product_id, 'tree_view_ref':'product.product_packaging_tree_view', 'form_view_ref':'product.product_packaging_form_view'}" groups="product.group_stock_packaging" optional="show"/>
-                                <field name="price_unit" attrs="{
-                                    'readonly': [('qty_invoiced', '!=', 0)],
-                                    'column_invisible': [('parent.currency_name', '!=', 'IDR')]
-                                }"/>
+                                <field name="price_unit" attrs="{'readonly': [('qty_invoiced', '!=', 0)]}"/>
                                 <field name="unit_price_idr" attrs="{'column_invisible': [('parent.currency_name', '=', 'IDR')]}"/>
-                                <button name="action_purchase_history" type="object" icon="fa-history" title="Purchase History" attrs="{'invisible': [('id', '=', False)]}"/>
                                 <field name="taxes_id" widget="many2many_tags" domain="[('type_tax_use','=','purchase'), ('company_id', '=', parent.company_id), ('country_id', '=', parent.tax_country_id)]" context="{'default_type_tax_use': 'purchase', 'search_view_ref': 'account.account_tax_view_search'}" options="{'no_create': True}" optional="show"/>
-                                <field name="price_subtotal" attrs="{'column_invisible': [('parent.currency_name', '!=', 'IDR')]}"/>
+                                <field name="price_subtotal"/>
                                 <field name="subtotal_idr" attrs="{'column_invisible': [('parent.currency_name', '=', 'IDR')]}"/>
                                 <field name="price_total" invisible="1"/>
                                 <field name="price_tax" invisible="1"/>
@@ -227,6 +237,15 @@
                         </group>
                         <div class="clearfix"/>
                     </page>
+                    <page string="Potongan Lain-lain">
+                        <field name="price_cut_ids" attrs="{'readonly': [('state', 'in', ('uploaded', 'approved'))]}">
+                            <tree editable="top">
+                                <field name="purchase_id" invisible="1"/>
+                                <field name="product_id"/>
+                                <field name="amount"/>
+                            </tree>
+                        </field>
+                    </page>
                     <page string="History Approval">
                         <field name="history_approval_ids" attrs="{'readonly': [('state', 'in', ('uploaded', 'approved'))]}">
                             <tree editable="bottom">
@@ -240,8 +259,8 @@
                     </page>
                     <page string="List Document">
                         <group>
-                            <field name="document_ids" attrs="{'readonly': [('state', 'in', ('uploaded', 'approved'))]}">
-                                <tree string="List Document" editable="top">
+                            <field name="document_ids"  nolabel="1" colspan="2"  attrs="{'readonly': [('state', 'in', ('uploaded', 'approved'))]}">
+                                <tree string="List Document">
                                     <field name="document_id"/>
                                     <field name="document" widget="binary_button" filename="filename"/>
                                     <field name="filename" invisible="1"/>
@@ -251,21 +270,13 @@
                                     <group>
                                         <field name="document" string="Purchase Orders Document Preview" widget="pdf_viewer" filename="filename"/>
                                         <field name="filename" invisible="1"/>
-                                        <field name="state" invisible="1"/>                       
+                                        <field name="state" invisible="1"/>
                                     </group>
                                 </form>
                             </field>
                         </group>
                     </page>
-                    <page string="Potongan Lain-lain">
-                        <field name="price_cut_ids" attrs="{'readonly': [('state', 'in', ('uploaded', 'approved'))]}">
-                            <tree editable="top">
-                                <field name="purchase_id" invisible="1"/>
-                                <field name="product_id"/>
-                                <field name="amount"/>
-                            </tree>
-                        </field>
-                    </page>
+
                     <page string="Activities" groups="base.group_no_one">
                         <field name="activity_ids" attrs="{'readonly': [('state', 'in', ('uploaded', 'approved'))]}"/>
                     </page>
@@ -287,19 +298,22 @@
         <field name="priority" eval="1"/>
         <field name="arch" type="xml">
             <!-- <tree string="Purchase Order" decoration-muted="state=='cancel'" sample="1" create="false"> -->
-            <tree string="Purchase Order" decoration-muted="state=='cancel'" sample="1">
+            <tree string="Purchase Order" decoration-muted="state=='cancel'" sample="1" create="0">
                 <field name="priority" optional="show" widget="priority" nolabel="1"/>
                 <field name="branch_id"/>
+<!--
                 <field name="department_id" string="Dept"/>
+-->
                 <field name="project_id"/>
                 <field name="currency_id"/>
                 <field name="po_type" string="PO Type"/>
-                <field name="name" string="Reference" readonly="1" decoration-info="state in ('draft','sent')"/>
+                <field name="transaction_type" string="Transaction Type"/>
+                <field name="name" string="Nomor PO"  decoration-info="state in ('po','uploaded')"/>
                 <field name="sap_doc_number"/>
                 <field name="begin_date"/>
                 <field name="end_date"/>
                 <field name="partner_id" readonly="1"/>
-                <field name="amount_total" sum="Total amount" widget="monetary" optional="show"/>
+                <field name="amount_untaxed" sum="Total amount" string='Total Amount' widget="monetary" optional="show"/>
                 <field name="state" optional="show"/>
                 <field name="step_approve" invisible="1"/> 
             </tree>
