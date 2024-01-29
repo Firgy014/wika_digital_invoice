@@ -38,6 +38,19 @@ class WikaInheritedAccountMove(models.Model):
         auto_join=True,
         groups="base.group_user",)
 
+    partner_id = fields.Many2one(
+        'res.partner',
+        string='Vendors',
+        readonly=True,
+        tracking=True,
+        states={'draft': [('readonly', False)]},
+        inverse='_inverse_partner_id',
+        check_company=True,
+        change_default=True,
+        index=True,
+        ondelete='restrict',
+    )
+
     def action_submit(self):
         self.write({'state': 'upload'})
         self.step_approve += 1
