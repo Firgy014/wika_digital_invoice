@@ -17,11 +17,12 @@
                 </xpath>
 
                 <!-- filters -->
-                <xpath expr="//filter[@name='cancel']" position="after">
+                <!-- <xpath expr="//filter[@name='cancel']" position="after">
                     <filter name="branch_id" string="Divisi" domain="[('invoice_user_id', '=', uid)]"/>
                     <filter name="department_id" string="Department" domain="[('invoice_user_id', '=', uid)]"/>
                     <filter name="project_id" string="Project" domain="[('invoice_user_id', '=', uid)]"/>
-                </xpath>
+                    <filter name="po_id" string="Nomor PO" domain="[('invoice_user_id', '=', uid)]"/>
+                </xpath> -->
 
                 <!-- group by -->
                 <xpath expr="//filter[@name='salesperson']" position="after">

@@ -85,8 +85,70 @@
                         </field>
                     </page>
                 </xpath>
+            </field>      
+        </record>
+
+        <!-- tree -->
+        <record id="view_wika_account_move_tree_inherited" model="ir.ui.view">
+            <field name="name">wika.account.move.inherit.view.tree</field>
+            <field name="model">account.move</field>
+            <field name="inherit_id" ref="account.view_in_invoice_bill_tree"/>
+            <field name="arch" type="xml">
+                <xpath expr="//field[@name='name']" position="after">
+                    <field name="branch_id"/>
+                    <field name="department_id"/>
+                    <field name="project_id"/>
+                    <field name="partner_id"/>
+                    <field name="invoice_date"/>
+                    <!-- <field name="amount_total_signed"/> -->
+                </xpath>
+                
+                <!-- hide tree field -->
+                <xpath expr="field[@name='invoice_partner_display_name']" position="attributes">
+                    <attribute name="invisible">1</attribute>
+                </xpath>
+                <xpath expr="field[@name='invoice_date_due']" position="attributes">
+                    <attribute name="invisible">1</attribute>
+                </xpath>
+                <xpath expr="field[@name='ref']" position="attributes">
+                    <attribute name="invisible">1</attribute>
+                </xpath>
+                <xpath expr="field[@name='activity_ids']" position="attributes">
+                    <attribute name="invisible">1</attribute>
+                </xpath>
+                <xpath expr="field[@name='invoice_date']" position="attributes">
+                    <attribute name="invisible">1</attribute>
+                </xpath>
+                <xpath expr="field[@name='amount_untaxed_signed']" position="attributes">
+                    <attribute name="invisible">1</attribute>
+                </xpath>
+                <xpath expr="field[@name='date']" position="attributes">
+                    <attribute name="invisible">1</attribute>
+                </xpath>
+                <xpath expr="field[@name='invoice_origin']" position="attributes">
+                    <attribute name="invisible">1</attribute>
+                </xpath>
+                <xpath expr="field[@name='payment_reference']" position="attributes">
+                    <attribute name="invisible">1</attribute>
+                </xpath>
+                <xpath expr="field[@name='company_id']" position="attributes">
+                    <attribute name="invisible">1</attribute>
+                </xpath>
+                <xpath expr="field[@name='amount_residual_signed']" position="attributes">
+                    <attribute name="invisible">1</attribute>
+                </xpath>
+                <xpath expr="field[@name='currency_id']" position="attributes">
+                    <attribute name="invisible">1</attribute>
+                </xpath>
+                <xpath expr="field[@name='to_check']" position="attributes">
+                    <attribute name="invisible">1</attribute>
+                </xpath>
+                <xpath expr="field[@name='amount_tax_signed']" position="attributes">
+                    <attribute name="invisible">1</attribute>
+                </xpath>
             </field>
         </record>
+
     </data>
     
 </odoo>
