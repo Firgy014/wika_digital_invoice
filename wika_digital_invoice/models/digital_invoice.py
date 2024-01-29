@@ -1,12 +1,13 @@
 import time
-from odoo import api, models, fields
+from odoo import api, models, fields, _
 
-DEFAULT_SERVER_DATE_FORMAT = "%Y-%m-%d"
-DEFAULT_SERVER_TIME_FORMAT = "%H:%M:%S"
-DEFAULT_SERVER_DATETIME_FORMAT = "%s %s" % (
-    DEFAULT_SERVER_DATE_FORMAT,
-    DEFAULT_SERVER_TIME_FORMAT
-)
+list_models = [
+    'purchase.order',
+    'stock.picking',
+    'wika.berita.acara.pembayaran',
+    'account.move',
+    'wika.payment.request',
+]
 
 class DigitalInvoiceOverview(models.Model):
     _name = 'wika.digital.invoice'
@@ -38,47 +39,155 @@ class DigitalInvoiceOverview(models.Model):
     # bap_ids = fields.One2many('wika.berita.acara.pembayaran', string='Berita Acara Pembayaran')
     # invoice_ids = fields.One2many('account.move', string='Account Moves')
     # payment_ids = fields.One2many('wika.payment.request', string='Pengajuan Pembayaran')
+    count_purchase = fields.Integer(string='Total Purchase Orders')
+    count_picking = fields.Integer(string='Total Stock Pickings')
+    count_bap = fields.Integer(string='Total BAP Documents')
+    count_invoice = fields.Integer(string='Total Invoices')
+    count_payment = fields.Integer(string='Total Payment Requests')
+
+    # def get_action_picking_tree_ready()
+
+    count_submit = fields.Integer('Submit', compute='_compute_count_submit')
+
+    def get_action_submit(self):
+        for model in list_models:
+            if model == 'purchase.order':
+                state = 'po'
+                view_tree_id = self.env.ref('wika_purchase.purchase_order_tree_wika').id
+
+                if view_tree_id:
+                    return {
+                        'name': _('Purchase Orders'),
+                        'type': 'ir.actions.act_window',
+                        'view_mode': 'tree',
+                        'res_model': model,
+                        'view_id': view_tree_id,
+                        'domain': [('state', '=', state)],  
+                    }
+                
+            elif model == 'stock.picking':
+                state = 'waits'
+                view_tree_id = self.env.ref('wika_inventory.stock_picking_tree_wika').id
+            # elif model == 'wika.berita.acara.pembayaran':
+            #     state = 'draft'
+            #     view_tree_id = self.env.ref('wika_berita_acara_pembayaran.wika_berita_acara_pembayaran_view_tree').id
+            elif model == 'account.move':
+                state = 'draft'
+                view_tree_id = self.env.ref('wika_account_move.view_move_tree').id
+            elif model == 'wika.payment.requests':
+                state = 'draft'
+                view_tree_id = self.env.ref('wika_payment_request.wika_payment_request_view_tree').id
+
+    @api.depends('model')    
+    def _compute_count_submit(self):
+        # for model in list_models:
+        #     if model == 'purchase.order':
+        #         state = 'po'
+        #     elif model == 'stock.picking':
+        #         state = 'waits'
+        #     # elif model == 'wika.berita.acara.pembayaran':
+        #     #     state = 'draft'
+        #     elif model == 'account.move':
+        #         state = 'draft'
+        #     elif model == 'wika.payment.requests':
+        #         state = 'draft'
+
+            # object_id = self.env[model].sudo().search_count(['state', '=', state])
+            # print('======OBJ ID=======', object_id)
+
+        if self.model == 'po':
+            state = 'po'
+            object_id = self.env['purchase.order'].sudo().search_count(['state', '=', state])
+            self.count_submit = object_id
+
+        elif self.model == 'grses':
+            state = 'waits'
+            object_id = self.env['stock.picking'].sudo().search_count(['state', '=', state])
+            self.count_submit = object_id
+
+        elif self.model == 'bap':
+            state = 'draft'
+            object_id = self.env['wika.berita.acara.pembayaran'].sudo().search_count(['state', '=', state])
+            self.count_submit = object_id
+
+        elif self.model == 'inv':
+            state = 'draft'
+            object_id = self.env['account.move'].sudo().search_count(['state', '=', state])
+            self.count_submit = object_id
+
+        elif self.model == 'pr':
+            state = 'draft'
+            object_id = self.env['wika.payment.request'].sudo().search_count(['state', '=', state])
+            self.count_submit = object_id
+
+
+    # @api.depends('purchase_ids')
+    # def _compute_total_purchase_orders(self):
+    #     for record in self:
+    #         print("LEEENNN",len(record.purchase_ids))
+    #         tes_compute_po
+    #         record.count_purchase = len(record.purchase_ids)
+
+    # @api.depends('picking_ids')
+    # def _compute_total_stock_pickings(self):
+    #     for record in self:
+    #         record.count_picking = len(record.picking_ids)
+
+    # @api.depends('bap_ids')
+    # def _compute_total_bap_documents(self):
+    #     for record in self:
+    #         record.count_bap = len(record.bap_ids)
+
+    # @api.depends('invoice_ids')
+    # def _compute_total_invoices(self):
+    #     for record in self:
+    #         record.count_invoice = len(record.invoice_ids)
+
+    # @api.depends('payment_ids')
+    # def _compute_total_payment_requests(self):
+    #     for record in self:
+    #         record.count_payment = len(record.payment_ids)
 
     # Essentials
     color = fields.Integer(string='Color')
 
     # Codes
-    purchase_code = fields.Selection([
-        ('waiting', 'Waiting PO Documents'),
-        ('uploaded', 'PO Documents Uploaded'),
-        ('approved', 'PO Documents Approved')],
-    string='Type of PO', compute='_compute_code')
+    # purchase_code = fields.Selection([
+    #     ('waiting', 'Waiting PO Documents'),
+    #     ('uploaded', 'PO Documents Uploaded'),
+    #     ('approved', 'PO Documents Approved')],
+    # string='Type of PO', compute='_compute_code')
 
-    picking_code = fields.Selection([
-        ('waiting', 'Waiting GR/SES Documents'),
-        ('uploaded', 'GR/SES Documents Uploaded'),
-        ('approved', 'GR/SES Documents Approved')],
-    string='Type of GR/SES', compute='_compute_code')
+    # picking_code = fields.Selection([
+    #     ('waiting', 'Waiting GR/SES Documents'),
+    #     ('uploaded', 'GR/SES Documents Uploaded'),
+    #     ('approved', 'GR/SES Documents Approved')],
+    # string='Type of GR/SES', compute='_compute_code')
 
-    bap_code = fields.Selection([
-        ('waiting', 'Waiting BAP Documents'),
-        ('uploaded', 'BAP Documents Uploaded'),
-        ('approved', 'BAP Documents Approved')],
-    string='Type of BAP', compute='_compute_code')
+    # bap_code = fields.Selection([
+    #     ('waiting', 'Waiting BAP Documents'),
+    #     ('uploaded', 'BAP Documents Uploaded'),
+    #     ('approved', 'BAP Documents Approved')],
+    # string='Type of BAP', compute='_compute_code')
 
-    invoice_code = fields.Selection([
-        ('waiting', 'Waiting Invoice Documents'),
-        ('uploaded', 'Invoice Documents Uploaded'),
-        ('approved', 'Invoice Documents Approved')],
-    string='Type of Invoice', compute='_compute_code')
+    # invoice_code = fields.Selection([
+    #     ('waiting', 'Waiting Invoice Documents'),
+    #     ('uploaded', 'Invoice Documents Uploaded'),
+    #     ('approved', 'Invoice Documents Approved')],
+    # string='Type of Invoice', compute='_compute_code')
 
-    payment_code = fields.Selection([
-        ('waiting', 'Waiting PR Documents'),
-        ('uploaded', 'PR Documents Uploaded'),
-        ('approved', 'PR Documents Approved')],
-    string='Type of PR', compute='_compute_code')
+    # payment_code = fields.Selection([
+    #     ('waiting', 'Waiting PR Documents'),
+    #     ('uploaded', 'PR Documents Uploaded'),
+    #     ('approved', 'PR Documents Approved')],
+    # string='Type of PR', compute='_compute_code')
 
     # Counting records
     # Purchase
     # count_purchase_po = fields.Integer(compute='_compute_purchase_count')
     # count_purchase_uploaded = fields.Integer(compute='_compute_purchase_count')
     # count_purchase_approved = fields.Integer(compute='_compute_purchase_count')
-    count_purchase = fields.Integer(string='Total PO')
+    # count_purchase = fields.Integer(string='Total PO')
     count_purchase_po = fields.Integer(string='Total Doc Waiting PO')
     count_purchase_uploaded = fields.Integer(string='Total Doc Uploaded PO')
     count_purchase_approved = fields.Integer(string='Total Doc Approved PO')
@@ -88,7 +197,7 @@ class DigitalInvoiceOverview(models.Model):
     # count_picking_waits = fields.Integer(compute='_compute_picking_waits_count')
     # count_picking_uploaded = fields.Integer(compute='_compute_picking_uploaded_count')
     # count_picking_approved = fields.Integer(compute='_compute_picking_approved_count')
-    count_picking = fields.Integer(string='Total GR/SES')
+    # count_picking = fields.Integer(string='Total GR/SES')
     count_picking_waits = fields.Integer(string='Total Doc Waiting GR/SES')
     count_picking_uploaded = fields.Integer(string='Total Doc Uploaded GR/SES')
     count_picking_approved = fields.Integer(string='Total Doc Approved GR/SES')
@@ -97,7 +206,7 @@ class DigitalInvoiceOverview(models.Model):
     # count_bap_waiting = fields.Integer(compute='_compute_bap_count')
     # count_bap_uploaded = fields.Integer(compute='_compute_bap_count')
     # count_bap_approved = fields.Integer(compute='_compute_bap_count')
-    count_bap = fields.Integer(string='Total BAP')
+    # count_bap = fields.Integer(string='Total BAP')
     count_bap_waiting = fields.Integer(string='Total Doc Waiting BAP')
     count_bap_uploaded = fields.Integer(string='Total Doc Uploaded BAP')
     count_bap_approved = fields.Integer(string='Total Doc Approved BAP')
@@ -105,7 +214,7 @@ class DigitalInvoiceOverview(models.Model):
     # Invoice
     # count_invoice_waiting = fields.Integer(compute='_compute_invoice_count')
     # count_invoice_uploaded = fields.Integer(compute='_compute_invoice_count')
-    count_invoice = fields.Integer(string='Total Invoice')
+    # count_invoice = fields.Integer(string='Total Invoice')
     count_invoice_waiting = fields.Integer(string='Total Doc Waiting Invoice')
     count_invoice_uploaded = fields.Integer(string='Total Doc Uploaded Invoice')
     count_invoice_approved = fields.Integer(string='Total Doc Approved Invoice')
@@ -113,7 +222,7 @@ class DigitalInvoiceOverview(models.Model):
     # Payment Request
     # count_payment_waiting = fields.Integer(compute='_compute_payment_count')
     # count_payment_uploaded = fields.Integer(compute='_compute_payment_count')
-    count_payment = fields.Integer(string='Total PR')
+    # count_payment = fields.Integer(string='Total PR')
     count_payment_waiting = fields.Integer(string='Total Doc Waiting PR')
     count_payment_uploaded = fields.Integer(string='Total Doc Uploaded PR')
     count_payment_approved = fields.Integer(string='Total Doc Approved PR')
@@ -156,18 +265,18 @@ class DigitalInvoiceOverview(models.Model):
 
         return res
     
-    def _compute_code(self):
-        for record in self:
-            if record.model == 'po':
-                record.purchase_code = 'waiting'
-            elif record.model == 'grses':
-                record.picking_code = 'waiting'
-            elif record.model == 'bap':
-                record.bap_code = 'waiting'
-            elif record.model == 'inv':
-                record.invoice_code = 'waiting'
-            elif record.model == 'pr':
-                record.payment_code = 'waiting'
+    # def _compute_code(self):
+    #     for record in self:
+    #         if record.model == 'po':
+    #             record.purchase_code = 'waiting'
+    #         elif record.model == 'grses':
+    #             record.picking_code = 'waiting'
+    #         elif record.model == 'bap':
+    #             record.bap_code = 'waiting'
+    #         elif record.model == 'inv':
+    #             record.invoice_code = 'waiting'
+    #         elif record.model == 'pr':
+    #             record.payment_code = 'waiting'
 
 
     # def _compute_picking_count(self):
