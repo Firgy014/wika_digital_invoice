@@ -13,15 +13,27 @@
         <field name="binding_view_types">form</field>
     </record> -->
 
-    <record id="report_wika_berita_acara_pembayaran_action" model="ir.actions.report">
+    <!-- <record id="report_wika_berita_acara_pembayaran_action" model="ir.actions.report">
         <field name="name">BAP Report</field>
         <field name="model">wika.berita.acara.pembayaran</field>
-        <field name="report_type">qweb-pdf</field>
+        <field name="report_type">qweb-html</field>
         <field name="report_name">wika_berita_acara_pembayaran.report_bap</field>
         <field name="report_file">wika_berita_acara_pembayaran.report_bap</field>
         <field name="binding_model_id" ref="model_wika_berita_acara_pembayaran"/>
         <field name="binding_type">report</field>
+    </record> -->
+
+    <record id="report_wika_berita_acara_pembayaran_action" model="ir.actions.report">
+        <field name="name">BAP</field>
+        <field name="model">wika.berita.acara.pembayaran</field>
+        <field name="report_type">qweb-html</field>
+        <field name="report_name">wika_berita_acara_pembayaran.report_session</field>
+        <field name="report_file">wika_berita_acara_pembayaran.report_wika_berita_acara_pembayaran</field>
+        <field name="print_report_name">'Session - %s' % (object.name)</field>
+        <field name="binding_model_id" ref="model_wika_berita_acara_pembayaran"/>
+        <field name="binding_view_types">form</field>
     </record>
+
     <!-- <report
         id="report_wika_berita_acara_pembayaran_action"
         string="BAP"

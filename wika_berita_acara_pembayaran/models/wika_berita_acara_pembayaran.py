@@ -2,24 +2,16 @@ from odoo import models, fields, api
 from datetime import datetime, timedelta
 from odoo.exceptions import UserError, ValidationError, Warning, AccessError
 
-class WikaStockMoveInherited(models.Model):
-    _inherit = 'stock.move'
-    _rec_name = 'name'
-
-    po_id = fields.Many2one('purchase.order')
-
 class WikaBeritaAcaraPembayaran(models.Model):
     _name = 'wika.berita.acara.pembayaran'
     _description = 'Berita Acara Pembayaran'
     _inherit = ['mail.thread']
-
 
     name = fields.Char(string='Nomor BAP', readonly=True, default='/')
     branch_id = fields.Many2one('res.branch', string='Divisi', required=True, related="po_id.branch_id")
     department_id = fields.Many2one('res.branch', string='Department', related="po_id.department_id")
     project_id = fields.Many2one('project.project', string='Project', related="po_id.project_id")
     po_id = fields.Many2one('purchase.order', string='Nomor PO', required=True)
-    # po_id = fields.Many2one('purchase.order', string='Nomor PO', required=True, domain="[('state', '=', 'purchase')]")
     partner_id = fields.Many2one('res.partner', string='Vendor', required=True)
     bap_ids = fields.One2many('wika.berita.acara.pembayaran.line', 'bap_id', string='List BAP', required=True)
     document_ids = fields.One2many('wika.bap.document.line', 'bap_id', string='List Document')
@@ -58,7 +50,6 @@ class WikaBeritaAcaraPembayaran(models.Model):
     total_amount = fields.Monetary(string='Total Amount', compute='compute_total_amount')
     total_tax = fields.Monetary(string='Total Tax', compute='compute_total_tax')
     grand_total = fields.Monetary(string='Grand Total', compute='compute_grand_total')
-
 
     @api.onchange('po_id')
     def onchange_po_id(self):
@@ -239,7 +230,6 @@ class WikaBeritaAcaraPembayaranLine(models.Model):
     _name = 'wika.berita.acara.pembayaran.line'
 
     bap_id = fields.Many2one('wika.berita.acara.pembayaran', string='')
-    # po_id = fields.Many2one('purchase.order', string='Nomor PO', required=True)
     picking_id = fields.Many2one('stock.picking', string='NO GR/SES', required=True)
     product_id = fields.Many2one('product.product', string='Product', required=True)
     qty = fields.Integer(string='Quantity', required=True)
