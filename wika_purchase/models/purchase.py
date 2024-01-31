@@ -34,6 +34,9 @@ class PurchaseOrderInherit(models.Model):
     price_cut_ids = fields.One2many('wika.po.pricecut.line', 'purchase_id', string='Other Price Cut')
     active = fields.Boolean(default=True)
 
+    def init(self):
+        self.env.cr.execute("DELETE FROM purchase_order WHERE state NOT IN ('po', 'uploaded', 'approved')")
+
     @api.model_create_multi
     def create(self, vals_list):
         model_model = self.env['ir.model'].sudo()
@@ -62,8 +65,9 @@ class PurchaseOrderInherit(models.Model):
                 res.document_ids = document_list
 
                 # Create todo activity
-                self.env['mail.activity'].create({
+                act_id = self.env['mail.activity'].create({
                     'activity_type_id': 4,
+                    'state': 'planned',
                     'res_model_id': model_id.id,
                     'res_id': res.id,
                     'user_id': first_user.id,
