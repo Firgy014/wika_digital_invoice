@@ -24,7 +24,7 @@
         'base',
         'purchase',
         'stock',
-        'wika_berita_acara_pembayaran',
+        # 'wika_berita_acara_pembayaran',
         'wika_account_move',
         'wika_payment_request',
         'wika_dashboard',

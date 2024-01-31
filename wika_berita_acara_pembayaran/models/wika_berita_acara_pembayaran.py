@@ -4,19 +4,20 @@ from odoo.exceptions import UserError, ValidationError, Warning, AccessError
 
 class WikaStockMoveInherited(models.Model):
     _inherit = 'stock.move'
-    _rec_name = 'reference'
+    _rec_name = 'name'
 
-    po_id = fields.Many2one('purchase.order', related='picking_id.po_id', string='field_name')
+    po_id = fields.Many2one('purchase.order')
 
 class WikaBeritaAcaraPembayaran(models.Model):
     _name = 'wika.berita.acara.pembayaran'
     _description = 'Berita Acara Pembayaran'
     _inherit = ['mail.thread']
 
+
     name = fields.Char(string='Nomor BAP', readonly=True, default='/')
-    branch_id = fields.Many2one('res.branch', string='Divisi', required=True)
-    department_id = fields.Many2one('res.branch', string='Department')
-    project_id = fields.Many2one('project.project', string='Project')
+    branch_id = fields.Many2one('res.branch', string='Divisi', required=True, related="po_id.branch_id")
+    department_id = fields.Many2one('res.branch', string='Department', related="po_id.department_id")
+    project_id = fields.Many2one('project.project', string='Project', related="po_id.project_id")
     po_id = fields.Many2one('purchase.order', string='Nomor PO', required=True)
     # po_id = fields.Many2one('purchase.order', string='Nomor PO', required=True, domain="[('state', '=', 'purchase')]")
     partner_id = fields.Many2one('res.partner', string='Vendor', required=True)
@@ -58,19 +59,22 @@ class WikaBeritaAcaraPembayaran(models.Model):
     total_tax = fields.Monetary(string='Total Tax', compute='compute_total_tax')
     grand_total = fields.Monetary(string='Grand Total', compute='compute_grand_total')
 
-    # @api.onchange('po_id')
-    # def _onchange_po_id(self):
-    #     if self.po_id:
-    #         product_lines = []
-    #         for po_line in self.po_id.order_line:
-    #             bap_line_values = {
-    #                 'product_id': po_line.product_id.id,
-    #                 'qty': po_line.product_qty,
-    #                 'unit_price': po_line.unit_price_idr,
-    #             }
-    #             product_lines.append((0, 0, bap_line_values))
 
-    #         self.bap_ids = product_lines
+    @api.onchange('po_id')
+    def onchange_po_id(self):
+        if self.po_id:
+            self.bap_ids = [(5, 0, 0)]
+            
+            stock_pickings = self.env['stock.picking'].search([('po_id', '=', self.po_id.id)])
+            
+            bap_lines = []
+            for picking in stock_pickings.move_ids_without_package:
+                bap_lines.append((0, 0, {'picking_id': picking.picking_id.id, 
+                'product_id': picking.product_id.id,
+                'qty': picking.product_uom_qty,
+                'unit_price': picking.price_unit,}))
+                
+            self.bap_ids = bap_lines
 
     @api.depends('bap_ids.sub_total', 'bap_ids.tax_ids')
     def compute_total_amount(self):
@@ -140,9 +144,13 @@ class WikaBeritaAcaraPembayaran(models.Model):
                 'summary': """ Need Approval Document PO """
             })
 
+        if not self.bap_ids:
+            raise ValidationError('List BAP tidak boleh kosong. Mohon isi List BAP terlebih dahulu!')
+
         for record in self:
             if any(not line.document for line in record.document_ids):
                 raise ValidationError('Document belum di unggah, mohon unggah file terlebih dahulu!')
+        
 
     # @api.constrains('document_ids')
     # def _check_documents(self):
@@ -231,8 +239,8 @@ class WikaBeritaAcaraPembayaranLine(models.Model):
     _name = 'wika.berita.acara.pembayaran.line'
 
     bap_id = fields.Many2one('wika.berita.acara.pembayaran', string='')
-    po_id = fields.Many2one('purchase.order', string='Nomor PO', required=True)
-    picking_id = fields.Many2one('stock.move', string='NO GR/SES', required=True)
+    # po_id = fields.Many2one('purchase.order', string='Nomor PO', required=True)
+    picking_id = fields.Many2one('stock.picking', string='NO GR/SES', required=True)
     product_id = fields.Many2one('product.product', string='Product', required=True)
     qty = fields.Integer(string='Quantity', required=True)
     tax_ids = fields.Many2many('account.tax', string='Tax', required=True)
@@ -263,20 +271,6 @@ class WikaBeritaAcaraPembayaranLine(models.Model):
         for record in self:
             if not record.picking_id:
                 raise ValidationError('Field "NO GR/SES" harus diisi. Tidak boleh kosong!')
-
-    # @api.onchange('po_id')
-    # def _onchange_po_id(self):
-    #     if self.po_id:
-    #         # Filter domain untuk product_id berdasarkan nilai po_id
-    #         return {'domain': {'product_id': [('purchase_order_id', '=', self.po_id.id)]}}
-    #     else:
-    #         # Reset domain jika po_id dihapus
-    #         return {'domain': {'product_id': []}}
-
-    @api.onchange('bap_id')
-    def _onchange_bap_id(self):
-        domain = [('id', 'in', self.bap_id.po_id.order_line.product_id.ids)]
-        return {'domain': {'product_id': domain}}
 
 class WikaBabDocumentLine(models.Model):
     _name = 'wika.bap.document.line'

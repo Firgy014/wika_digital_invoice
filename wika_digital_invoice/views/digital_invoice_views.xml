@@ -6,7 +6,7 @@
         <field name="arch" type="xml">
             <kanban class="oe_background_grey o_kanban_dashboard o_emphasize_colors o_stock_kanban" create="true" group_create="false">
                 <field name="color"/>
-                <field name="picking_code" readonly="1"/>
+                <!-- <field name="picking_code" readonly="1"/> -->
                 <field name="count_picking_waits"/>
                 <field name="count_picking_uploaded"/>
                 <field name="count_picking_approved"/>
@@ -14,52 +14,62 @@
                 <templates>
 
                     <t t-name="kanban-box">
-                        <div t-if="['waiting', 'uploaded', 'approved'].indexOf(record.picking_code.raw_value) > -1" t-attf-class="#{!selection_mode ? kanban_color(record.color.raw_value) : ''}" name="wika_digital_invoice">
+                        <!-- <div t-if="['waiting', 'uploaded', 'approved'].indexOf(record.picking_code.raw_value) > -1" t-attf-class="#{!selection_mode ? kanban_color(record.color.raw_value) : ''}" name="wika_digital_invoice"> -->
+                        <div name="wika_digital_invoice">
                             <div t-attf-class="o_kanban_card_header">
                                 <div class="o_kanban_card_header_title">
-                                    <div class="o_primary" t-if="!selection_mode">
+                                    <!-- <div class="o_primary" t-if="!selection_mode"> -->
+                                    <div class="o_primary">
                                         <a type="object" name="get_stock_picking_action_picking_type">
                                             <field name="name"/>
                                         </a>
                                     </div>
-                                    <div class="o_primary" t-if="selection_mode">
+                                    <!-- <div class="o_primary" t-if="selection_mode"> -->
+                                    <div class="o_primary">
                                         <field name="name"/>
                                     </div>
                                 </div>
-                                <div class="o_kanban_manage_button_section" t-if="!selection_mode">
+                                <!-- <div class="o_kanban_manage_button_section" t-if="!selection_mode"> -->
+                                <div class="o_kanban_manage_button_section">
                                     <a class="o_kanban_manage_toggle_button" href="#"><i class="fa fa-ellipsis-v" role="img" aria-label="Manage" title="Manage"/></a>
                                 </div>
                             </div>
-                            <div class="container o_kanban_card_content" t-if="!selection_mode">
+                            <!-- <div class="container o_kanban_card_content" t-if="!selection_mode"> -->
+                            <div class="container o_kanban_card_content">
                                 <div class="row">
                                     <div class="col-6 o_kanban_primary_left">
-                                        <button class="btn btn-primary" name="get_action_picking_tree_ready" type="object">
+                                        <!-- <button class="btn btn-primary" name="get_action_picking_tree_ready" type="object">
                                             <span t-if="record.picking_code.raw_value == 'waiting'"><t t-esc="record.count_picking_waits.value"/> To Upload</span>
                                             <span t-elif="record.picking_code.raw_value == 'uploaded'"><t t-esc="record.count_picking_uploaded.value"/> To Approve</span>
                                             <span t-elif="record.picking_code.raw_value == 'approved'"><t t-esc="record.count_picking_approved.value"/> To Verified</span>
+                                        </button> -->
+
+                                        <button class="btn btn-primary" name="get_action_submit" type="object">
+                                            <!-- <span> Butuh Upload <t t-esc="record.count_submit"/> Nih</span> -->
                                         </button>
+
                                     </div>
                                     <div class="col-6 o_kanban_primary_right">
 
-                                        <div t-if="record.count_picking.raw_value > 0" class="row">
+                                        <!-- <div t-if="record.count_picking.raw_value > 0" class="row">
                                             <div class="col-12">
                                                 <a name="get_action_picking_tree_waiting" type="object">
                                                     <field name="count_picking"/>
                                                     Total
                                                 </a>
                                             </div>
-                                        </div>
+                                        </div> -->
 
-                                        <div t-if="record.count_picking_waits.raw_value > 0" class="row">
+                                        <!-- <div t-if="record.count_picking_waits.raw_value > 0" class="row">
                                             <div class="col-12">
                                                 <a name="get_action_picking_tree_waiting" type="object">
                                                     <field name="count_picking_waits"/>
                                                     Waiting
                                                 </a>
                                             </div>
-                                        </div>
+                                        </div> -->
 
-                                        <div t-if="record.count_picking_uploaded.raw_value > 0" class="row">
+                                        <!-- <div t-if="record.count_picking_uploaded.raw_value > 0" class="row">
                                             <div class="col-12">
                                                 <a class="oe_kanban_stock_picking_type_list" name="get_action_picking_tree_late" type="object">
                                                     <field name="count_picking_uploaded"/>
@@ -75,7 +85,7 @@
                                                     Approved
                                                 </a>
                                             </div>
-                                        </div>
+                                        </div> -->
 
                                     </div>
                                 </div>
@@ -86,8 +96,8 @@
                                 <div class="row">
                                     <div class="col-6 o_kanban_card_manage_section o_kanban_manage_view">
                                         <div role="menuitem" class="o_kanban_card_manage_title">
-                                            <span t-if="record.picking_code.raw_value == 'internal'">Transfers</span>
-                                            <span t-else="">View</span>
+                                            <!-- <span t-if="record.picking_code.raw_value == 'internal'">Transfers</span> -->
+                                            <!-- <span t-else="">View</span> -->
                                         </div>
                                         <div role="menuitem">
                                             <a name="get_stock_picking_action_picking_type" type="object">All</a>
@@ -124,7 +134,7 @@
         </field>
     </record>
 
-    # Form view
+    <!-- Form view -->
     <record id="wika_digital_invoice_form" model="ir.ui.view">
         <field name="name">wika.digital.invoice.form</field>
         <field name="model">wika.digital.invoice</field>
@@ -135,6 +145,8 @@
                         <field name="name" readonly="0"/>
                         <!-- <field name="status"/> -->
                         <field name="model"/>
+                        <field name="count_submit"/>
+
                         <!-- <field name="purchase_ids" widget="many2many_tags" domain="[('state', '=', 'po')]" attrs="{'invisible': [('model', 'in', ['init','grses','bap','inv','pr'])]}"/> -->
                         <!-- <field name="picking_ids" widget="many2many_tags" domain="[('state', '=', 'waits')]" attrs="{'invisible': [('model', 'in', ['init','po','bap','inv','pr'])]}"/> -->
                         <!-- <field name="picking_id" attrs="{'invisible': [('model', 'in', ['init','po','bap','inv','pr'])]}"/> -->
@@ -143,7 +155,7 @@
                         <!-- <field name="payment_id" attrs="{'invisible': [('model', 'in', ['init','po','grses','bap','inv'])]}"/> -->
 
                         <field name="color" invisible="1" attrs="{'invisible': [('model', 'in', ['init','grses','bap','inv','pr'])]}"/>
-                        <field name="picking_code" invisible="1" attrs="{'invisible': [('model', 'in', ['init','grses','bap','inv','pr'])]}"/>
+                        <!-- <field name="picking_code" invisible="1" attrs="{'invisible': [('model', 'in', ['init','grses','bap','inv','pr'])]}"/> -->
                         
                         <!-- <field name="count_picking"/>
                         <field name="count_picking_waits"/>

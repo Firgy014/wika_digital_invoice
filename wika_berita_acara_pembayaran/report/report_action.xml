@@ -16,7 +16,7 @@
     <record id="report_wika_berita_acara_pembayaran_action" model="ir.actions.report">
         <field name="name">BAP Report</field>
         <field name="model">wika.berita.acara.pembayaran</field>
-        <field name="report_type">qweb-html</field>
+        <field name="report_type">qweb-pdf</field>
         <field name="report_name">wika_berita_acara_pembayaran.report_bap</field>
         <field name="report_file">wika_berita_acara_pembayaran.report_bap</field>
         <field name="binding_model_id" ref="model_wika_berita_acara_pembayaran"/>
