@@ -44,6 +44,9 @@ class PurchaseOrderInherit(models.Model):
         ('BL', 'BL'),
     ],compute="cek_transaction_type",store=True)
 
+    def init(self):
+        self.env.cr.execute("DELETE FROM purchase_order WHERE state NOT IN ('po', 'uploaded', 'approved')")
+
     @api.depends('department_id')
     def _cek_biro(self):
         for x in self:
