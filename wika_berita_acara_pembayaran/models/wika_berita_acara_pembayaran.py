@@ -45,7 +45,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
     begin_date = fields.Date(string='Tgl Mulai Kontrak', required=True, related="po_id.begin_date")
     sap_doc_number = fields.Char(string='Nomor Kontrak', required=True, related="po_id.sap_doc_number")
     amount_total = fields.Monetary(string='Total', related="po_id.amount_total")
-    currency_id = fields.Many2one('res.currency', string='Currency', required=True)
+    currency_id = fields.Many2one('res.currency', string='Currency')
     notes = fields.Html(string='Terms and Conditions', store=True, readonly=False,)
     total_amount = fields.Monetary(string='Total Amount', compute='compute_total_amount')
     total_tax = fields.Monetary(string='Total Tax', compute='compute_total_tax')
@@ -230,12 +230,12 @@ class WikaBeritaAcaraPembayaranLine(models.Model):
     _name = 'wika.berita.acara.pembayaran.line'
 
     bap_id = fields.Many2one('wika.berita.acara.pembayaran', string='')
-    picking_id = fields.Many2one('stock.picking', string='NO GR/SES', required=True)
-    product_id = fields.Many2one('product.product', string='Product', required=True)
-    qty = fields.Integer(string='Quantity', required=True)
-    tax_ids = fields.Many2many('account.tax', string='Tax', required=True)
-    currency_id = fields.Many2one('res.currency', string='Currency', required=True)
-    unit_price = fields.Monetary(string='Unit Price', required=True)
+    picking_id = fields.Many2one('stock.picking', string='NO GR/SES')
+    product_id = fields.Many2one('product.product', string='Product')
+    qty = fields.Integer(string='Quantity')
+    tax_ids = fields.Many2many('account.tax', string='Tax')
+    currency_id = fields.Many2one('res.currency', string='Currency')
+    unit_price = fields.Monetary(string='Unit Price')
     sub_total = fields.Monetary(string='Subtotal' , compute= 'compute_sub_total')
     tax_amount = fields.Monetary(string='Tax Amount', compute='compute_tax_amount')
 
