@@ -30,14 +30,16 @@ class wika_integration(models.Model):
     _sql_constraints = [
         ('app_name_unique', 'unique (name)', 'Nama harus unik!')
     ]
+    request_ids = fields.One2many(comodel_name='wika.integration.line',inverse_name='integration_id')
 
+class wika_integration_line(models.Model):
+    _name = 'wika.integration.line'
+    _description='Wika Integration.line'
 
+    integration_id  = fields.Many2one(comodel_name='wika.integration')
+    request= fields.Text(string='Request')
+    request_date= fields.Datetime(string='Request Date')
+    response = fields.Text(string='Response')
 
-    def tag_coa(self):
-        coa = self.env['account.account'].search([('company_id','=',1)])
-        for c in coa:
-            coa_lain = self.env['account.account'].search([('code', '=', c.code), ('company_id', '!=', 1)])
-            for cc in coa_lain:
-                cc.tag_ids = c.tag_ids
 
 
