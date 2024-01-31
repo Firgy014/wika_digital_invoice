@@ -54,6 +54,8 @@
             <field name="show_clear_qty_button" invisible="1"/>
             <field name="company_id" invisible="1"/>
             <header>
+               <button name="assign_todo_first" type="object" states="waits,uploaded,approved" string="Assign Todo First" groups="base.group_no_one"/>
+
                 <button name="action_submit_pick" type="object" states="waits" string="SUBMIT" class="oe_highlight" id="bid_submit" data-hotkey="v"/>
                 <button name="action_approve" type="object" states="uploaded" string="APPROVE" context="{'validate_analytic': True}" class="oe_highlight" id="bid_approve" data-hotkey="v"/>
                 <button name="action_reject" type="object" states="uploaded" string="REJECT" context="{'validate_analytic': True}" class="btn-danger" id="bid_reject" data-hotkey="v"/>
@@ -92,6 +94,8 @@
                         <field name="branch_id" string="Divisi" domain="[('biro', '=', False)]" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
                         <field name="department_id" string="Dept" domain="[('biro', '=', True), ('parent_id', '=', branch_id)]" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
                         <field name="project_id" string="Project" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
+                        <field name="check_biro" invisible="1"/>
+
                         <label for="scheduled_date"/>
                         <div class="o_row">
                             <field name="scheduled_date" string="Date" attrs="{'required': [('id', '!=', False)], 'readonly': [('state', 'in', ['uploaded', 'approved'])]}"

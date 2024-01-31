@@ -43,6 +43,7 @@ class PurchaseOrderInherit(models.Model):
         ('BTL', 'BTL'),
         ('BL', 'BL'),
     ],compute="cek_transaction_type",store=True)
+
     @api.depends('department_id')
     def _cek_biro(self):
         for x in self:
@@ -177,66 +178,109 @@ class PurchaseOrderInherit(models.Model):
         except:
             raise UserError(_("Connection Failed. Please Check Your Internet Connection."))
         if txt['DATA']:
-            txt_data = txt['DATA']
-            vals = []
+            txt_data = sorted(txt['DATA'], key=lambda x: x["MAT_DOC"])
+            mat_doc_dict = {}
             vals_header = []
             for hasil in txt_data:
-                print(hasil)
-                po_exist = self.env['purchase.order'].sudo().search([
-                    ('name', '=', hasil['PO_NUMBER'])], limit=1)
-                if po_exist:
+                mat_doc = hasil["MAT_DOC"]
+                if mat_doc in mat_doc_dict:
+                    # Append the item to the existing list
+                    mat_doc_dict[mat_doc].append(hasil)
+                else:
+                    # Create a new list with the current item
+                    mat_doc_dict[mat_doc] = [hasil]
+            for mat_doc, items in mat_doc_dict.items():
+                print(f"MAT_DOC: {mat_doc}")
+                print("hehe")
+                vals = []
+                for item in items:
                     prod = self.env['product.product'].sudo().search([
-                        ('default_code', '=', hasil['MATERIAL'])], limit=1)
-                    qty = float(hasil['QUANTITY']) * 100
+                                ('default_code', '=', item['MATERIAL'])], limit=1)
+                    qty = float(item['QUANTITY']) * 100
                     uom = self.env['uom.uom'].sudo().search([
-                        ('name', '=', hasil['ENTRY_UOM'])], limit=1)
-                    if po_exist.po_type == 'BARANG':
-                        tipe_gr = 'gr'
-                    else:
-                        tipe_gr = 'ses'
+                                ('name', '=', item['ENTRY_UOM'])], limit=1)
                     if not uom:
                         uom = self.env['uom.uom'].sudo().create({
                             'name': hasil['ENTRY_UOM'], 'category_id': 1})
+                    po_line= self.env['purchase.order.line'].sudo().search([
+                             ('order_id', '=' ,self.id),('sequence','=',item['PO_ITEM'])] ,limit=1)
                     vals.append((0, 0, {
+                        'sequence':item['MATDOC_ITM'],
                         'product_id': prod.id if prod else False,
-                        'quantity_done': qty,
+                        'quantity_done': float(item['QUANTITY']),
+                        'product_uom_qty': float(item['QUANTITY']),
                         'product_uom': uom.id,
                         'location_id': 4,
                         'location_dest_id': 8,
-                        'name': hasil['MAT_DOC']
+                        'purchase_line_id':po_line.id,
+                        'name': hasil['PO_NUMBER']
                     }))
-                #     vals_header.append((0, 0, {
-                #         'name': hasil['MAT_DOC'],
-                #         'po_id': po_exist.id,
-                #         'project_id': po_exist.project_id.id,
-                #         'branch_id': po_exist.branch_id.id,
-                #         'department_id': po_exist.department_id.id,
-                #         'scheduled_date':hasil['DOC_DATE']
-                #     }))
-                matdoc = hasil['MAT_DOC']
-                docdate = hasil['DOC_DATE']
-                gr_type = hasil['MATERIAL']
-            if vals:
-                print("ppppppppppppppppppppp")
-                picking_create = self.env['stock.picking'].sudo().create({
-                    'name': matdoc,
-                    'po_id': po_exist.id,
-                    'project_id': po_exist.project_id.id,
-                    'branch_id': po_exist.branch_id.id,
-                    'department_id': po_exist.department_id.id if po_exist.department_id.id else False,
-                    'scheduled_date': docdate,
-                    'partner_id': po_exist.partner_id.id,
-                    'location_id': 4,
-                    'location_dest_id': 8,
-                    'picking_type_id': 1,
-                    'move_ids': vals,
-                    'pick_type': tipe_gr,
-                    # 'move_ids_without_package':vals,
-                    'company_id': 1,
-                    'state': 'waits'
-                })
-            else:
-                raise UserError(_("Data GR Tidak Tersedia di PO TERSEBUT!"))
+                    print(item['DOC_DATE'])
+                    docdate = hasil['DOC_DATE']
+                print(vals)
+                if vals:
+                    print("ppppppppppppppppppppp")
+                    picking_create = self.env['stock.picking'].sudo().create({
+                        'name': mat_doc,
+                        'po_id': self.id,
+                        'purchase_id':self.id,
+                        'project_id': self.project_id.id,
+                        'branch_id': self.branch_id.id,
+                        'department_id': self.department_id.id if self.department_id.id else False,
+                        'scheduled_date': docdate,
+                        'start_date': docdate,
+                        'partner_id': self.partner_id.id,
+                        'location_id': 4,
+                        'location_dest_id': 8,
+                        'picking_type_id': 1,
+                        'move_ids': vals,
+                        #'pick_type': tipe_gr,
+                        #'move_ids_without_package':vals,
+                        'company_id': 1,
+                        'state': 'assigned'
+                    })
+                else:
+                    raise UserError(_("Data GR Tidak Tersedia di PO TERSEBUT!"))
+            #     prod = self.env['product.product'].sudo().search([
+            #         ('default_code', '=', hasil['MATERIAL'])], limit=1)
+            #     qty = float(hasil['QUANTITY']) * 100
+            #     uom = self.env['uom.uom'].sudo().search([
+            #         ('name', '=', hasil['ENTRY_UOM'])], limit=1)
+            #     if not uom:
+            #         uom = self.env['uom.uom'].sudo().create({
+            #             'name': hasil['ENTRY_UOM'], 'category_id': 1})
+
+            #     #     vals_header.append((0, 0, {
+            #     #         'name': hasil['MAT_DOC'],
+            #     #         'po_id': po_exist.id,
+            #     #         'project_id': po_exist.project_id.id,
+            #     #         'branch_id': po_exist.branch_id.id,
+            #     #         'department_id': po_exist.department_id.id,
+            #     #         'scheduled_date':hasil['DOC_DATE']
+            #     #     }))
+            #     matdoc = hasil['MAT_DOC']
+            #     docdate = hasil['DOC_DATE']
+            #     gr_type = hasil['MATERIAL']
+            # if vals:
+            #     print("ppppppppppppppppppppp")
+            #     picking_create = self.env['stock.picking'].sudo().create({
+            #         'name': matdoc,
+            #         'po_id': po_exist.id,
+            #         'project_id': po_exist.project_id.id,
+            #         'branch_id': po_exist.branch_id.id,
+            #         'department_id': po_exist.department_id.id if po_exist.department_id.id else False,
+            #         'scheduled_date': docdate,
+            #         'partner_id': po_exist.partner_id.id,
+            #         'location_id': 4,
+            #         'location_dest_id': 8,
+            #         'picking_type_id': 1,
+            #         'move_ids': vals,
+            #         'pick_type': tipe_gr,
+            #         # 'move_ids_without_package':vals,
+            #         'company_id': 1,
+            #         'state': 'waits'
+            #     })
+
 
         else:
             raise UserError(_("Data GR Tidak Tersedia!"))
