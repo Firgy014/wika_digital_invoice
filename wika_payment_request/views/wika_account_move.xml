@@ -1,9 +1,8 @@
-<?xml version="1.0" encoding="utf-8"?>
+<!-- <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
     <data>
     
-        <!-- tree -->
         <record id="view_wika_account_move_tree_inherit" model="ir.ui.view">
             <field name="name">wika.account.move.inherit.view.tree</field>
             <field name="model">account.move</field>
@@ -18,4 +17,4 @@
     </data>
     
 
-</odoo>
+</odoo> -->

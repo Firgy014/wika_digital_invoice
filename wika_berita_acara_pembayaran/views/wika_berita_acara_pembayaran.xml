@@ -151,6 +151,14 @@
                                             <field name="sub_total"/>
                                         </tree>
                                     </field>
+                                    <field name="price_cut_ids" attrs="{'invisible': [('bap_type', '=', 'progress')]}" 
+                                        mode="tree,kanban" nolabel="1" colspan="2">
+                                        <tree editable="top">
+                                            <field name="po_id" invisible="1"/>
+                                            <field name="product_id"/>
+                                            <field name="amount"/>
+                                        </tree>
+                                    </field>
                                     <group>
                                         <field colspan="2" name="notes" nolabel="1" placeholder="Define your terms and conditions ..."/>
                                     </group>
@@ -161,14 +169,6 @@
                                     </group>
                                 </group>
                                 <div class="clearfix"/>
-                                <field name="price_cut_ids" attrs="{'invisible': [('bap_type', '=', 'progress')]}" 
-                                    mode="tree,kanban" nolabel="1" colspan="2">
-                                    <tree editable="top">
-                                        <field name="po_id" invisible="1"/>
-                                        <field name="product_id"/>
-                                        <field name="amount"/>
-                                    </tree>
-                                </field>
                             </page>
                             <page string="Potongan Lain-lain" attrs="{'invisible': [('bap_type', '=', 'uang muka')]}">
                                 <field name="price_cut_ids">

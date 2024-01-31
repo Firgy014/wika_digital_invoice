@@ -17,6 +17,12 @@ class WikaApprovalSetting(models.Model):
     ], string='Status')
     setting_line_ids = fields.One2many('wika.approval.setting.line', 'approval_id', string='Lines')
     total_approve = fields.Integer(string='Total Approve', compute='_compute_total_approve')
+    level = fields.Selection([
+        ('Proyek', 'Proyek'),
+        ('Divisi Operasi', 'Divisi Operasi'),
+        ('Divisi Fungsi','Divisi Fungsi'),
+        ('Pusat', 'Pusat')
+    ], string='Level',required=True)
 
     @api.depends('setting_line_ids')
     def _compute_total_approve(self):
@@ -30,16 +36,8 @@ class WikaApprovalSetting(models.Model):
         formatted_date_time = current_date_time.strftime('%Y%m%d%H%M%S')
         return f"APR/{formatted_date_time}"
 
-    @api.onchange('state')
-    def _onchange_state(self):
-        for record in self:
-            if record.state == 'confirm':
-                record.set_fields_readonly()
 
-    def set_fields_readonly(self):
-        for field_name, field in self.env['wika.approval.setting.line']._fields.items():
-            if not field.related:
-                self[field_name].readonly = True
+
 
 class WikaApprovalSettingLine(models.Model):
     _name = 'wika.approval.setting.line'
@@ -56,3 +54,9 @@ class WikaApprovalSettingLine(models.Model):
         ('draft', 'Draft'),
         ('confirm', 'Confirm')
     ], string='Status', related='approval_id.state')
+    level = fields.Selection([
+        ('Proyek', 'Proyek'),
+        ('Divisi Operasi', 'Divisi Operasi'),
+        ('Divisi Fungsi','Divisi Fungsi'),
+        ('Pusat', 'Pusat')
+    ], string='Level',related='approval_id.level')
