@@ -29,7 +29,7 @@
                 </xpath>
                 <xpath expr="//filter[@name='state_approved']" position="after">
                     <separator/>
-                    <filter string="Rejected" name="rejected" domain="[('active', '=', False)]"/>
+                    <filter string="Archived" name="archived" domain="[('active', '=', False)]"/>
                 </xpath>
 
                 <!-- hide existing filters -->

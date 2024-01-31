@@ -2,6 +2,12 @@ from odoo import models, fields, api
 from datetime import datetime, timedelta
 from odoo.exceptions import UserError, ValidationError, Warning, AccessError
 
+class WikaStockMoveInherited(models.Model):
+    _inherit = 'stock.move'
+    _rec_name = 'reference'
+
+    po_id = fields.Many2one('purchase.order', related='picking_id.po_id', string='field_name')
+
 class WikaBeritaAcaraPembayaran(models.Model):
     _name = 'wika.berita.acara.pembayaran'
     _description = 'Berita Acara Pembayaran'
@@ -11,7 +17,8 @@ class WikaBeritaAcaraPembayaran(models.Model):
     branch_id = fields.Many2one('res.branch', string='Divisi', required=True)
     department_id = fields.Many2one('res.branch', string='Department')
     project_id = fields.Many2one('project.project', string='Project')
-    po_id = fields.Many2one('purchase.order', string='Nomor PO', required=True, domain="[('state', '=', 'approved')]")
+    po_id = fields.Many2one('purchase.order', string='Nomor PO', required=True)
+    # po_id = fields.Many2one('purchase.order', string='Nomor PO', required=True, domain="[('state', '=', 'purchase')]")
     partner_id = fields.Many2one('res.partner', string='Vendor', required=True)
     bap_ids = fields.One2many('wika.berita.acara.pembayaran.line', 'bap_id', string='List BAP', required=True)
     document_ids = fields.One2many('wika.bap.document.line', 'bap_id', string='List Document')
@@ -46,31 +53,41 @@ class WikaBeritaAcaraPembayaran(models.Model):
     sap_doc_number = fields.Char(string='Nomor Kontrak', required=True, related="po_id.sap_doc_number")
     amount_total = fields.Monetary(string='Total', related="po_id.amount_total")
     currency_id = fields.Many2one('res.currency', string='Currency', required=True)
-
-    # move_ids_without_package = fields.One2many(
-    #     'stock.move', 'picking_id', string="Stock moves not in package", compute='_compute_move_without_package',
-    #     inverse='_set_move_without_package', compute_sudo=True)
-    # # move_line_ids = fields.One2many('stock.move', 'picking_id', string='Move Line')
-
-    narration = fields.Html(string='Terms and Conditions', store=True, readonly=False,)
-    tax_totals = fields.Char(string="Invoice Totals")
+    notes = fields.Html(string='Terms and Conditions', store=True, readonly=False,)
+    total_amount = fields.Monetary(string='Total Amount', compute='compute_total_amount')
+    total_tax = fields.Monetary(string='Total Tax', compute='compute_total_tax')
+    grand_total = fields.Monetary(string='Grand Total', compute='compute_grand_total')
 
     # @api.onchange('po_id')
     # def _onchange_po_id(self):
-    #     # Filter domain untuk bap_ids berdasarkan nilai po_id
-    #     domain = [('product_id.purchase_id', '=', self.po_id.id)] if self.po_id else []
-    #     return {'domain': {'bap_ids': domain}}
+    #     if self.po_id:
+    #         product_lines = []
+    #         for po_line in self.po_id.order_line:
+    #             bap_line_values = {
+    #                 'product_id': po_line.product_id.id,
+    #                 'qty': po_line.product_qty,
+    #                 'unit_price': po_line.unit_price_idr,
+    #             }
+    #             product_lines.append((0, 0, bap_line_values))
 
-    # @api.onchange('po_id')
-    # def onchange_po_id(self):
-    #     for rec in self:
-    #         if rec.po_id:
-    #             for line in rec.bap_ids:
-    #                 find_c = self.env["purchase.order.line"].search([('order_id', '=', rec.po_id.id), ('product_id', '=', line.product_id.id)])
+    #         self.bap_ids = product_lines
 
-    #                 if find_c:
-    #                     return {'domain': {'bap_ids': [('product_id', '=', find_c.product_id.id)]}}
-    #         return {'domain': {'bap_ids': []}}
+    @api.depends('bap_ids.sub_total', 'bap_ids.tax_ids')
+    def compute_total_amount(self):
+        for record in self:
+            total_amount_value = sum(record.bap_ids.mapped('sub_total'))
+            record.total_amount = total_amount_value
+
+    @api.depends('bap_ids.sub_total', 'bap_ids.tax_ids')
+    def compute_total_tax(self):
+        for record in self:
+            total_tax_value = sum(record.bap_ids.mapped('tax_amount'))
+            record.total_tax = total_tax_value
+
+    @api.depends('total_amount', 'total_tax')
+    def compute_grand_total(self):
+        for record in self:
+            record.grand_total = record.total_amount + record.total_tax
 
     @api.onchange('partner_id')
     def _onchange_(self):
@@ -214,6 +231,7 @@ class WikaBeritaAcaraPembayaranLine(models.Model):
     _name = 'wika.berita.acara.pembayaran.line'
 
     bap_id = fields.Many2one('wika.berita.acara.pembayaran', string='')
+    po_id = fields.Many2one('purchase.order', string='Nomor PO', required=True)
     picking_id = fields.Many2one('stock.move', string='NO GR/SES', required=True)
     product_id = fields.Many2one('product.product', string='Product', required=True)
     qty = fields.Integer(string='Quantity', required=True)
@@ -221,7 +239,19 @@ class WikaBeritaAcaraPembayaranLine(models.Model):
     currency_id = fields.Many2one('res.currency', string='Currency', required=True)
     unit_price = fields.Monetary(string='Unit Price', required=True)
     sub_total = fields.Monetary(string='Subtotal' , compute= 'compute_sub_total')
-    untaxed_amount = fields.Monetary('untaxed amount')
+    tax_amount = fields.Monetary(string='Tax Amount', compute='compute_tax_amount')
+
+    @api.depends('tax_ids', 'sub_total')
+    def compute_sub_total(self):
+        for record in self:
+            tax_rate = sum(record.tax_ids.mapped('amount')) / 100  # Assuming tax amount is in percentage
+            record.sub_total = record.sub_total + (record.sub_total * tax_rate)
+
+    @api.depends('tax_ids', 'sub_total')
+    def compute_tax_amount(self):
+        for record in self:
+            tax_amount_value = sum(record.tax_ids.mapped('amount')) * record.sub_total / 100
+            record.tax_amount = tax_amount_value
 
     @api.depends('qty', 'unit_price')
     def compute_sub_total(self):
@@ -234,14 +264,19 @@ class WikaBeritaAcaraPembayaranLine(models.Model):
             if not record.picking_id:
                 raise ValidationError('Field "NO GR/SES" harus diisi. Tidak boleh kosong!')
 
-    @api.onchange('po_id')
-    def _onchange_po_id(self):
-        if self.po_id:
-            # Filter domain untuk product_id berdasarkan nilai po_id
-            return {'domain': {'product_id': [('purchase_order_id', '=', self.po_id.id)]}}
-        else:
-            # Reset domain jika po_id dihapus
-            return {'domain': {'product_id': []}}
+    # @api.onchange('po_id')
+    # def _onchange_po_id(self):
+    #     if self.po_id:
+    #         # Filter domain untuk product_id berdasarkan nilai po_id
+    #         return {'domain': {'product_id': [('purchase_order_id', '=', self.po_id.id)]}}
+    #     else:
+    #         # Reset domain jika po_id dihapus
+    #         return {'domain': {'product_id': []}}
+
+    @api.onchange('bap_id')
+    def _onchange_bap_id(self):
+        domain = [('id', 'in', self.bap_id.po_id.order_line.product_id.ids)]
+        return {'domain': {'product_id': domain}}
 
 class WikaBabDocumentLine(models.Model):
     _name = 'wika.bap.document.line'
