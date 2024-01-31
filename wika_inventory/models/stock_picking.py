@@ -25,7 +25,7 @@ class PickingInherit(models.Model):
     end_date = fields.Date(string='End Date')
     document_ids = fields.One2many('wika.picking.document.line', 'picking_id', string='List Document')
     history_approval_ids = fields.One2many('wika.picking.approval.line', 'picking_id', string='List Log')
-    step_approve = fields.Integer(string='Step Approve')
+    step_approve = fields.Integer(string='Step Approve',default=1)
     po_count = fields.Integer(string='Purchase Orders', compute='_compute_po_count')
     active = fields.Boolean(default=True)
 
@@ -34,11 +34,8 @@ class PickingInherit(models.Model):
         model_model = self.env['ir.model'].sudo()
         document_setting_model = self.env['wika.document.setting'].sudo()
         model_id = model_model.search([('model', '=', 'stock.picking')], limit=1)
-        approval_id = self.env['wika.approval.setting'].sudo().search([('model_id', '=', model_id.id)], limit=1)
-        approval_line_id = self.env['wika.approval.setting.line'].sudo().search([('approval_id', '=', approval_id.id)], limit=1)
 
-        if approval_line_id:
-            first_user = approval_line_id.groups_id.users[0]
+
         
         for vals in vals_list:
             vals['state'] = 'waits'
@@ -47,7 +44,23 @@ class PickingInherit(models.Model):
             #         move_vals[2]['company_id'] = 1 if move_vals[2]['company_id'] is False else move_vals[2]['company_id']
 
             res = super(PickingInherit, self).create(vals)
-
+            approval_id = self.env['wika.approval.setting'].sudo().search(
+                [('model_id', '=', model_id.id), ('branch_id', '=', res.branch_id.id)], limit=1)
+            approval_line_id = self.env['wika.approval.setting.line'].search([
+                ('branch_id', '=', res.branch_id.id),
+                ('sequence', '=', 1),
+                ('approval_id', '=', approval_id.id)
+            ], limit=1)
+            if approval_line_id:
+                first_user = approval_line_id.groups_id.users[0]
+                if first_user:
+                    self.env['mail.activity'].create({
+                        'activity_type_id': 4,
+                        'res_model_id': model_id.id,
+                        'res_id': res.id,
+                        'user_id': first_user.id,
+                        'summary': f"The required documents of {model_id.name} is not uploaded yet. Please upload it immediately!"
+                    })
             # Get Document Setting
             document_list = []
             doc_setting_id = document_setting_model.search([('model_id', '=', model_id.id)])
@@ -61,14 +74,8 @@ class PickingInherit(models.Model):
                     }))
                 res.document_ids = document_list
 
-                # Create todo activity
-                self.env['mail.activity'].create({
-                    'activity_type_id': 4,
-                    'res_model_id': model_id.id,
-                    'res_id': res.id,
-                    'user_id': first_user.id,
-                    'summary': f"The required documents of {model_id.name} is not uploaded yet. Please upload it immediately!"
-                })
+                # Createtodoactivity
+
 
             else:
                 raise AccessError("Either approval and/or document settings are not found. Please configure it first in the settings menu.")

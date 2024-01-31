@@ -143,6 +143,12 @@ class WikaBeritaAcaraPembayaran(models.Model):
                 raise ValidationError('Document belum di unggah, mohon unggah file terlebih dahulu!')
         
 
+    # @api.constrains('document_ids')
+    # def _check_documents(self):
+    #     for record in self:
+    #         if any(not line.document for line in record.document_ids):
+    #             raise ValidationError('Dokumen belum diunggah. Mohon unggah file terlebih dahulu sebelum melanjutkan.')
+
     def action_approve(self):
         user = self.env['res.users'].search([('id','=',self._uid)], limit=1)
         documents_model = self.env['documents.document'].sudo()
