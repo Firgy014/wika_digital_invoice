@@ -11,7 +11,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
     branch_id = fields.Many2one('res.branch', string='Divisi', required=True)
     department_id = fields.Many2one('res.branch', string='Department')
     project_id = fields.Many2one('project.project', string='Project')
-    po_id = fields.Many2one('purchase.order', string='Nomor PO', required=True, domain="[('state', '=', 'purchase')]")
+    po_id = fields.Many2one('purchase.order', string='Nomor PO', required=True, domain="[('state', '=', 'approved')]")
     partner_id = fields.Many2one('res.partner', string='Vendor', required=True)
     bap_ids = fields.One2many('wika.berita.acara.pembayaran.line', 'bap_id', string='List BAP', required=True)
     document_ids = fields.One2many('wika.bap.document.line', 'bap_id', string='List Document')
