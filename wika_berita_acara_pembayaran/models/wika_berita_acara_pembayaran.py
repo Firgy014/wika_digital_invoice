@@ -1,4 +1,4 @@
-from odoo import models, fields, api
+from odoo import models, fields, api, _
 from datetime import datetime, timedelta
 from odoo.exceptions import UserError, ValidationError, Warning, AccessError
 
@@ -31,6 +31,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
         'mail.activity', 'res_id', 'Activities',
         auto_join=True,
         groups="base.group_user",)
+    end_date = fields.Date(string='Tgl Akhir Kontrak', related="po_id.end_date")
     bap_date = fields.Date(string='Tanggal BAP', required=True)
     bap_type = fields.Selection([
         ('progress', 'Progress'),
@@ -175,13 +176,6 @@ class WikaBeritaAcaraPembayaran(models.Model):
             if any(not line.document for line in record.document_ids):
                 raise ValidationError('Document belum di unggah, mohon unggah file terlebih dahulu!')
         
-
-    # @api.constrains('document_ids')
-    # def _check_documents(self):
-    #     for record in self:
-    #         if any(not line.document for line in record.document_ids):
-    #             raise ValidationError('Dokumen belum diunggah. Mohon unggah file terlebih dahulu sebelum melanjutkan.')
-
     def action_approve(self):
         user = self.env['res.users'].search([('id','=',self._uid)], limit=1)
         documents_model = self.env['documents.document'].sudo()
@@ -258,6 +252,22 @@ class WikaBeritaAcaraPembayaran(models.Model):
 
     def action_print_bap(self):
         return self.env.ref('wika_berita_acara_pembayaran.report_wika_berita_acara_pembayaran_action').report_action(self)
+
+    @api.onchange('end_date')
+    def _check_contract_expiry_on_save(self):
+        if self.end_date and self.end_date < fields.Date.today():
+            raise UserError(_("Tanggal akhir kontrak PO sudah kadaluarsa. Silakan perbarui kontrak segera!"))
+
+    @api.model
+    def create(self, values):
+        record = super(WikaBeritaAcaraPembayaran, self).create(values)
+        record._check_contract_expiry_on_save()
+        return record
+
+    def write(self, values):
+        super(WikaBeritaAcaraPembayaran, self).write(values)
+        self._check_contract_expiry_on_save()
+        return True
 
 class WikaBeritaAcaraPembayaranLine(models.Model):
     _name = 'wika.berita.acara.pembayaran.line'

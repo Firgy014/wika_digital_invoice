@@ -13,6 +13,24 @@ class WikaInheritedAccountMove(models.Model):
     history_approval_ids = fields.One2many('wika.invoice.approval.line', 'invoice_id', string='History Approval Line')
     reject_reason_account = fields.Text(string='Reject Reason')
     step_approve = fields.Integer(string='Step Approve')
+    no_doc_sap = fields.Char(string='No Doc SAP')
+    no_invoice_vendor = fields.Char(string='Nomor Invoice Vendor')
+    invoice_number = fields.Char(string='Invoice Number', size=16)
+    baseline_date = fields.Date(string='Baseline Date')
+    retention_due = fields.Date(string='Retentstring=ion Due')
+    amount_invoice = fields.Float(string='Amount Invoice')
+    special_gl_id = fields.Many2one('wika.special.gl', string='Special GL')
+
+    invoice_line_ids = fields.One2many(  # /!\ invoice_line_ids is just a subset of line_ids.
+        'account.move.line',
+        'move_id',
+        string='Invoice lines',
+        copy=False,
+        readonly=True,
+        domain=[('display_type', 'in', ('product', 'line_section', 'line_note'))],
+        states={'draft': [('readonly', False)]},
+    )
+
     state = fields.Selection(
         selection=[
             ('draft', 'Draft'),
@@ -50,6 +68,21 @@ class WikaInheritedAccountMove(models.Model):
         index=True,
         ondelete='restrict',
     )
+
+    @api.onchange('bap_id')
+    def _onchange_bap_id(self):
+        if self.bap_id:
+            lines = []
+
+            for bap_line in self.bap_id.bap_ids:
+                lines.append((0, 0, {
+                    'product_id': bap_line.product_id.id,
+                    'quantity': bap_line.qty,
+                    'price_unit': bap_line.unit_price,
+                    # Add other fields as needed
+                }))
+
+            self.invoice_line_ids = lines
 
     def action_submit(self):
         self.write({'state': 'upload'})

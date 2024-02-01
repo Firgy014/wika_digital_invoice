@@ -134,6 +134,7 @@
                                 <field name="department_id" domain="[('biro', '=', True), ('parent_id', '=', branch_id)]" 
                                     attrs="{'readonly': [('state', 'in', ['upload', 'approve'])], 'invisible': [('check_biro', '=', False)]}"/>
                                 <field name="project_id" attrs="{'readonly': [('state', 'in', ['upload', 'approve'])]}"/>
+                                <field name="end_date" attrs="{'readonly': [('state', 'in', ['upload', 'approve'])]}"/>
                                 <field name="bap_date" attrs="{'readonly': [('state', 'in', ['upload', 'approve'])]}"/>
                             </group>
                         </group>
