@@ -1,6 +1,7 @@
 from odoo import models, fields, api, _
 from datetime import datetime
 from odoo.exceptions import AccessError, ValidationError
+from datetime import datetime, timedelta
 
 class PickingInherit(models.Model):
     _inherit = "stock.picking"
@@ -28,82 +29,179 @@ class PickingInherit(models.Model):
     step_approve = fields.Integer(string='Step Approve',default=1)
     po_count = fields.Integer(string='Purchase Orders', compute='_compute_po_count')
     active = fields.Boolean(default=True)
+    check_biro = fields.Boolean(compute="_cek_biro")
 
-    @api.model_create_multi
-    def create(self, vals_list):
+    @api.depends('department_id')
+    def _cek_biro(self):
+        for x in self:
+            if x.department_id:
+                biro = self.env['res.branch'].search([('parent_id', '=', x.department_id.id)])
+                if biro:
+                    x.check_biro = True
+                else:
+                    x.check_biro = False
+            else:
+                x.check_biro = False
+    def assign_todo_first(self):
         model_model = self.env['ir.model'].sudo()
         document_setting_model = self.env['wika.document.setting'].sudo()
         model_id = model_model.search([('model', '=', 'stock.picking')], limit=1)
-
-
-        
-        for vals in vals_list:
-            vals['state'] = 'waits'
-            # if 'move_ids_without_package' in vals:
-            #     for move_vals in vals['move_ids_without_package']:
-            #         move_vals[2]['company_id'] = 1 if move_vals[2]['company_id'] is False else move_vals[2]['company_id']
-
-            res = super(PickingInherit, self).create(vals)
-            approval_id = self.env['wika.approval.setting'].sudo().search(
-                [('model_id', '=', model_id.id), ('branch_id', '=', res.branch_id.id)], limit=1)
-            approval_line_id = self.env['wika.approval.setting.line'].search([
-                ('branch_id', '=', res.branch_id.id),
-                ('sequence', '=', 1),
-                ('approval_id', '=', approval_id.id)
-            ], limit=1)
-            if approval_line_id:
-                first_user = approval_line_id.groups_id.users[0]
+        for res in self:
+            if res.project_id:
+                level = 'Proyek'
+            elif res.branch_id and not res.department_id and not res.project_id:
+                level = 'Divisi Operasi'
+            elif res.branch_id and res.department_id and not res.project_id:
+                level = 'Divisi Fungsi'
+            print(level)
+            first_user = False
+            if level:
+                approval_id = self.env['wika.approval.setting'].sudo().search(
+                    [('model_id', '=', model_id.id), ('level', '=', level)], limit=1)
+                print('approval_idapproval_idapproval_id')
+                approval_line_id = self.env['wika.approval.setting.line'].search([
+                    ('sequence', '=', 1),
+                    ('approval_id', '=', approval_id.id)
+                ], limit=1)
+                print(approval_line_id)
+                groups_id = approval_line_id.groups_id
+                if groups_id:
+                    for x in groups_id.users:
+                        if level == 'Proyek' and x.project_id == res.project_id:
+                            first_user = x.id
+                        if level == 'Divisi Operasi' and x.branch_id == res.branch_id:
+                            first_user = x.id
+                        if level == 'Divisi Fungsi' and x.department_id == res.department_id:
+                            first_user = x.id
+                print(first_user)
+                #     # Createtodoactivity
                 if first_user:
-                    self.env['mail.activity'].create({
+                    self.env['mail.activity'].sudo().create({
                         'activity_type_id': 4,
                         'res_model_id': model_id.id,
                         'res_id': res.id,
-                        'user_id': first_user.id,
+                        'user_id': first_user,
+                        'date_deadline': fields.Date.today() + timedelta(days=2),
+                        'state': 'planned',
                         'summary': f"The required documents of {model_id.name} is not uploaded yet. Please upload it immediately!"
                     })
+
             # Get Document Setting
             document_list = []
             doc_setting_id = document_setting_model.search([('model_id', '=', model_id.id)])
 
             if doc_setting_id:
                 for document_line in doc_setting_id:
-                    document_list.append((0,0, {
+                    document_list.append((0, 0, {
                         'picking_id': res.id,
                         'document_id': document_line.id,
                         'state': 'waiting'
                     }))
                 res.document_ids = document_list
-
-                # Createtodoactivity
-
-
             else:
-                raise AccessError("Either approval and/or document settings are not found. Please configure it first in the settings menu.")
+                raise AccessError(
+                    "Either approval and/or document settings are not found. Please configure it first in the settings menu.")
 
-        res.state = 'waits'
-        res.active = True
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        model_model = self.env['ir.model'].sudo()
+        document_setting_model = self.env['wika.document.setting'].sudo()
+        model_id = model_model.search([('model', '=', 'stock.picking')], limit=1)
+        for vals in vals_list:
+
+            # if 'move_ids_without_package' in vals:
+            #     for move_vals in vals['move_ids_without_package']:
+            #         move_vals[2]['company_id'] = 1 if move_vals[2]['company_id'] is False else move_vals[2]['company_id']
+
+            res = super(PickingInherit, self).create(vals)
+            res.assign_todo_first()
+            #res.state = 'waits'
+            #
+            # approval_id = self.env['wika.approval.setting'].sudo().search(
+            #     [('model_id', '=', model_id.id), ('branch_id', '=', res.branch_id.id)], limit=1)
+            # approval_line_id = self.env['wika.approval.setting.line'].search([
+            #     ('branch_id', '=', res.branch_id.id),
+            #     ('sequence', '=', 1),
+            #     ('approval_id', '=', approval_id.id)
+            # ], limit=1)
+            # if approval_line_id:
+            #     first_user = approval_line_id.groups_id.users[0]
+            #     if first_user:
+            #         self.env['mail.activity'].create({
+            #             'activity_type_id': 4,
+            #             'res_model_id': model_id.id,
+            #             'res_id': res.id,
+            #             'user_id': first_user.id,
+            #             'summary': f"The required documents of {model_id.name} is not uploaded yet. Please upload it immediately!"
+            #         })
+            # # Get Document Setting
+            # document_list = []
+            # doc_setting_id = document_setting_model.search([('model_id', '=', model_id.id)])
+            #
+            # if doc_setting_id:
+            #     for document_line in doc_setting_id:
+            #         document_list.append((0,0, {
+            #             'picking_id': res.id,
+            #             'document_id': document_line.id,
+            #             'state': 'waiting'
+            #         }))
+            #     res.document_ids = document_list
+            #
+            #     # Createtodoactivity
+            #
+            #
+            # else:
+            #     raise AccessError("Either approval and/or document settings are not found. Please configure it first in the settings menu.")
         return res
 
     def action_approve(self):
-        user = self.env['res.users'].search([('id','=',self._uid)], limit=1)
+        user = self.env['res.users'].search([('id', '=', self._uid)], limit=1)
         documents_model = self.env['documents.document'].sudo()
         cek = False
-        model_id = self.env['ir.model'].search([('model','=', 'stock.picking')], limit=1)
-        if model_id:
-            model_wika_id = self.env['wika.approval.setting'].search([('model_id','=',  model_id.id)], limit=1)
-
-        if user.branch_id.id==self.branch_id.id and model_wika_id:
-            groups_line = self.env['wika.approval.setting.line'].search(
-                [('branch_id', '=', self.branch_id.id), ('sequence',  '=', self.step_approve), ('approval_id', '=', model_wika_id.id )], limit=1)
-            groups_id = groups_line.groups_id
-
-            for x in groups_id.users:
-                if x.id == self._uid:
-                    cek = True
+        model_id = self.env['ir.model'].search([('model', '=', 'stock.picking')], limit=1)
+        if self.project_id:
+            level = 'Proyek'
+        elif self.branch_id and not self.department_id and not self.project_id:
+            level = 'Divisi Operasi'
+        elif self.branch_id and self.department_id and not self.project_id:
+            level = 'Divisi Fungsi'
+        if level:
+            model_id = self.env['ir.model'].search([('model', '=', 'stock.picking')], limit=1)
+            approval_id = self.env['wika.approval.setting'].sudo().search(
+                [('model_id', '=', model_id.id), ('level', '=', level)], limit=1)
+            print('approval_idapproval_idapproval_id')
+            if not approval_id:
+                raise ValidationError(
+                    'Approval Setting untuk menu GR/SES tidak ditemukan. Silakan hubungi Administrator!')
+            approval_line_id = self.env['wika.approval.setting.line'].search([
+                ('sequence', '=', self.step_approve),
+                ('approval_id', '=', approval_id.id)
+            ], limit=1)
+            print(approval_line_id)
+            groups_id = approval_line_id.groups_id
+            if groups_id:
+                print(groups_id.name)
+                for x in groups_id.users:
+                    if level == 'Proyek' and x.project_id == self.project_id and x.id == self._uid:
+                        cek = True
+                    if level == 'Divisi Operasi' and x.branch_id == self.branch_id and x.id == self._uid:
+                        cek = True
+                    if level == 'Divisi Fungsi' and x.department_id == self.department_id and x.id == self._uid:
+                        cek = True
 
         if cek == True:
-            if model_wika_id.total_approve == self.step_approve:
+            print (self.step_approve)
+            print ('ddddddddddddd')
+            if approval_id.total_approve == self.step_approve:
                 self.state = 'approved'
+                self.env['wika.picking.approval.line'].create({
+                    'user_id': self._uid,
+                    'groups_id': groups_id.id,
+                    'date': datetime.now(),
+                    'note': 'Approved',
+                    'picking_id': self.id
+                })
                 folder_id = self.env['documents.folder'].sudo().search([('name', '=', 'GR/SES')], limit=1)
                 if folder_id:
                     facet_id = self.env['documents.facet'].sudo().search([
@@ -122,22 +220,72 @@ class PickingInherit(models.Model):
                                 'attachment_id': attachment_id.id,
                                 'folder_id': folder_id.id,
                                 'tag_ids': facet_id.tag_ids.ids,
-                                'partner_id': self.env.user.partner_id.id,
-                                'purchase_id': self.id,
+                                'partner_id': self.purchase_id.partner_id.id,
+                                'purchase_id': self.purchase_id.id,
                                 'is_po_doc': True
                             })
+                if self.activity_ids:
+                    for x in self.activity_ids.filtered(lambda x: x.status == 'todo'):
+                        print("masuk")
+                        print(x.user_id)
+                        if x.user_id.id == self._uid:
+                            print(x.status)
+                            x.status = 'approved'
+                            x.state = 'done'
             else:
-                self.step_approve += 1
+                first_user=False
+                # Createtodoactivity
+                groups_line_next = self.env['wika.approval.setting.line'].search([
+                    ('level', '=', level),
+                    ('sequence', '=', self.step_approve+1),
+                    ('approval_id', '=', approval_id.id)
+                ], limit=1)
+                print("groups", groups_line_next)
+                groups_id_next = groups_line_next.groups_id
+                if groups_id_next:
+                    print(groups_id_next.name)
+                    for x in groups_id_next.users:
+                        if level == 'Proyek' and x.project_id == self.project_id:
+                            first_user = x.id
+                        if level == 'Divisi Operasi' and x.branch_id == self.branch_id:
+                            first_user = x.id
+                        if level == 'Divisi Fungsi' and x.department_id == self.department_id:
+                            first_user = x.id
 
-            self.env['wika.picking.approval.line'].create({
-                'user_id': self._uid,
-                'groups_id' :groups_id.id,
-                'date': datetime.now(),
-                'note': 'Approve',
-                'picking_id': self.id
-            })
+                    print(first_user)
+                    if first_user:
+                        self.step_approve += 1
+                        self.env['mail.activity'].sudo().create({
+                            'activity_type_id': 4,
+                            'res_model_id': self.env['ir.model'].sudo().search(
+                                [('model', '=', 'stock.picking')], limit=1).id,
+                            'res_id': self.id,
+                            'user_id': first_user,
+                            'date_deadline': fields.Date.today() + timedelta(days=2),
+                            'state': 'planned',
+                            'status':'to_approve',
+                            'summary': """Need Approval Document GR/SES"""
+                        })
+                        self.env['wika.picking.approval.line'].create({
+                            'user_id': self._uid,
+                            'groups_id': groups_id.id,
+                            'date': datetime.now(),
+                            'note': 'Approved',
+                            'picking_id': self.id
+                        })
+                        if self.activity_ids:
+                            for x in self.activity_ids.filtered(lambda x: x.status == 'todo'):
+                                print("masuk")
+                                print(x.user_id)
+                                if x.user_id.id == self._uid:
+                                    print(x.status)
+                                    x.status = 'approved'
+                                    x.state = 'done'
+                    else:
+                        raise ValidationError('User Role Next Approval Belum di Setting!')
         else:
             raise ValidationError('User Akses Anda tidak berhak Approve!')
+
 
     def action_reject(self):
         user = self.env['res.users'].search([('id', '=', self._uid)], limit=1)
@@ -172,36 +320,125 @@ class PickingInherit(models.Model):
     def action_submit_pick(self):
         if self.document_ids:
             for doc_line in self.document_ids:
-                if doc_line.document != False:
-                    model_id = self.env['ir.model'].search([('model', '=', 'stock.picking')], limit=1)
-                    model_wika_id = self.env['wika.approval.setting'].search([('model_id', '=', model_id.id)], limit=1)
-                    user = self.env['res.users'].search([('branch_id', '=', self.branch_id.id)])
-
-                    if model_wika_id:
-                        self.state = 'uploaded'
-                        self.step_approve += 1
-
-                        groups_line = self.env['wika.approval.setting.line'].search([
-                            ('branch_id', '=', self.branch_id.id),
-                            ('sequence', '=', self.step_approve),
-                            ('approval_id', '=', model_wika_id.id)
-                        ], limit=1)
-                        groups_id = groups_line.groups_id
-                        
-                        for x in groups_id.users:
-                            self.env['mail.activity'].create({
+                if doc_line.document == False:
+                    raise ValidationError('Anda belum mengunggah dokumen yang diperlukan!')
+            cek = False
+            if self.project_id:
+                level = 'Proyek'
+            elif self.branch_id and not self.department_id and not self.project_id:
+                level = 'Divisi Operasi'
+            elif self.branch_id and self.department_id and not self.project_id:
+                level = 'Divisi Fungsi'
+            print(level)
+            if level:
+                model_id = self.env['ir.model'].search([('model', '=', 'stock.picking')], limit=1)
+                approval_id = self.env['wika.approval.setting'].sudo().search(
+                    [('model_id', '=', model_id.id), ('level', '=', level)], limit=1)
+                print('approval_idapproval_idapproval_id')
+                if not approval_id:
+                    raise ValidationError(
+                        'Approval Setting untuk menu Purchase Orders tidak ditemukan. Silakan hubungi Administrator!')
+                approval_line_id = self.env['wika.approval.setting.line'].search([
+                    ('sequence', '=', 1),
+                    ('approval_id', '=', approval_id.id)
+                ], limit=1)
+                print(approval_line_id)
+                groups_id = approval_line_id.groups_id
+                if groups_id:
+                    print(groups_id.name)
+                    for x in groups_id.users:
+                        if level == 'Proyek' and x.project_id == self.project_id and x.id== self._uid:
+                            cek = True
+                        if level == 'Divisi Operasi' and x.branch_id == self.branch_id and x.id== self._uid:
+                            cek = True
+                        if level == 'Divisi Fungsi' and x.department_id == self.department_id and x.id== self._uid:
+                            cek = True
+            if cek == True:
+                if self.activity_ids:
+                    for x in self.activity_ids.filtered(lambda x: x.status == 'todo'):
+                        print("masuk")
+                        print(x.user_id)
+                        if x.user_id.id == self._uid:
+                            print(x.status)
+                            x.status = 'approved'
+                            x.state='done'
+                    self.state = 'uploaded'
+                    self.step_approve += 1
+                    self.env['wika.po.approval.line'].sudo().create({
+                        'user_id': self._uid,
+                        'groups_id': groups_id.id,
+                        'date': datetime.now(),
+                        'note': 'Submit Document',
+                        'purchase_id': self.id
+                    })
+                    print(self.step_approve)
+                    groups_line = self.env['wika.approval.setting.line'].search([
+                        ('level', '=', level),
+                        ('sequence', '=', self.step_approve),
+                        ('approval_id', '=', approval_id.id)
+                    ], limit=1)
+                    print("groups", groups_line)
+                    groups_id_next = groups_line.groups_id
+                    if groups_id_next:
+                        print (groups_id_next.name)
+                        for x in groups_id_next.users:
+                            if level == 'Proyek' and x.project_id == self.project_id:
+                                first_user = x.id
+                            if level == 'Divisi Operasi' and x.branch_id == self.branch_id:
+                                first_user = x.id
+                            if level == 'Divisi Fungsi' and x.department_id == self.department_id:
+                                first_user = x.id
+                        print (first_user)
+                        if first_user:
+                            self.env['mail.activity'].sudo().create({
                                 'activity_type_id': 4,
-                                'res_model_id': self.env['ir.model'].sudo().search([('model', '=', 'stock.picking')], limit=1).id,
+                                'res_model_id': self.env['ir.model'].sudo().search(
+                                    [('model', '=', 'stock.picking')], limit=1).id,
                                 'res_id': self.id,
-                                'user_id': x.id,
+                                'user_id': first_user,
+                                'date_deadline': fields.Date.today() + timedelta(days=2),
+                                'state': 'planned',
                                 'summary': """Need Approval Document GR/SES"""
                             })
 
-                    else:
-                        raise ValidationError('Approval Setting untuk menu Purchase Orders tidak ditemukan. Silakan hubungi Administrator!')
-                    
-                elif doc_line.document == False:
-                    raise ValidationError('Anda belum mengunggah dokumen yang diperlukan!')
+            else:
+                raise ValidationError('User Akses Anda tidak berhak Submit!')
+
+        else:
+            raise ValidationError('Mohon untuk diisi terlebih dahulu Nama Penanda Tangan, Jabatan, Nama Penanda Tangan Vendor, Jabatan Vendor, Tgl Akhir Kontrak dan Nomor Kontrak.')
+
+        # if self.document_ids:
+        #     for doc_line in self.document_ids:
+        #         if doc_line.document != False:
+        #             model_id = self.env['ir.model'].search([('model', '=', 'stock.picking')], limit=1)
+        #             model_wika_id = self.env['wika.approval.setting'].search([('model_id', '=', model_id.id)], limit=1)
+        #             user = self.env['res.users'].search([('branch_id', '=', self.branch_id.id)])
+        #
+        #             if model_wika_id:
+        #                 self.state = 'uploaded'
+        #                 self.step_approve += 1
+        #
+        #                 groups_line = self.env['wika.approval.setting.line'].search([
+        #                     ('branch_id', '=', self.branch_id.id),
+        #                     ('sequence', '=', self.step_approve),
+        #                     ('approval_id', '=', model_wika_id.id)
+        #                 ], limit=1)
+        #                 groups_id = groups_line.groups_id
+        #
+        #                 for x in groups_id.users:
+        #                     self.env['mail.activity'].create({
+        #                         'activity_type_id': 4,
+        #                         'res_model_id': self.env['ir.model'].sudo().search([('model', '=', 'stock.picking')], limit=1).id,
+        #                         'res_id': self.id,
+        #                         'user_id': x.id,
+        #                         'summary': """Need Approval Document GR/SES"""
+        #                     })
+        #
+        #             else:
+        #                 raise ValidationError('Approval Setting untuk menu Purchase Orders tidak ditemukan. Silakan hubungi Administrator!')
+        #
+        #         elif doc_line.document == False:
+        #             raise ValidationError('Anda belum mengunggah dokumen yang diperlukan!')
 
     def get_purchase(self):
         self.ensure_one()

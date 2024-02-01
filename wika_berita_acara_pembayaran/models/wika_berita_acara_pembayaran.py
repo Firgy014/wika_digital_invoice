@@ -11,7 +11,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
     branch_id = fields.Many2one('res.branch', string='Divisi', required=True, related="po_id.branch_id")
     department_id = fields.Many2one('res.branch', string='Department', related="po_id.department_id")
     project_id = fields.Many2one('project.project', string='Project', related="po_id.project_id")
-    po_id = fields.Many2one('purchase.order', string='Nomor PO', required=True)
+    po_id = fields.Many2one('purchase.order', string='Nomor PO', required=True,domain=[('state','=','approved')])
     partner_id = fields.Many2one('res.partner', string='Vendor', required=True)
     bap_ids = fields.One2many('wika.berita.acara.pembayaran.line', 'bap_id', string='List BAP', required=True)
     document_ids = fields.One2many('wika.bap.document.line', 'bap_id', string='List Document')
@@ -51,7 +51,19 @@ class WikaBeritaAcaraPembayaran(models.Model):
     total_amount = fields.Monetary(string='Total Amount', compute='compute_total_amount')
     total_tax = fields.Monetary(string='Total Tax', compute='compute_total_tax')
     grand_total = fields.Monetary(string='Grand Total', compute='compute_grand_total')
+    check_biro = fields.Boolean(compute="_cek_biro")
 
+    @api.depends('department_id')
+    def _cek_biro(self):
+        for x in self:
+            if x.department_id:
+                biro = self.env['res.branch'].search([('parent_id', '=', x.department_id.id)])
+                if biro:
+                    x.check_biro = True
+                else:
+                    x.check_biro = False
+            else:
+                x.check_biro = False
     @api.onchange('po_id')
     def onchange_po_id(self):
         if self.po_id:
@@ -61,10 +73,13 @@ class WikaBeritaAcaraPembayaran(models.Model):
             
             bap_lines = []
             for picking in stock_pickings.move_ids_without_package:
-                bap_lines.append((0, 0, {'picking_id': picking.picking_id.id, 
+                bap_lines.append((0, 0, {'picking_id': picking.picking_id.id,
+                                         'purchase_line_id':picking.purchase_line_id.id,
                 'product_id': picking.product_id.id,
                 'qty': picking.product_uom_qty,
-                'unit_price': picking.price_unit,}))
+                'unit_price': picking.purchase_line_id.price_unit,
+               'tax_ids':picking.purchase_line_id.taxes_id.ids,
+               'currency_id':picking.purchase_line_id.currency_id.id}))
                 
             self.bap_ids = bap_lines
 
@@ -117,25 +132,43 @@ class WikaBeritaAcaraPembayaran(models.Model):
         self.write({'state': 'upload'})
         self.step_approve += 1
         model_id = self.env['ir.model'].search([('model', '=', 'wika.berita.acara.pembayaran')], limit=1)
-        model_wika_id = self.env['wika.approval.setting'].search([('model_id', '=', model_id.id)], limit=1)
         user = self.env['res.users'].search([('branch_id', '=', self.branch_id.id)])
-        if model_wika_id:
-            groups_line = self.env['wika.approval.setting.line'].search([
-                ('branch_id', '=', self.branch_id.id),
-                ('sequence', '=', self.step_approve),
-                ('approval_id', '=', model_wika_id.id)
+        if self.project_id:
+            level = 'Proyek'
+        elif self.branch_id and not self.department_id and not self.project_id:
+            level = 'Divisi Operasi'
+        elif self.branch_id and self.department_id and not self.project_id:
+            level = 'Divisi Fungsi'
+        print(level)
+        first_user = False
+        if level:
+            approval_id = self.env['wika.approval.setting'].sudo().search(
+                [('model_id', '=', model_id.id), ('level', '=', level)], limit=1)
+            print('approval_idapproval_idapproval_id')
+            approval_line_id = self.env['wika.approval.setting.line'].search([
+                ('sequence', '=', 1),
+                ('approval_id', '=', approval_id.id)
             ], limit=1)
-            groups_id = groups_line.groups_id
-
-        for x in groups_id.users:
-            activity_ids = self.env['mail.activity'].create({
-                'activity_type_id': 4,
-                'res_model_id': self.env['ir.model'].sudo().search([('model', '=', 'wika.berita.acara.pembayaran')], limit=1).id,
-                'res_id': self.id,
-                'user_id': x.id,
-                'summary': """ Need Approval Document PO """
-            })
-
+            print(approval_line_id)
+            groups_id = approval_line_id.groups_id
+            if groups_id:
+                for x in groups_id.users:
+                    if level == 'Proyek' and x.project_id == self.project_id:
+                        first_user = x.id
+                    if level == 'Divisi Operasi' and x.branch_id == self.branch_id:
+                        first_user = x.id
+                    if level == 'Divisi Fungsi' and x.department_id == self.department_id:
+                        first_user = x.id
+            if first_user:
+                self.env['mail.activity'].sudo().create({
+                    'activity_type_id': 4,
+                    'res_model_id': model_id.id,
+                    'res_id': self.id,
+                    'user_id': first_user,
+                    'date_deadline': fields.Date.today() + timedelta(days=2),
+                    'state': 'planned',
+                    'summary': """ Need Approval Document BAP """
+                })
         if not self.bap_ids:
             raise ValidationError('List BAP tidak boleh kosong. Mohon isi List BAP terlebih dahulu!')
 
@@ -201,7 +234,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
             
     def action_cancel(self):
         self.write({'state': 'draft'})
-    
+
     @api.model
     def create(self, vals):
         vals['name'] = self.env['ir.sequence'].next_by_code('wika.berita.acara.pembayaran')
@@ -241,6 +274,7 @@ class WikaBeritaAcaraPembayaranLine(models.Model):
 
     bap_id = fields.Many2one('wika.berita.acara.pembayaran', string='')
     picking_id = fields.Many2one('stock.picking', string='NO GR/SES')
+    purchase_line_id= fields.Many2one('purchase.order.line', string='Purchase Line')
     product_id = fields.Many2one('product.product', string='Product')
     qty = fields.Integer(string='Quantity')
     tax_ids = fields.Many2many('account.tax', string='Tax')
@@ -284,6 +318,7 @@ class WikaBabDocumentLine(models.Model):
         ('uploaded', 'Uploaded'),
         ('verif', 'Verif'),
     ], string='Status', default='waiting')
+
 
     @api.onchange('document')
     def onchange_document(self):
