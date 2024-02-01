@@ -48,12 +48,9 @@
     <record id="todo_mail_activity_action" model="ir.actions.act_window">
         <field name="name">To Do List</field>
         <field name="res_model">mail.activity</field>
-        <field name="view_mode">tree,form</field>
-        <field name="domain">[('status', '=', 'todo')]</field>
-        <field name="view_ids" eval="[(5, 0, 0),
-            (0, 0, {'view_mode': 'tree', 'view_id': ref('wika_dashboard.mail_activity_todo_view_tree')}),
-            (0, 0, {'view_mode': 'form', 'view_id': ref('wika_dashboard.mail_activity_todo_view_form')}),
-        ]"/>
+        <field name="view_mode">tree</field>
+        <field name="view_id" ref="mail_activity_todo_view_tree"/>
+        <field name="domain">[('status', 'in', ['todo','to_approve'])]</field>
     </record>
 
   </data>
