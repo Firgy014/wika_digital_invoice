@@ -485,7 +485,7 @@ class PurchaseOrderInherit(models.Model):
                         if x.user_id.id == self._uid:
                             print(x.status)
                             x.status = 'approved'
-                            x.state = 'done'
+                            x.action_done()
             else:
                 first_user=False
                 # Createtodoactivity
@@ -534,7 +534,7 @@ class PurchaseOrderInherit(models.Model):
                                 if x.user_id.id == self._uid:
                                     print(x.status)
                                     x.status = 'approved'
-                                    x.state = 'done'
+                                    x.action_done()
                     else:
                         raise ValidationError('User Role Next Approval Belum di Setting!')
 
@@ -620,7 +620,7 @@ class PurchaseOrderInherit(models.Model):
                         if x.user_id.id == self._uid:
                             print(x.status)
                             x.status = 'approved'
-                            x.state='done'
+                            x.action_done()
                     self.state = 'uploaded'
                     self.step_approve += 1
                     self.env['wika.po.approval.line'].sudo().create({

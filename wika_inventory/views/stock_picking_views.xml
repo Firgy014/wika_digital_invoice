@@ -92,7 +92,7 @@
                     </group>
                     <group>
                         <field name="branch_id" string="Divisi" domain="[('biro', '=', False)]" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
-                        <field name="department_id" string="Dept" domain="[('biro', '=', True), ('parent_id', '=', branch_id)]" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
+                        <field name="department_id" string="Dept" domain="[('biro', '=', True), ('parent_id', '=', branch_id)]" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])], 'invisible': [('check_biro', '=', False)]}"/>
                         <field name="project_id" string="Project" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
                         <field name="check_biro" invisible="1"/>
 
