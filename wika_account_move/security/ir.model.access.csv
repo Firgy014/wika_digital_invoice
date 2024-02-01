@@ -2,3 +2,4 @@ id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_wika_invoice_document_line, Wika Invoice Document Line,model_wika_invoice_document_line,,1,1,1,1
 access_wika_invoice_approval_line, Wika Invoice Approval Line,model_wika_invoice_approval_line,,1,1,1,1
 access_reject_wizard_account_move, Reject Wizard,model_reject_wizard_account_move,,1,1,1,1
+access_wika_special_gl, Special GL,model_wika_special_gl,,1,1,1,1

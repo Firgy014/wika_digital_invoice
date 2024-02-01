@@ -9,6 +9,13 @@
             parent="wika_berita_acara_pembayaran.wika_berita_acara_pembayaran_menu_root"
             sequence="30"/>
 
+        <menuitem
+            action="wika_special_gl_action"
+            id="sub_menu_wika_special_gl"
+            name="Special GL"
+            parent="wika_berita_acara_pembayaran.wika_berita_acara_pembayaran_menu_root"
+            sequence="40"/>
+
     </data>
     
 </odoo>

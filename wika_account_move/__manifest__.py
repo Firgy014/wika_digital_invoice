@@ -33,6 +33,7 @@
         'views/action.xml',
         'views/filter.xml',
         'views/templates.xml',
+        'views/wika_special_gl.xml',
         'wizard/wika_reject_reason.xml',
         'views/wika_menu.xml',
     ],

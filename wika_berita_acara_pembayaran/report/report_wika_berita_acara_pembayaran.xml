@@ -574,13 +574,13 @@
                         <table class="table table-borderless" style="width:100%">
                             <thead class="thead-dark">
                                 <tr>
-                                    <th scope="col" style="width: 5%;"></th>
-                                    <th scope="col" style="width: 25%;"></th>
-                                    <th scope="col" style="width: 5%;"></th>
-                                    <th scope="col" style="width: 5%;"></th>
-                                    <th scope="col" style="width: 5%;"></th>
-                                    <th scope="col" style="width: 9%;"></th>
-                                    <th scope="col" style="width: 5%;"></th>
+                                    <th scope="col" style="width: auto;"></th>
+                                    <th scope="col" style="width: auto;"></th>
+                                    <th scope="col" style="width: auto;"></th>
+                                    <th scope="col" style="width: auto;"></th>
+                                    <th scope="col" style="width: auto;"></th>
+                                    <th scope="col" style="width: auto;"></th>
+                                    <th scope="col" style="width: auto;"></th>
                                     <!-- <th scope="col" style="width: 14%;"></th> -->
                                 </tr>
                             </thead>
