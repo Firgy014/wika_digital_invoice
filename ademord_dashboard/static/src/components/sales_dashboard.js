@@ -441,33 +441,27 @@ export class OwlSalesDashboard extends Component {
         let domainWaiting = [
             ['status', '=', 'todo'],
             ['res_model', '=', 'purchase.order'],
-            ['state', 'in', ['today','planned']],
+            // ['state', 'in', ['today','planned']],
         ]
         const dataWaits = await this.orm.searchCount("mail.activity", domainWaiting)
-        console.log("dataWaits", dataWaits)
         this.state.po.waits = dataWaits
     }
     async getUploadedPO(){
         let domainUploaded = [
             ['status', '=', 'to_approve'],
             ['res_model', '=', 'purchase.order'],
-            ['state', 'in', ['today','planned']],
+            // ['state', 'in', ['today','planned']],
             // ['state', '=', 'planned'],
         ]
         const dataUploaded = await this.orm.searchCount("mail.activity", domainUploaded)
-        console.log("dataUploaded", dataUploaded)
         this.state.po.uploaded = dataUploaded
     }
     async getLatePO(){
-        // let today = new Date().toISOString().slice(0, 10).replace(/-/g, '/')
         let domainLate = [
-            // ['status', '=', 'approved'],
-            // ['date_deadline', '<', today.toString()]
             ['res_model', '=', 'purchase.order'],
             ['state', '=', 'overdue']
         ]
         const dataLate = await this.orm.searchCount("mail.activity", domainLate)
-        console.log("dataLate", dataLate)
         this.state.po.late = dataLate
     }
     // ======================
@@ -484,7 +478,7 @@ export class OwlSalesDashboard extends Component {
         let domainWaiting = [
             ['status', '=', 'todo'],
             ['res_model', '=', 'stock.picking'],
-            ['state', 'in', ['today','planned']],
+            // ['state', 'in', ['today','planned']],
         ]
         const dataWaits = await this.orm.searchCount("mail.activity", domainWaiting)
         this.state.grses.waits = dataWaits
@@ -493,7 +487,7 @@ export class OwlSalesDashboard extends Component {
         let domainUploaded = [
             ['status', '=', 'to_approve'],
             ['res_model', '=', 'stock.picking'],
-            ['state', 'in', ['today','planned']],
+            // ['state', 'in', ['today','planned']],
         ]
         const dataUploaded = await this.orm.searchCount("mail.activity", domainUploaded)
         this.state.grses.uploaded = dataUploaded
@@ -520,7 +514,7 @@ export class OwlSalesDashboard extends Component {
         let domainWaiting = [
             ['status', '=', 'todo'],
             ['res_model', '=', 'wika.berita.acara.pembayaran'],
-            ['state', 'in', ['today','planned']],
+            // ['state', 'in', ['today','planned']],
         ]
         const dataWaits = await this.orm.searchCount("mail.activity", domainWaiting)
         this.state.bap.waits = dataWaits
@@ -529,7 +523,7 @@ export class OwlSalesDashboard extends Component {
         let domainUploaded = [
             ['status', '=', 'to_approve'],
             ['res_model', '=', 'wika.berita.acara.pembayaran'],
-            ['state', 'in', ['today','planned']],
+            // ['state', 'in', ['today','planned']],
         ]
         const dataUploaded = await this.orm.searchCount("mail.activity", domainUploaded)
         this.state.bap.uploaded = dataUploaded
@@ -556,7 +550,7 @@ export class OwlSalesDashboard extends Component {
         let domainWaiting = [
             ['status', '=', 'todo'],
             ['res_model', '=', 'account.move'],
-            ['state', 'in', ['today','planned']],
+            // ['state', 'in', ['today','planned']],
         ]
         const dataWaits = await this.orm.searchCount("mail.activity", domainWaiting)
         this.state.inv.waits = dataWaits
@@ -565,7 +559,7 @@ export class OwlSalesDashboard extends Component {
         let domainUploaded = [
             ['status', '=', 'to_approve'],
             ['res_model', '=', 'account.move'],
-            ['state', 'in', ['today','planned']],
+            // ['state', 'in', ['today','planned']],
         ]
         const dataUploaded = await this.orm.searchCount("mail.activity", domainUploaded)
         this.state.inv.uploaded = dataUploaded
@@ -592,7 +586,7 @@ export class OwlSalesDashboard extends Component {
         let domainWaiting = [
             ['status', '=', 'todo'],
             ['res_model', '=', 'wika.payment.request'],
-            ['state', 'in', ['today','planned']],
+            // ['state', 'in', ['today','planned']],
         ]
         const dataWaits = await this.orm.searchCount("mail.activity", domainWaiting)
         this.state.pr.waits = dataWaits
@@ -601,7 +595,7 @@ export class OwlSalesDashboard extends Component {
         let domainUploaded = [
             ['status', '=', 'to_approve'],
             ['res_model', '=', 'wika.payment.request'],
-            ['state', 'in', ['today','planned']],
+            // ['state', 'in', ['today','planned']],
         ]
         const dataUploaded = await this.orm.searchCount("mail.activity", domainUploaded)
         this.state.pr.uploaded = dataUploaded
@@ -661,7 +655,10 @@ export class OwlSalesDashboard extends Component {
     async getPoUrlWait(){
         let domainView = [['name', '=', 'mail.activity.todo.view.tree'], ['model', '=', 'mail.activity']]
         let domainMenu = [['name', '=', 'Dashboard'], ['web_icon', 'ilike', 'wika_dashboard']]
-        let domainAction = [['name','=','Purchase Orders to Upload'], ['view_mode', '=', 'tree']]
+        let domainAction = [
+            ['name','=','Purchase Orders to Upload'],
+            ['domain', '=', "[('status', '=', 'todo'), ('res_model', '=', 'purchase.order')]"]
+        ]
         const viewId = await this.orm.search("ir.ui.view", domainView)
         const existingAction = await this.orm.search("ir.actions.act_window", domainAction)
         const menuId = await this.orm.search("ir.ui.menu", domainMenu)
@@ -672,7 +669,7 @@ export class OwlSalesDashboard extends Component {
                 res_model: 'mail.activity',
                 view_mode: 'tree',
                 view_id: viewId[0],
-                domain: "[('status', '=', 'todo'), ('res_model', '=', 'purchase.order'), ('state', 'in', ['today', 'planned'])]"
+                domain: "[('status', '=', 'todo'), ('res_model', '=', 'purchase.order')]"
             }])
             let url = `/web#model=mail.activity&view_type=list&action=${actionId}&menu_id=${menuId}`
             this.state.po.url.wait = url
@@ -684,7 +681,10 @@ export class OwlSalesDashboard extends Component {
     async getPoUrlUpload(){
         let domainView = [['name', '=', 'mail.activity.todo.view.tree'], ['model', '=', 'mail.activity']]
         let domainMenu = [['name', '=', 'Dashboard'], ['web_icon', 'ilike', 'wika_dashboard']]
-        let domainAction = [['name','=','Purchase Orders to Approve'], ['view_mode', '=', 'tree']]
+        let domainAction = [
+            ['name','=','Purchase Orders to Approve'],
+            ['domain', '=', "[('status', '=', 'to_approve'), ('res_model', '=', 'purchase.order')]"]
+        ]
         const viewId = await this.orm.search("ir.ui.view", domainView)
         const existingAction = await this.orm.search("ir.actions.act_window", domainAction)
         const menuId = await this.orm.search("ir.ui.menu", domainMenu)
@@ -695,7 +695,7 @@ export class OwlSalesDashboard extends Component {
                 res_model: 'mail.activity',
                 view_mode: 'tree',
                 view_id: viewId[0],
-                domain: "[('status', '=', 'to_approve'), ('res_model', '=', 'purchase.order'), ('state', 'in', ['today', 'planned'])]"
+                domain: "[('status', '=', 'to_approve'), ('res_model', '=', 'purchase.order')]"
             }])
             let url = `/web#model=mail.activity&view_type=list&action=${actionId}&menu_id=${menuId}`
             this.state.po.url.upload = url
@@ -734,7 +734,10 @@ export class OwlSalesDashboard extends Component {
     async getGrsesUrlWait(){
         let domainView = [['name', '=', 'mail.activity.todo.view.tree'], ['model', '=', 'mail.activity']]
         let domainMenu = [['name', '=', 'Dashboard'], ['web_icon', 'ilike', 'wika_dashboard']]
-        let domainAction = [['name','=','GR/SES to Upload'], ['view_mode', '=', 'tree']]
+        let domainAction = [
+            ['name','=','GR/SES to Upload'],
+            ['domain', '=', "[('status', '=', 'todo'), ('res_model', '=', 'stock.picking')]"]
+        ]
         const viewId = await this.orm.search("ir.ui.view", domainView)
         const existingAction = await this.orm.search("ir.actions.act_window", domainAction)
         const menuId = await this.orm.search("ir.ui.menu", domainMenu)
@@ -745,7 +748,7 @@ export class OwlSalesDashboard extends Component {
                 res_model: 'mail.activity',
                 view_mode: 'tree',
                 view_id: viewId[0],
-                domain: "[('status', '=', 'todo'), ('res_model', '=', 'stock.picking'), ('state', 'in', ['today', 'planned'])]"
+                domain: "[('status', '=', 'todo'), ('res_model', '=', 'stock.picking')]"
             }])
             let url = `/web#model=mail.activity&view_type=list&action=${actionId}&menu_id=${menuId}`
             this.state.grses.url.wait = url
@@ -757,7 +760,10 @@ export class OwlSalesDashboard extends Component {
     async getGrsesUrlUpload(){
         let domainView = [['name', '=', 'mail.activity.todo.view.tree'], ['model', '=', 'mail.activity']]
         let domainMenu = [['name', '=', 'Dashboard'], ['web_icon', 'ilike', 'wika_dashboard']]
-        let domainAction = [['name','=','GR/SES to Approve'], ['view_mode', '=', 'tree']]
+        let domainAction = [
+            ['name','=','GR/SES to Approve'],
+            ['domain', '=', "[('status', '=', 'to_approve'), ('res_model', '=', 'stock.picking')]"]
+        ]
         const viewId = await this.orm.search("ir.ui.view", domainView)
         const existingAction = await this.orm.search("ir.actions.act_window", domainAction)
         const menuId = await this.orm.search("ir.ui.menu", domainMenu)
@@ -768,7 +774,7 @@ export class OwlSalesDashboard extends Component {
                 res_model: 'mail.activity',
                 view_mode: 'tree',
                 view_id: viewId[0],
-                domain: "[('status', '=', 'to_approve'), ('res_model', '=', 'stock.picking'), ('state', 'in', ['today', 'planned'])]"
+                domain: "[('status', '=', 'to_approve'), ('res_model', '=', 'stock.picking')]"
             }])
             let url = `/web#model=mail.activity&view_type=list&action=${actionId}&menu_id=${menuId}`
             this.state.grses.url.upload = url
@@ -806,7 +812,10 @@ export class OwlSalesDashboard extends Component {
     async getBapUrlWait(){
         let domainView = [['name', '=', 'mail.activity.todo.view.tree'], ['model', '=', 'mail.activity']]
         let domainMenu = [['name', '=', 'Dashboard'], ['web_icon', 'ilike', 'wika_dashboard']]
-        let domainAction = [['name','=','Berita Acara Pembayaran to Upload'], ['view_mode', '=', 'tree']]
+        let domainAction = [
+            ['name','=','Berita Acara Pembayaran to Upload'],
+            ['domain', '=', "[('status', '=', 'todo'), ('res_model', '=', 'wika.berita.acara.pembayaran')]"]
+        ]
         const viewId = await this.orm.search("ir.ui.view", domainView)
         const existingAction = await this.orm.search("ir.actions.act_window", domainAction)
         const menuId = await this.orm.search("ir.ui.menu", domainMenu)
@@ -817,7 +826,7 @@ export class OwlSalesDashboard extends Component {
                 res_model: 'mail.activity',
                 view_mode: 'tree',
                 view_id: viewId[0],
-                domain: "[('status', '=', 'todo'), ('res_model', '=', 'wika.berita.acara.pembayaran'), ('state', 'in', ['today', 'planned'])]"
+                domain: "[('status', '=', 'todo'), ('res_model', '=', 'wika.berita.acara.pembayaran')]"
             }])
             let url = `/web#model=mail.activity&view_type=list&action=${actionId}&menu_id=${menuId}`
             this.state.bap.url.wait = url
@@ -829,7 +838,10 @@ export class OwlSalesDashboard extends Component {
     async getBapUrlUpload(){
         let domainView = [['name', '=', 'mail.activity.todo.view.tree'], ['model', '=', 'mail.activity']]
         let domainMenu = [['name', '=', 'Dashboard'], ['web_icon', 'ilike', 'wika_dashboard']]
-        let domainAction = [['name','=','Berita Acara Pembayaran to Approve'], ['view_mode', '=', 'tree']]
+        let domainAction = [
+            ['name','=','Berita Acara Pembayaran to Approve'],
+            ['domain', '=', "[('status', '=', 'to_approve'), ('res_model', '=', 'wika.berita.acara.pembayaran')]"]
+        ]
         const viewId = await this.orm.search("ir.ui.view", domainView)
         const existingAction = await this.orm.search("ir.actions.act_window", domainAction)
         const menuId = await this.orm.search("ir.ui.menu", domainMenu)
@@ -840,7 +852,7 @@ export class OwlSalesDashboard extends Component {
                 res_model: 'mail.activity',
                 view_mode: 'tree',
                 view_id: viewId[0],
-                domain: "[('status', '=', 'to_approve'), ('res_model', '=', 'wika.berita.acara.pembayaran'), ('state', 'in', ['today', 'planned'])]"
+                domain: "[('status', '=', 'to_approve'), ('res_model', '=', 'wika.berita.acara.pembayaran')]"
             }])
             let url = `/web#model=mail.activity&view_type=list&action=${actionId}&menu_id=${menuId}`
             this.state.bap.url.upload = url
@@ -878,7 +890,10 @@ export class OwlSalesDashboard extends Component {
     async getInvUrlWait(){
         let domainView = [['name', '=', 'mail.activity.todo.view.tree'], ['model', '=', 'mail.activity']]
         let domainMenu = [['name', '=', 'Dashboard'], ['web_icon', 'ilike', 'wika_dashboard']]
-        let domainAction = [['name','=','Invoice to Upload'], ['view_mode', '=', 'tree']]
+        let domainAction = [
+            ['name', '=', 'Invoice to Upload'],
+            ['domain', '=', "[('status', '=', 'todo'), ('res_model', '=', 'account.move')]"]
+        ]
         const viewId = await this.orm.search("ir.ui.view", domainView)
         const existingAction = await this.orm.search("ir.actions.act_window", domainAction)
         const menuId = await this.orm.search("ir.ui.menu", domainMenu)
@@ -889,7 +904,7 @@ export class OwlSalesDashboard extends Component {
                 res_model: 'mail.activity',
                 view_mode: 'tree',
                 view_id: viewId[0],
-                domain: "[('status', '=', 'todo'), ('res_model', '=', 'account.move'), ('state', 'in', ['today', 'planned'])]"
+                domain: "[('status', '=', 'todo'), ('res_model', '=', 'account.move')]"
             }])
             let url = `/web#model=mail.activity&view_type=list&action=${actionId}&menu_id=${menuId}`
             this.state.inv.url.wait = url
@@ -901,7 +916,10 @@ export class OwlSalesDashboard extends Component {
     async getInvUrlUpload(){
         let domainView = [['name', '=', 'mail.activity.todo.view.tree'], ['model', '=', 'mail.activity']]
         let domainMenu = [['name', '=', 'Dashboard'], ['web_icon', 'ilike', 'wika_dashboard']]
-        let domainAction = [['name','=','Invoice to Approve'], ['view_mode', '=', 'tree']]
+        let domainAction = [
+            ['name','=','Invoice to Approve'],
+            ['domain', '=', "[('status', '=', 'to_approve'), ('res_model', '=', 'account.move')]"]
+        ]
         const viewId = await this.orm.search("ir.ui.view", domainView)
         const existingAction = await this.orm.search("ir.actions.act_window", domainAction)
         const menuId = await this.orm.search("ir.ui.menu", domainMenu)
@@ -912,7 +930,7 @@ export class OwlSalesDashboard extends Component {
                 res_model: 'mail.activity',
                 view_mode: 'tree',
                 view_id: viewId[0],
-                domain: "[('status', '=', 'to_approve'), ('res_model', '=', 'account.move'), ('state', 'in', ['today', 'planned'])]"
+                domain: "[('status', '=', 'to_approve'), ('res_model', '=', 'account.move')]"
             }])
             let url = `/web#model=mail.activity&view_type=list&action=${actionId}&menu_id=${menuId}`
             this.state.inv.url.upload = url
@@ -950,7 +968,10 @@ export class OwlSalesDashboard extends Component {
     async getPrUrlWait(){
         let domainView = [['name', '=', 'mail.activity.todo.view.tree'], ['model', '=', 'mail.activity']]
         let domainMenu = [['name', '=', 'Dashboard'], ['web_icon', 'ilike', 'wika_dashboard']]
-        let domainAction = [['name','=','Pengajuan Pembayaran to Upload'], ['view_mode', '=', 'tree']]
+        let domainAction = [
+            ['name','=','Pengajuan Pembayaran to Upload'],
+            ['domain', '=', "[('status', '=', 'todo'), ('res_model', '=', 'wika.payment.request')]"]
+        ]
         const viewId = await this.orm.search("ir.ui.view", domainView)
         const existingAction = await this.orm.search("ir.actions.act_window", domainAction)
         const menuId = await this.orm.search("ir.ui.menu", domainMenu)
@@ -961,7 +982,7 @@ export class OwlSalesDashboard extends Component {
                 res_model: 'mail.activity',
                 view_mode: 'tree',
                 view_id: viewId[0],
-                domain: "[('status', '=', 'todo'), ('res_model', '=', 'wika.payment.request'), ('state', 'in', ['today', 'planned'])]"
+                domain: "[('status', '=', 'todo'), ('res_model', '=', 'wika.payment.request')]"
             }])
             let url = `/web#model=mail.activity&view_type=list&action=${actionId}&menu_id=${menuId}`
             this.state.pr.url.wait = url
@@ -973,7 +994,10 @@ export class OwlSalesDashboard extends Component {
     async getPrUrlUpload(){
         let domainView = [['name', '=', 'mail.activity.todo.view.tree'], ['model', '=', 'mail.activity']]
         let domainMenu = [['name', '=', 'Dashboard'], ['web_icon', 'ilike', 'wika_dashboard']]
-        let domainAction = [['name','=','Pengajuan Pembayaran to Approve'], ['view_mode', '=', 'tree']]
+        let domainAction = [
+            ['name','=','Pengajuan Pembayaran to Approve'],
+            ['domain', '=', "[('status', '=', 'to_approve'), ('res_model', '=', 'wika.payment.request')]"]
+        ]
         const viewId = await this.orm.search("ir.ui.view", domainView)
         const existingAction = await this.orm.search("ir.actions.act_window", domainAction)
         const menuId = await this.orm.search("ir.ui.menu", domainMenu)
@@ -984,7 +1008,7 @@ export class OwlSalesDashboard extends Component {
                 res_model: 'mail.activity',
                 view_mode: 'tree',
                 view_id: viewId[0],
-                domain: "[('status', '=', 'to_approve'), ('res_model', '=', 'wika.payment.request'), ('state', 'in', ['today', 'planned'])]"
+                domain: "[('status', '=', 'to_approve'), ('res_model', '=', 'wika.payment.request')]"
             }])
             let url = `/web#model=mail.activity&view_type=list&action=${actionId}&menu_id=${menuId}`
             this.state.pr.url.upload = url
