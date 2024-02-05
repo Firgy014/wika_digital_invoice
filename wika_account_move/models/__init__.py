@@ -3,3 +3,4 @@
 from . import wika_special_gl
 from . import models
 from . import wika_account_move
+from . import wika_account_move_line

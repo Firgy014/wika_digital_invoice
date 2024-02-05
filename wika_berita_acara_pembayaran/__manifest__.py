@@ -30,7 +30,6 @@
         'wizard/wika_reject_reason.xml',
         'views/templates.xml',
         'views/wika_berita_acara_pembayaran.xml',
-        'views/wika_outstanding_bap.xml',
         'report/report_action.xml',
         'report/report_wika_berita_acara_pembayaran.xml',
         'views/sequence_data.xml',

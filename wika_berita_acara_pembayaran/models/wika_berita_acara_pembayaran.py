@@ -281,6 +281,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
 class WikaBeritaAcaraPembayaranLine(models.Model):
     _name = 'wika.berita.acara.pembayaran.line'
 
+    name = fields.Char('name', compute='_compute_name')
     bap_id = fields.Many2one('wika.berita.acara.pembayaran', string='')
     picking_id = fields.Many2one('stock.picking', string='NO GR/SES')
     purchase_line_id= fields.Many2one('purchase.order.line', string='Purchase Line')

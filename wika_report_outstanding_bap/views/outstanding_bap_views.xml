@@ -4,33 +4,33 @@
     <data>
 
         <!-- tree view -->
-        <record id="wika_outstanding_bap_view_tree" model="ir.ui.view">
+        <record id="wika_outstanding_bap_new_view_tree" model="ir.ui.view">
             <field name="name">wika.outstanding.bap.view.tree</field>
             <field name="model">wika.outstanding.bap</field>
             <field name="arch" type="xml">
                 <tree string="">
                     <field name="purchase_id"/>
-                    <field name="project_id"/>
-                    <field name="branch_id"/>
-                    <field name="po_line"/>
-                    <field name="product_id"/>
-                    <field name="qty"/>
-                    <field name="unit_price"/>
-                    <field name="sub_total"/>
+                    <field name="product_po_id"/>
+                    <field name="sub_total_po"/>
                     <field name="picking_id"/>
-                    <field name="no_gr"/>
-                    <field name="qty_process"/>
-                    <field name="no_bap"/>
+                    <field name="product_gr_id"/>
+                    <field name="sub_total_gr"/>
+                    <field name="bap_id"/>
+                    <field name="product_bap_id"/>
+                    <field name="sub_total_bap"/>
+                    <field name="bap_date"/>
                 </tree>
             </field>
         </record>
 
         <!-- action -->
-        <record id="wika_outstanding_bap_action" model="ir.actions.act_window">
+        <record id="wika_outstanding_bap_new_action" model="ir.actions.act_window">
             <field name="name">Outstanding BAP</field>
             <field name="res_model">wika.outstanding.bap</field>
             <field name="view_mode">tree,form</field>
         </record>
+
+        
     </data>
     
 

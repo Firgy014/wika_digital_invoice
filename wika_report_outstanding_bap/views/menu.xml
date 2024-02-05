@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <data>
+
+        <menuitem id="main_menu_wika_outstanding_bap_new" name="Outstanding BAP"
+            parent="wika_berita_acara_pembayaran.wika_berita_acara_pembayaran_menu_root" 
+            action="wika_outstanding_bap_new_action" sequence="100"/>
+    
+    </data>
+    
+
+</odoo>
