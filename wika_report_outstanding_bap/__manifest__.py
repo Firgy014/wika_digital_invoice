@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 {
-    'name': "wika_account_move",
+    'name': "wika_report_outstanding_bap",
 
     'summary': """
         Short (1 phrase/line) summary of the module's purpose, used as
@@ -20,23 +20,15 @@
     'version': '0.1',
 
     # any module necessary for this one to work correctly
-    'depends': ['base', 'branch', 'project', 'account', 'wika_payment_request', 'wika_berita_acara_pembayaran', 'wika_matrix_approval'],
+    'depends': ['base', 'purchase', 'stock', 'wika_berita_acara_pembayaran'],
 
     # always loaded
     'data': [
         'security/ir.model.access.csv',
         'views/views.xml',
-        'views/wika_account_move.xml',
-        'data/documents_folder_data.xml',
-        'report/report_action.xml',
-        'report/report_wika_account_move.xml',
-        'views/action.xml',
-        'views/filter.xml',
+        'views/outstanding_bap_views.xml',
         'views/templates.xml',
-        'views/wika_special_gl.xml',
-        # 'views/wika_account_move_line',
-        'wizard/wika_reject_reason.xml',
-        'views/wika_menu.xml',
+        'views/menu.xml',
     ],
     # only loaded in demonstration mode
     'demo': [
