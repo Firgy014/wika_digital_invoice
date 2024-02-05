@@ -11,7 +11,8 @@ class WikaBeritaAcaraPembayaran(models.Model):
     branch_id = fields.Many2one('res.branch', string='Divisi', required=True, related="po_id.branch_id")
     department_id = fields.Many2one('res.branch', string='Department', related="po_id.department_id")
     project_id = fields.Many2one('project.project', string='Project', related="po_id.project_id")
-    po_id = fields.Many2one('purchase.order', string='Nomor PO', required=True,domain=[('state','=','approved')])
+    # po_id = fields.Many2one('purchase.order', string='Nomor PO', required=True,domain=[('state','=','approved')])
+    po_id = fields.Many2one('purchase.order', string='Nomor PO')
     partner_id = fields.Many2one('res.partner', string='Vendor', required=True)
     bap_ids = fields.One2many('wika.berita.acara.pembayaran.line', 'bap_id', string='List BAP', required=True)
     document_ids = fields.One2many('wika.bap.document.line', 'bap_id', string='List Document')
@@ -49,10 +50,17 @@ class WikaBeritaAcaraPembayaran(models.Model):
     currency_id = fields.Many2one('res.currency', string='Currency')
     notes = fields.Html(string='Terms and Conditions', store=True, readonly=False,)
     total_amount = fields.Monetary(string='Total Amount', compute='compute_total_amount')
+    asu_tax = fields.Monetary(string='Asu Tax', compute='compute_total_amount')
     total_tax = fields.Monetary(string='Total Tax', compute='compute_total_tax')
     grand_total = fields.Monetary(string='Grand Total', compute='compute_grand_total')
     check_biro = fields.Boolean(compute="_cek_biro")
-
+    tax_totals = fields.Float(
+        string="Invoice Totals",
+        compute='_compute_tax_totals',
+        inverse='_inverse_tax_totals',
+        help='Edit Tax amounts if you encounter rounding issues.',
+        exportable=False,
+    )
     @api.depends('department_id')
     def _cek_biro(self):
         for x in self:
@@ -64,6 +72,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
                     x.check_biro = False
             else:
                 x.check_biro = False
+                
     @api.onchange('po_id')
     def onchange_po_id(self):
         if self.po_id:

@@ -55,6 +55,8 @@
                     <field name="invoice_number"/>
                     <field name="baseline_date"/>
                     <field name="amount_invoice"/>
+                    <field name="amount_total_footer" invisible="1"/>
+                    <!-- <field name="tax_totals"/> -->
                 </xpath>
                 <xpath expr="//field[@name='pr_id']" position="after">
                     <field name="ref" attrs="{'readonly': [('state', 'in', ['upload', 'approve'])]}"/>
