@@ -1,5 +1,5 @@
-from odoo import fields, models, api
-from odoo.exceptions import AccessError, ValidationError
+from odoo import fields, models, api, _
+from odoo.exceptions import UserError, ValidationError, Warning, AccessError
 from datetime import datetime
 
 class WikaInheritedAccountMove(models.Model):
@@ -19,8 +19,14 @@ class WikaInheritedAccountMove(models.Model):
     baseline_date = fields.Date(string='Baseline Date')
     retention_due = fields.Date(string='Retentstring=ion Due')
     amount_invoice = fields.Float(string='Amount Invoice')
+    tax_totals = fields.Binary(
+        string="Invoice Totals",
+        compute='_compute_tax_totals',
+        inverse='_inverse_tax_totals',
+        help='Edit Tax amounts if you encounter rounding issues.',
+        exportable=False,
+    )
     special_gl_id = fields.Many2one('wika.special.gl', string='Special GL')
-
     invoice_line_ids = fields.One2many(  # /!\ invoice_line_ids is just a subset of line_ids.
         'account.move.line',
         'move_id',
@@ -30,7 +36,6 @@ class WikaInheritedAccountMove(models.Model):
         domain=[('display_type', 'in', ('product', 'line_section', 'line_note'))],
         states={'draft': [('readonly', False)]},
     )
-
     state = fields.Selection(
         selection=[
             ('draft', 'Draft'),
@@ -69,17 +74,58 @@ class WikaInheritedAccountMove(models.Model):
         ondelete='restrict',
     )
 
+    amount_total_footer = fields.Float(string='Amount Total', compute='_compute_amount_total', store=True)
+
+    @api.depends('line_ids.price_unit', 'line_ids.quantity', 'line_ids.discount', 'line_ids.tax_ids')
+    def _compute_amount_total(self):
+        for move in self:
+            amount_total_footer = 0.0
+            for line in move.line_ids:
+                
+                price_subtotal = line.price_unit * line.quantity
+                
+                price_subtotal -= line.discount
+                for tax in line.tax_ids:
+                    price_subtotal += price_subtotal * tax.amount / 100
+
+                amount_total_footer += price_subtotal
+
+            move.amount_total_footer = amount_total_footer
+
+    
+    @api.model
+    def create(self, values):
+        record = super(WikaInheritedAccountMove, self).create(values)
+        record._check_invoice_totals()
+        return record
+
+    def write(self, values):
+        super(WikaInheritedAccountMove, self).write(values)
+        self._check_invoice_totals()
+
+    # @api.onchange('amount_invoice')
+    # def _onchange_amount_invoice(self):
+    #     if self.amount_invoice and self.amount_invoice != self.amount_total_footer:
+    #         warning = {
+    #             'title': _('Warning!'),
+    #             'message': _('Nilai dari "Amount Invoice" tidak sama dengan "Tax Totals".')
+    #         }
+    #         return {'warning': warning}
+
+    def _check_invoice_totals(self):
+        if self.amount_invoice and self.amount_invoice != self.amount_total_footer:
+            raise ValidationError("Amount Invoice harus sama dengan Amount Total!")
+
+        
     @api.onchange('bap_id')
     def _onchange_bap_id(self):
         if self.bap_id:
             lines = []
-
             for bap_line in self.bap_id.bap_ids:
                 lines.append((0, 0, {
                     'product_id': bap_line.product_id.id,
                     'quantity': bap_line.qty,
                     'price_unit': bap_line.unit_price,
-                    # Add other fields as needed
                 }))
 
             self.invoice_line_ids = lines
