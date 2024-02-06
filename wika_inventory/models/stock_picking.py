@@ -32,7 +32,8 @@ class PickingInherit(models.Model):
     check_biro = fields.Boolean(compute="_cek_biro")
     movement_type = fields.Char(string='Movement Type')
     amount_bap = fields.Float('BAP Amount')
-    total_amount = fields.Float(string='Total Amount', compute='_compute_total_amount')
+    # total_amount = fields.Float(string='Total Amount', compute='_compute_total_amount')
+    total_amount = fields.Float(string='Total Amount')
 
     @api.depends('move_ids.price_subtotal')
     def _compute_total_amount(self):
