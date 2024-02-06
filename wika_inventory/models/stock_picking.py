@@ -31,6 +31,31 @@ class PickingInherit(models.Model):
     po_count = fields.Integer(string='Purchase Orders', compute='_compute_po_count')
     active = fields.Boolean(default=True)
     check_biro = fields.Boolean(compute="_cek_biro")
+    movement_type = fields.Char(string='Movement Type')
+    amount_bap = fields.Float('BAP Amount')
+    # total_amount = fields.Float(string='Total Amount', compute='_compute_total_amount')
+    total_amount = fields.Float(string='Total Amount')
+
+    @api.depends('move_ids.price_subtotal')
+    def _compute_total_amount(self):
+        print("masuk.def")
+        for record in self:
+            print("masuk.for")
+            total_amount_value = sum(record.move_ids.mapped('price_subtotal'))
+            if total_amount_value:
+                print("masuk.if")
+                record.total_amount = total_amount_value
+
+    # @api.depends('bap_ids.price_subtotal')
+    # def _compute_total_tax(self):
+    #     for record in self:
+    #         total_tax_value = sum(record.bap_ids.mapped('tax_amount'))
+    #         record.total_tax = total_tax_value
+
+    # @api.depends('total_amount', 'total_tax')
+    # def _compute_grand_total(self):
+    #     for record in self:
+    #         record.grand_total = record.total_amount + record.total_tax
 
     @api.depends('department_id')
     def _cek_biro(self):
@@ -43,6 +68,7 @@ class PickingInherit(models.Model):
                     x.check_biro = False
             else:
                 x.check_biro = False
+
     def assign_todo_first(self):
         model_model = self.env['ir.model'].sudo()
         document_setting_model = self.env['wika.document.setting'].sudo()
@@ -100,12 +126,17 @@ class PickingInherit(models.Model):
                     }))
                 res.document_ids = document_list
             else:
-                raise AccessError(
-                    "Either approval and/or document settings are not found. Please configure it first in the settings menu.")
+                raise AccessError("Either approval and/or document settings are not found. Please configure it first in the settings menu.")
 
-
+    def assign_company_to_move_ids(self, vals_list):
+        for val in vals_list:
+            for ids in val['move_ids_without_package']:
+                    if 'company_id' in ids[2]:
+                        ids[2]['company_id'] = 1
+    
     @api.model_create_multi
     def create(self, vals_list):
+        self.assign_company_to_move_ids(vals_list)
         model_model = self.env['ir.model'].sudo()
         document_setting_model = self.env['wika.document.setting'].sudo()
         model_id = model_model.search([('model', '=', 'stock.picking')], limit=1)
