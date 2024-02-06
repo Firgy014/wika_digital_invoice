@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 
 class PickingInherit(models.Model):
     _inherit = "stock.picking"
+    _description = "GR/SES"
 
     partner_id = fields.Many2one('res.partner', string='Receive From', required=True)
     purchase_id = fields.Many2one('purchase.order', string='Purchase Order', store=True)
@@ -57,7 +58,7 @@ class PickingInherit(models.Model):
             first_user = False
             if level:
                 approval_id = self.env['wika.approval.setting'].sudo().search(
-                    [('model_id', '=', model_id.id), ('level', '=', level)], limit=1)
+                    [('model_id', '=', model_id.id), ('level', '=', level),('transaction_type','=',res.pick_type)], limit=1)
                 print('approval_idapproval_idapproval_id')
                 approval_line_id = self.env['wika.approval.setting.line'].search([
                     ('sequence', '=', 1),
@@ -83,7 +84,7 @@ class PickingInherit(models.Model):
                         'user_id': first_user,
                         'date_deadline': fields.Date.today() + timedelta(days=2),
                         'state': 'planned',
-                        'summary': f"The required documents of {model_id.name} is not uploaded yet. Please upload it immediately!"
+                        'summary': f"Need Upload Document  {model_id.name}"
                     })
 
             # Get Document Setting
@@ -169,7 +170,7 @@ class PickingInherit(models.Model):
         if level:
             model_id = self.env['ir.model'].search([('model', '=', 'stock.picking')], limit=1)
             approval_id = self.env['wika.approval.setting'].sudo().search(
-                [('model_id', '=', model_id.id), ('level', '=', level)], limit=1)
+                [('model_id', '=', model_id.id), ('level', '=', level),('transaction_type','=',self.pick_type)], limit=1)
             print('approval_idapproval_idapproval_id')
             if not approval_id:
                 raise ValidationError(
@@ -231,7 +232,7 @@ class PickingInherit(models.Model):
                         if x.user_id.id == self._uid:
                             print(x.status)
                             x.status = 'approved'
-                            x.state = 'done'
+                            x.action_done()
             else:
                 first_user=False
                 # Createtodoactivity
@@ -280,7 +281,7 @@ class PickingInherit(models.Model):
                                 if x.user_id.id == self._uid:
                                     print(x.status)
                                     x.status = 'approved'
-                                    x.state = 'done'
+                                    x.action_done()
                     else:
                         raise ValidationError('User Role Next Approval Belum di Setting!')
         else:
@@ -288,20 +289,34 @@ class PickingInherit(models.Model):
 
 
     def action_reject(self):
-        user = self.env['res.users'].search([('id', '=', self._uid)], limit=1)
         cek = False
-        model_id = self.env['ir.model'].search([('model','=', 'stock.picking')], limit=1)
-        if model_id:
-            model_wika_id = self.env['wika.approval.setting'].search([('model_id','=',  model_id.id)], limit=1)
-
-        if user.branch_id.id==self.branch_id.id and model_wika_id:
-            groups_line = self.env['wika.approval.setting.line'].search(
-                [('branch_id', '=', self.branch_id.id), ('sequence',  '=', self.step_approve), ('approval_id', '=', model_wika_id.id )], limit=1)
-            groups_id = groups_line.groups_id
-            for x in groups_id.users:
-                if x.id == self._uid:
-                    cek = True
-
+        if self.project_id:
+            level = 'Proyek'
+        elif self.branch_id and not self.department_id and not self.project_id:
+            level = 'Divisi Operasi'
+        elif self.branch_id and self.department_id and not self.project_id:
+            level = 'Divisi Fungsi'
+        if level:
+            model_id = self.env['ir.model'].search([('model', '=', 'stock.picking')], limit=1)
+            approval_id = self.env['wika.approval.setting'].sudo().search(
+                [('model_id', '=', model_id.id), ('level', '=', level),
+                 ('transaction_type', '=', self.pick_type)], limit=1)
+            if not approval_id:
+                raise ValidationError(
+                    'Approval Setting untuk menu Purchase Orders tidak ditemukan. Silakan hubungi Administrator!')
+            approval_line_id = self.env['wika.approval.setting.line'].search([
+                ('sequence', '=', self.step_approve),
+                ('approval_id', '=', approval_id.id)
+            ], limit=1)
+            groups_id = approval_line_id.groups_id
+            if groups_id:
+                for x in groups_id.users:
+                    if level == 'Proyek' and x.project_id == self.project_id and x.id == self._uid:
+                        cek = True
+                    if level == 'Divisi Operasi' and x.branch_id == self.branch_id and x.id == self._uid:
+                        cek = True
+                    if level == 'Divisi Fungsi' and x.department_id == self.department_id and x.id == self._uid:
+                        cek = True
         if cek == True:
             action = {
                 'name': ('Reject Reason'),
@@ -333,7 +348,7 @@ class PickingInherit(models.Model):
             if level:
                 model_id = self.env['ir.model'].search([('model', '=', 'stock.picking')], limit=1)
                 approval_id = self.env['wika.approval.setting'].sudo().search(
-                    [('model_id', '=', model_id.id), ('level', '=', level)], limit=1)
+                    [('model_id', '=', model_id.id), ('level', '=', level),('transaction_type','=',self.pick_type)], limit=1)
                 print('approval_idapproval_idapproval_id')
                 if not approval_id:
                     raise ValidationError(
@@ -361,15 +376,15 @@ class PickingInherit(models.Model):
                         if x.user_id.id == self._uid:
                             print(x.status)
                             x.status = 'approved'
-                            x.state='done'
+                            x.action_done()
                     self.state = 'uploaded'
                     self.step_approve += 1
-                    self.env['wika.po.approval.line'].sudo().create({
+                    self.env['wika.picking.approval.line'].sudo().create({
                         'user_id': self._uid,
                         'groups_id': groups_id.id,
                         'date': datetime.now(),
                         'note': 'Submit Document',
-                        'purchase_id': self.id
+                        'picking_id': self.id
                     })
                     print(self.step_approve)
                     groups_line = self.env['wika.approval.setting.line'].search([
