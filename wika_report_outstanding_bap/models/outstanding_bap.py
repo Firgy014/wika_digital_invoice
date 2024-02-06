@@ -1,133 +1,142 @@
 from odoo import models, fields, api, tools
 from odoo.exceptions import UserError, ValidationError, Warning, AccessError
-# from odoo import tools
+from odoo import tools
 
+# class PurchaseOrder(models.Model):
+#     _inherit = 'purchase.order'
+#     _name = 'purchase.order'
+
+#     asu_ids = fields.One2many('wika.outstanding.bap', 'purchase_id', string='Your Models')
 
 class WikaOutstandingBap(models.Model):
-    _name = 'wika.outstanding.bap'
-    _description = 'Wika Outstanding BAP'
+    _name = 'outstanding.bap'
     _auto = False
 
     # outstanding
     purchase_id = fields.Many2one('purchase.order', string='Nomor PO')
-    product_po_id = fields.Many2one('product.product', string='Purchase Items', default=1)
+    product_po_id = fields.Many2one('product.product', string='Purchase Items')
     sub_total_po = fields.Float(string='Subtotal')
     picking_id = fields.Many2one('stock.picking', string='NO GR/SES')
-    product_gr_id = fields.Many2one('product.product', string='Move Items', default=1)
-    sub_total_gr = fields.Float(string='Subtotal GR')
-    bap_id = fields.Many2one('wika.berita.acara.pembayaran', string='BAP Id')
-    product_bap_id = fields.Many2one('product.product', string='BAP Id', default=1)
-    sub_total_bap = fields.Float(string='Subtotal')
-    bap_date = fields.Date(string='Tanggal BAP', required=True, related='bap_id.bap_date')
+    # product_gr_id = fields.Many2one('product.product', string='Move Items')
+    # sub_total_gr = fields.Float(string='Subtotal GR')
+    # bap_id = fields.Many2one('wika.berita.acara.pembayaran', string='BAP Id')
+    # product_bap_id = fields.Many2one('product.product', string=' Product BAP')
+    # sub_total_bap = fields.Float(string='Subtotal')
+    # bap_date = fields.Date(string='Tanggal BAP', required=True, related='bap_id.bap_date')
 
-    # non outstanding
-    project_id = fields.Many2one('project.project', string='Project')
-    branch_id = fields.Many2one('res.branch', string='Divisi')
-    po_line = fields.Integer('PO Line')
-    qty = fields.Integer(string='Quantity')
-    currency_id = fields.Many2one('res.currency', string='Currency')
-    unit_price = fields.Monetary(string='Unit Price')
-    no_gr = fields.Char(string='Nomor GR')
-    qty_process = fields.Integer(string='Quantity Proses')
-    no_bap = fields.Char(string='Nomor BAP')
+    # # non outstanding
+    # project_id = fields.Many2one('project.project', string='Project')
+    # branch_id = fields.Many2one('res.branch', string='Divisi')
+    # po_line = fields.Integer('PO Line')
+    # qty = fields.Integer(string='Quantity')
+    # currency_id = fields.Many2one('res.currency', string='Currency')
+    # unit_price = fields.Monetary(string='Unit Price')
+    # no_gr = fields.Char(string='Nomor GR')
+    # qty_process = fields.Integer(string='Quantity Proses')
+    # no_bap = fields.Char(string='Nomor BAP')
 
-    # def init(self):
-    #     purchase_model = self.env['purchase.order'].sudo()
-    #     outstanding_model = self.env['wika.outstanding.bap'].sudo()
+    # def _get_combined_query(self):
+    #     return """
+    #     SELECT
+    #         po.id AS id,
+    #         po.id AS purchase_id,
+    #         pol.product_id AS product_po_id,
+    #         pol.price_subtotal AS sub_total_po,
+    #         NULL AS picking_id,
+    #         NULL AS product_gr_id
+    #     FROM
+    #         purchase_order po
+    #     LEFT JOIN
+    #         purchase_order_line pol ON po.id = pol.order_id
+    #     WHERE
+    #         po.active = 't'
 
-    #     total_purchase = purchase_model.search([('id', '!=', False)])
-    #     for po in total_purchase:
-    #         bap_ids = [(5, 0, 0)]
-    #         picking_id = self.env['stock.picking'].search([('po_id', '=', po.id)])
-    #         for gr in picking_id:
+    #     UNION ALL
 
-    #             for move in gr:
-    #                 outstanding_id = outstanding_model.create({
-    #                     'picking_id': move.id,
-    #                     'product_gr_id': move.move_ids_without_package[0].product_id.id,
-    #                     # 'sub_total_po': move.product_id.list_price
-    #                 })
-    #                 outstanding_id.env.cr.commit()
+    #     SELECT
+    #         sp.id AS id,
+    #         NULL AS purchase_id,
+    #         NULL AS product_po_id,
+    #         NULL AS sub_total,
+    #         sp.id AS picking_id,
+    #         sm.product_id AS product_gr_id
+    #     FROM
+    #         stock_picking sp
+    #     LEFT JOIN
+    #         stock_move_line sm ON sp.id = sm.move_id
+    #     WHERE
+    #         sp.active = 't'
+    #     """
 
-    #         print("TEESSSSSSSSSTTTTTTTT")
-    #         print(outstanding_id)
-    #         print("TEESSSSSSSSSTTTTTTTT")
-    #         # test
+    # def _get_combined_query(self):
+    # return """
+    # SELECT
+    #     po.id AS id,
+    #     po.id AS purchase_id,
+    #     pol.product_id AS product_po_id,
+    #     pol.price_subtotal AS sub_total,
+    #     NULL AS picking_id,
+    #     NULL AS product_gr_id,
+    #     NULL AS bap_id
+    # FROM
+    #     purchase_order po
+    # LEFT JOIN
+    #     purchase_order_line pol ON po.id = pol.order_id
+    # WHERE
+    #     po.active = 't'
 
-            # bap_lines.append((0, 0, {
-            #     'picking_id': move.picking_id.id,
-            #     'purchase_line_id':move.purchase_line_id.id,
-            #     'product_id': move.product_id.id,
-            #     'qty': move.product_uom_qty,
-            #     'unit_price': move.purchase_line_id.price_unit,
-            #     'tax_ids':move.purchase_line_id.taxes_id.ids,
-            #     'currency_id':move.purchase_line_id.currency_id.id
-            # }))
-        
-                
-    
-    
-    # def init(self):
-    #     tools.drop_view_if_exists(self._cr, 'wika_berita_acara_pembayaran')
-    #     self._cr.execute("""CREATE or REPLACE VIEW wika_outstanding_bap as (
-    #         select id as purchase_id from purchase_order)""")
-    #     cr = self.env.cr
-    #     cr.execute("SELECT * FROM purchase_order WHERE active = true")
-    #     result = cr.fetchone()
-    #     print("BERHASILLLLLLLLLLLLLLLL")
-    #     print("BERHASILLLLLLLLLLLLLLLL", result)
+    # UNION
 
-    # def init(self):
-    #     # Ensure the index does not exist before creating it
-    #     if not tools.index_exists(self._cr, 'wika_outstanding_bap_custom_index'):
-    #         self._cr.execute("""
-    #             CREATE INDEX wika_outstanding_bap_custom_index
-    #             ON
-    #                 wika_outstanding_bap (project_id, branch_id, product_id)
-    #         """)
+    # SELECT
+    #     sp.id AS id,
+    #     NULL AS purchase_id,
+    #     NULL AS product_po_id,
+    #     NULL AS sub_total,
+    #     sp.id AS picking_id,
+    #     sm.product_id AS product_gr_id,
+    #     NULL AS bap_id
+    # FROM
+    #     stock_picking sp
+    # LEFT JOIN
+    #     stock_move_line sm ON sp.id = sm.move_id
+    # WHERE
+    #     sp.active = 't'
 
-    # @api.model_cr
-    # def init(self):
-    #     tools.drop_view_if_exists(self._cr, 'wika_outstanding_bap')
-    #     self._cr.execute("""
-    #         CREATE OR REPLACE VIEW wika_outstanding_bap AS (
-    #             SELECT  
-    #                 po.id AS purchase_id
-    #             FROM 
-    #                 purchase_order po
-    #             WHERE 
-    #                 po.state = 'po'
-    #         )""")
+    # UNION
 
-    # def init(self):
-    #         tools.drop_view_if_exists(self.env.cr, 'purchase_bill_union')
-    #         self.env.cr.execute("""
-    #             CREATE OR REPLACE VIEW purchase_bill_union AS (
-    #                 SELECT
-    #                     id, name, ref as reference, partner_id, date, amount_untaxed as amount, currency_id, company_id,
-    #                     id as vendor_bill_id, NULL as purchase_order_id
-    #                 FROM account_move
-    #                 WHERE
-    #                     move_type='in_invoice' and state = 'posted'
-    #             UNION
-    #                 SELECT
-    #                     -id, name, partner_ref as reference, partner_id, date_order::date as date, amount_untaxed as amount, currency_id, company_id,
-    #                     NULL as vendor_bill_id, id as purchase_order_id
-    #                 FROM purchase_order
-    #                 WHERE
-    #                     state in ('purchase', 'done') AND
-    #                     invoice_status in ('to invoice', 'no')
-    #             )""")
+    # SELECT
+    #     bap.id AS id,
+    #     NULL AS purchase_id,
+    #     NULL AS product_po_id,
+    #     NULL AS sub_total,
+    #     NULL AS picking_id,
+    #     NULL AS product_gr_id,
+    #     bal.product_id AS product_bap_id
+    # FROM
+    #     wika_berita_acara_pembayaran bap
+    # LEFT JOIN
+    #     wika_berita_acara_pembayaran_line bal ON bap.id = bal.bap_id
+    # """
+    def _get_combined_query(self):
+        return """
+        SELECT
+            pol.id AS id,
+            po.id AS purchase_id,
+            pol.product_id AS product_po_id,
+            pol.price_subtotal AS sub_total_po,
+            sp.id AS picking_id
+        FROM
+            purchase_order_line pol
+        LEFT JOIN
+            purchase_order po ON po.id = pol.order_id
+        LEFT JOIN
+            stock_picking sp ON po.id = sp.purchase_id
+        WHERE
+            po.active = 't'
+        """
 
-    # def init(self):
-    #     tools.drop_view_if_exists(self.env.cr, self._table)
-
-    #     self.env.cr.execute("""
-    #     CREATE OR REPLACE VIEW %s AS (
-    #         SELECT  
-    #                 id as purhcase_id,
-    #                 project_id as project_id
-    #             FROM 
-    #                 purchase_order
-    #     )
-    #     """ % (self._table, ))
+    def init(self):
+        tools.drop_view_if_exists(self.env.cr, self._table)
+        self.env.cr.execute("""
+        CREATE OR REPLACE VIEW %s AS (%s)
+        """ % (self._table, self._get_combined_query()))

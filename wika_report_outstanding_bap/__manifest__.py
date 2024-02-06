@@ -20,7 +20,7 @@
     'version': '0.1',
 
     # any module necessary for this one to work correctly
-    'depends': ['base', 'purchase', 'stock', 'wika_berita_acara_pembayaran'],
+    'depends': ['base', 'purchase', 'stock', 'wika_berita_acara_pembayaran', 'wika_purchase'],
 
     # always loaded
     'data': [
