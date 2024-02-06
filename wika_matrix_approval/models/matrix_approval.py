@@ -23,6 +23,13 @@ class WikaApprovalSetting(models.Model):
         ('Divisi Fungsi','Divisi Fungsi'),
         ('Pusat', 'Pusat')
     ], string='Level',required=True)
+    transaction_type = fields.Selection([
+        ('BTL', 'BTL'),
+        ('BL', 'BL'),
+        ('gr', 'GR'),
+        ('ses', 'SES')
+    ],string='Transaction Type')
+
 
     @api.depends('setting_line_ids')
     def _compute_total_approve(self):
@@ -60,3 +67,9 @@ class WikaApprovalSettingLine(models.Model):
         ('Divisi Fungsi','Divisi Fungsi'),
         ('Pusat', 'Pusat')
     ], string='Level',related='approval_id.level')
+    transaction_type = fields.Selection([
+        ('BTL', 'BTL'),
+        ('BL', 'BL'),
+        ('gr','GR'),
+        ('ses', 'SES')
+    ],string='Transaction Type',related='approval_id.transaction_type')

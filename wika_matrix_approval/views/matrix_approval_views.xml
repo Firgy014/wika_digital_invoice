@@ -7,6 +7,8 @@
             <field name="arch" type="xml">
                 <tree>
                     <field name="level"/>
+                    <field name="transaction_type"/>
+
                     <!--<field name="branch_id"/>
                     <field name="project_id"/>-->
                     <field name="model_id"/>
@@ -26,6 +28,7 @@
                     </header>
                     <group>
                         <field name="level" attrs="{'readonly': [('state', '=', 'confirm')]}"/>
+                        <field name="transaction_type"/>
                         <field name="branch_id"/>
                         <field name="department_id"/>
                         <field name="project_id"/>
