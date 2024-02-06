@@ -29,6 +29,7 @@
         'data/documents_folder_data.xml',
         'views/filter.xml',
         'views/stock_picking_views.xml',
+        'views/stock_move_views.xml',
         'views/action.xml',
         'views/menu.xml',
         'views/templates.xml',

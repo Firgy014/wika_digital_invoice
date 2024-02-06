@@ -63,6 +63,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
                     x.check_biro = False
             else:
                 x.check_biro = False
+                
     @api.onchange('po_id')
     def onchange_po_id(self):
         if self.po_id:
