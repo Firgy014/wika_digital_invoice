@@ -26,7 +26,7 @@ class PurchaseOrderInherit(models.Model):
                                            string='Purchase Order Approval Lines')
     sap_doc_number = fields.Char(string='Nomor Kontrak')
     step_approve = fields.Integer(string='Step Approve',default=1)
-    picking_count = fields.Integer(string='Picking', compute='_compute_picking_count')
+    picking_count = fields.Integer(string='Total GR/SES', compute='_compute_picking_count')
     kurs = fields.Float(string='Kurs')
     currency_name = fields.Char(string='Currency Name', related='currency_id.name', readonly=False)
     signatory_name = fields.Char(string='Nama Penanda Tangan')
@@ -43,6 +43,22 @@ class PurchaseOrderInherit(models.Model):
         ('BTL', 'BTL'),
         ('BL', 'BL'),
     ],compute="cek_transaction_type",store=True)
+
+    @api.constrains('begin_date', 'end_date')
+    def _check_end_date_greater_than_begin_date(self):
+        for record in self:
+            if record.end_date and record.begin_date:
+                if record.end_date < record.begin_date:
+                    raise ValidationError("End date cannot be earlier than begin date.")
+
+    @api.onchange('begin_date', 'end_date')
+    def _onchange_dates(self):
+        if self.end_date and self.begin_date:
+            if self.end_date < self.begin_date:
+                self.end_date = False
+                raise ValidationError("End date cannot be earlier than begin date.")
+
+
 
     def init(self):
         self.env.cr.execute("DELETE FROM purchase_order WHERE state NOT IN ('po', 'uploaded', 'approved')")

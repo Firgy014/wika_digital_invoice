@@ -527,15 +527,15 @@ class ResConfigSettings(models.TransientModel):
 
                                 prod = self.env['product.product'].sudo().search([
                                     ('default_code', '=', hasil['prd_no'])], limit=1)
-                                if data['po_jenis'] == 'JASA':
-                                    qty = float(hasil['po_qty'])
-                                    price_x = float(hasil['po_price'])
-                                    print (price_x/qty)
-                                    print ("lllllllllllllllllllllllllllllllllllllllll")
-                                    price = float(price_x/qty)*10
-                                else:
-                                    qty = float(hasil['po_qty'])
-                                    price = float(hasil['po_price'])
+                                # if data['po_jenis'] == 'JASA':
+                                #     qty = float(hasil['po_qty'])
+                                #     price_x = float(hasil['po_price'])
+                                #     print (price_x/qty)
+                                #     print ("lllllllllllllllllllllllllllllllllllllllll")
+                                #     price = float(price_x/qty)*10
+                                # else:
+                                qty = float(hasil['po_qty'])
+                                price = float(hasil['po_price'])
                                 if not prod:
                                     return "Material/Service  : %s tidak ditemukan" % (hasil['prd_no'])
                                 tax = self.env['account.tax'].sudo().search([
@@ -659,14 +659,14 @@ class ResConfigSettings(models.TransientModel):
 
                             prod = self.env['product.product'].sudo().search([
                                 ('default_code', '=', data['prd_no'])], limit=1)
-                            if txt_data['po_jenis'] == 'JASA':
-                                qty = float(data['po_qty'])
-                                price_x = float(data['po_price'])
-                                print ("oooooooooooooooooooooooooooooooooooo")
-                                price = float(price_x/qty)*10
-                            else:
-                                qty = float(data['po_qty'])
-                                price = float(data['po_price'])
+                            # if txt_data['po_jenis'] == 'JASA':
+                            #     qty = float(data['po_qty'])
+                            #     price_x = float(data['po_price'])
+                            #     print ("oooooooooooooooooooooooooooooooooooo")
+                            #     price = float(price_x/qty)*10
+                            # else:
+                            qty = float(data['po_qty'])
+                            price = float(data['po_price'])
 
                             if not prod:
                                 return "Material/Service  : %s tidak ditemukan" % (data['prd_no'])

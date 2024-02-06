@@ -85,16 +85,16 @@
                 </div>
                 <group>
                     <group>
-                        <field name="partner_id" string="Receive From" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
-                        <field name="po_id" string="Nomor PO" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
-                        <field name="pick_type" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
+                        <field name="partner_id" string="Receive From" readonly="1"/>
+                        <field name="po_id" string="Nomor PO"  readonly="1"/>
+                        <field name="pick_type"  readonly="1"/>
                         <field name="start_date" string="Period Start" attrs="{'invisible': [('pick_type', '=', 'gr')], 'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
                         <field name="end_date" string="Period End" attrs="{'invisible': [('pick_type', '=', 'gr')], 'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
                     </group>
                     <group>
-                        <field name="branch_id" string="Divisi" domain="[('biro', '=', False)]" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
+                        <field name="branch_id" string="Divisi" domain="[('biro', '=', False)]"  readonly="1"/>
                         <field name="department_id" string="Dept" domain="[('biro', '=', True), ('parent_id', '=', branch_id)]" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])], 'invisible': [('check_biro', '=', False)]}"/>
-                        <field name="project_id" string="Project" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
+                        <field name="project_id" string="Project" readonly="1"/>
                         <field name="check_biro" invisible="1"/>
                         <field name="movement_type" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
 
@@ -231,7 +231,7 @@
                     </page>
 
                     <page string="History Approval">
-                        <field name="history_approval_ids" attrs="{'readonly': [('state', 'in', ('uploaded', 'approved'))]}">
+                        <field name="history_approval_ids"  readonly="1">
                             <tree>
                                 <field name="picking_id"/>
                                 <field name="user_id"/>
