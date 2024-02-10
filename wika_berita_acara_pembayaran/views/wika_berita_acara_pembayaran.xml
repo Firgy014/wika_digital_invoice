@@ -94,6 +94,7 @@
                     <field name="project_id"/>
                     <field name="name"/>
                     <field name="partner_id"/>
+                     <field name="state"/>
                 </tree>
             </field>
         </record>
@@ -115,7 +116,7 @@
                     <sheet>
                         <group>
                             <group>
-                                <field name="po_id" attrs="{'readonly': [('state', 'in', ['upload', 'approve'])]}"/>
+                                <field name="po_id" domain="[('state', '=', 'approved')]"  attrs="{'readonly': [('state', 'in', ['upload', 'approve'])]}"/>
                                 <field name="partner_id" attrs="{'readonly': [('state', 'in', ['upload', 'approve'])]}"/>
                                 <field name="bap_type" attrs="{'readonly': [('state', 'in', ['upload', 'approve'])]}"/>
                                 <field name="signatory_name" attrs="{'readonly': [('state', 'in', ['upload', 'approve'])]}"/>

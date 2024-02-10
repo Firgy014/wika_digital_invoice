@@ -11,6 +11,7 @@
                         <field name="branch_id"/>
                         <field name="department_id"/>
                         <field name="project_id"/>
+                        <field name="project_ids" widget="many2many_tags "/>
                     </group>
                     <field name="branch_ids" nolabel="1" widget="many2many_tags "/>
 
