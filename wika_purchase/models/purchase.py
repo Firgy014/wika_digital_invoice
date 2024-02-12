@@ -16,7 +16,8 @@ class PurchaseOrderInherit(models.Model):
     state = fields.Selection(selection_add=[
         ('po', 'PO'),
         ('uploaded', 'Uploaded'),
-        ('approved', 'Approved')
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected')
     ])
     po_type = fields.Char(string='Purchasing Doc Type')
     begin_date = fields.Date(string='Tgl Mulai Kontrak')
@@ -43,6 +44,24 @@ class PurchaseOrderInherit(models.Model):
         ('BTL', 'BTL'),
         ('BL', 'BL'),
     ],compute="cek_transaction_type",store=True)
+    level = fields.Selection([
+        ('Proyek', 'Proyek'),
+        ('Divisi Operasi', 'Divisi Operasi'),
+        ('Divisi Fungsi', 'Divisi Fungsi'),
+        ('Pusat', 'Pusat')
+    ], string='Level',compute='_compute_level')
+
+    @api.depends('project_id','branch_id','department_id')
+    def _compute_level(self):
+        for res in self:
+            if res.project_id:
+                level = 'Proyek'
+            elif res.branch_id and not res.department_id and not res.project_id:
+                level = 'Divisi Operasi'
+            elif res.branch_id and res.department_id and not res.project_id:
+                level = 'Divisi Fungsi'
+            res.level=level
+
 
     @api.constrains('begin_date', 'end_date')
     def _check_end_date_greater_than_begin_date(self):
@@ -349,23 +368,15 @@ class PurchaseOrderInherit(models.Model):
         document_setting_model = self.env['wika.document.setting'].sudo()
         model_id = model_model.search([('model', '=', 'purchase.order')], limit=1)
         for res in self:
-            if res.project_id:
-                level = 'Proyek'
-            elif res.branch_id and not res.department_id and not res.project_id:
-                level = 'Divisi Operasi'
-            elif res.branch_id and res.department_id and not res.project_id:
-                level = 'Divisi Fungsi'
-            print(level)
+            level=res.level
             first_user = False
             if level:
                 approval_id = self.env['wika.approval.setting'].sudo().search(
                     [('model_id', '=', model_id.id), ('level', '=', level),('transaction_type','=',res.transaction_type)], limit=1)
-                print('approval_idapproval_idapproval_id')
                 approval_line_id = self.env['wika.approval.setting.line'].search([
                     ('sequence', '=', 1),
                     ('approval_id', '=', approval_id.id)
                 ], limit=1)
-                print(approval_line_id)
                 groups_id = approval_line_id.groups_id
                 if groups_id:
                     for x in groups_id.users:
@@ -407,65 +418,9 @@ class PurchaseOrderInherit(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         model_model = self.env['ir.model'].sudo()
-        # document_setting_model = self.env['wika.document.setting'].sudo()
-        # model_id = model_model.search([('model', '=', 'purchase.order')], limit=1)
         for vals in vals_list:
             res = super(PurchaseOrderInherit, self).create(vals)
             res.assign_todo_first()
-            # if res.project_id:
-            #     level='Proyek'
-            # elif res.branch_id and not res.department_id and not res.project_id:
-            #     level='Divisi Operasi'
-            # elif res.branch_id and res.department_id and not res.project_id:
-            #     level='Divisi Fungsi'
-            # print (level)
-            # first_user=False
-            # if level:
-            #     approval_id = self.env['wika.approval.setting'].sudo().search(
-            #         [('model_id', '=', model_id.id), ('level', '=', level)], limit=1)
-            #     print('approval_idapproval_idapproval_id')
-            #     approval_line_id = self.env['wika.approval.setting.line'].search([
-            #         ('sequence', '=', 1),
-            #         ('approval_id', '=', approval_id.id)
-            #     ], limit=1)
-            #     print(approval_line_id)
-            #     groups_id = approval_line_id.groups_id
-            #     if groups_id:
-            #         for x in groups_id.users:
-            #             if level=='Proyek' and x.project_id == res.project_id:
-            #                 first_user=x.id
-            #             if level=='Divisi Operasi' and x.branch_id == res.branch_id:
-            #                 first_user=x.id
-            #             if level=='Divisi Fungsi' and x.department_id == res.department_id:
-            #                 first_user=x.id
-            #     print (first_user)
-            # #     # Createtodoactivity
-            #     if first_user:
-            #         self.env['mail.activity'].sudo().create({
-            #             'activity_type_id': 4,
-            #             'res_model_id': model_id.id,
-            #             'res_id': res.id,
-            #             'user_id': first_user,
-            #             'date_deadline': fields.Date.today() + timedelta(days=2),
-            #             'state':'planned',
-            #             'summary': f"The required documents of {model_id.name} is not uploaded yet. Please upload it immediately!"
-            #         })
-            #
-            # # Get Document Setting
-            # document_list = []
-            # doc_setting_id = document_setting_model.search([('model_id', '=', model_id.id)])
-            #
-            # if doc_setting_id:
-            #     for document_line in doc_setting_id:
-            #         document_list.append((0, 0, {
-            #             'purchase_id': res.id,
-            #             'document_id': document_line.id,
-            #             'state': 'waiting'
-            #         }))
-            #     res.document_ids = document_list
-            # else:
-            #     raise AccessError("Either approval and/or document settings are not found. Please configure it first in the settings menu.")
-
         return res
 
     def action_approve(self):
@@ -473,17 +428,11 @@ class PurchaseOrderInherit(models.Model):
         documents_model = self.env['documents.document'].sudo()
         cek = False
         model_id = self.env['ir.model'].search([('model', '=', 'purchase.order')], limit=1)
-        if self.project_id:
-            level = 'Proyek'
-        elif self.branch_id and not self.department_id and not self.project_id:
-            level = 'Divisi Operasi'
-        elif self.branch_id and self.department_id and not self.project_id:
-            level = 'Divisi Fungsi'
+        level = self.level
         if level:
             model_id = self.env['ir.model'].search([('model', '=', 'purchase.order')], limit=1)
             approval_id = self.env['wika.approval.setting'].sudo().search(
                 [('model_id', '=', model_id.id), ('level', '=', level),('transaction_type','=',self.transaction_type)], limit=1)
-            print('approval_idapproval_idapproval_id')
             if not approval_id:
                 raise ValidationError(
                     'Approval Setting untuk menu Purchase Orders tidak ditemukan. Silakan hubungi Administrator!')
@@ -491,10 +440,8 @@ class PurchaseOrderInherit(models.Model):
                 ('sequence', '=', self.step_approve),
                 ('approval_id', '=', approval_id.id)
             ], limit=1)
-            print(approval_line_id)
             groups_id = approval_line_id.groups_id
             if groups_id:
-                print(groups_id.name)
                 for x in groups_id.users:
                     if level == 'Proyek' and x.project_id == self.project_id and x.id == self._uid:
                         cek = True
@@ -521,7 +468,7 @@ class PurchaseOrderInherit(models.Model):
                         ('name', '=', 'Kontrak'),
                         ('folder_id', '=', folder_id.id)
                     ], limit=1)
-                    for doc in self.document_ids.filtered(lambda x: x.state == 'uploaded'):
+                    for doc in self.document_ids.filtered(lambda x: x.state in ('uploaded','rejected')):
                         doc.state = 'verified'
                         attachment_id = self.env['ir.attachment'].sudo().create({
                             'name': doc.filename,
@@ -534,13 +481,11 @@ class PurchaseOrderInherit(models.Model):
                                 'folder_id': folder_id.id,
                                 'tag_ids': facet_id.tag_ids.ids,
                                 'partner_id': doc.purchase_id.partner_id.id,
-                                'purchase_id': self.id,
+                                'purchase_id': doc.purchase_id.id,
                                 'is_po_doc': True
                             })
                 if self.activity_ids:
-                    for x in self.activity_ids.filtered(lambda x: x.status == 'todo'):
-                        print("masuk")
-                        print(x.user_id)
+                    for x in self.activity_ids.filtered(lambda x: x.status != 'approved'):
                         if x.user_id.id == self._uid:
                             print(x.status)
                             x.status = 'approved'
@@ -583,11 +528,11 @@ class PurchaseOrderInherit(models.Model):
                             'user_id': self._uid,
                             'groups_id': groups_id.id,
                             'date': datetime.now(),
-                            'note': 'Approved',
+                            'note': 'Verified',
                             'purchase_id': self.id
                         })
                         if self.activity_ids:
-                            for x in self.activity_ids.filtered(lambda x: x.status == 'todo'):
+                            for x in self.activity_ids.filtered(lambda x: x.status != 'approved'):
                                 print("masuk")
                                 print(x.user_id)
                                 if x.user_id.id == self._uid:
@@ -604,12 +549,7 @@ class PurchaseOrderInherit(models.Model):
     def action_reject(self):
         user = self.env['res.users'].search([('id', '=', self._uid)], limit=1)
         cek = False
-        if self.project_id:
-            level = 'Proyek'
-        elif self.branch_id and not self.department_id and not self.project_id:
-            level = 'Divisi Operasi'
-        elif self.branch_id and self.department_id and not self.project_id:
-            level = 'Divisi Fungsi'
+        level=self.level
         if level:
             model_id = self.env['ir.model'].search([('model', '=', 'purchase.order')], limit=1)
             approval_id = self.env['wika.approval.setting'].sudo().search(
@@ -621,7 +561,7 @@ class PurchaseOrderInherit(models.Model):
                 ('sequence', '=', self.step_approve),
                 ('approval_id', '=', approval_id.id)
             ], limit=1)
-            print(approval_line_id)
+
             groups_id = approval_line_id.groups_id
             if groups_id:
                 print(groups_id.name)
@@ -637,12 +577,12 @@ class PurchaseOrderInherit(models.Model):
             action = {
                 'name': ('Reject Reason'),
                 'type': "ir.actions.act_window",
-                'res_model': "reject.wizard",
+                'res_model': "po.reject.wizard",
                 'view_type': "form",
                 'target': 'new',
                 'view_mode': "form",
                 'context': {'groups_id': groups_id.id},
-                'view_id': self.env.ref('wika_purchase.reject_wizard_form').id,
+                'view_id': self.env.ref('wika_purchase.po_reject_wizard_form').id,
             }
             return action
         else:
@@ -687,7 +627,7 @@ class PurchaseOrderInherit(models.Model):
                                 cek = True
             if cek == True:
                 if self.activity_ids:
-                    for x in self.activity_ids.filtered(lambda x: x.status == 'todo'):
+                    for x in self.activity_ids.filtered(lambda x: x.status != 'approved'):
                         print("masuk")
                         print(x.user_id)
                         if x.user_id.id == self._uid:
@@ -730,6 +670,7 @@ class PurchaseOrderInherit(models.Model):
                                 'user_id': first_user,
                                 'date_deadline': fields.Date.today() + timedelta(days=2),
                                 'state': 'planned',
+                                'status': 'to_approve',
                                 'summary': """Need Approval Document PO"""
                             })
 
@@ -778,7 +719,8 @@ class PurchaseOrderDocumentLine(models.Model):
     state = fields.Selection([
         ('waiting', 'Waiting'),
         ('uploaded', 'Uploaded'),
-        ('verified', 'Verified')
+        ('verified', 'Verified'),
+        ('rejected', 'Rejected')
     ], string='Status')
 
     @api.onchange('document')

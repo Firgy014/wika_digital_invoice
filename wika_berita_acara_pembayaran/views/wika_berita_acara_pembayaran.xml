@@ -117,7 +117,7 @@
                     <sheet>
                         <group>
                             <group>
-                                <field name="po_id" attrs="{'readonly': [('state', 'in', ['upload', 'approve'])]}"/>
+                                <field name="po_id" domain="[('state', '=', 'approved')]"  attrs="{'readonly': [('state', 'in', ['upload', 'approve'])]}"/>
                                 <field name="partner_id" attrs="{'readonly': [('state', 'in', ['upload', 'approve'])]}"/>
                                 <field name="bap_type" attrs="{'readonly': [('state', 'in', ['upload', 'approve'])]}"/>
                                 <field name="signatory_name" attrs="{'readonly': [('state', 'in', ['upload', 'approve'])]}"/>
