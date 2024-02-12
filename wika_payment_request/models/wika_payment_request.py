@@ -32,7 +32,16 @@ class WikaPaymentRequest(models.Model):
         'mail.activity', 'res_id', 'Activities',
         auto_join=True,
         groups="base.group_user",)
-
+    assignment = fields.Many2one('res.branch', string='Assignment', required=True)
+    reference = fields.Many2one('project.project', string='Reference', required=True)
+    payment_block = fields.Selection([
+        ('B', 'Default Invoice'),
+        ('C', 'Pengajuan Ke Divisi'),
+        ('D', 'Pengajuan Ke Pusat'),
+        ('" "', 'Free For Payment (Sudah Approve)'),
+        ('K', 'Dokumen Kembali'),
+    ], string='Payment Block')
+    
     @api.model
     def create(self, vals):
         vals['name'] = self.env['ir.sequence'].next_by_code('wika.payment.request')

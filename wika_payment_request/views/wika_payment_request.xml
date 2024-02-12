@@ -72,6 +72,9 @@
                             <group>
                                 <field name="date" attrs="{'readonly': [('state', 'in', ['upload', 'request', 'approve'])]}"/>
                                 <field name="total" attrs="{'readonly': [('state', 'in', ['upload', 'request', 'approve'])]}"/>
+                                <field name="assignment" attrs="{'readonly': [('state', 'in', ['upload', 'request', 'approve'])]}"/>
+                                <field name="reference" attrs="{'readonly': [('state', 'in', ['upload', 'request', 'approve'])]}"/>
+                                <field name="payment_block" attrs="{'readonly': [('state', 'in', ['upload', 'request', 'approve'])]}"/>
                                 <field name="step_approve" invisible="1" attrs="{'readonly': [('state', 'in', ['upload', 'request', 'approve'])]}"/>
                             </group>
                             <group>
