@@ -451,8 +451,6 @@ class PurchaseOrderInherit(models.Model):
                         cek = True
 
         if cek == True:
-            print (self.step_approve)
-            print ('ddddddddddddd')
             if approval_id.total_approve == self.step_approve:
                 self.state = 'approved'
                 self.env['wika.po.approval.line'].create({
@@ -481,7 +479,7 @@ class PurchaseOrderInherit(models.Model):
                                 'folder_id': folder_id.id,
                                 'tag_ids': facet_id.tag_ids.ids,
                                 'partner_id': doc.purchase_id.partner_id.id,
-                                'purchase_id': doc.purchase_id.id,
+                                'purchase_id': self.id,
                                 'is_po_doc': True
                             })
                 if self.activity_ids:
@@ -595,13 +593,8 @@ class PurchaseOrderInherit(models.Model):
                     if doc_line.document == False:
                         raise ValidationError('Anda belum mengunggah dokumen yang diperlukan!')
                 cek = False
-                if self.project_id:
-                    level = 'Proyek'
-                elif self.branch_id and not self.department_id and not self.project_id:
-                    level = 'Divisi Operasi'
-                elif self.branch_id and self.department_id and not self.project_id:
-                    level = 'Divisi Fungsi'
-                print(level)
+                level=self.level
+
                 if level:
                     model_id = self.env['ir.model'].search([('model', '=', 'purchase.order')], limit=1)
                     approval_id = self.env['wika.approval.setting'].sudo().search(
