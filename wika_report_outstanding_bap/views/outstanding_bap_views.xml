@@ -9,16 +9,22 @@
             <field name="model">outstanding.bap</field>
             <field name="arch" type="xml">
                 <tree string="">
+                    <field name="branch_id"/>
                     <field name="purchase_id"/>
+                    <field name="sequence_po"/>
                     <field name="product_po_id"/>
                     <field name="sub_total_po"/>
-                    <field name="picking_id"/>
-                    <!-- <field name="product_gr_id"/>
-                    <field name="sub_total_gr"/> -->
-                    <!-- <field name="bap_id"/> -->
-                    <!-- <field name="product_bap_id"/>
+                    <field name="picking_id"/>  
+                    <field name="sequence_gr"/>
+                    <field name="product_gr_id"/>
+                    <field name="sub_total_gr"/>
+                    <field name="date_bap"/>
+                    <field name="bap_id"/>
+                    <field name="product_bap_id"/>
+                    <field name="unit_price_bap" invisible="1"/>
+                    <field name="qty_bap" invisible="1"/>
                     <field name="sub_total_bap"/>
-                    <field name="bap_date"/> -->
+                    <field name="price_subtotal_invoice"/>
                 </tree>
             </field>
         </record>

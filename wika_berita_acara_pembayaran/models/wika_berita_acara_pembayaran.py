@@ -50,7 +50,6 @@ class WikaBeritaAcaraPembayaran(models.Model):
     currency_id = fields.Many2one('res.currency', string='Currency')
     notes = fields.Html(string='Terms and Conditions', store=True, readonly=False,)
     total_amount = fields.Monetary(string='Total Amount', compute='compute_total_amount')
-    asu_tax = fields.Monetary(string='Asu Tax', compute='compute_total_amount')
     total_tax = fields.Monetary(string='Total Tax', compute='compute_total_tax')
     grand_total = fields.Monetary(string='Grand Total', compute='compute_grand_total')
     check_biro = fields.Boolean(compute="_cek_biro")
@@ -61,6 +60,39 @@ class WikaBeritaAcaraPembayaran(models.Model):
         help='Edit Tax amounts if you encounter rounding issues.',
         exportable=False,
     )
+    # total_current_value = fields.Float(string='Total Current Value', compute='_compute_total_current_value') #buat sum nilai saat ini
+    total_qty_gr = fields.Integer(string='Total Quantity', compute='_compute_total_qty_gr')
+    total_unit_price_po = fields.Float(string='Total Unit Price PO', compute='_compute_total_unit_price_po')
+    total_current_value = fields.Float(string='Total GR PO', compute='_compute_total_current_value') #buat sum nilai saat ini
+
+    #compute total qty gr
+    @api.depends('bap_ids.qty')
+    def _compute_total_qty_gr(self):
+        for record in self:
+            total_qty = sum(line.qty for line in record.bap_ids)
+            record.total_qty_gr = total_qty
+
+    #compute total unit price PO
+    @api.depends('bap_ids.unit_price_po')
+    def _compute_total_unit_price_po(self):
+        for record in self:
+            total_unit_price = sum(line.unit_price_po for line in record.bap_ids)
+            record.total_unit_price_po = total_unit_price
+
+    #compute unit price po * qty gr
+    @api.depends('bap_ids.qty', 'bap_ids.unit_price_po')
+    def _compute_total_current_value(self):
+        for record in self:
+            total_qty = sum(line.qty for line in record.bap_ids)
+            total_unit_price_po = sum(line.unit_price_po for line in record.bap_ids)
+            record.total_current_value = total_qty * total_unit_price_po
+
+    @api.model
+    def create(self, vals):
+        vals['name'] = self.env['ir.sequence'].next_by_code('wika.berita.acara.pembayaran')
+        return super(WikaBeritaAcaraPembayaran, self).create(vals)
+
+
     @api.depends('department_id')
     def _cek_biro(self):
         for x in self:
@@ -82,14 +114,25 @@ class WikaBeritaAcaraPembayaran(models.Model):
             
             bap_lines = []
             for picking in stock_pickings.move_ids_without_package:
-                bap_lines.append((0, 0, {'picking_id': picking.picking_id.id,
-                                         'purchase_line_id':picking.purchase_line_id.id,
-                'product_id': picking.product_id.id,
-                'qty': picking.product_uom_qty,
-                'unit_price': picking.purchase_line_id.price_unit,
-               'tax_ids':picking.purchase_line_id.taxes_id.ids,
-               'currency_id':picking.purchase_line_id.currency_id.id}))
-                
+                pol_src = self.env['purchase.order.line'].search([
+                    ('order_id', '=', picking.picking_id.po_id.id), 
+                    ('product_id', '=', picking.product_id.id)])
+
+                # aml_src = self.env['account.move.line'].search([
+                #     ('move_id', '=', picking.picking_id.po_id.id), 
+                #     ('product_id', '=', picking.product_id.id)])
+
+                bap_lines.append((0, 0, {
+                    'picking_id': picking.picking_id.id,
+                    'purchase_line_id':pol_src.id or False,
+                    'unit_price_po':pol_src.price_unit,
+                    # 'account_move_line_id':aml_src.id or False,
+                    'product_id': picking.product_id.id,
+                    'qty': picking.product_uom_qty,
+                    'unit_price': picking.purchase_line_id.price_unit,
+                    'tax_ids':picking.purchase_line_id.taxes_id.ids,
+                    'currency_id':picking.purchase_line_id.currency_id.id
+                }))      
             self.bap_ids = bap_lines
 
     @api.depends('bap_ids.sub_total', 'bap_ids.tax_ids')
@@ -102,6 +145,12 @@ class WikaBeritaAcaraPembayaran(models.Model):
     def compute_total_tax(self):
         for record in self:
             total_tax_value = sum(record.bap_ids.mapped('tax_amount'))
+            record.total_tax = total_tax_value
+    
+    @api.depends('bap_ids.price_unit_po', 'bap_ids.qty')
+    def compute_current_value(self):
+        for record in self:
+            total_current_value = sum(record.bap_ids.mapped('tax_amount'))
             record.total_tax = total_tax_value
 
     @api.depends('total_amount', 'total_tax')
@@ -440,13 +489,6 @@ class WikaBeritaAcaraPembayaran(models.Model):
     def action_cancel(self):
         self.write({'state': 'draft'})
 
-    @api.model
-    def create(self, vals):
-        vals['name'] = self.env['ir.sequence'].next_by_code('wika.berita.acara.pembayaran')
-        res = super(WikaBeritaAcaraPembayaran, self).create(vals)
-        res.assign_todo_first()
-        return res
-
     @api.onchange('po_id')
     def onchange_po(self):
         self.partner_id = self.po_id.partner_id.id
@@ -479,10 +521,11 @@ class WikaBeritaAcaraPembayaran(models.Model):
 class WikaBeritaAcaraPembayaranLine(models.Model):
     _name = 'wika.berita.acara.pembayaran.line'
 
-    name = fields.Char('name', compute='_compute_name')
     bap_id = fields.Many2one('wika.berita.acara.pembayaran', string='')
     picking_id = fields.Many2one('stock.picking', string='NO GR/SES')
     purchase_line_id= fields.Many2one('purchase.order.line', string='Purchase Line')
+    unit_price_po = fields.Monetary(string='Price Unit PO')
+    # account_move_line_id = fields.Many2one('account.move.line', string='Move Line')
     product_id = fields.Many2one('product.product', string='Product')
     qty = fields.Integer(string='Quantity')
     tax_ids = fields.Many2many('account.tax', string='Tax')
@@ -490,6 +533,7 @@ class WikaBeritaAcaraPembayaranLine(models.Model):
     unit_price = fields.Monetary(string='Unit Price')
     sub_total = fields.Monetary(string='Subtotal' , compute= 'compute_sub_total')
     tax_amount = fields.Monetary(string='Tax Amount', compute='compute_tax_amount')
+    current_value = fields.Monetary(string='Current Value', compute='_compute_current_value')
 
     @api.depends('tax_ids', 'sub_total')
     def compute_sub_total(self):
@@ -513,6 +557,11 @@ class WikaBeritaAcaraPembayaranLine(models.Model):
         for record in self:
             if not record.picking_id:
                 raise ValidationError('Field "NO GR/SES" harus diisi. Tidak boleh kosong!')
+
+    @api.depends('unit_price_po', 'qty')
+    def _compute_current_value(self):
+        for record in self:
+            record.current_value = record.qty * record.unit_price_po
 
 class WikaBabDocumentLine(models.Model):
     _name = 'wika.bap.document.line'

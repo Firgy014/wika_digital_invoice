@@ -2,10 +2,17 @@
     <data> 
         <!-- Sequence -->
  
-        <record id="seq_wika_bap" model="ir.sequence">
+        <!-- <record id="seq_wika_bap" model="ir.sequence">
             <field name="name">Berita Acara Pembayaran</field>
             <field name="code">wika.berita.acara.pembayaran</field>
-            <field name="prefix">BAP/2023/</field>
+            <field name="prefix">BAP/2024/</field>
+            <field name="padding">3</field>
+        </record> -->
+
+         <record id="sequence_wika_bap" model="ir.sequence">
+            <field name="name">BAP</field>
+            <field name="code">wika.berita.acara.pembayaran</field>
+            <field name="prefix">BAP/2024/</field>
             <field name="padding">3</field>
         </record>
 

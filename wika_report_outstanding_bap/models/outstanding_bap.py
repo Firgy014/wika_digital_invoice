@@ -2,27 +2,29 @@ from odoo import models, fields, api, tools
 from odoo.exceptions import UserError, ValidationError, Warning, AccessError
 from odoo import tools
 
-# class PurchaseOrder(models.Model):
-#     _inherit = 'purchase.order'
-#     _name = 'purchase.order'
-
-#     asu_ids = fields.One2many('wika.outstanding.bap', 'purchase_id', string='Your Models')
-
 class WikaOutstandingBap(models.Model):
     _name = 'outstanding.bap'
     _auto = False
 
     # outstanding
+    branch_id = fields.Many2one('res.branch', string='Divisi')
     purchase_id = fields.Many2one('purchase.order', string='Nomor PO')
     product_po_id = fields.Many2one('product.product', string='Purchase Items')
-    sub_total_po = fields.Float(string='Subtotal')
+    sequence_po = fields.Integer (string='Sequence PO')
+    sub_total_po = fields.Float(string='Subtotal PO')
     picking_id = fields.Many2one('stock.picking', string='NO GR/SES')
-    # product_gr_id = fields.Many2one('product.product', string='Move Items')
-    # sub_total_gr = fields.Float(string='Subtotal GR')
-    # bap_id = fields.Many2one('wika.berita.acara.pembayaran', string='BAP Id')
-    # product_bap_id = fields.Many2one('product.product', string=' Product BAP')
-    # sub_total_bap = fields.Float(string='Subtotal')
-    # bap_date = fields.Date(string='Tanggal BAP', required=True, related='bap_id.bap_date')
+    sequence_gr = fields.Integer (string='Sequence GR')
+    product_gr_id = fields.Many2one('product.product', string='GR Items')
+    sub_total_gr = fields.Float(string='Subtotal GR')
+    date_bap = fields.Date(string='Tanggal BAP', required=True)
+    bap_id = fields.Many2one('wika.berita.acara.pembayaran', string='Nomor BAP')
+    unit_price_bap = fields.Float(string='Unit Price BAP')
+    qty_bap = fields.Integer(string='Quantity BAP')
+    product_bap_id = fields.Many2one('product.product', string=' Product BAP')
+    sub_total_bap = fields.Float(string='subtotal bap')
+    unit_price_bap = fields.Float(string='Unit Price BAP')
+    price_subtotal_invoice = fields.Float(string='Nilai Invoice')
+
 
     # # non outstanding
     # project_id = fields.Many2one('project.project', string='Project')
@@ -34,6 +36,54 @@ class WikaOutstandingBap(models.Model):
     # no_gr = fields.Char(string='Nomor GR')
     # qty_process = fields.Integer(string='Quantity Proses')
     # no_bap = fields.Char(string='Nomor BAP')
+
+
+
+    def _get_combined_query(self):
+        return """
+        SELECT
+            bal.id AS id,
+            po.branch_id AS branch_id,
+            bap.po_id AS purchase_id,
+            pol.sequence AS sequence_po,
+            bal.product_id AS product_po_id,
+            pol.price_subtotal AS sub_total_po,
+            bal.picking_id AS picking_id,
+            pol.sequence AS sequence_gr,
+            bal.product_id AS product_gr_id,
+            sm.price_unit AS sub_total_gr,
+            bap.bap_date AS date_bap,
+            bap.id AS bap_id,
+            bal.product_id AS product_bap_id,
+            bal.unit_price AS unit_price_bap,
+            bal.qty AS qty_bap,
+            (bal.unit_price * bal.qty) AS sub_total_bap,
+            aml.price_subtotal AS price_subtotal_invoice
+
+        FROM 
+            wika_berita_acara_pembayaran_line bal
+        LEFT JOIN 
+            wika_berita_acara_pembayaran bap ON bal.bap_id = bap.id
+        LEFT JOIN 
+            purchase_order po ON bap.po_id = po.id
+        LEFT JOIN 
+            purchase_order_line pol ON bal.product_id = pol.product_id
+        LEFT JOIN 
+            stock_picking sp ON bap.po_id = sp.purchase_id
+        LEFT JOIN 
+            stock_move sm ON sp.id = sm.picking_id
+        LEFT JOIN 
+            account_move am ON bap.po_id = am.id
+        LEFT JOIN 
+            account_move_line aml ON bal.product_id = aml.product_id
+        WHERE bap.state = 'approve'
+        """
+
+    def init(self):
+        tools.drop_view_if_exists(self.env.cr, self._table)
+        self.env.cr.execute("""
+        CREATE OR REPLACE VIEW %s AS (%s)
+        """ % (self._table, self._get_combined_query()))
 
     # def _get_combined_query(self):
     #     return """
@@ -117,26 +167,4 @@ class WikaOutstandingBap(models.Model):
     # LEFT JOIN
     #     wika_berita_acara_pembayaran_line bal ON bap.id = bal.bap_id
     # """
-    def _get_combined_query(self):
-        return """
-        SELECT
-            pol.id AS id,
-            po.id AS purchase_id,
-            pol.product_id AS product_po_id,
-            pol.price_subtotal AS sub_total_po,
-            sp.id AS picking_id
-        FROM
-            purchase_order_line pol
-        LEFT JOIN
-            purchase_order po ON po.id = pol.order_id
-        LEFT JOIN
-            stock_picking sp ON po.id = sp.purchase_id
-        WHERE
-            po.active = 't'
-        """
-
-    def init(self):
-        tools.drop_view_if_exists(self.env.cr, self._table)
-        self.env.cr.execute("""
-        CREATE OR REPLACE VIEW %s AS (%s)
-        """ % (self._table, self._get_combined_query()))
+    
