@@ -75,7 +75,8 @@
                                         <span class="fa fa-arrow-right text-white"/>
                                     </div>
                                 </div>
-                                <ChartRenderer type="'pie'" title="'Purchase Report'" config="state.digitalInvoiceReport"/>
+                                <!-- <ChartRenderer type="'pie'" title="'Purchase Report'" config="state.digitalInvoiceReport"/> -->
+                                <ChartRenderer type="'pie'" title="'Purchase Report'" config="state.topSalesPeople"/>
                             </div>
                         </div>
                     </div>

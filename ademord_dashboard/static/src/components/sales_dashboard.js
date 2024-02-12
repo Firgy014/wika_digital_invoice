@@ -42,13 +42,52 @@ export class OwlSalesDashboard extends Component {
     }
 
     // top sales people
+    async getTopSalesPeople(){
+        let domain = [['state', 'in', ['sale', 'done']]]
+        if (this.state.period > 0){
+            domain.push(['date','>', this.state.current_date])
+        }
+
+        const data = await this.orm.readGroup("sale.report", domain, ['user_id', 'price_total'], ['user_id'], { limit: 5, orderby: "price_total desc" })
+
+        if (data === undefined){
+            console.log(typeof(data))
+            console.log("DATA", data)
+            console.log("NO WAY HOME")
+        } else {
+            console.log(typeof(data))
+            console.log("DATA", data)
+            console.log("MUCH WAY TO GOING HOME")
+        }
+
+        this.state.topSalesPeople = {
+            data: {
+                labels: data.map(d => d.user_id[1]),
+                  datasets: [
+                  {
+                    label: 'Total',
+                    data: data.map(d => d.price_total),
+                    hoverOffset: 4,
+                    backgroundColor: data.map((_, index) => getColor(index)),
+                  }]
+            },
+            domain,
+            label_field: 'user_id',
+        }
+    }
+
+
+    // top sales people
     // async getTopSalesPeople(){
+    //     // tesdulu_masuk
     //     let domain = [['state', 'in', ['sale', 'done']]]
     //     if (this.state.period > 0){
     //         domain.push(['date','>', this.state.current_date])
     //     }
 
-    //     const data = await this.orm.readGroup("sale.report", domain, ['user_id', 'price_total'], ['user_id'], { limit: 5, orderby: "price_total desc" })
+    //     // const data = await this.orm.readGroup("sale.report", domain, ['user_id', 'price_total'], ['user_id'], { limit: 5, orderby: "price_total desc" })
+    //     const data = await this.orm.readGroup("sale.report", domain, ['user_id', 'price_total'], ['user_id'])
+    //     // const data = 900
 
     //     this.state.topSalesPeople = {
     //         data: {
@@ -67,43 +106,43 @@ export class OwlSalesDashboard extends Component {
     // }
 
     // digital invoice by stages
-    async getDigitalInvoiceReport() {
-        let domainPo = [['state', 'in', ['po', 'uploaded', 'approved']]];
-        let domainGrses = [['state', 'in', ['waits', 'uploaded', 'approved']]];
-        let domainBap = [['state', 'in', ['draft', 'upload', 'approve']]];
-        let domainInv = [['state', 'in', ['draft', 'upload', 'approve']]];
-        let domainPr = [['state', 'in', ['draft', 'upload', 'request', 'approve']]];
+    // async getDigitalInvoiceReport() {
+    //     let domainPo = [['state', 'in', ['po', 'uploaded', 'approved']]];
+    //     let domainGrses = [['state', 'in', ['waits', 'uploaded', 'approved']]];
+    //     let domainBap = [['state', 'in', ['draft', 'upload', 'approve']]];
+    //     let domainInv = [['state', 'in', ['draft', 'upload', 'approve']]];
+    //     let domainPr = [['state', 'in', ['draft', 'upload', 'request', 'approve']]];
     
-        const totalPo = await this.orm.searchCount("purchase.order", domainPo);
-        const totalGrses = await this.orm.searchCount("stock.picking", domainGrses);
-        const totalBap = await this.orm.searchCount("wika.berita.acara.pembayaran", domainBap);
-        const totalInv = await this.orm.searchCount("account.move", domainInv);
-        const totalPr = await this.orm.searchCount("wika.payment.request", domainPr);
+    //     const totalPo = await this.orm.searchCount("purchase.order", domainPo);
+    //     const totalGrses = await this.orm.searchCount("stock.picking", domainGrses);
+    //     const totalBap = await this.orm.searchCount("wika.berita.acara.pembayaran", domainBap);
+    //     const totalInv = await this.orm.searchCount("account.move", domainInv);
+    //     const totalPr = await this.orm.searchCount("wika.payment.request", domainPr);
     
-        const data = [
-            { label: 'Purchase Orders in Digital Invoicing', count: totalPo },
-            { label: 'GR/SES in Digital Invoicing', count: totalGrses },
-            { label: 'Berita Acara Pembayaran in Digital Invoicing', count: totalBap },
-            { label: 'Invoice in Digital Invoicing', count: totalInv },
-            { label: 'Pengajuan Pembayaran in Digital Invoicing', count: totalPr },
-        ];
+    //     const data = [
+    //         { label: 'Purchase Orders in Digital Invoicing', count: totalPo },
+    //         { label: 'GR/SES in Digital Invoicing', count: totalGrses },
+    //         { label: 'Berita Acara Pembayaran in Digital Invoicing', count: totalBap },
+    //         { label: 'Invoice in Digital Invoicing', count: totalInv },
+    //         { label: 'Pengajuan Pembayaran in Digital Invoicing', count: totalPr },
+    //     ];
     
-        this.state.digitalInvoiceReport = {
-            data: {
-                labels: data.map(d => d.label),
-                datasets: [
-                    {
-                        label: 'Total',
-                        data: data.map(d => d.count),
-                        hoverOffset: 4,
-                        backgroundColor: data.map((_, index) => getColor(index)),
-                    },
-                ],
-            },
-            domain: [domainPo, domainGrses, domainBap, domainInv, domainPr],
-            label_field: 'label',
-        };
-    }
+    //     this.state.digitalInvoiceReport = {
+    //         data: {
+    //             labels: data.map(d => d.label),
+    //             datasets: [
+    //                 {
+    //                     label: 'Total',
+    //                     data: data.map(d => d.count),
+    //                     hoverOffset: 4,
+    //                     backgroundColor: data.map((_, index) => getColor(index)),
+    //                 },
+    //             ],
+    //         },
+    //         domain: [domainPo, domainGrses, domainBap, domainInv, domainPr],
+    //         label_field: 'label',
+    //     };
+    // }
     
 
     // monthly sales
@@ -194,6 +233,7 @@ export class OwlSalesDashboard extends Component {
                 percentage:6,
             },
             
+            // KANBAN STATES
             po: {
                 total:100,
                 waits:1,
@@ -329,12 +369,12 @@ export class OwlSalesDashboard extends Component {
             await this.getPrUrlLate()
 
             // New Pie
-            await this.getDigitalInvoiceReport()
+            // await this.getDigitalInvoiceReport()
             
             // Existings
             await this.getOrders()
             await this.getTopProducts()
-            // await this.getTopSalesPeople()
+            await this.getTopSalesPeople()
             await this.getMonthlySales()
             await this.getPartnerOrders()
         })
@@ -394,13 +434,13 @@ export class OwlSalesDashboard extends Component {
         await this.getPrUrlLate()
         
         // New Pie
-        await this.getDigitalInvoiceReport()
+        // await this.getDigitalInvoiceReport()
         
 
         // Existings
         await this.getOrders()
         await this.getTopProducts()
-        // await this.getTopSalesPeople()
+        await this.getTopSalesPeople()
         await this.getMonthlySales()
         await this.getPartnerOrders()
     }
