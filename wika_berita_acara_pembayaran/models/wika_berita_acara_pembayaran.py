@@ -109,39 +109,121 @@ class WikaBeritaAcaraPembayaran(models.Model):
         for record in self:
             record.grand_total = record.total_amount + record.total_tax
 
-    @api.onchange('partner_id')
-    def _onchange_(self):
-        if self.partner_id:
-            model_model = self.env['ir.model'].sudo()
-            document_setting_model = self.env['wika.document.setting'].sudo()
-            model_id = model_model.search([('model', '=', 'wika.berita.acara.pembayaran')], limit=1)
+    def action_reject(self):
+        user = self.env['res.users'].search([('id', '=', self._uid)], limit=1)
+        cek = False
+        if self.project_id:
+            level = 'Proyek'
+        elif self.branch_id and not self.department_id and not self.project_id:
+            level = 'Divisi Operasi'
+        elif self.branch_id and self.department_id and not self.project_id:
+            level = 'Divisi Fungsi'
+        if level:
+            model_id = self.env['ir.model'].search([('model', '=', 'wika.berita.acara.pembayaran')], limit=1)
+            approval_id = self.env['wika.approval.setting'].sudo().search(
+                [('model_id', '=', model_id.id), ('level', '=', level),
+                 ('transaction_type', '=', self.po_id.transaction_type)], limit=1)
+            if not approval_id:
+                raise ValidationError(
+                    'Approval Setting untuk menu BAP tidak ditemukan. Silakan hubungi Administrator!')
+            approval_line_id = self.env['wika.approval.setting.line'].search([
+                ('sequence', '=', self.step_approve),
+                ('approval_id', '=', approval_id.id)
+            ], limit=1)
+            print(approval_line_id)
+            groups_id = approval_line_id.groups_id
+            if groups_id:
+                print(groups_id.name)
+                for x in groups_id.users:
+                    if level == 'Proyek' and x.project_id == self.project_id and x.id == self._uid:
+                        cek = True
+                    if level == 'Divisi Operasi' and x.branch_id == self.branch_id and x.id == self._uid:
+                        cek = True
+                    if level == 'Divisi Fungsi' and x.department_id == self.department_id and x.id == self._uid:
+                        cek = True
+
+        if cek == True:
+            action = {
+                'name': ('Reject Reason'),
+                'type': "ir.actions.act_window",
+                'res_model': "reject.wizard",
+                'view_type': "form",
+                'target': 'new',
+                'view_mode': "form",
+                'context': {'groups_id': groups_id.id},
+                'view_id': self.env.ref('wika_berita_acara_pembayaran.action_reject_wizard').id,
+            }
+            return action
+        else:
+            raise ValidationError('User Akses Anda tidak berhak Reject!')
+
+
+    def assign_todo_first(self):
+        model_model = self.env['ir.model'].sudo()
+        document_setting_model = self.env['wika.document.setting'].sudo()
+        model_id = model_model.search([('model', '=', 'wika.berita.acara.pembayaran')], limit=1)
+        for res in self:
+            if res.project_id:
+                level = 'Proyek'
+            elif res.branch_id and not res.department_id and not res.project_id:
+                level = 'Divisi Operasi'
+            elif res.branch_id and res.department_id and not res.project_id:
+                level = 'Divisi Fungsi'
+            print(level)
+            first_user = False
+            if level:
+                approval_id = self.env['wika.approval.setting'].sudo().search(
+                    [('model_id', '=', model_id.id), ('level', '=', level),('transaction_type','=',res.po_id.transaction_type)], limit=1)
+                approval_line_id = self.env['wika.approval.setting.line'].search([
+                    ('sequence', '=', 1),
+                    ('approval_id', '=', approval_id.id)
+                ], limit=1)
+                groups_id = approval_line_id.groups_id
+                if groups_id:
+                    for x in groups_id.users:
+                        if level == 'Proyek' and x.project_id == res.project_id:
+                            first_user = x.id
+                        if level == 'Divisi Operasi' and x.branch_id == res.branch_id:
+                            first_user = x.id
+                        if level == 'Divisi Fungsi' and x.department_id == res.department_id:
+                            first_user = x.id
+                print(first_user)
+                #     # Createtodoactivity
+                if first_user:
+                    self.env['mail.activity'].sudo().create({
+                        'activity_type_id': 4,
+                        'res_model_id': model_id.id,
+                        'res_id': res.id,
+                        'user_id': first_user,
+                        'date_deadline': fields.Date.today() + timedelta(days=2),
+                        'state': 'planned',
+                        'summary': f"Need Upload Document {model_id.name}!"
+                    })
+
+            # Get Document Setting
+            document_list = []
             doc_setting_id = document_setting_model.search([('model_id', '=', model_id.id)])
 
             if doc_setting_id:
-                self.document_ids.unlink()
-
-                document_list = []
                 for document_line in doc_setting_id:
                     document_list.append((0, 0, {
-                        'bap_id': self.id,
+                        'bap_id': res.id,
                         'document_id': document_line.id,
                         'state': 'waiting'
                     }))
-                self.document_ids = document_list
+                res.document_ids = document_list
             else:
-                raise AccessError("Data dokumen tidak ada!")
-            # print("partner_id-----------", model_id)
-
-    def action_reject(self):
-        action = self.env.ref('wika_berita_acara_pembayaran.action_reject_wizard').read()[0]
-
-        return action
+                raise AccessError(
+                    "Either approval and/or document settings are not found. Please configure it first in the settings menu.")
 
     def action_submit(self):
-        self.write({'state': 'upload'})
-        self.step_approve += 1
-        model_id = self.env['ir.model'].search([('model', '=', 'wika.berita.acara.pembayaran')], limit=1)
-        user = self.env['res.users'].search([('branch_id', '=', self.branch_id.id)])
+        if not self.bap_ids:
+            raise ValidationError('List BAP tidak boleh kosong. Mohon isi List BAP terlebih dahulu!')
+
+        for record in self:
+            if any(not line.document for line in record.document_ids):
+                raise ValidationError('Document belum di unggah, mohon unggah file terlebih dahulu!')
+        cek = False
         if self.project_id:
             level = 'Proyek'
         elif self.branch_id and not self.department_id and not self.project_id:
@@ -149,11 +231,14 @@ class WikaBeritaAcaraPembayaran(models.Model):
         elif self.branch_id and self.department_id and not self.project_id:
             level = 'Divisi Fungsi'
         print(level)
-        first_user = False
         if level:
+            model_id = self.env['ir.model'].search([('model', '=', 'purchase.order')], limit=1)
             approval_id = self.env['wika.approval.setting'].sudo().search(
-                [('model_id', '=', model_id.id), ('level', '=', level)], limit=1)
-            print('approval_idapproval_idapproval_id')
+                [('model_id', '=', model_id.id), ('level', '=', level),
+                 ('transaction_type', '=', self.po_id.transaction_type)], limit=1)
+            if not approval_id:
+                raise ValidationError(
+                    'Approval Setting untuk menu BAP tidak ditemukan. Silakan hubungi Administrator!')
             approval_line_id = self.env['wika.approval.setting.line'].search([
                 ('sequence', '=', 1),
                 ('approval_id', '=', approval_id.id)
@@ -161,51 +246,111 @@ class WikaBeritaAcaraPembayaran(models.Model):
             print(approval_line_id)
             groups_id = approval_line_id.groups_id
             if groups_id:
+                print(groups_id.name)
                 for x in groups_id.users:
-                    if level == 'Proyek' and x.project_id == self.project_id:
-                        first_user = x.id
-                    if level == 'Divisi Operasi' and x.branch_id == self.branch_id:
-                        first_user = x.id
-                    if level == 'Divisi Fungsi' and x.department_id == self.department_id:
-                        first_user = x.id
-            if first_user:
-                self.env['mail.activity'].sudo().create({
-                    'activity_type_id': 4,
-                    'res_model_id': model_id.id,
-                    'res_id': self.id,
-                    'user_id': first_user,
-                    'date_deadline': fields.Date.today() + timedelta(days=2),
-                    'state': 'planned',
-                    'summary': """ Need Approval Document BAP """
-                })
-        if not self.bap_ids:
-            raise ValidationError('List BAP tidak boleh kosong. Mohon isi List BAP terlebih dahulu!')
+                    if level == 'Proyek' and x.project_id == self.project_id and x.id == self._uid:
+                        cek = True
+                    if level == 'Divisi Operasi' and x.branch_id == self.branch_id and x.id == self._uid:
+                        cek = True
+                    if level == 'Divisi Fungsi' and x.department_id == self.department_id and x.id == self._uid:
+                        cek = True
 
-        for record in self:
-            if any(not line.document for line in record.document_ids):
-                raise ValidationError('Document belum di unggah, mohon unggah file terlebih dahulu!')
-        
+        if cek == True:
+            if self.activity_ids:
+                for x in self.activity_ids.filtered(lambda x: x.status == 'todo'):
+                    print("masuk")
+                    print(x.user_id)
+                    if x.user_id.id == self._uid:
+                        print(x.status)
+                        x.status = 'approved'
+                        x.action_done()
+                self.state = 'upload'
+                self.step_approve += 1
+                self.env['wika.bap.approval.line'].sudo().create({
+                    'user_id': self._uid,
+                    'groups_id': groups_id.id,
+                    'date': datetime.now(),
+                    'note': 'Submit Document',
+                    'bap_id': self.id
+                })
+                print(self.step_approve)
+                groups_line = self.env['wika.approval.setting.line'].search([
+                    ('level', '=', level),
+                    ('sequence', '=', self.step_approve),
+                    ('approval_id', '=', approval_id.id)
+                ], limit=1)
+                print("groups", groups_line)
+                groups_id_next = groups_line.groups_id
+                if groups_id_next:
+                    print(groups_id_next.name)
+                    for x in groups_id_next.users:
+                        if level == 'Proyek' and x.project_id == self.project_id:
+                            first_user = x.id
+                        if level == 'Divisi Operasi' and x.branch_id == self.branch_id:
+                            first_user = x.id
+                        if level == 'Divisi Fungsi' and x.department_id == self.department_id:
+                            first_user = x.id
+                    print(first_user)
+                    if first_user:
+                        self.env['mail.activity'].sudo().create({
+                            'activity_type_id': 4,
+                            'res_model_id': self.env['ir.model'].sudo().search(
+                                [('model', '=', 'wika.berita.acara.pembayaran')], limit=1).id,
+                            'res_id': self.id,
+                            'user_id': first_user,
+                            'date_deadline': fields.Date.today() + timedelta(days=2),
+                            'state': 'planned',
+                            'summary': """Need Approval Document BAP"""
+                        })
+        else:
+            raise ValidationError('User Akses Anda tidak berhak Submit!')
+
     def action_approve(self):
         user = self.env['res.users'].search([('id','=',self._uid)], limit=1)
         documents_model = self.env['documents.document'].sudo()
         cek = False
         model_id = self.env['ir.model'].search([('model','=', 'wika.berita.acara.pembayaran')], limit=1)
-        if model_id:
-            # print ("TESTTTTTTTTTTTTTTT", model_id)
-            model_wika_id = self.env['wika.approval.setting'].search([('model_id','=',  model_id.id)], limit=1)
+        if self.project_id:
+            level = 'Proyek'
+        elif self.branch_id and not self.department_id and not self.project_id:
+            level = 'Divisi Operasi'
+        elif self.branch_id and self.department_id and not self.project_id:
+            level = 'Divisi Fungsi'
+        if level:
+            approval_id = self.env['wika.approval.setting'].sudo().search(
+                [('model_id', '=', model_id.id), ('level', '=', level),
+                 ('transaction_type', '=', self.po_id.transaction_type)], limit=1)
+            print('approval_idapproval_idapproval_id')
+            if not approval_id:
+                raise ValidationError(
+                    'Approval Setting untuk menu BAP tidak ditemukan. Silakan hubungi Administrator!')
 
-        if user.branch_id.id==self.branch_id.id and model_wika_id:
-            groups_line = self.env['wika.approval.setting.line'].search(
-                [('branch_id', '=', self.branch_id.id), ('sequence',  '=', self.step_approve), ('approval_id', '=', model_wika_id.id )], limit=1)
-            groups_id = groups_line.groups_id
-
-            for x in groups_id.users:
-                if x.id == self._uid:
-                    cek = True
+            approval_line_id = self.env['wika.approval.setting.line'].search([
+                ('sequence', '=', self.step_approve),
+                ('approval_id', '=', approval_id.id)
+            ], limit=1)
+            print(approval_line_id)
+            groups_id = approval_line_id.groups_id
+            if groups_id:
+                print(groups_id.name)
+                for x in groups_id.users:
+                    if level == 'Proyek' and x.project_id == self.project_id and x.id == self._uid:
+                        cek = True
+                    if level == 'Divisi Operasi' and x.branch_id == self.branch_id and x.id == self._uid:
+                        cek = True
+                    if level == 'Divisi Fungsi' and x.department_id == self.department_id and x.id == self._uid:
+                        cek = True
 
         if cek == True:
-            if model_wika_id.total_approve == self.step_approve:
+            if approval_id.total_approve == self.step_approve:
                 self.state = 'approve'
+                self.env['wika.bap.approval.line'].create({
+                    'user_id': self._uid,
+                    'groups_id': groups_id.id,
+                    'date': datetime.now(),
+                    'note': 'Approved',
+                    'bap_id': self.id
+                })
                 folder_id = self.env['documents.folder'].sudo().search([('name', '=', 'BAP')], limit=1)
                 # print("TESTTTTTTTTTTTTTTTTTTTTT", folder_id)
                 if folder_id:
@@ -229,15 +374,66 @@ class WikaBeritaAcaraPembayaran(models.Model):
                                 'tag_ids': facet_id.tag_ids.ids,
                                 'partner_id': doc.bap_id.partner_id.id,
                             })
+                if self.activity_ids:
+                    for x in self.activity_ids.filtered(lambda x: x.status == 'todo'):
+                        print("masuk")
+                        print(x.user_id)
+                        if x.user_id.id == self._uid:
+                            print(x.status)
+                            x.status = 'approved'
+                            x.action_done()
             else:
-                self.step_approve += 1
+                first_user = False
+                # Createtodoactivity
+                groups_line_next = self.env['wika.approval.setting.line'].search([
+                    ('level', '=', level),
+                    ('sequence', '=', self.step_approve + 1),
+                    ('approval_id', '=', approval_id.id)
+                ], limit=1)
+                print("groups", groups_line_next)
+                groups_id_next = groups_line_next.groups_id
+                if groups_id_next:
+                    print(groups_id_next.name)
+                    for x in groups_id_next.users:
+                        if level == 'Proyek' and x.project_id == self.project_id:
+                            first_user = x.id
+                        if level == 'Divisi Operasi' and x.branch_id == self.branch_id:
+                            first_user = x.id
+                        if level == 'Divisi Fungsi' and x.department_id == self.department_id:
+                            first_user = x.id
 
-            audit_log_obj = self.env['wika.bap.approval.line'].create({'user_id': self._uid,
-                'groups_id' :groups_id.id,
-                'datetime': datetime.now(),
-                'note': 'Approve',
-                'bap_id': self.id
-                })
+                    print(first_user)
+                    if first_user:
+                        self.step_approve += 1
+                        self.env['mail.activity'].sudo().create({
+                            'activity_type_id': 4,
+                            'res_model_id': self.env['ir.model'].sudo().search(
+                                [('model', '=', 'purchase.order')], limit=1).id,
+                            'res_id': self.id,
+                            'user_id': first_user,
+                            'date_deadline': fields.Date.today() + timedelta(days=2),
+                            'state': 'planned',
+                            'status': 'to_approve',
+                            'summary': """Need Approval Document BAP"""
+                        })
+                        self.env['wika.bap.approval.line'].create({
+                            'user_id': self._uid,
+                            'groups_id': groups_id.id,
+                            'date': datetime.now(),
+                            'note': 'Verified',
+                            'bap_id': self.id
+                        })
+                        if self.activity_ids:
+                            for x in self.activity_ids.filtered(lambda x: x.status == 'todo'):
+                                print("masuk")
+                                print(x.user_id)
+                                if x.user_id.id == self._uid:
+                                    print(x.status)
+                                    x.status = 'approved'
+                                    x.action_done()
+                    else:
+                        raise ValidationError('User Role Next Approval Belum di Setting!')
+
         else:
             raise ValidationError('User Akses Anda tidak berhak Approve!')
             
@@ -247,7 +443,9 @@ class WikaBeritaAcaraPembayaran(models.Model):
     @api.model
     def create(self, vals):
         vals['name'] = self.env['ir.sequence'].next_by_code('wika.berita.acara.pembayaran')
-        return super(WikaBeritaAcaraPembayaran, self).create(vals)
+        res = super(WikaBeritaAcaraPembayaran, self).create(vals)
+        res.assign_todo_first()
+        return res
 
     @api.onchange('po_id')
     def onchange_po(self):
@@ -262,21 +460,21 @@ class WikaBeritaAcaraPembayaran(models.Model):
     def action_print_bap(self):
         return self.env.ref('wika_berita_acara_pembayaran.report_wika_berita_acara_pembayaran_action').report_action(self)
 
-    @api.onchange('end_date')
-    def _check_contract_expiry_on_save(self):
-        if self.end_date and self.end_date < fields.Date.today():
-            raise UserError(_("Tanggal akhir kontrak PO sudah kadaluarsa. Silakan perbarui kontrak segera!"))
-
-    @api.model
-    def create(self, values):
-        record = super(WikaBeritaAcaraPembayaran, self).create(values)
-        record._check_contract_expiry_on_save()
-        return record
-
-    def write(self, values):
-        super(WikaBeritaAcaraPembayaran, self).write(values)
-        self._check_contract_expiry_on_save()
-        return True
+    # @api.onchange('end_date')
+    # def _check_contract_expiry_on_save(self):
+    #     if self.end_date and self.end_date < fields.Date.today():
+    #         raise UserError(_("Tanggal akhir kontrak PO sudah kadaluarsa. Silakan perbarui kontrak segera!"))
+    #
+    # @api.model
+    # def create(self, values):
+    #     record = super(WikaBeritaAcaraPembayaran, self).create(values)
+    #     record._check_contract_expiry_on_save()
+    #     return record
+    #
+    # def write(self, values):
+    #     super(WikaBeritaAcaraPembayaran, self).write(values)
+    #     self._check_contract_expiry_on_save()
+    #     return True
 
 class WikaBeritaAcaraPembayaranLine(models.Model):
     _name = 'wika.berita.acara.pembayaran.line'
