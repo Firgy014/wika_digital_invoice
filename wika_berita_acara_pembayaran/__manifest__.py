@@ -25,15 +25,14 @@
     # always loaded
     'data': [
         'security/ir.model.access.csv',
-        'views/views.xml',
         'data/documents_folder_data.xml',
-        'wizard/wika_reject_reason.xml',
-        'views/templates.xml',
         'views/wika_berita_acara_pembayaran.xml',
         'report/report_action.xml',
         'report/report_wika_berita_acara_pembayaran.xml',
         'views/sequence_data.xml',
         'views/wika_menu.xml',
+        'wizard/wika_reject_reason.xml',
+
     ],
     
     # only loaded in demonstration mode

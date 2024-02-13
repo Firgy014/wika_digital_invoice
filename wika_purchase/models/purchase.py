@@ -253,6 +253,7 @@ class PurchaseOrderInherit(models.Model):
                             'product_uom_qty': float(item['QUANTITY']),
                             'product_uom': uom.id,
                             #'active':active,
+                            'state':'waits',
                             'location_id': 4,
                             'location_dest_id': 8,
                             'purchase_line_id':po_line.id,
@@ -280,7 +281,7 @@ class PurchaseOrderInherit(models.Model):
                             'pick_type': 'gr',
                             #'move_ids_without_package':vals,
                             'company_id': 1,
-                            'state': 'assigned'
+                            'state': 'waits'
                         })
                     else:
                         raise UserError(_("Data GR Tidak Tersedia di PO TERSEBUT!"))
@@ -326,6 +327,7 @@ class PurchaseOrderInherit(models.Model):
                             'product_uom_qty': float(item['QUANTITY']),
                             'product_uom': uom.id,
                             #'active': active,
+                            'state':'waits',
                             'location_id': 4,
                             'location_dest_id': 8,
                             'purchase_line_id': po_line.id,
@@ -355,7 +357,7 @@ class PurchaseOrderInherit(models.Model):
                             'origin':matdoc,
                             #'move_ids_without_package':vals,
                             'company_id': 1,
-                            'state': 'assigned'
+                            'state': 'waits'
                         })
                     else:
                         raise UserError(_("Data GR Tidak Tersedia di PO TERSEBUT!"))
@@ -474,6 +476,7 @@ class PurchaseOrderInherit(models.Model):
                             'res_model': 'documents.document',
                         })
                         if attachment_id:
+
                             documents_model.create({
                                 'attachment_id': attachment_id.id,
                                 'folder_id': folder_id.id,
@@ -482,6 +485,7 @@ class PurchaseOrderInherit(models.Model):
                                 'purchase_id': self.id,
                                 'is_po_doc': True
                             })
+                            print (documents_model)
                 if self.activity_ids:
                     for x in self.activity_ids.filtered(lambda x: x.status != 'approved'):
                         if x.user_id.id == self._uid:

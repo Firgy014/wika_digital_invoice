@@ -4,7 +4,13 @@ class StockMoveInherit(models.Model):
     _inherit = 'stock.move'
 
     price_subtotal = fields.Float(string='Amount', compute='_compute_price_subtotal')
+    state = fields.Selection(selection_add=[
+        ('waits', 'Waiting'),
+        ('uploaded', 'Uploaded'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected')
 
+    ], string='Status', default='waits')
     # @api.model_create_multi
     # def create(self, vals_list):
     #     print("this is vals list", vals_list)

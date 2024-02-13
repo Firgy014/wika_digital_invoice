@@ -210,7 +210,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
                         cek = True
                     if level == 'Divisi Fungsi' and x.department_id == self.department_id and x.id == self._uid:
                         cek = True
-
+                print (cek)
         if cek == True:
             action = {
                 'name': ('Reject Reason'),
@@ -220,7 +220,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
                 'target': 'new',
                 'view_mode': "form",
                 'context': {'groups_id': groups_id.id},
-                'view_id': self.env.ref('wika_berita_acara_pembayaran.action_reject_wizard').id,
+                'view_id': self.env.ref('wika_berita_acara_pembayaran.bap_reject_wizard_form').id,
             }
             return action
         else:

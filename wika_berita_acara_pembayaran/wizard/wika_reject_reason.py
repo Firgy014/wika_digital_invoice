@@ -7,6 +7,8 @@ class RejectWizard(models.TransientModel):
 
     reject_reason = fields.Text(string='Reject Reason')
 
+    def cancel(self):
+        return
     
     def ok(self):
         groups_id = self.env.context.get('groups_id')
@@ -21,7 +23,7 @@ class RejectWizard(models.TransientModel):
                 x.write({
                     'state': 'rejected'
                 })
-            for y in bap_id_model.history_approval_ids.filtered(lambda y: y.note == 'Submit Document'):
+            for y in min(bap_id_model.history_approval_ids, key=lambda x: x.id):
                 self.env['mail.activity'].sudo().create({
                     'activity_type_id': 4,
                     'res_model_id': self.env['ir.model'].sudo().search(

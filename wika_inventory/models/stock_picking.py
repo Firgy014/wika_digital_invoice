@@ -129,7 +129,7 @@ class PickingInherit(models.Model):
 
             # Get Document Setting
             document_list = []
-            doc_setting_id = document_setting_model.search([('model_id', '=', model_id.id)])
+            doc_setting_id = document_setting_model.search([('model_id', '=', model_id.id),('transaction_type', '=', self.pick_type)])
 
             if doc_setting_id:
                 for document_line in doc_setting_id:
