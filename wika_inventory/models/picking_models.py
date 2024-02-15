@@ -11,7 +11,8 @@ class PickingDocument(models.Model):
     state = fields.Selection([
         ('waiting', 'Waiting'),
         ('uploaded', 'Uploaded'),
-        ('verified', 'Verified')
+        ('verified', 'Verified'),
+        ('rejected', 'Rejected')
     ], string='Status')
 
     @api.onchange('document')
