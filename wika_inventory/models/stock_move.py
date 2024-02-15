@@ -11,6 +11,10 @@ class StockMoveInherit(models.Model):
         ('rejected', 'Rejected')
 
     ], string='Status', default='waits')
+    qty_bap=fields.Float(string='Qty BAP')
+
+
+
     # @api.model_create_multi
     # def create(self, vals_list):
     #     print("this is vals list", vals_list)

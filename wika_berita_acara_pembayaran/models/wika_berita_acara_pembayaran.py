@@ -70,7 +70,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
         ('Divisi Fungsi', 'Divisi Fungsi'),
         ('Pusat', 'Pusat')
     ], string='Level',compute='_compute_level')
-
+    documents_count = fields.Integer(string='Total Doc', compute='_compute_documents_count')
 
     @api.depends('project_id','branch_id','department_id')
     def _compute_level(self):
@@ -409,7 +409,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
                 # print("TESTTTTTTTTTTTTTTTTTTTTT", folder_id)
                 if folder_id:
                     facet_id = self.env['documents.facet'].sudo().search([
-                        ('name', '=', 'Wika BAP'),
+                        ('name', '=', 'Documents'),
                         ('folder_id', '=', folder_id.id)
                     ], limit=1)
                     # print("TESTTTTTTTTTERRRRRRR", facet_id)
@@ -422,10 +422,14 @@ class WikaBeritaAcaraPembayaran(models.Model):
                         })
                         # print("SSSIIIIUUUUUUUUUUUUUUUUUU", attachment_id)
                         if attachment_id:
+                            tag = self.env['documents.tag'].sudo().search([
+                                ('facet_id', '=', facet_id.id),
+                                ('name', '=', doc.document_id.name)
+                            ], limit=1)
                             documents_model.create({
                                 'attachment_id': attachment_id.id,
                                 'folder_id': folder_id.id,
-                                'tag_ids': facet_id.tag_ids.ids,
+                                'tag_ids': tag.ids,
                                 'partner_id': doc.bap_id.partner_id.id,
                                 'purchase_id': self.po_id.id,
                             })
@@ -491,7 +495,29 @@ class WikaBeritaAcaraPembayaran(models.Model):
 
         else:
             raise ValidationError('User Akses Anda tidak berhak Approve!')
-            
+
+    def _compute_documents_count(self):
+        for record in self:
+            record.documents_count = self.env['documents.document'].search_count(
+                [('purchase_id', '=', record.po_id.id)])
+
+    def get_documents(self):
+        self.ensure_one()
+        view_kanban_id = self.env.ref("documents.document_view_kanban", raise_if_not_found=False)
+
+        view_tree_id = self.env.ref("documents.documents_view_list", raise_if_not_found=False)
+
+        return {
+            'name': _('Documents'),
+            'type': 'ir.actions.act_window',
+            'view_mode': 'kanban,tree',
+            'res_model': 'documents.document',
+            'view_ids': [(view_kanban_id, 'kanban'),(view_tree_id, 'tree')],
+            'res_id': self.id,
+            'domain': [('purchase_id', '=', self.po_id.id),('folder_id','in',('PO','GR/SES'))],
+            'context': {'default_purchase_id': self.po_id.id},
+        }
+
     def action_cancel(self):
         self.write({'state': 'draft'})
 

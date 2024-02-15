@@ -117,6 +117,11 @@
                         <field name="state" widget="statusbar" statusbar_visible="draft,uploaded,approved"/>
                     </header>
                     <sheet>
+                        <div name="button_box" position="inside">
+                            <button class="oe_stat_button" type="object" name="get_documents" icon="fa-file-text-o">
+                                <field string="Documents" name="documents_count" widget="statinfo"/>
+                            </button>
+                        </div>
                         <group>
                             <group>
                                 <field name="po_id" domain="[('state', '=', 'approved')]"  attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>

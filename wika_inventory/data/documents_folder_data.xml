@@ -1,21 +1,24 @@
 <odoo>
     <record id="documents_facet_transfer" model="documents.facet">
-        <field name="name">Transfer</field>
+        <field name="name">Documents</field>
     </record>
 
     <record id="documents_tag_1st_transfer" model="documents.tag">
-        <field name="name">Transfer Pertama</field>
+        <field name="name">GR</field>
         <field name="facet_id" ref="wika_inventory.documents_facet_transfer"/>
     </record>
 
     <record id="documents_tag_2nd_transfer" model="documents.tag">
-        <field name="name">Transfer Kedua</field>
+        <field name="name">SES</field>
         <field name="facet_id" ref="wika_inventory.documents_facet_transfer"/>
     </record>
-
+    <record id="documents_tag_3nd_transfer" model="documents.tag">
+        <field name="name">Surat Jalan</field>
+        <field name="facet_id" ref="wika_inventory.documents_facet_transfer"/>
+    </record>
     <!-- Update documents_facet_transfer with tag_ids -->
     <record id="documents_facet_transfer" model="documents.facet">
-        <field name="tag_ids" eval="[(6, 0, [ref('wika_inventory.documents_tag_1st_transfer'), ref('wika_inventory.documents_tag_2nd_transfer')])]"/>
+        <field name="tag_ids" eval="[(6, 0, [ref('wika_inventory.documents_tag_1st_transfer'), ref('wika_inventory.documents_tag_2nd_transfer'),ref('wika_inventory.documents_tag_3nd_transfer')])]"/>
     </record>
 
     <record id="documents_folder_picking" model="documents.folder">
