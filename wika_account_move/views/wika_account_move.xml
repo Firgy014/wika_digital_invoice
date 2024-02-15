@@ -45,6 +45,7 @@
                     <field name="department_id" domain="[('biro', '=', True), ('parent_id', '=', branch_id)]" 
                         attrs="{'readonly': [('state', 'in', ['upload', 'approve'])]}"/>
                     <field name="project_id" attrs="{'readonly': [('state', 'in', ['upload', 'approve'])]}"/>
+                    <field name="level" attrs="{'readonly': [('state', 'in', ['upload', 'approve'])]}"/>
                     <!-- <field name="sap_doc_number" attrs="{'readonly': [('state', 'in', ['upload', 'approve'])]}"/> -->
                     <field name="step_approve" invisible="1"/>
                 </xpath>
