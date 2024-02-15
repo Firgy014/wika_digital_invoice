@@ -1,0 +1,36 @@
+<odoo>
+    <data>
+
+
+        <menuitem
+            action="account.action_move_in_invoice_type"
+            id="sub_menu_wika_account_move"
+            name="Pembuatan Invoice"
+            parent="wika_berita_acara_pembayaran.wika_berita_acara_pembayaran_menu_root"
+            sequence="30"/>
+
+            <!-- action="action_wika_account_payable_setting" -->
+
+        <menuitem
+            id="main_menu_account_move_config"
+            name="Configurations"
+            parent="wika_berita_acara_pembayaran.wika_berita_acara_pembayaran_menu_root"
+            sequence="40"/>
+
+        <menuitem
+            action="wika_special_gl_action"
+            id="sub_menu_wika_special_gl"
+            name="Special GL"
+            parent="main_menu_account_move_config"
+            sequence="40"/>
+
+        <menuitem
+            action="action_wika_account_payable_setting"
+            id="sub_menu_account_move_account_payable_setting"
+            name="Payable Account Setting"
+            parent="main_menu_account_move_config"
+            sequence="100"/>
+
+    </data>
+    
+</odoo>

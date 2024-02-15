@@ -26,6 +26,9 @@
     'data': [
         'security/ir.model.access.csv',
         'views/views.xml',
+        'views/partner_views.xml',
+        'views/setting_account_payable_views.xml',
+        'views/product_views.xml',
         'views/wika_account_move.xml',
         'data/documents_folder_data.xml',
         'report/report_action.xml',
@@ -36,7 +39,7 @@
         'views/wika_special_gl.xml',
         # 'views/wika_account_move_line',
         'wizard/wika_reject_reason.xml',
-        'views/wika_menu.xml',
+        'views/menu.xml',
     ],
     # only loaded in demonstration mode
     'demo': [
