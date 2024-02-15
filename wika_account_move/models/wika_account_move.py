@@ -150,9 +150,9 @@ class WikaInheritedAccountMove(models.Model):
                     ])
                     if account_setting_id != False:
                         lines_new_payable.append((0, 0, {
-                            'account_id': account_setting_id.account_berelasi_id.id,
+                            'account_id': account_setting_id.account_pihak_ketiga_id.id,
                             'display_type': 'payment_term',
-                            'name': "Berelasi",
+                            'name': "Pihak Ketiga",
                             'debit': 0.0,
                             'credit': record.amount_total_footer
                         }))
