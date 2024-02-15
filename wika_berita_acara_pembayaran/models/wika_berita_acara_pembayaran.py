@@ -2,6 +2,10 @@ from odoo import models, fields, api, _
 from datetime import datetime, timedelta
 from odoo.exceptions import UserError, ValidationError, Warning, AccessError
 import pytz
+# import terbilang
+from num2words import num2words
+# from terbilang import terbilang
+
 
 class WikaBeritaAcaraPembayaran(models.Model):
     _name = 'wika.berita.acara.pembayaran'
@@ -80,6 +84,58 @@ class WikaBeritaAcaraPembayaran(models.Model):
     last_retensi_total = fields.Float('Total retensi yang lalu')
     last_qty_dp = fields.Float('Total Qty DP yang lalu')
     last_qty_retensi = fields.Float('Total Qty Retensi yang lalu')
+
+    # terbilang
+    test_rupiah = fields.Float('Test Rupiah')
+    test_rupiah_terbilang = fields.Char('Test Rupiah Terbilang', compute='_compute_test_rupiah_terbilang')
+
+    # nilai s/d saat ini
+    qty_sd_saatini = fields.Float('qty s/d saat ini', compute='_compute_qty_sd_saatini')
+    price_sd_saatini = fields.Float('Price s/d saat ini', compute='_compute_price_po_sd_saatini')
+    total_sd_saatini = fields.Float('Total s/d saat ini', compute='_compute_total_sd_saatini')
+
+    # # total nilai s/d saat ini
+    # @api.depends('bap_ids.qty', 'bap_ids.unit_price_po')
+    # def _compute_total_sd_saatini(self):
+    #     for record in self:
+    #         record.qty_sd_saatini = sum(record.bap_ids.mapped('qty'))
+    #         record.price_sd_saatini = sum(record.bap_ids.mapped('unit_price_po'))
+    #         record.total_sd_saatini = record.qty_sd_saatini * record.price_sd_saatini
+
+    # qty s/d saat ini
+    @api.depends('bap_ids.qty')
+    def _compute_qty_sd_saatini(self):
+        for record in self:
+            total_qty = sum(record.bap_ids.mapped('qty'))
+            record.qty_sd_saatini = record.last_quantity + total_qty
+    
+    # unit price s/d saat ini
+    @api.depends('bap_ids.unit_price_po')
+    def _compute_price_po_sd_saatini(self):
+        for record in self:
+            total_po = sum(record.bap_ids.mapped('unit_price_po'))
+            record.price_sd_saatini = record.last_value + total_po
+
+    @api.depends('qty_sd_saatini', 'price_sd_saatini')
+    def _compute_total_sd_saatini(self):
+        for record in self:
+            record.total_sd_saatini = record.qty_sd_saatini * record.price_sd_saatini
+
+    @api.depends('test_rupiah')
+    def _compute_test_rupiah_terbilang(self):
+        for record in self:
+            if record.test_rupiah:
+                # Convert float to integer representation of Rupiah
+                rupiah_int = int(record.test_rupiah)
+                # Convert the integer part to words
+                rupiah_terbilang = num2words(rupiah_int, lang='id') + " rupiah"
+                # If there are cents, add them as well
+                sen = int((record.test_rupiah - rupiah_int) * 100)
+                if sen > 0:
+                    rupiah_terbilang += " dan " + num2words(sen, lang='id') + " sen"
+                record.test_rupiah_terbilang = rupiah_terbilang
+            else:
+                record.test_rupiah_terbilang = ""
 
     @api.depends('bap_date')
     def _compute_last_value(self):

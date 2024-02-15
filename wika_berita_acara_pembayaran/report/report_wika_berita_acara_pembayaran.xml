@@ -290,8 +290,13 @@
                                     <td style="padding: 1px;"></td>
                                     <td style="padding: 1px;"></td>
                                     <td style="text-align: right; padding: 1px;">=</td>
-                                    <td style="text-align: left; padding: 1px;">Rp. <t t-esc="'{:,.0f}'.format(o.total_current_value) if o.total_current_value else ''"/></td>
+                                    <td style="text-align: left; padding: 1px;">Rp. <t t-esc="'{:,.0f}'.format((((o.last_quantity + o.total_qty_gr) * (o.last_value + o.total_unit_price_po)) - 
+                                        ((o.last_qty_dp + o.dp_qty_total) * (o.last_dp_total + o.dp_total))) - ((o.last_qty_retensi + o.retensi_qty_total) * (o.last_retensi_total + o.retensi_total))) 
+                                        if o.last_value and o.total_unit_price_po and o.last_quantity and o.total_qty_gr and o.last_qty_dp and o.dp_qty_total and o.last_dp_total and o.dp_total and o.last_qty_retensi 
+                                        and o.retensi_qty_total and o.last_retensi_total and o.retensi_total else ''"/>
+                                    </td>
                                 </tr>
+                                <t t-set="jumlah_total_netto" t-value="((o.last_quantity + o.total_qty_gr) * (o.last_value + o.total_unit_price_po)) - ((o.last_qty_dp + o.dp_qty_total) * (o.last_dp_total + o.dp_total)) - ((o.last_qty_retensi + o.retensi_qty_total) * (o.last_retensi_total + o.retensi_total))"/>
                                 <tr>
                                     <th style="padding: 1px;" scope="row">5.</th>
                                     <td style="padding: 1px;"><strong>PPN</strong></td>
@@ -300,7 +305,12 @@
                                     <td style="padding: 1px;"></td>
                                     <td style="padding: 1px;"></td>
                                     <td style="text-align: right; padding: 1px;">=</td>
-                                    <td style="text-align: left; padding: 1px;">Rp. <t t-esc="'{:,.0f}'.format(o.total_tax) if o.total_tax else ''"/></td>
+                                    <t t-if="o.total_tax">
+                                        <td style="text-align: left; padding: 1px;">Rp. <t t-esc="'{:,.0f}'.format(o.total_tax * jumlah_total_netto)"/></td>
+                                    </t>
+                                    <t t-else="">
+                                        <td style="text-align: left; padding: 1px;">Rp. </td>
+                                    </t>
                                 </tr>
                                 <tr>
                                     <th style="padding: 1px;" scope="row">6.</th>
@@ -310,7 +320,7 @@
                                     <td style="padding: 1px;"></td>
                                     <td style="padding: 1px;"></td>
                                     <td style="text-align: right; padding: 1px;">=</td>
-                                    <td style="text-align: left; padding: 1px;">Rp. <t t-esc="'{:,.0f}'.format(o.total_current_value) if o.total_current_value else ''"/></td>
+                                    <td style="text-align: left; padding: 1px;">Rp. <t t-esc="'{:,.0f}'.format(o.total_pph) if o.total_pph else ''"/></td>
                                 </tr>
                                 <tr>
                                     <th style="padding: 1px;" scope="row"></th>
@@ -330,8 +340,9 @@
                                     <td style="padding: 1px;"></td>
                                     <td style="padding: 1px;"></td>
                                     <td style="text-align: right; padding: 1px;">=</td>
-                                    <td style="text-align: left; padding: 1px;">Rp. <t t-esc="'{:,.0f}'.format(o.total_current_value) if o.total_current_value else ''"/></td>
+                                    <td style="text-align: left; padding: 1px;">Rp.</td>
                                 </tr>
+                                <t t-set="total_pembayaran" t-value="jumlah_total_netto + (o.total_tax * jumlah_total_netto) - o.total_pph"/>
                                 <tr>
                                     <th style="padding: 1px;" scope="row">7.</th>
                                     <td style="padding: 1px;"><strong>PEMBAYARAN</strong></td>
@@ -346,7 +357,7 @@
                                     <th style="padding: 1px;" scope="row"></th>
                                     <td style="padding: 1px;" colspan="5">PIHAK KEDUA berhak menerima pembayaran dari PIHAK KESATU sebesar</td>                                  
                                     <td style="text-align: right; padding: 1px;">=</td>
-                                    <td style="text-align: left; padding: 1px;">Rp. <t t-esc="'{:,.0f}'.format(o.total_current_value) if o.total_current_value else ''"/></td>
+                                    <td style="text-align: left; padding: 1px;">Rp. <t t-esc="'{:,.0f}'.format(total_pembayaran) if total_pembayaran else ''"/></td>
                                 </tr>
                                 <tr>
                                     <th style="padding: 1px" scope="row"></th>
@@ -355,7 +366,7 @@
                                     <td></td>
                                     <td colspan="2" style="padding: 1px">Jumlah Tagihan</td>
                                     <td style="text-align: right; padding: 1px">=</td>
-                                    <td style="text-align: left; padding: 1px">Rp. <t t-esc="'{:,.0f}'.format(o.total_current_value) if o.total_current_value else ''"/></td>
+                                    <td style="text-align: left; padding: 1px;">Rp. <t t-esc="'{:,.0f}'.format(total_pembayaran) if total_pembayaran else ''"/></td>
                                 </tr>
                                 <tr>
                                     <th style="padding: 1px" scope="row"></th>
@@ -364,16 +375,16 @@
                                     <td></td>
                                     <td colspan="2" style="padding: 1px">Dibulatkan</td>
                                     <td style="text-align: right; padding: 1px">=</td>
-                                    <td style="text-align: left; padding: 1px">Rp. <t t-esc="'{:,.0f}'.format(o.total_current_value) if o.total_current_value else ''"/></td>
+                                    <td style="text-align: left; padding: 1px;">Rp. <t t-esc="'{:,.0f}'.format(total_pembayaran) if total_pembayaran else ''"/></td>
                                 </tr>
                             </tbody>
                         </table>
                     </div>
-                    <div>
+                    <!-- <div>
                         <p style="text-align: center; margin-top: -10px; font-size: 14px;">
-                            Terbilang :
+                            <td> Terbilang : <t t-esc="number_to_words(o.last_dp_total) if o.last_dp_total else ''"/></td>
                         </p>
-                    </div>
+                    </div> -->
                     <div>
                         <p style="text-align: left; margin-top: -15px; font-size: 14px;">
                             Demikian Berita Acara ini dibuat dengan sebenarnya untuk dapat dipergunakan sebagaimana mestinya.

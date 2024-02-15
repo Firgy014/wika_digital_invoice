@@ -144,7 +144,11 @@
                                 <field name="last_retensi_total"/>
                                 <field name="last_qty_dp"/>
                                 <field name="last_qty_retensi"/>
-
+                                <field name="test_rupiah"/>
+                                <field name="test_rupiah_terbilang" readonly="1"/>
+                                <field name="qty_sd_saatini"/>
+                                <field name="price_sd_saatini" />
+                                <field name="total_sd_saatini" />
                             </group>
                         </group>
                         <notebook>

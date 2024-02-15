@@ -36,7 +36,7 @@
 
                 <!-- field -->
                 <xpath expr="//field[@name='partner_id']" position="after">
-                    <field name="bap_id" attrs="{'readonly': [('state', 'in', ['upload', 'approve'])]}"/>
+                    <field name="bap_id" attrs="{'readonly': [('state', 'in', ['upload', 'approve'])]}" domain="[('branch_id', '=', branch_id)]"/>
                     <field name="pr_id" attrs="{'readonly': [('state', 'in', ['upload', 'approve'])]}"/>
                 </xpath>
                 <xpath expr="//field[@name='invoice_date']" position="after">
