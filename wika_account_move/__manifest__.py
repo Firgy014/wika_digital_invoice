@@ -25,7 +25,6 @@
     # always loaded
     'data': [
         'security/ir.model.access.csv',
-        'views/views.xml',
         'views/partner_views.xml',
         'views/setting_account_payable_views.xml',
         'views/product_views.xml',
@@ -35,7 +34,6 @@
         'report/report_wika_account_move.xml',
         'views/action.xml',
         'views/filter.xml',
-        'views/templates.xml',
         'views/wika_special_gl.xml',
         # 'views/wika_account_move_line',
         'wizard/wika_reject_reason.xml',

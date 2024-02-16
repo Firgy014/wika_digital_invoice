@@ -26,7 +26,9 @@
         'stock',
         'product',
         'wika_matrix_approval',
-        'wika_activity'
+        'wika_activity',
+        'wika_documents'
+
     ],
 
     # always loaded

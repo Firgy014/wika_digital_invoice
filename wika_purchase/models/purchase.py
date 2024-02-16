@@ -253,6 +253,7 @@ class PurchaseOrderInherit(models.Model):
                             'product_uom_qty': float(item['QUANTITY']),
                             'product_uom': uom.id,
                             #'active':active,
+                            'state':'waits',
                             'location_id': 4,
                             'location_dest_id': 8,
                             'purchase_line_id':po_line.id,
@@ -280,7 +281,7 @@ class PurchaseOrderInherit(models.Model):
                             'pick_type': 'gr',
                             #'move_ids_without_package':vals,
                             'company_id': 1,
-                            'state': 'assigned'
+                            'state': 'waits'
                         })
                     else:
                         raise UserError(_("Data GR Tidak Tersedia di PO TERSEBUT!"))
@@ -326,6 +327,7 @@ class PurchaseOrderInherit(models.Model):
                             'product_uom_qty': float(item['QUANTITY']),
                             'product_uom': uom.id,
                             #'active': active,
+                            'state':'waits',
                             'location_id': 4,
                             'location_dest_id': 8,
                             'purchase_line_id': po_line.id,
@@ -355,7 +357,7 @@ class PurchaseOrderInherit(models.Model):
                             'origin':matdoc,
                             #'move_ids_without_package':vals,
                             'company_id': 1,
-                            'state': 'assigned'
+                            'state': 'waits'
                         })
                     else:
                         raise UserError(_("Data GR Tidak Tersedia di PO TERSEBUT!"))
@@ -451,8 +453,6 @@ class PurchaseOrderInherit(models.Model):
                         cek = True
 
         if cek == True:
-            print (self.step_approve)
-            print ('ddddddddddddd')
             if approval_id.total_approve == self.step_approve:
                 self.state = 'approved'
                 self.env['wika.po.approval.line'].create({
@@ -462,10 +462,10 @@ class PurchaseOrderInherit(models.Model):
                     'note': 'Approved',
                     'purchase_id': self.id
                 })
-                folder_id = self.env['documents.folder'].sudo().search([('name', '=', 'Purchase')], limit=1)
+                folder_id = self.env['documents.folder'].sudo().search([('name', '=', 'PO')], limit=1)
                 if folder_id:
                     facet_id = self.env['documents.facet'].sudo().search([
-                        ('name', '=', 'Kontrak'),
+                        ('name', '=', 'Documents'),
                         ('folder_id', '=', folder_id.id)
                     ], limit=1)
                     for doc in self.document_ids.filtered(lambda x: x.state in ('uploaded','rejected')):
@@ -476,12 +476,16 @@ class PurchaseOrderInherit(models.Model):
                             'res_model': 'documents.document',
                         })
                         if attachment_id:
+                            tag=self.env['documents.tag'].sudo().search([
+                                    ('facet_id', '=',facet_id.id),
+                                    ('name', '=', doc.document_id.name)
+                                ], limit=1)
                             documents_model.create({
                                 'attachment_id': attachment_id.id,
                                 'folder_id': folder_id.id,
-                                'tag_ids': facet_id.tag_ids.ids,
+                                'tag_ids': tag.ids,
                                 'partner_id': doc.purchase_id.partner_id.id,
-                                'purchase_id': doc.purchase_id.id,
+                                'purchase_id': self.id,
                                 'is_po_doc': True
                             })
                 if self.activity_ids:
@@ -595,13 +599,8 @@ class PurchaseOrderInherit(models.Model):
                     if doc_line.document == False:
                         raise ValidationError('Anda belum mengunggah dokumen yang diperlukan!')
                 cek = False
-                if self.project_id:
-                    level = 'Proyek'
-                elif self.branch_id and not self.department_id and not self.project_id:
-                    level = 'Divisi Operasi'
-                elif self.branch_id and self.department_id and not self.project_id:
-                    level = 'Divisi Fungsi'
-                print(level)
+                level=self.level
+
                 if level:
                     model_id = self.env['ir.model'].search([('model', '=', 'purchase.order')], limit=1)
                     approval_id = self.env['wika.approval.setting'].sudo().search(

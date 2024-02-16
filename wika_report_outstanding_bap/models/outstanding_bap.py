@@ -10,11 +10,13 @@ class WikaOutstandingBap(models.Model):
     branch_id = fields.Many2one('res.branch', string='Divisi')
     purchase_id = fields.Many2one('purchase.order', string='Nomor PO')
     product_po_id = fields.Many2one('product.product', string='Purchase Items')
+    qty_po = fields.Float('QTY PO')
     sequence_po = fields.Integer (string='Sequence PO')
     sub_total_po = fields.Float(string='Subtotal PO')
     picking_id = fields.Many2one('stock.picking', string='NO GR/SES')
     sequence_gr = fields.Integer (string='Sequence GR')
     product_gr_id = fields.Many2one('product.product', string='GR Items')
+    qty_gr = fields.Float('QTY GR/SES')
     sub_total_gr = fields.Float(string='Subtotal GR')
     date_bap = fields.Date(string='Tanggal BAP', required=True)
     bap_id = fields.Many2one('wika.berita.acara.pembayaran', string='Nomor BAP')
@@ -24,8 +26,12 @@ class WikaOutstandingBap(models.Model):
     sub_total_bap = fields.Float(string='subtotal bap')
     unit_price_bap = fields.Float(string='Unit Price BAP')
     price_subtotal_invoice = fields.Float(string='Nilai Invoice')
+    potongan_uang_muka_dp = fields.Float(string='Total DP')
+    potongan_retensi = fields.Float(string='Total Retensi')
+    potongan_uang_muka_qty_dp = fields.Float(string='QTY DP')
+    potongan_retensi_qty = fields.Float(string='QTY Retensi')
 
-
+    # potongan_retensi = fields.Float(string='Total Retensi')
     # # non outstanding
     # project_id = fields.Many2one('project.project', string='Project')
     # branch_id = fields.Many2one('res.branch', string='Divisi')
@@ -47,10 +53,12 @@ class WikaOutstandingBap(models.Model):
             bap.po_id AS purchase_id,
             pol.sequence AS sequence_po,
             bal.product_id AS product_po_id,
+            pol.product_qty AS qty_po,
             pol.price_subtotal AS sub_total_po,
             bal.picking_id AS picking_id,
             pol.sequence AS sequence_gr,
             bal.product_id AS product_gr_id,
+            sm. quantity_done AS qty_gr,
             sm.price_unit AS sub_total_gr,
             bap.bap_date AS date_bap,
             bap.id AS bap_id,
@@ -58,8 +66,11 @@ class WikaOutstandingBap(models.Model):
             bal.unit_price AS unit_price_bap,
             bal.qty AS qty_bap,
             (bal.unit_price * bal.qty) AS sub_total_bap,
-            aml.price_subtotal AS price_subtotal_invoice
-
+            aml.price_subtotal AS price_subtotal_invoice,
+            bap.dp_total AS potongan_uang_muka_dp,
+            bap.retensi_total AS potongan_retensi,
+            bap.dp_qty_total AS potongan_uang_muka_qty_dp,
+            bap.retensi_qty_total AS potongan_retensi_qty
         FROM 
             wika_berita_acara_pembayaran_line bal
         LEFT JOIN 
@@ -73,10 +84,8 @@ class WikaOutstandingBap(models.Model):
         LEFT JOIN 
             stock_move sm ON sp.id = sm.picking_id
         LEFT JOIN 
-            account_move am ON bap.po_id = am.id
-        LEFT JOIN 
-            account_move_line aml ON bal.product_id = aml.product_id
-        WHERE bap.state = 'approve'
+            account_move_line aml ON bal.id = aml.bap_line_id
+        WHERE bap.state = 'draft'
         """
 
     def init(self):

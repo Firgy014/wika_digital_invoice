@@ -129,7 +129,7 @@ class PickingInherit(models.Model):
 
             # Get Document Setting
             document_list = []
-            doc_setting_id = document_setting_model.search([('model_id', '=', model_id.id)])
+            doc_setting_id = document_setting_model.search([('model_id', '=', model_id.id),('transaction_type', '=', self.pick_type)])
 
             if doc_setting_id:
                 for document_line in doc_setting_id:
@@ -205,7 +205,7 @@ class PickingInherit(models.Model):
                 folder_id = self.env['documents.folder'].sudo().search([('name', '=', 'GR/SES')], limit=1)
                 if folder_id:
                     facet_id = self.env['documents.facet'].sudo().search([
-                        ('name', '=', 'Transfer'),
+                        ('name', '=', 'Documents'),
                         ('folder_id', '=', folder_id.id)
                     ], limit=1)
                     for doc in self.document_ids.filtered(lambda x: x.state  in ('uploaded','rejected')):
@@ -216,10 +216,14 @@ class PickingInherit(models.Model):
                             'res_model': 'documents.document',
                         })
                         if attachment_id:
+                            tag = self.env['documents.tag'].sudo().search([
+                                ('facet_id', '=', facet_id.id),
+                                ('name', '=', doc.document_id.name)
+                            ], limit=1)
                             documents_model.create({
                                 'attachment_id': attachment_id.id,
                                 'folder_id': folder_id.id,
-                                'tag_ids': facet_id.tag_ids.ids,
+                                'tag_ids': tag.ids,
                                 'partner_id': self.purchase_id.partner_id.id,
                                 'purchase_id': self.purchase_id.id,
                                 'is_po_doc': True

@@ -32,8 +32,8 @@ class WikaPaymentRequest(models.Model):
         'mail.activity', 'res_id', 'Activities',
         auto_join=True,
         groups="base.group_user",)
-    assignment = fields.Many2one('res.branch', string='Assignment', required=True)
-    reference = fields.Many2one('project.project', string='Reference', required=True)
+    assignment = fields.Char('Assignment')
+    reference = fields.Char('Reference')
     payment_block = fields.Selection([
         ('B', 'Default Invoice'),
         ('C', 'Pengajuan Ke Divisi'),

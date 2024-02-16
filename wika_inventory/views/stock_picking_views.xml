@@ -84,19 +84,25 @@
                 </div>
                 <group>
                     <group>
+<<<<<<< HEAD
+                        <field name="partner_id" string="Receive From" readonly="0"/>
+                        <field name="po_id" string="Nomor PO"  readonly="0"/>
+                        <field name="pick_type"  readonly="0"/>
+=======
                         <field name="partner_id" string="Receive From" readonly="1"/>
                         <field name="po_id" string="Nomor PO"  readonly="1"/>
                         <field name="pick_type"  readonly="1"/>
                         <field name="level"  invisible="1"/>
                         <field name="origin" attrs="{'invisible': [('pick_type', '=', 'gr')]}"/>
 
+>>>>>>> 130978044bede62902dadf64331b09478c954436
                         <field name="start_date" string="Period Start" attrs="{'invisible': [('pick_type', '=', 'gr')], 'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
                         <field name="end_date" string="Period End" attrs="{'invisible': [('pick_type', '=', 'gr')], 'required': [('pick_type', '!=', 'gr')],'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
                     </group>
                     <group>
-                        <field name="branch_id" string="Divisi" domain="[('biro', '=', False)]"  readonly="1"/>
+                        <field name="branch_id" string="Divisi" domain="[('biro', '=', False)]"  readonly="0"/>
                         <field name="department_id" string="Dept" domain="[('biro', '=', True), ('parent_id', '=', branch_id)]" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])], 'invisible': [('check_biro', '=', False)]}"/>
-                        <field name="project_id" string="Project" readonly="1"/>
+                        <field name="project_id" string="Project" readonly="0"/>
                         <field name="check_biro" invisible="1"/>
 
                         <label for="scheduled_date"/>
@@ -153,6 +159,7 @@
                                     <field name="product_id" required="1" context="{'default_detailed_type': 'product'}" attrs="{'readonly': ['|', '&amp;', ('state', '!=', 'draft'), ('additional', '=', False), ('move_lines_count', '&gt;', 0)]}"/>
                                     <field name="description_picking" string="Description" optional="hide"/>
                                     <field name="date" optional="hide"/>
+                                      <field name="qty_bap" invisible="1"/>
                                     <field name="date_deadline" optional="hide"/>
                                     <field name="is_initial_demand_editable" invisible="1"/>
                                     <field name="is_quantity_done_editable" invisible="1"/>
