@@ -1,6 +1,11 @@
 from odoo import models, fields, api, _
 from datetime import datetime, timedelta
 from odoo.exceptions import UserError, ValidationError, Warning, AccessError
+import pytz
+# import terbilang
+from num2words import num2words
+# from terbilang import terbilang
+
 
 class WikaBeritaAcaraPembayaran(models.Model):
     _name = 'wika.berita.acara.pembayaran'
@@ -163,7 +168,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
                         COALESCE(SUM(potongan_uang_muka_qty_dp), 0) AS potongan_uang_muka_qty_dp,
                         COALESCE(SUM(potongan_retensi_qty), 0) AS potongan_retensi_qty
                     FROM outstanding_bap
-                       WHERE purchase_id = %s AND date_bap >= '%s' AND bap_id < %s
+                    WHERE purchase_id = %s AND date_bap >= '%s' AND bap_id < %s
                 """ % (record.po_id.id, tanggal, record.id)
                 self.env.cr.execute(query)
                 result = self.env.cr.fetchone()
@@ -194,7 +199,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
                 record.last_retensi_total = 0.0
                 record.last_qty_dp = 0.0
                 record.last_qty_retensi = 0.0
-
+                
     # compute Total DP QTY
     @api.depends('price_cut_ids')
     def _compute_dp_qty(self):
@@ -232,7 +237,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
         sequence_parts = sequence.split('/')
         sequence_number = sequence_parts[-1]
         return 'BAP/{}/{:03d}'.format(year, int(sequence_number))
-
+    
     @api.onchange('partner_id')
     def onchange_partner_id(self):
         if self.partner_id:
@@ -312,9 +317,12 @@ class WikaBeritaAcaraPembayaran(models.Model):
                     'product_id': picking.product_id.id,
                     'qty': picking.product_uom_qty,
                     'unit_price': picking.purchase_line_id.price_unit,
-                    'tax_ids':picking.purchase_line_id.taxes_id.ids,
-                    'currency_id':picking.purchase_line_id.currency_id.id
-                }))      
+                    # 'tax_ids': picking.purchase_line_id.taxes_id.ids,
+                    'currency_id': picking.purchase_line_id.currency_id.id
+                }))
+        
+            # Memperbarui value dari price_cut_ids dan bap_ids
+            self.price_cut_ids = price_cut_lines
             self.bap_ids = bap_lines
             self.price_cut_ids = price_cut_lines
 

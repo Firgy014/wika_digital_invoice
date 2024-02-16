@@ -107,6 +107,15 @@ class WikaInheritedAccountMove(models.Model):
                 level = 'Divisi Fungsi'
             res.level = level
 
+    @api.onchange('partner_id')
+    def onchange_partner_id(self):
+        if self.partner_id:
+            domain = [('partner_id', '=', self.partner_id.id)]
+            return {'domain': {'bap_id': domain}}
+        else:
+            return {'domain': {'bap_id': []}}
+
+
     @api.depends('line_ids.price_unit', 'line_ids.quantity', 'line_ids.discount', 'line_ids.tax_ids')
     def _compute_amount_total(self):
         for move in self:
