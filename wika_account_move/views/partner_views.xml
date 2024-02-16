@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <record id="view_partner_property_form_wika" model="ir.ui.view">
+            <field name="name">res.partner.property.form.inherit.wika</field>
+            <field name="model">res.partner</field>
+            <field name="inherit_id" ref="base.view_partner_form"/>
+            <field name="arch" type="xml">
+                <xpath expr="//field[@name='category_id']" position="after">
+                    <field name="bill_coa_type"/>
+                </xpath>
+                <!-- <xpath expr="//page[@name='accounting']//group[@name='accounting_entries']" position="inside">
+                    <field name="account_berelasi_id"/>
+                    <field name="account_pihak_ketiga_id"/>
+                </xpath> -->
+            </field>
+        </record>
+    </data>  
+</odoo>

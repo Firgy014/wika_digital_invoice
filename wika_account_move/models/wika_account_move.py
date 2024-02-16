@@ -1,6 +1,6 @@
 from odoo import fields, models, api, _
 from odoo.exceptions import UserError, ValidationError, Warning, AccessError
-from datetime import datetime,timedelta
+from datetime import datetime
 
 class WikaInheritedAccountMove(models.Model):
     _inherit = 'account.move'
@@ -89,6 +89,23 @@ class WikaInheritedAccountMove(models.Model):
     )
 
     amount_total_footer = fields.Float(string='Amount Total', compute='_compute_amount_total', store=True)
+    level = fields.Selection([
+        ('Proyek', 'Proyek'),
+        ('Divisi Operasi', 'Divisi Operasi'),
+        ('Divisi Fungsi', 'Divisi Fungsi'),
+        ('Pusat', 'Pusat')
+    ], string='Level', compute='_compute_level', default='Proyek')
+
+    @api.depends('project_id', 'branch_id', 'department_id')
+    def _compute_level(self):
+        for res in self:
+            if res.project_id:
+                level = 'Proyek'
+            elif res.branch_id and not res.department_id and not res.project_id:
+                level = 'Divisi Operasi'
+            elif res.branch_id and res.department_id and not res.project_id:
+                level = 'Divisi Fungsi'
+            res.level = level
 
     @api.depends('line_ids.price_unit', 'line_ids.quantity', 'line_ids.discount', 'line_ids.tax_ids')
     def _compute_amount_total(self):
@@ -106,12 +123,63 @@ class WikaInheritedAccountMove(models.Model):
 
             move.amount_total_footer = amount_total_footer
 
-    
-    @api.model
+    @api.model_create_multi
     def create(self, values):
+        account_setting_model = self.env['wika.setting.account.payable'].sudo()
         record = super(WikaInheritedAccountMove, self).create(values)
         record._check_invoice_totals()
         record.assign_todo_first()
+
+        # Delete the duplicated COGS first
+        i = 0
+        lines_new_payable = []
+        while i < len(record.line_ids) - 1:
+            if record.line_ids[i].account_id.name == record.line_ids[i+1].account_id.name:
+                record.line_ids[i].unlink()
+            i += 1
+
+        # Assign the COA
+        for line in record.line_ids:
+            if record.partner_id.bill_coa_type == 'relate':
+                if record.level == 'Proyek':
+                    account_setting_id = account_setting_model.search([
+                        ('valuation_class', '=', line.product_id.valuation_class),
+                        ('assignment', '=', record.level.lower()),
+                    ], limit=1)
+                    if account_setting_id != False:
+                        lines_new_payable.append((0, 0, {
+                            'account_id': account_setting_id.account_berelasi_id.id,
+                            'display_type': 'payment_term',
+                            'name': "Berelasi",
+                            'debit': 0.0,
+                            'credit': record.amount_total_footer
+                        }))
+                    else:
+                        raise ValidationError("COA untuk Invoice ini tidak ditemukan, silakan hubungi Administrator!")
+
+            elif record.partner_id.bill_coa_type == '3rd_party':
+                if record.level == 'Proyek':
+                    account_setting_id = account_setting_model.search([
+                        ('valuation_class', '=', line.product_id.valuation_class),
+                        ('assignment', '=', record.level.lower()),
+                    ])
+                    if account_setting_id != False:
+                        lines_new_payable.append((0, 0, {
+                            'account_id': account_setting_id.account_pihak_ketiga_id.id,
+                            'display_type': 'payment_term',
+                            'name': "Pihak Ketiga",
+                            'debit': 0.0,
+                            'credit': record.amount_total_footer
+                        }))
+                    else:
+                        raise ValidationError("COA untuk Invoice ini tidak ditemukan, silakan hubungi Administrator!")
+
+            # Replace the payable COA
+            for line_coa in record.line_ids:
+                if line_coa.account_id.name == 'Trade Receivable':
+                    for new_coa in lines_new_payable:
+                        line_coa.write(new_coa[2])
+
         return record
 
     def write(self, values):
@@ -131,7 +199,13 @@ class WikaInheritedAccountMove(models.Model):
         if self.amount_invoice and self.amount_invoice != self.amount_total_footer:
             raise ValidationError("Amount Invoice harus sama dengan Amount Total!")
 
-        
+    def _check_partner_payable_accounts(self):
+        if self.partner_id.category_id != False:
+            if self.partner_id.category_id.name == 'Berelasi':
+                for lines in self.invoice_line_ids:
+                    print(lines.name)
+            # print(self.partner_id.category_id.name)
+
     @api.onchange('bap_id')
     def _onchange_bap_id(self):
         self.po_id =False
@@ -238,13 +312,11 @@ class WikaInheritedAccountMove(models.Model):
             if model_wika_id.total_approve == self.step_approve:
                 self.state = 'approve'
                 folder_id = self.env['documents.folder'].sudo().search([('name', '=', 'Invoice')], limit=1)
-                print("TESTTTTTTTTTTTTTTTTTTTTT", folder_id)
                 if folder_id:
                     facet_id = self.env['documents.facet'].sudo().search([
                         ('name', '=', 'Vendor Bills'),
                         ('folder_id', '=', folder_id.id)
                     ], limit=1)
-                    print("TESTTTTTTTTTERRRRRRR", facet_id)
                     for doc in self.document_ids.filtered(lambda x: x.state == 'uploaded'):
                         doc.state = 'verif'
                         attachment_id = self.env['ir.attachment'].sudo().create({
@@ -252,7 +324,6 @@ class WikaInheritedAccountMove(models.Model):
                             'datas': doc.document,
                             'res_model': 'documents.document',
                         })
-                        print("SSSIIIIUUUUUUUUUUUUUUUUUU", attachment_id)
                         if attachment_id:
                             documents_model.create({
                                 'attachment_id': attachment_id.id,
@@ -308,6 +379,7 @@ class WikaInheritedAccountMove(models.Model):
             model_model = self.env['ir.model'].sudo()
             document_setting_model = self.env['wika.document.setting'].sudo()
             model_id = model_model.search([('model', '=', 'account.move')], limit=1)
+            print("partner_id----------TEST--------", model_id)
             doc_setting_id = document_setting_model.search([('model_id', '=', model_id.id)])
 
             if doc_setting_id:
@@ -329,8 +401,33 @@ class WikaInheritedAccountMove(models.Model):
             if record.state in ('upload', 'approve'):
                 raise ValidationError('Tidak dapat menghapus ketika status Vendor Bils dalam keadaan Upload atau Approve')
         return super(WikaInheritedAccountMove, self).unlink()
-        
 
+    @api.depends('posted_before', 'state', 'journal_id', 'date')
+    def _compute_name(self):
+        self = self.sorted(lambda m: (m.date, m.ref or '', m.id))
+
+        for move in self:
+            move_has_name = move.name and move.name != '/'
+            if move_has_name or move.state != 'draft':
+                if not move.posted_before and not move._sequence_matches_date():
+                    if move._get_last_sequence(lock=False):
+                        # The name does not match the date and the move is not the first in the period:
+                        # Reset to draft
+                        move.name = False
+                        continue
+                else:
+                    if move_has_name and move.posted_before or not move_has_name and move._get_last_sequence(lock=False):
+                        # The move either
+                        # - has a name and was posted before, or
+                        # - doesn't have a name, but is not the first in the period
+                        # so we don't recompute the name
+                        continue
+            if move.date and (not move_has_name or not move._sequence_matches_date()):
+                move._set_next_sequence()
+
+        self.filtered(lambda m: not m.name and not move.quick_edit_mode).name = '/'
+        self._inverse_name()
+    
     def action_print_invoice(self):
         return self.env.ref('wika_account_move.report_wika_account_move_action').report_action(self)   
 

@@ -13,6 +13,16 @@
             ]"/>
         </record>
 
+        <record id="action_wika_account_payable_setting" model="ir.actions.act_window">
+            <field name="name">WiKA Payable Account Setting</field>
+            <field name="res_model">wika.setting.account.payable</field>
+            <field name="view_mode">tree,form</field>
+            <field name="view_ids" eval="[(5, 0, 0),
+                (0, 0, {'view_mode': 'tree', 'view_id': ref('wika_account_move.view_setting_account_payable_tree')}),
+                (0, 0, {'view_mode': 'form', 'view_id': ref('wika_account_move.view_setting_account_payable_form')}),
+            ]"/>
+        </record>
+
     
     </data>
     
