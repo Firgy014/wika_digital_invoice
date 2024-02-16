@@ -53,6 +53,7 @@
                     <field name="no_doc_sap"/>
                     <field name="no_invoice_vendor"/>
                     <field name="special_gl_id"/>
+                    <field name="valuation_class"/>
                     <field name="invoice_number"/>
                     <field name="baseline_date"/>
                     <field name="amount_invoice"/>

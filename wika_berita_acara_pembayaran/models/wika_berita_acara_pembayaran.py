@@ -92,7 +92,6 @@ class WikaBeritaAcaraPembayaran(models.Model):
         vals['name'] = self.env['ir.sequence'].next_by_code('wika.berita.acara.pembayaran')
         return super(WikaBeritaAcaraPembayaran, self).create(vals)
 
-
     @api.depends('department_id')
     def _cek_biro(self):
         for x in self:
@@ -111,29 +110,44 @@ class WikaBeritaAcaraPembayaran(models.Model):
             self.bap_ids = [(5, 0, 0)]
             
             stock_pickings = self.env['stock.picking'].search([('po_id', '=', self.po_id.id)])
-            
             bap_lines = []
-            for picking in stock_pickings.move_ids_without_package:
-                pol_src = self.env['purchase.order.line'].search([
-                    ('order_id', '=', picking.picking_id.po_id.id), 
-                    ('product_id', '=', picking.product_id.id)])
 
-                # aml_src = self.env['account.move.line'].search([
-                #     ('move_id', '=', picking.picking_id.po_id.id), 
-                #     ('product_id', '=', picking.product_id.id)])
+            if len(stock_pickings.move_ids_without_package) == 1:
+                for picking in stock_pickings.move_ids_without_package:
+                    pol_src = self.env['purchase.order.line'].search([
+                        ('order_id', '=', picking.picking_id.po_id.id), 
+                        ('product_id', '=', picking.product_id.id)])
 
-                bap_lines.append((0, 0, {
-                    'picking_id': picking.picking_id.id,
-                    'purchase_line_id':pol_src.id or False,
-                    'unit_price_po':pol_src.price_unit,
-                    # 'account_move_line_id':aml_src.id or False,
-                    'product_id': picking.product_id.id,
-                    'qty': picking.product_uom_qty,
-                    'unit_price': picking.purchase_line_id.price_unit,
-                    'tax_ids':picking.purchase_line_id.taxes_id.ids,
-                    'currency_id':picking.purchase_line_id.currency_id.id
-                }))      
-            self.bap_ids = bap_lines
+                    bap_lines.append((0, 0, {
+                        'picking_id': picking.picking_id.id,
+                        'purchase_line_id':pol_src.id or False,
+                        'unit_price_po':pol_src.price_unit,
+                        'product_id': picking.product_id.id,
+                        'qty': picking.sisa_qty_bap,
+                        'unit_price': picking.purchase_line_id.price_unit,
+                        'tax_ids':picking.purchase_line_id.taxes_id.ids,
+                        'currency_id':picking.purchase_line_id.currency_id.id
+                    }))      
+                self.bap_ids = bap_lines
+            
+            elif len(stock_pickings.move_ids_without_package) > 1:
+                for picking in stock_pickings.move_ids_without_package:
+                    pol_src = self.env['purchase.order.line'].search([
+                        ('order_id', '=', picking.picking_id.po_id.id), 
+                        ('product_id', '=', picking.product_id.id)])
+
+                    bap_lines.append((0, 0, {
+                        'picking_id': picking.picking_id.id,
+                        'purchase_line_id':pol_src.id or False,
+                        'unit_price_po':pol_src.price_unit,
+                        'product_id': picking.product_id.id,
+                        'qty': picking.product_uom_qty,
+                        'unit_price': picking.purchase_line_id.price_unit,
+                        'tax_ids':picking.purchase_line_id.taxes_id.ids,
+                        'currency_id':picking.purchase_line_id.currency_id.id
+                    }))      
+                self.bap_ids = bap_lines
+
 
     @api.depends('bap_ids.sub_total', 'bap_ids.tax_ids')
     def compute_total_amount(self):
@@ -205,7 +219,6 @@ class WikaBeritaAcaraPembayaran(models.Model):
             return action
         else:
             raise ValidationError('User Akses Anda tidak berhak Reject!')
-
 
     def assign_todo_first(self):
         model_model = self.env['ir.model'].sudo()
@@ -525,7 +538,6 @@ class WikaBeritaAcaraPembayaranLine(models.Model):
     picking_id = fields.Many2one('stock.picking', string='NO GR/SES')
     purchase_line_id= fields.Many2one('purchase.order.line', string='Purchase Line')
     unit_price_po = fields.Monetary(string='Price Unit PO')
-    # account_move_line_id = fields.Many2one('account.move.line', string='Move Line')
     product_id = fields.Many2one('product.product', string='Product')
     qty = fields.Integer(string='Quantity')
     tax_ids = fields.Many2many('account.tax', string='Tax')
@@ -534,6 +546,13 @@ class WikaBeritaAcaraPembayaranLine(models.Model):
     sub_total = fields.Monetary(string='Subtotal' , compute= 'compute_sub_total')
     tax_amount = fields.Monetary(string='Tax Amount', compute='compute_tax_amount')
     current_value = fields.Monetary(string='Current Value', compute='_compute_current_value')
+    sisa_qty_bap_grses = fields.Integer(string='Sisa BAP', related='picking_id.move_ids_without_package.sisa_qty_bap')
+
+    @api.onchange('qty')
+    def _onchange_product_qty(self):
+        for line in self:
+            if line.qty > line.sisa_qty_bap_grses:
+                raise ValidationError('Quantity tidak boleh melebihi sisa quantity pada GR/SES!')
 
     @api.depends('tax_ids', 'sub_total')
     def compute_sub_total(self):
@@ -575,7 +594,6 @@ class WikaBabDocumentLine(models.Model):
         ('uploaded', 'Uploaded'),
         ('verif', 'Verif'),
     ], string='Status', default='waiting')
-
 
     @api.onchange('document')
     def onchange_document(self):
