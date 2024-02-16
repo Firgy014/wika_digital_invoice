@@ -7,7 +7,7 @@ class WikaInheritedAccountMove(models.Model):
     
     bap_id = fields.Many2one('wika.berita.acara.pembayaran', string='BAP', required=True)
     branch_id = fields.Many2one('res.branch', string='Divisi', required=True)
-    department_id = fields.Many2one('res.branch', string='Department', required=True)
+    department_id = fields.Many2one('res.branch', string='Department')
     project_id = fields.Many2one('project.project', string='Project', required=True, readonly=True)
     document_ids = fields.One2many('wika.invoice.document.line', 'invoice_id', string='Document Line', required=True)
     history_approval_ids = fields.One2many('wika.invoice.approval.line', 'invoice_id', string='History Approval Line')
@@ -92,6 +92,15 @@ class WikaInheritedAccountMove(models.Model):
             elif res.branch_id and res.department_id and not res.project_id:
                 level = 'Divisi Fungsi'
             res.level = level
+
+    @api.onchange('partner_id')
+    def onchange_partner_id(self):
+        if self.partner_id:
+            domain = [('partner_id', '=', self.partner_id.id)]
+            return {'domain': {'bap_id': domain}}
+        else:
+            return {'domain': {'bap_id': []}}
+
 
     @api.depends('line_ids.price_unit', 'line_ids.quantity', 'line_ids.discount', 'line_ids.tax_ids')
     def _compute_amount_total(self):
@@ -200,6 +209,7 @@ class WikaInheritedAccountMove(models.Model):
                     'product_id': bap_line.product_id.id,
                     'quantity': bap_line.qty,
                     'price_unit': bap_line.unit_price,
+                    'bap_line_id': bap_line.id or False,
                 }))
 
             self.invoice_line_ids = lines

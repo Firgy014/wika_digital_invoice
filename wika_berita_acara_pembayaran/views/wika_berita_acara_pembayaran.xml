@@ -119,6 +119,7 @@
                             <group>
                                 <field name="po_id" domain="[('state', '=', 'approved')]"  attrs="{'readonly': [('state', 'in', ['upload', 'approve'])]}"/>
                                 <field name="partner_id" attrs="{'readonly': [('state', 'in', ['upload', 'approve'])]}"/>
+                                <field name="po_id" attrs="{'readonly': [('state', 'in', ['upload', 'approve'])]}"/>
                                 <field name="bap_type" attrs="{'readonly': [('state', 'in', ['upload', 'approve'])]}"/>
                                 <field name="signatory_name" attrs="{'readonly': [('state', 'in', ['upload', 'approve'])]}"/>
                                 <field name="position" attrs="{'readonly': [('state', 'in', ['upload', 'approve'])]}"/>
@@ -138,6 +139,17 @@
                                 <field name="project_id" attrs="{'readonly': [('state', 'in', ['upload', 'approve'])]}"/>
                                 <field name="end_date" attrs="{'readonly': [('state', 'in', ['upload', 'approve'])]}"/>
                                 <field name="bap_date" attrs="{'readonly': [('state', 'in', ['upload', 'approve'])]}"/>
+                                <field name="last_value"/>
+                                <field name="last_quantity"/>
+                                <field name="last_dp_total"/>
+                                <field name="last_retensi_total"/>
+                                <field name="last_qty_dp"/>
+                                <field name="last_qty_retensi"/>
+                                <field name="test_rupiah"/>
+                                <field name="test_rupiah_terbilang" readonly="1"/>
+                                <field name="qty_sd_saatini"/>
+                                <field name="price_sd_saatini" />
+                                <field name="total_sd_saatini" />
                             </group>
                         </group>
                         <notebook>
@@ -169,14 +181,16 @@
                                     </field>
                                     <group>
                                         <field colspan="2" name="notes" nolabel="1" placeholder="Define your terms and conditions ..."/>
+                                        <field name="pph_ids" widget="many2many_tags"/>
+                                        <field name="total_pph"/>
                                     </group>
                                     <group class="oe_subtotal_footer oe_right">
                                         <field name="total_amount"/>
                                         <field name="total_tax"/>
                                         <field name="grand_total"/>        
                                         <field name="total_current_value"/>    
-                                        <field name="total_qty_gr"/>       
-                                        <field name="total_unit_price_po"/>       
+                                        <field name="total_qty_gr" invisible="1"/>       
+                                        <field name="total_unit_price_po" invisible="1"/>       
                                     </group>
                                 </group>
                                 <div class="clearfix"/>
@@ -186,9 +200,17 @@
                                     <tree editable="top">
                                         <field name="po_id" invisible="1"/>
                                         <field name="product_id"/>
+                                        <field name="qty"/>
                                         <field name="amount"/>
+                                        <field name="percentage_amount"/>
                                     </tree>
                                 </field>
+                                <group class="oe_subtotal_footer oe_right">
+                                    <field name="retensi_total"/>
+                                    <field name="dp_total"/>
+                                    <field name="dp_qty_total"/>
+                                    <field name="retensi_qty_total"/>
+                                </group>
                             </page>
                             <page string="List Document">
                                 <group>
