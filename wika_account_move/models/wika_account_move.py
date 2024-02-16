@@ -1,6 +1,6 @@
 from odoo import fields, models, api, _
 from odoo.exceptions import UserError, ValidationError, Warning, AccessError
-from datetime import datetime
+from datetime import datetime,timedelta
 
 class WikaInheritedAccountMove(models.Model):
     _inherit = 'account.move'
