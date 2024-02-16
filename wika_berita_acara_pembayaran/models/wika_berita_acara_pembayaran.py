@@ -8,11 +8,11 @@ class WikaBeritaAcaraPembayaran(models.Model):
     _inherit = ['mail.thread']
 
     name = fields.Char(string='Nomor BAP', readonly=True, default='/')
-    branch_id = fields.Many2one('res.branch', string='Divisi', required=True, related="po_id.branch_id")
-    department_id = fields.Many2one('res.branch', string='Department', related="po_id.department_id")
-    project_id = fields.Many2one('project.project', string='Project', related="po_id.project_id")
+    branch_id = fields.Many2one('res.branch', string='Divisi', required=True)
+    department_id = fields.Many2one('res.branch', string='Department')
+    project_id = fields.Many2one('project.project', string='Project')
     # po_id = fields.Many2one('purchase.order', string='Nomor PO', required=True,domain=[('state','=','approved')])
-    po_id = fields.Many2one('purchase.order', string='Nomor PO')
+    po_id = fields.Many2one('purchase.order', string='Nomor PO',domain=[('state','=','approved')])
     partner_id = fields.Many2one('res.partner', string='Vendor', required=True)
     bap_ids = fields.One2many('wika.berita.acara.pembayaran.line', 'bap_id', string='List BAP', required=True)
     document_ids = fields.One2many('wika.bap.document.line', 'bap_id', string='List Document')
@@ -130,6 +130,8 @@ class WikaBeritaAcaraPembayaran(models.Model):
                 
     @api.onchange('po_id')
     def onchange_po_id(self):
+        bap_lines = []
+
         if self.po_id:
             self.bap_ids = [(5, 0, 0)]
             
@@ -137,18 +139,10 @@ class WikaBeritaAcaraPembayaran(models.Model):
             
             bap_lines = []
             for picking in stock_pickings.move_ids_without_package:
-                pol_src = self.env['purchase.order.line'].search([
-                    ('order_id', '=', picking.picking_id.po_id.id), 
-                    ('product_id', '=', picking.product_id.id)])
-
-                # aml_src = self.env['account.move.line'].search([
-                #     ('move_id', '=', picking.picking_id.po_id.id), 
-                #     ('product_id', '=', picking.product_id.id)])
-
                 bap_lines.append((0, 0, {
                     'picking_id': picking.picking_id.id,
-                    'purchase_line_id':pol_src.id or False,
-                    'unit_price_po':pol_src.price_unit,
+                    'purchase_line_id':picking.purchase_line_id.id or False,
+                    'unit_price_po':picking.purchase_line_id.price_unit,
                     # 'account_move_line_id':aml_src.id or False,
                     'product_uom':picking.product_uom,
                     'product_id': picking.product_id.id,
@@ -524,6 +518,9 @@ class WikaBeritaAcaraPembayaran(models.Model):
     @api.onchange('po_id')
     def onchange_po(self):
         self.partner_id = self.po_id.partner_id.id
+        self.branch_id = self.po_id.branch_id.id
+        self.department_id = self.po_id.department_id.id if self.po_id.department_id else False
+        self.project_id = self.po_id.project_id.id if self.po_id.project_id else False
 
     def unlink(self):
         for record in self:

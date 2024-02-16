@@ -1,23 +1,25 @@
 from odoo import fields, models, api, _
 from odoo.exceptions import UserError, ValidationError, Warning, AccessError
-from datetime import datetime
+from datetime import datetime,timedelta
 
 class WikaInheritedAccountMove(models.Model):
     _inherit = 'account.move'
     
-    bap_id = fields.Many2one('wika.berita.acara.pembayaran', string='BAP', required=True)
+    bap_id = fields.Many2one('wika.berita.acara.pembayaran', string='BAP', required=True,domain=[('state','=','approved')])
     branch_id = fields.Many2one('res.branch', string='Divisi', required=True)
-    department_id = fields.Many2one('res.branch', string='Department', required=True)
+    department_id = fields.Many2one('res.branch', string='Department')
     project_id = fields.Many2one('project.project', string='Project', required=True, readonly=True)
     document_ids = fields.One2many('wika.invoice.document.line', 'invoice_id', string='Document Line', required=True)
     history_approval_ids = fields.One2many('wika.invoice.approval.line', 'invoice_id', string='History Approval Line')
     reject_reason_account = fields.Text(string='Reject Reason')
-    step_approve = fields.Integer(string='Step Approve')
+    step_approve = fields.Integer(string='Step Approve',default=1)
     no_doc_sap = fields.Char(string='No Doc SAP')
     no_invoice_vendor = fields.Char(string='Nomor Invoice Vendor')
-    invoice_number = fields.Char(string='Invoice Number', size=16)
+    invoice_number = fields.Char(string='Invoice Number')
     baseline_date = fields.Date(string='Baseline Date')
-    retention_due = fields.Date(string='Retentstring=ion Due')
+    retention_due = fields.Date(string='Retention Due')
+    po_id = fields.Many2one('purchase.order', store=True, readonly=False,
+        string='Nomor PO',domain=[('state','=','approved')])
     amount_invoice = fields.Float(string='Amount Invoice')
     tax_totals = fields.Binary(
         string="Invoice Totals",
@@ -27,24 +29,36 @@ class WikaInheritedAccountMove(models.Model):
         exportable=False,
     )
     special_gl_id = fields.Many2one('wika.special.gl', string='Special GL')
-    invoice_line_ids = fields.One2many(  # /!\ invoice_line_ids is just a subset of line_ids.
-        'account.move.line',
-        'move_id',
-        string='Invoice lines',
-        copy=False,
-        readonly=True,
-        domain=[('display_type', 'in', ('product', 'line_section', 'line_note'))],
-        states={'draft': [('readonly', False)]},
-    )
+    check_biro = fields.Boolean(compute="_cek_biro")
+
+    @api.depends('department_id')
+    def _cek_biro(self):
+        for x in self:
+            if x.department_id:
+                biro = self.env['res.branch'].search([('parent_id', '=', x.department_id.id)])
+                if biro:
+                    x.check_biro = True
+                else:
+                    x.check_biro = False
+            else:
+                x.check_biro = False
+    # invoice_line_ids = fields.One2many(  # /!\ invoice_line_ids is just a subset of line_ids.
+    #     'account.move.line',
+    #     'move_id',
+    #     string='Invoice lines',
+    #     copy=False,
+    #     readonly=True,
+    #     domain=[('display_type', 'in', ('product', 'line_section', 'line_note'))],
+    #     states={'draft': [('readonly', False)]},
+    # )
     state = fields.Selection(
         selection=[
             ('draft', 'Draft'),
-            ('upload', 'Upload'),
-            ('approve', 'Approve'),
-            ('reject', 'Reject'),
+            ('uploaded', 'Uploaded'),
+            ('approved', 'Approved'),
+            ('rejected', 'Rejected'),
             ('posted', 'Posted'),
             ('cancel', 'Cancelled'),
-            ('reject', 'Reject'),
         ],
         string='Status',
         required=True,
@@ -97,6 +111,7 @@ class WikaInheritedAccountMove(models.Model):
     def create(self, values):
         record = super(WikaInheritedAccountMove, self).create(values)
         record._check_invoice_totals()
+        record.assign_todo_first()
         return record
 
     def write(self, values):
@@ -119,16 +134,61 @@ class WikaInheritedAccountMove(models.Model):
         
     @api.onchange('bap_id')
     def _onchange_bap_id(self):
+        self.po_id =False
         if self.bap_id:
             lines = []
+            self.po_id=self.bap_id.po_id.id
+            self.branch_id=self.bap_id.branch_id.id
+            self.department_id=self.bap_id.department_id.id if self.bap_id.department_id else False
+            self.project_id=self.bap_id.project_id.id if self.bap_id.project_id else False
+
             for bap_line in self.bap_id.bap_ids:
                 lines.append((0, 0, {
                     'product_id': bap_line.product_id.id,
+                    'purchase_line_id': bap_line.purchase_line_id.id,
+                    'bap_line_id': bap_line.id,
                     'quantity': bap_line.qty,
                     'price_unit': bap_line.unit_price,
+                    'tax_ids': bap_line.purchase_line_id.taxes_id.ids,
+                    'product_uom_id': bap_line.product_uom.id,
                 }))
 
             self.invoice_line_ids = lines
+
+    def assign_todo_first(self):
+        model_model = self.env['ir.model'].sudo()
+        model_id = model_model.search([('model', '=', 'account.move')], limit=1)
+        for res in self:
+            level=res.level
+            first_user = False
+            if level:
+                approval_id = self.env['wika.approval.setting'].sudo().search(
+                    [('model_id', '=', model_id.id), ('level', '=', level)], limit=1)
+                approval_line_id = self.env['wika.approval.setting.line'].search([
+                    ('sequence', '=', 1),
+                    ('approval_id', '=', approval_id.id)
+                ], limit=1)
+                print(approval_line_id)
+                groups_id = approval_line_id.groups_id
+                if groups_id:
+                    for x in groups_id.users:
+                        if level == 'Proyek' and x.project_id == res.project_id:
+                            first_user = x.id
+                        if level == 'Divisi Operasi' and x.branch_id == res.branch_id:
+                            first_user = x.id
+                        if level == 'Divisi Fungsi' and x.department_id == res.department_id:
+                            first_user = x.id
+                if first_user:
+                    self.env['mail.activity'].sudo().create({
+                        'activity_type_id': 4,
+                        'res_model_id': model_id.id,
+                        'res_id': res.id,
+                        'user_id': first_user,
+                        'date_deadline': fields.Date.today() + timedelta(days=2),
+                        'state': 'planned',
+                        'summary': f"Need Upload Document  {model_id.name}"
+                    })
+
 
     def action_submit(self):
         self.write({'state': 'upload'})
@@ -243,12 +303,11 @@ class WikaInheritedAccountMove(models.Model):
             raise ValidationError('User Akses Anda tidak berhak Reject!')
 
     @api.onchange('partner_id')
-    def _onchange_(self):
+    def _onchange_doc(self):
         if self.partner_id:
             model_model = self.env['ir.model'].sudo()
             document_setting_model = self.env['wika.document.setting'].sudo()
             model_id = model_model.search([('model', '=', 'account.move')], limit=1)
-            print("partner_id----------TEST--------", model_id)
             doc_setting_id = document_setting_model.search([('model_id', '=', model_id.id)])
 
             if doc_setting_id:
@@ -271,32 +330,7 @@ class WikaInheritedAccountMove(models.Model):
                 raise ValidationError('Tidak dapat menghapus ketika status Vendor Bils dalam keadaan Upload atau Approve')
         return super(WikaInheritedAccountMove, self).unlink()
         
-    @api.depends('posted_before', 'state', 'journal_id', 'date')
-    def _compute_name(self):
-        self = self.sorted(lambda m: (m.date, m.ref or '', m.id))
 
-        for move in self:
-            move_has_name = move.name and move.name != '/'
-            if move_has_name or move.state != 'draft':
-                if not move.posted_before and not move._sequence_matches_date():
-                    if move._get_last_sequence(lock=False):
-                        # The name does not match the date and the move is not the first in the period:
-                        # Reset to draft
-                        move.name = False
-                        continue
-                else:
-                    if move_has_name and move.posted_before or not move_has_name and move._get_last_sequence(lock=False):
-                        # The move either
-                        # - has a name and was posted before, or
-                        # - doesn't have a name, but is not the first in the period
-                        # so we don't recompute the name
-                        continue
-            if move.date and (not move_has_name or not move._sequence_matches_date()):
-                move._set_next_sequence()
-
-        self.filtered(lambda m: not m.name and not move.quick_edit_mode).name = '/'
-        self._inverse_name()
-    
     def action_print_invoice(self):
         return self.env.ref('wika_account_move.report_wika_account_move_action').report_action(self)   
 
@@ -311,7 +345,8 @@ class WikaInvoiceDocumentLine(models.Model):
     state = fields.Selection([
         ('waiting', 'Waiting'),
         ('uploaded', 'Uploaded'),
-        ('verif', 'Verif'),
+        ('verified', 'Verified'),
+        ('rejected', 'Rejected')
     ], string='Status', default='waiting')
 
 

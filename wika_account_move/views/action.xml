@@ -4,7 +4,7 @@
     <data>
     
         <record id="action_wika_account_move" model="ir.actions.act_window">
-            <field name="name">Pembuatan Invoice</field>
+            <field name="name">Invoice</field>
             <field name="res_model">account.move</field>
             <field name="view_mode">tree,form</field>
             <field name="view_ids" eval="[(5, 0, 0),

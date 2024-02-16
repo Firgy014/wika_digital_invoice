@@ -2,7 +2,22 @@
 <odoo>
 
     <data>
-
+        <record id="view_wika_account_move_form_inherit2" model="ir.ui.view">
+             <field name="name">wika.account.move.inherit2.view.form</field>
+            <field name="model">account.move</field>
+            <field name="inherit_id" ref="l10n_id_efaktur.account_move_efaktur_form_view"/>
+              <field name="arch" type="xml">
+                    <xpath expr="//field[@name='l10n_id_replace_invoice_id']" position="attributes">
+                        <attribute name="invisible">1</attribute>
+                    </xpath>
+                    <xpath expr="//field[@name='l10n_id_tax_number']" position="attributes">
+                        <attribute name="invisible">1</attribute>
+                    </xpath>
+                   <xpath expr="//field[@name='partner_id']" position="after">
+                       <field name="l10n_id_tax_number"/>
+                   </xpath>
+            </field>
+        </record>
         <!-- form -->
         <record id="view_wika_account_move_form_inherit" model="ir.ui.view">
             <field name="name">wika.account.move.inherit.view.form</field>
@@ -33,37 +48,36 @@
                 <xpath expr="/form/header/button[2]" position="attributes">
                     <attribute name="invisible">1</attribute>
                 </xpath>
+                <xpath expr="//field[@name='purchase_vendor_bill_id']" position="attributes">
+                    <attribute name="invisible">1</attribute>
+                </xpath>
 
                 <!-- field -->
                 <xpath expr="//field[@name='partner_id']" position="after">
-                    <field name="bap_id" attrs="{'readonly': [('state', 'in', ['upload', 'approve'])]}"/>
-                    <field name="pr_id" attrs="{'readonly': [('state', 'in', ['upload', 'approve'])]}"/>
-                </xpath>
-                <xpath expr="//field[@name='invoice_date']" position="after">
-                    <field name="branch_id" domain="[('biro', '=', False)]" 
-                        attrs="{'readonly': [('state', 'in', ['upload', 'approve'])]}"/>
-                    <field name="department_id" domain="[('biro', '=', True), ('parent_id', '=', branch_id)]" 
-                        attrs="{'readonly': [('state', 'in', ['upload', 'approve'])]}"/>
-                    <field name="project_id" attrs="{'readonly': [('state', 'in', ['upload', 'approve'])]}"/>
-                    <!-- <field name="sap_doc_number" attrs="{'readonly': [('state', 'in', ['upload', 'approve'])]}"/> -->
-                    <field name="step_approve" invisible="1"/>
-                </xpath>
-                <xpath expr="//field[@name='purchase_vendor_bill_id']" position="after">
-                    <field name="no_doc_sap"/>
+                    <field name="bap_id" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
+                    <field name="po_id" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
+                     <field name="no_doc_sap"/>
                     <field name="no_invoice_vendor"/>
                     <field name="special_gl_id"/>
                     <field name="invoice_number"/>
-                    <field name="baseline_date"/>
                     <field name="amount_invoice"/>
                     <field name="amount_total_footer" invisible="1"/>
-                    <!-- <field name="tax_totals"/> -->
+
                 </xpath>
-                <xpath expr="//field[@name='pr_id']" position="after">
-                    <field name="ref" attrs="{'readonly': [('state', 'in', ['upload', 'approve'])]}"/>
+                <xpath expr="//group[@id='header_right_group']/field[@name='currency_id']" position="before">
+                    <field name="baseline_date"/>
                 </xpath>
-                <!-- <xpath expr="//field[@name='date']" position="after">
-                    <field name="payment_reference" attrs="{'readonly': [('state', 'in', ['upload', 'approve'])]}"/>
-                </xpath>  -->
+                <xpath expr="//field[@name='invoice_date']" position="after">
+                    <field name="branch_id" domain="[('biro', '=', False)]" 
+                        attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
+                     <field name="check_biro" invisible="1"/>
+                    <field name="department_id" domain="[('biro', '=', True), ('parent_id', '=', branch_id)]" 
+                        attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])], 'invisible': [('check_biro', '=', False)]}"/>
+                    <field name="project_id" attrs="{'readonly': [('state', 'in', ['upload', 'approved'])]}"/>
+                    <!-- <field name="sap_doc_number" attrs="{'readonly': [('state', 'in', ['upload', 'approve'])]}"/> -->
+                    <field name="step_approve" invisible="1"/>
+                </xpath>
+
                 <xpath expr="//field[@name='payment_reference']" position="attributes">
                     <attribute name="invisible">1</attribute>
                 </xpath>
@@ -82,26 +96,21 @@
                 <xpath expr="//label[3][@for='ref']" position="attributes">
                     <attribute name="string">Header Text</attribute>
                 </xpath>
-                <xpath expr="//label[@for='purchase_vendor_bill_id']" position="attributes">
-                    <attribute name="string">Nomor PO</attribute>
-                </xpath>
                 <!-- <xpath expr="//notebook/page[@name='other_info']" position="ass">
                     <field name="payment_reference" />
                 </xpath> -->
                 <xpath expr="//notebook/page[@name='other_info']//field[@name='company_id']" position="after">
                     <field name="payment_reference"/>
+                    <field name="pr_id" invisible="1"/>
                     <field name="partner_bank_id" string="Bank Account"/>
                     <field name="retention_due"/>
                 </xpath>
-                <!-- <xpath expr="/form/sheet/notebook/page[1]/field[@name='price_subtotal']" position="after">
-                    <field name="bap_line_id"/>
-                </xpath> -->
                 <xpath expr="//field[@name='invoice_line_ids']/tree/field[13]" position="after">
-                    <field name="bap_line_id"/>
+                    <field name="bap_line_id" invisible="1"/>
                 </xpath>
                 <xpath expr="//notebook/page[@name='other_info']" position="after">
                     <page string="List Document">
-                        <field name="document_ids" attrs="{'readonly': [('state', 'in', ['upload', 'approve'])]}">
+                        <field name="document_ids" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}">
                             <tree>
                                 <field name="document_id"/>
                                 <field name="document" widget="binary_button" filename="filename"/>
@@ -148,6 +157,17 @@
                 
                 <!-- hide tree field -->
                 <xpath expr="field[@name='invoice_partner_display_name']" position="attributes">
+                    <attribute name="invisible">1</attribute>
+                </xpath>
+                 <xpath expr="//field[@name='amount_total_signed']" position="before">
+                    <field name="amount_untaxed"/>
+                     <field name="amount_tax"/>
+                     <field name="amount_total"/>
+                 </xpath>
+                 <xpath expr="field[@name='amount_total_signed']" position="attributes">
+                    <attribute name="invisible">1</attribute>
+                </xpath>
+                 <xpath expr="field[@name='amount_total_in_currency_signed']" position="attributes">
                     <attribute name="invisible">1</attribute>
                 </xpath>
                 <xpath expr="field[@name='invoice_date_due']" position="attributes">

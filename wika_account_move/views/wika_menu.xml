@@ -7,7 +7,7 @@
             id="sub_menu_wika_account_move"
             name="Pembuatan Invoice"
             parent="wika_berita_acara_pembayaran.wika_berita_acara_pembayaran_menu_root"
-            sequence="30"/>
+            sequence="15"/>
 
         <menuitem
             action="wika_special_gl_action"
