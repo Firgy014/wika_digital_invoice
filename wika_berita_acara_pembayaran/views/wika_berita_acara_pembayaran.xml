@@ -108,62 +108,70 @@
                 <form string="Berita Acara Pembayaran Form">
                     <header>
                         <button name="action_print_bap" type="object" string="Print BAP" states="draft" class="oe_highlight"/>
-                        <button name="action_approve" type="object" string="APPROVE" states="upload" class="btn-success"/>
-                        <button name="action_cancel" type="object" string="CANCEL" states="approve"/>
-                        <button name="action_submit" type="object" string="SUBMIT" states="draft" class="btn-primary"/>
-                        <button name="%(wika_berita_acara_pembayaran.action_reject_wizard)d" type="action" string="REJECT" states="upload" class="btn-danger"/>
-                        <field name="state" widget="statusbar" statusbar_visible="draft,upload,approve"/>
+                        <button name="action_approve" type="object" string="APPROVE" states="uploaded" class="btn-success"/>
+<!--
+                        <button name="action_cancel" type="object" string="CANCEL" states="approved"/>
+-->
+                        <button name="action_submit" type="object" string="SUBMIT" states="draft,rejected" class="btn-primary"/>
+                        <button name="action_reject" type="object" string="REJECT" states="uploaded" class="btn-danger"/>
+                        <field name="state" widget="statusbar" statusbar_visible="draft,uploaded,approved"/>
                     </header>
                     <sheet>
+                        <div name="button_box" position="inside">
+                            <button class="oe_stat_button" type="object" name="get_documents" icon="fa-file-text-o">
+                                <field string="Documents" name="documents_count" widget="statinfo"/>
+                            </button>
+                        </div>
                         <group>
                             <group>
-                                <field name="po_id" domain="[('state', '=', 'approved')]"  attrs="{'readonly': [('state', 'in', ['upload', 'approve'])]}"/>
-                                <field name="partner_id" attrs="{'readonly': [('state', 'in', ['upload', 'approve'])]}"/>
-                                <field name="po_id" attrs="{'readonly': [('state', 'in', ['upload', 'approve'])]}"/>
-                                <field name="bap_type" attrs="{'readonly': [('state', 'in', ['upload', 'approve'])]}"/>
-                                <field name="signatory_name" attrs="{'readonly': [('state', 'in', ['upload', 'approve'])]}"/>
-                                <field name="position" attrs="{'readonly': [('state', 'in', ['upload', 'approve'])]}"/>
-                                <field name="vendor_signatory_name" attrs="{'readonly': [('state', 'in', ['upload', 'approve'])]}"/>
-                                <field name="vendor_position" attrs="{'readonly': [('state', 'in', ['upload', 'approve'])]}"/>
-                                <field name="address" attrs="{'readonly': [('state', 'in', ['upload', 'approve'])]}"/>
-                                <field name="job" attrs="{'readonly': [('state', 'in', ['upload', 'approve'])]}"/>
+                                <field name="po_id" domain="[('state', '=', 'approved')]"  attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
+                                <field name="partner_id" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
+                                <field name="bap_type" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
+                                <field name="signatory_name" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
+                                <field name="position" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
+                                <field name="vendor_signatory_name" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
+                                <field name="vendor_position" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
+                                <field name="address" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
+                                <field name="job" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
                                 <field name="step_approve" invisible="1"/>
                             </group>
                             <group>
                                 <field name="check_biro" invisible="1"/>
+                                <field name="level" invisible="1"/>
 
                                 <field name="branch_id" domain="[('biro', '=', False)]" 
-                                    attrs="{'readonly': [('state', 'in', ['upload', 'approve'])]}"/>
+                                    attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
                                 <field name="department_id" domain="[('biro', '=', True), ('parent_id', '=', branch_id)]" 
-                                    attrs="{'readonly': [('state', 'in', ['upload', 'approve'])], 'invisible': [('check_biro', '=', False)]}"/>
-                                <field name="project_id" attrs="{'readonly': [('state', 'in', ['upload', 'approve'])]}"/>
-                                <field name="end_date" attrs="{'readonly': [('state', 'in', ['upload', 'approve'])]}"/>
-                                <field name="bap_date" attrs="{'readonly': [('state', 'in', ['upload', 'approve'])]}"/>
-                                <field name="last_value"/>
-                                <field name="last_quantity"/>
-                                <field name="last_dp_total"/>
-                                <field name="last_retensi_total"/>
-                                <field name="last_qty_dp"/>
-                                <field name="last_qty_retensi"/>
-                                <field name="test_rupiah"/>
-                                <field name="test_rupiah_terbilang" readonly="1"/>
-                                <field name="qty_sd_saatini"/>
-                                <field name="price_sd_saatini" />
-                                <field name="total_sd_saatini" />
+                                    attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])], 'invisible': [('check_biro', '=', False)]}"/>
+                                <field name="project_id" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
+                                <field name="end_date" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
+                                <field name="bap_date" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
+                                <field name="last_value" groups="base.group_no_one"/>
+                                <field name="last_quantity" groups="base.group_no_one"/>
+                                <field name="last_dp_total" groups="base.group_no_one"/>
+                                <field name="last_retensi_total" groups="base.group_no_one"/>
+                                <field name="last_qty_dp" groups="base.group_no_one"/>
+                                <field name="last_qty_retensi" groups="base.group_no_one"/>
+                                <field name="test_rupiah" groups="base.group_no_one"/>
+                                <field name="test_rupiah_terbilang" readonly="1" groups="base.group_no_one"/>
+                                <field name="qty_sd_saatini" groups="base.group_no_one"/>
+                                <field name="price_sd_saatini" groups="base.group_no_one"/>
+                                <field name="total_sd_saatini" groups="base.group_no_one"/>
                             </group>
                         </group>
                         <notebook>
                             <page string="List BAP">
                                 <group>
                                     <field name="bap_ids" mode="tree,kanban" nolabel="1" colspan="2"
-                                        attrs="{'readonly': [('state', 'in', ['upload', 'approve'])], 
-                                            'invisible': [('bap_type', '!=', 'progress')]}">
-                                        <tree string="List BAP" editable="top">
+                                        attrs="{'invisible': [('bap_type', '!=', 'progress')],'readonly': [('state', '!=', 'draft')]}">
+                                        <tree string="List BAP" editable="top" create="0" >
                                             <field name="picking_id"/>
-                                            <field name="purchase_line_id"/>
-                                            <field name="unit_price_po"/>
+                                            <field name="purchase_line_id" invisible="1"/>
+                                            <field name="unit_price_po" invisible="1"/>
                                             <!-- <field name="account_move_line_id"/> -->
                                             <field name="product_id"/>
+                                            <field name="product_uom"/>
+
                                             <field name="qty"/>
                                             <field name="tax_ids" widget="many2many_tags"/>
                                             <field name="currency_id"/>
@@ -188,9 +196,9 @@
                                         <field name="total_amount"/>
                                         <field name="total_tax"/>
                                         <field name="grand_total"/>        
-                                        <field name="total_current_value"/>    
-                                        <field name="total_qty_gr" invisible="1"/>       
-                                        <field name="total_unit_price_po" invisible="1"/>       
+                                        <field name="total_current_value" groups="base.group_no_one"/>
+                                        <field name="total_qty_gr" invisible="1"/>
+                                        <field name="total_unit_price_po" invisible="1"/>
                                     </group>
                                 </group>
                                 <div class="clearfix"/>
@@ -214,9 +222,8 @@
                             </page>
                             <page string="List Document">
                                 <group>
-                                    <field name="document_ids" mode="tree,kanban" nolabel="1" colspan="2" 
-                                        attrs="{'readonly': [('state', 'in', ['upload', 'approve'])]}">
-                                        <tree string="List Document">
+                                    <field name="document_ids" mode="tree,kanban" nolabel="1" colspan="2">
+                                        <tree string="List Document" delete="0" create="0">
                                             <field name="document_id"/>
                                             <field name="document" widget="binary_button" filename="filename"/>
                                             <field name="filename" invisible="1"/>
@@ -239,14 +246,14 @@
                                         <tree string="List Approval">
                                             <field name="user_id"/>
                                             <field name="groups_id"/>
-                                            <field name="datetime"/>
+                                            <field name="date"/>
                                             <field name="note"/>
                                         </tree>
                                         <form string='List Approval'>
                                             <group>
                                                 <field name="user_id"/>
                                                 <field name="groups_id"/>
-                                                <field name="datetime"/>
+                                                <field name="date"/>
                                                 <field name="note"/>
                                             </group>
                                         </form>

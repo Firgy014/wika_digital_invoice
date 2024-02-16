@@ -7,7 +7,7 @@
             <field name="inherit_id" ref="documents.documents_view_list"/>
             <field name="arch" type="xml">
                 <xpath expr="//field[@name='partner_id']" position="after">
-                    <field name="purchase_id" string="Purchase" attrs="{'invisible': [('purchase_id', '!=', False)]}"/>
+                    <field name="purchase_id" string="Nomor PO"/>
                 </xpath>
                 <xpath expr="//field[@name='create_date']" position="after">
                     <field name="is_po_doc" invisible="1"/>

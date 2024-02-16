@@ -6,3 +6,9 @@ class DocumentSettingModels(models.Model):
 
     name = fields.Char(string='Doc Setting Name')
     model_id = fields.Many2one('ir.model', string='Menu')
+    transaction_type = fields.Selection([
+        ('BTL', 'BTL'),
+        ('BL', 'BL'),
+        ('gr', 'GR'),
+        ('ses', 'SES')
+    ],string='Transaction Type')

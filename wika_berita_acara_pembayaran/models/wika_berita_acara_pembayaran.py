@@ -12,12 +12,12 @@ class WikaBeritaAcaraPembayaran(models.Model):
     _description = 'Berita Acara Pembayaran'
     _inherit = ['mail.thread']
 
-    name = fields.Char(string='Name', default=lambda self: self._default_name())
-    branch_id = fields.Many2one('res.branch', string='Divisi', required=True, related="po_id.branch_id")
-    department_id = fields.Many2one('res.branch', string='Department', related="po_id.department_id")
-    project_id = fields.Many2one('project.project', string='Project', related="po_id.project_id")
+    name = fields.Char(string='Nomor BAP', readonly=True, default='/')
+    branch_id = fields.Many2one('res.branch', string='Divisi', required=True)
+    department_id = fields.Many2one('res.branch', string='Department')
+    project_id = fields.Many2one('project.project', string='Project')
     # po_id = fields.Many2one('purchase.order', string='Nomor PO', required=True,domain=[('state','=','approved')])
-    po_id = fields.Many2one('purchase.order', string='Nomor PO')
+    po_id = fields.Many2one('purchase.order', string='Nomor PO',domain=[('state','=','approved')])
     partner_id = fields.Many2one('res.partner', string='Vendor', required=True)
     bap_ids = fields.One2many('wika.berita.acara.pembayaran.line', 'bap_id', string='List BAP', required=True)
     document_ids = fields.One2many('wika.bap.document.line', 'bap_id', string='List Document')
@@ -26,11 +26,11 @@ class WikaBeritaAcaraPembayaran(models.Model):
     end_date = fields.Datetime('End Date')
     state = fields.Selection([
         ('draft', 'Draft'), 
-        ('upload', 'Upload'), 
-        ('approve', 'Approve'), 
-        ('reject', 'Reject')], string='Status', readonly=True, default='draft')
+        ('uploaded', 'Uploaded'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected')], string='Status', readonly=True, default='draft')
     reject_reason = fields.Text(string='Reject Reason')
-    step_approve = fields.Integer(string='step approve')
+    step_approve = fields.Integer(string='step approve',default=1)
     message_follower_ids = fields.One2many(
         'mail.followers', 'res_id', string='Followers', groups='base.group_user')
     activity_ids = fields.One2many(
@@ -70,13 +70,20 @@ class WikaBeritaAcaraPembayaran(models.Model):
     total_current_value = fields.Float(string='Nilai saat ini', compute='_compute_total_current_value') #buat sum nilai saat ini
     pph_ids = fields.Many2many('account.tax', string='PPH')
     total_pph = fields.Monetary(string='Total PPH', compute='compute_total_pph')
+    level = fields.Selection([
+        ('Proyek', 'Proyek'),
+        ('Divisi Operasi', 'Divisi Operasi'),
+        ('Divisi Fungsi', 'Divisi Fungsi'),
+        ('Pusat', 'Pusat')
+    ], string='Level',compute='_compute_level')
+    documents_count = fields.Integer(string='Total Doc', compute='_compute_documents_count')
 
     # nilai saat ini
     dp_total = fields.Float(string='Total DP', compute='_compute_dp_total', store= True)
     retensi_total = fields.Float(string='Total Retensi', compute='_compute_retensi_total', store= True)
     dp_qty_total = fields.Float(string='Total QTY DP', compute='_compute_dp_qty', store= True)
     retensi_qty_total = fields.Float(string='Total QTY RETENSI', compute='_compute_retensi_qty', store= True)
-    
+
     # nilai yang lalu
     last_value = fields.Float(string='nilai yang lalu', compute='_compute_last_value')
     last_quantity = fields.Float(string='Qty yang lalu', compute='_compute_last_value')
@@ -101,14 +108,24 @@ class WikaBeritaAcaraPembayaran(models.Model):
     #         record.qty_sd_saatini = sum(record.bap_ids.mapped('qty'))
     #         record.price_sd_saatini = sum(record.bap_ids.mapped('unit_price_po'))
     #         record.total_sd_saatini = record.qty_sd_saatini * record.price_sd_saatini
-
+    @api.depends('project_id', 'branch_id', 'department_id')
+    def _compute_level(self):
+        level=''
+        for res in self:
+            if res.project_id:
+                level = 'Proyek'
+            elif res.branch_id and not res.department_id and not res.project_id:
+                level = 'Divisi Operasi'
+            elif res.branch_id and res.department_id and not res.project_id:
+                level = 'Divisi Fungsi'
+            res.level = level
     # qty s/d saat ini
     @api.depends('bap_ids.qty')
     def _compute_qty_sd_saatini(self):
         for record in self:
             total_qty = sum(record.bap_ids.mapped('qty'))
             record.qty_sd_saatini = record.last_quantity + total_qty
-    
+
     # unit price s/d saat ini
     @api.depends('bap_ids.unit_price_po')
     def _compute_price_po_sd_saatini(self):
@@ -137,7 +154,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
             else:
                 record.test_rupiah_terbilang = ""
 
-    @api.depends('bap_date')
+    @api.depends('bap_date','po_id')
     def _compute_last_value(self):
         for record in self:
             if record.bap_date:
@@ -253,8 +270,11 @@ class WikaBeritaAcaraPembayaran(models.Model):
 
     @api.model
     def create(self, vals):
-        vals['name'] = self.env['ir.sequence'].next_by_code('wika.berita.acara.pembayaran')
-        return super(WikaBeritaAcaraPembayaran, self).create(vals)
+        res = super(WikaBeritaAcaraPembayaran, self).create(vals)
+        res.name= self.env['ir.sequence'].next_by_code('wika.berita.acara.pembayaran')
+        res.assign_todo_first()
+        return res
+
 
 
     @api.depends('department_id')
@@ -271,10 +291,13 @@ class WikaBeritaAcaraPembayaran(models.Model):
                 
     @api.onchange('po_id')
     def onchange_po_id(self):
+
         if self.po_id:
-            price_cut_lines = []
+            self.bap_ids = [(5, 0, 0)]
             bap_lines = []
-            
+            price_cut_lines = []
+
+            stock_pickings = self.env['stock.picking'].search([('po_id', '=', self.po_id.id)])
             # Mengisi price_cut_lines
             for line in self.po_id.price_cut_ids:
                 price_cut_lines.append((0, 0, {
@@ -282,21 +305,15 @@ class WikaBeritaAcaraPembayaran(models.Model):
                     'percentage_amount': line.persentage_amount,
                     'amount': line.amount,
                 }))
-            
-            # Mengisi bap_lines
-            self.bap_ids = [(5, 0, 0)]  # Menghapus entri sebelumnya
-            stock_pickings = self.env['stock.picking'].search([('po_id', '=', self.po_id.id)])
-            
-            for picking in stock_pickings.move_ids_without_package:
-                pol_src = self.env['purchase.order.line'].search([
-                    ('order_id', '=', picking.picking_id.po_id.id), 
-                    ('product_id', '=', picking.product_id.id)])
 
+            bap_lines = []
+            for picking in stock_pickings.move_ids_without_package:
                 bap_lines.append((0, 0, {
                     'picking_id': picking.picking_id.id,
-                    'purchase_line_id': pol_src.id or False,
-                    'unit_price_po': pol_src.price_unit,
-                    'tax_ids': [(6, 0, pol_src.taxes_id.ids)],
+                    'purchase_line_id':picking.purchase_line_id.id or False,
+                    'unit_price_po':picking.purchase_line_id.price_unit,
+                    # 'account_move_line_id':aml_src.id or False,
+                    'product_uom':picking.product_uom,
                     'product_id': picking.product_id.id,
                     'qty': picking.product_uom_qty,
                     'unit_price': picking.purchase_line_id.price_unit,
@@ -307,6 +324,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
             # Memperbarui value dari price_cut_ids dan bap_ids
             self.price_cut_ids = price_cut_lines
             self.bap_ids = bap_lines
+            self.price_cut_ids = price_cut_lines
 
     @api.depends('bap_ids.sub_total', 'bap_ids.tax_ids')
     def compute_total_amount(self):
@@ -343,12 +361,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
     def action_reject(self):
         user = self.env['res.users'].search([('id', '=', self._uid)], limit=1)
         cek = False
-        if self.project_id:
-            level = 'Proyek'
-        elif self.branch_id and not self.department_id and not self.project_id:
-            level = 'Divisi Operasi'
-        elif self.branch_id and self.department_id and not self.project_id:
-            level = 'Divisi Fungsi'
+        level=self.level
         if level:
             model_id = self.env['ir.model'].search([('model', '=', 'wika.berita.acara.pembayaran')], limit=1)
             approval_id = self.env['wika.approval.setting'].sudo().search(
@@ -366,13 +379,14 @@ class WikaBeritaAcaraPembayaran(models.Model):
             if groups_id:
                 print(groups_id.name)
                 for x in groups_id.users:
+                    print ("kkkkkkkkkkkkkkk")
                     if level == 'Proyek' and x.project_id == self.project_id and x.id == self._uid:
                         cek = True
                     if level == 'Divisi Operasi' and x.branch_id == self.branch_id and x.id == self._uid:
                         cek = True
                     if level == 'Divisi Fungsi' and x.department_id == self.department_id and x.id == self._uid:
                         cek = True
-
+                print (cek)
         if cek == True:
             action = {
                 'name': ('Reject Reason'),
@@ -382,7 +396,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
                 'target': 'new',
                 'view_mode': "form",
                 'context': {'groups_id': groups_id.id},
-                'view_id': self.env.ref('wika_berita_acara_pembayaran.action_reject_wizard').id,
+                'view_id': self.env.ref('wika_berita_acara_pembayaran.bap_reject_wizard_form').id,
             }
             return action
         else:
@@ -394,13 +408,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
         document_setting_model = self.env['wika.document.setting'].sudo()
         model_id = model_model.search([('model', '=', 'wika.berita.acara.pembayaran')], limit=1)
         for res in self:
-            if res.project_id:
-                level = 'Proyek'
-            elif res.branch_id and not res.department_id and not res.project_id:
-                level = 'Divisi Operasi'
-            elif res.branch_id and res.department_id and not res.project_id:
-                level = 'Divisi Fungsi'
-            print(level)
+            level=res.level
             first_user = False
             if level:
                 approval_id = self.env['wika.approval.setting'].sudo().search(
@@ -455,15 +463,9 @@ class WikaBeritaAcaraPembayaran(models.Model):
             if any(not line.document for line in record.document_ids):
                 raise ValidationError('Document belum di unggah, mohon unggah file terlebih dahulu!')
         cek = False
-        if self.project_id:
-            level = 'Proyek'
-        elif self.branch_id and not self.department_id and not self.project_id:
-            level = 'Divisi Operasi'
-        elif self.branch_id and self.department_id and not self.project_id:
-            level = 'Divisi Fungsi'
-        print(level)
+        level=self.level
         if level:
-            model_id = self.env['ir.model'].search([('model', '=', 'purchase.order')], limit=1)
+            model_id = self.env['ir.model'].search([('model', '=', 'wika.berita.acara.pembayaran')], limit=1)
             approval_id = self.env['wika.approval.setting'].sudo().search(
                 [('model_id', '=', model_id.id), ('level', '=', level),
                  ('transaction_type', '=', self.po_id.transaction_type)], limit=1)
@@ -480,22 +482,24 @@ class WikaBeritaAcaraPembayaran(models.Model):
                 print(groups_id.name)
                 for x in groups_id.users:
                     if level == 'Proyek' and x.project_id == self.project_id and x.id == self._uid:
+                        print ("ok")
                         cek = True
                     if level == 'Divisi Operasi' and x.branch_id == self.branch_id and x.id == self._uid:
                         cek = True
                     if level == 'Divisi Fungsi' and x.department_id == self.department_id and x.id == self._uid:
                         cek = True
+                    print (cek)
 
         if cek == True:
             if self.activity_ids:
-                for x in self.activity_ids.filtered(lambda x: x.status == 'todo'):
+                for x in self.activity_ids.filtered(lambda x: x.status != 'approved'):
                     print("masuk")
                     print(x.user_id)
                     if x.user_id.id == self._uid:
                         print(x.status)
                         x.status = 'approved'
                         x.action_done()
-                self.state = 'upload'
+                self.state = 'uploaded'
                 self.step_approve += 1
                 self.env['wika.bap.approval.line'].sudo().create({
                     'user_id': self._uid,
@@ -504,7 +508,6 @@ class WikaBeritaAcaraPembayaran(models.Model):
                     'note': 'Submit Document',
                     'bap_id': self.id
                 })
-                print(self.step_approve)
                 groups_line = self.env['wika.approval.setting.line'].search([
                     ('level', '=', level),
                     ('sequence', '=', self.step_approve),
@@ -514,6 +517,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
                 groups_id_next = groups_line.groups_id
                 if groups_id_next:
                     print(groups_id_next.name)
+                    print(self.step_approve)
                     for x in groups_id_next.users:
                         if level == 'Proyek' and x.project_id == self.project_id:
                             first_user = x.id
@@ -531,6 +535,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
                             'user_id': first_user,
                             'date_deadline': fields.Date.today() + timedelta(days=2),
                             'state': 'planned',
+                            'status': 'to_approve',
                             'summary': """Need Approval Document BAP"""
                         })
         else:
@@ -541,17 +546,11 @@ class WikaBeritaAcaraPembayaran(models.Model):
         documents_model = self.env['documents.document'].sudo()
         cek = False
         model_id = self.env['ir.model'].search([('model','=', 'wika.berita.acara.pembayaran')], limit=1)
-        if self.project_id:
-            level = 'Proyek'
-        elif self.branch_id and not self.department_id and not self.project_id:
-            level = 'Divisi Operasi'
-        elif self.branch_id and self.department_id and not self.project_id:
-            level = 'Divisi Fungsi'
+        level=self.level
         if level:
             approval_id = self.env['wika.approval.setting'].sudo().search(
                 [('model_id', '=', model_id.id), ('level', '=', level),
                  ('transaction_type', '=', self.po_id.transaction_type)], limit=1)
-            print('approval_idapproval_idapproval_id')
             if not approval_id:
                 raise ValidationError(
                     'Approval Setting untuk menu BAP tidak ditemukan. Silakan hubungi Administrator!')
@@ -574,7 +573,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
 
         if cek == True:
             if approval_id.total_approve == self.step_approve:
-                self.state = 'approve'
+                self.state = 'approved'
                 self.env['wika.bap.approval.line'].create({
                     'user_id': self._uid,
                     'groups_id': groups_id.id,
@@ -586,12 +585,12 @@ class WikaBeritaAcaraPembayaran(models.Model):
                 # print("TESTTTTTTTTTTTTTTTTTTTTT", folder_id)
                 if folder_id:
                     facet_id = self.env['documents.facet'].sudo().search([
-                        ('name', '=', 'Wika BAP'),
+                        ('name', '=', 'Documents'),
                         ('folder_id', '=', folder_id.id)
                     ], limit=1)
                     # print("TESTTTTTTTTTERRRRRRR", facet_id)
-                    for doc in self.document_ids.filtered(lambda x: x.state == 'uploaded'):
-                        doc.state = 'verif'
+                    for doc in self.document_ids.filtered(lambda x: x.state in ('uploaded','rejected')):
+                        doc.state = 'verified'
                         attachment_id = self.env['ir.attachment'].sudo().create({
                             'name': doc.filename,
                             'datas': doc.document,
@@ -599,14 +598,19 @@ class WikaBeritaAcaraPembayaran(models.Model):
                         })
                         # print("SSSIIIIUUUUUUUUUUUUUUUUUU", attachment_id)
                         if attachment_id:
+                            tag = self.env['documents.tag'].sudo().search([
+                                ('facet_id', '=', facet_id.id),
+                                ('name', '=', doc.document_id.name)
+                            ], limit=1)
                             documents_model.create({
                                 'attachment_id': attachment_id.id,
                                 'folder_id': folder_id.id,
-                                'tag_ids': facet_id.tag_ids.ids,
+                                'tag_ids': tag.ids,
                                 'partner_id': doc.bap_id.partner_id.id,
+                                'purchase_id': self.po_id.id,
                             })
                 if self.activity_ids:
-                    for x in self.activity_ids.filtered(lambda x: x.status == 'todo'):
+                    for x in self.activity_ids.filtered(lambda x: x.status  != 'approved'):
                         print("masuk")
                         print(x.user_id)
                         if x.user_id.id == self._uid:
@@ -639,7 +643,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
                         self.env['mail.activity'].sudo().create({
                             'activity_type_id': 4,
                             'res_model_id': self.env['ir.model'].sudo().search(
-                                [('model', '=', 'purchase.order')], limit=1).id,
+                                [('model', '=', 'wika.berita.acara.pembayaran')], limit=1).id,
                             'res_id': self.id,
                             'user_id': first_user,
                             'date_deadline': fields.Date.today() + timedelta(days=2),
@@ -655,7 +659,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
                             'bap_id': self.id
                         })
                         if self.activity_ids:
-                            for x in self.activity_ids.filtered(lambda x: x.status == 'todo'):
+                            for x in self.activity_ids.filtered(lambda x: x.status != 'approved'):
                                 print("masuk")
                                 print(x.user_id)
                                 if x.user_id.id == self._uid:
@@ -667,18 +671,45 @@ class WikaBeritaAcaraPembayaran(models.Model):
 
         else:
             raise ValidationError('User Akses Anda tidak berhak Approve!')
-            
+
+    def _compute_documents_count(self):
+        for record in self:
+            record.documents_count = self.env['documents.document'].search_count(
+                [('purchase_id', '=', record.po_id.id)])
+
+    def get_documents(self):
+        self.ensure_one()
+        view_kanban_id = self.env.ref("documents.document_view_kanban", raise_if_not_found=False)
+
+        view_tree_id = self.env.ref("documents.documents_view_list", raise_if_not_found=False)
+
+        return {
+            'name': _('Documents'),
+            'type': 'ir.actions.act_window',
+            'view_mode': 'kanban,tree',
+            'res_model': 'documents.document',
+            'view_ids': [(view_kanban_id, 'kanban'),(view_tree_id, 'tree')],
+            'res_id': self.id,
+            'domain': [('purchase_id', '=', self.po_id.id),('folder_id','in',('PO','GR/SES'))],
+            'context': {'default_purchase_id': self.po_id.id},
+        }
+
     def action_cancel(self):
         self.write({'state': 'draft'})
 
     @api.onchange('po_id')
     def onchange_po(self):
         self.partner_id = self.po_id.partner_id.id
+        self.branch_id = self.po_id.branch_id.id
+        self.department_id = self.po_id.department_id.id if self.po_id.department_id else False
+        self.project_id = self.po_id.project_id.id if self.po_id.project_id else False
 
     def unlink(self):
         for record in self:
-            if record.state in ('upload', 'approve'):
+            if record.state in ('uploaded', 'approved'):
                 raise ValidationError('Tidak dapat menghapus ketika status Berita Acara Pembayaran (BAP) dalam keadaan Upload atau Approve')
+            if record.state=='draft' and record.activity_ids:
+                record.activity_ids.unlink()
         return super(WikaBeritaAcaraPembayaran, self).unlink()
 
     def action_print_bap(self):
@@ -710,6 +741,7 @@ class WikaBeritaAcaraPembayaranLine(models.Model):
     # account_move_line_id = fields.Many2one('account.move.line', string='Move Line')
     product_id = fields.Many2one('product.product', string='Product')
     qty = fields.Integer(string='Quantity')
+    product_uom = fields.Many2one('uom.uom', string='Unit of Measure')
     tax_ids = fields.Many2many('account.tax', string='Tax')
     currency_id = fields.Many2one('res.currency', string='Currency')
     unit_price = fields.Monetary(string='Unit Price')
@@ -755,7 +787,8 @@ class WikaBabDocumentLine(models.Model):
     state = fields.Selection([
         ('waiting', 'Waiting'),
         ('uploaded', 'Uploaded'),
-        ('verif', 'Verif'),
+        ('verified', 'Verified'),
+        ('rejected', 'Rejected')
     ], string='Status', default='waiting')
 
 
@@ -776,7 +809,7 @@ class WikaBabApprovalLine(models.Model):
     bap_id = fields.Many2one('wika.berita.acara.pembayaran', string='')
     user_id = fields.Many2one('res.users', string='User', readonly=True)
     groups_id = fields.Many2one('res.groups', string='Groups', readonly=True)
-    datetime = fields.Datetime('Date', readonly=True)
+    date = fields.Datetime('Date', readonly=True)
     note = fields.Char('Note', readonly=True)
 
 class WikaPriceCutLine(models.Model):
