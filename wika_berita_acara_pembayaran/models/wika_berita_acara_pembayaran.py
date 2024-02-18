@@ -288,51 +288,79 @@ class WikaBeritaAcaraPembayaran(models.Model):
             else:
                 x.check_biro = False
                 
+    # @api.onchange('po_id')
+    # def onchange_po_id(self):
+
+    #     if self.po_id:
+    #         self.bap_ids = [(5, 0, 0)]
+            
+    #         stock_pickings = self.env['stock.picking'].search([('po_id', '=', self.po_id.id)])
+    #         bap_lines = []
+
+    #         if len(stock_pickings.move_ids_without_package) == 1:
+    #             for picking in stock_pickings.move_ids_without_package:
+    #                 pol_src = self.env['purchase.order.line'].search([
+    #                     ('order_id', '=', picking.picking_id.po_id.id), 
+    #                     ('product_id', '=', picking.product_id.id)])
+
+    #                 bap_lines.append((0, 0, {
+    #                     'picking_id': picking.picking_id.id,
+    #                     'purchase_line_id':pol_src.id or False,
+    #                     'unit_price_po':pol_src.price_unit,
+    #                     'product_id': picking.product_id.id,
+    #                     'qty': picking.sisa_qty_bap,
+    #                     'unit_price': picking.purchase_line_id.price_unit,
+    #                     'tax_ids':picking.purchase_line_id.taxes_id.ids,
+    #                     'currency_id':picking.purchase_line_id.currency_id.id
+    #                 }))      
+    #             self.bap_ids = bap_lines
+            
+    #         elif len(stock_pickings.move_ids_without_package) > 1:
+    #             for picking in stock_pickings.move_ids_without_package:
+    #                 pol_src = self.env['purchase.order.line'].search([
+    #                     ('order_id', '=', picking.picking_id.po_id.id), 
+    #                     ('product_id', '=', picking.product_id.id)])
+
+    #                 bap_lines.append((0, 0, {
+    #                     'picking_id': picking.picking_id.id,
+    #                     'purchase_line_id':pol_src.id or False,
+    #                     'unit_price_po':pol_src.price_unit,
+    #                     'product_id': picking.product_id.id,
+    #                     'qty': picking.product_uom_qty,
+    #                     'unit_price': picking.purchase_line_id.price_unit,
+    #                     'tax_ids':picking.purchase_line_id.taxes_id.ids,
+    #                     'currency_id':picking.purchase_line_id.currency_id.id
+    #                 }))      
+    #             self.bap_ids = bap_lines
+
     @api.onchange('po_id')
     def onchange_po_id(self):
-
         if self.po_id:
             self.bap_ids = [(5, 0, 0)]
             
             stock_pickings = self.env['stock.picking'].search([('po_id', '=', self.po_id.id)])
             bap_lines = []
 
-            if len(stock_pickings.move_ids_without_package) == 1:
-                for picking in stock_pickings.move_ids_without_package:
-                    pol_src = self.env['purchase.order.line'].search([
-                        ('order_id', '=', picking.picking_id.po_id.id), 
-                        ('product_id', '=', picking.product_id.id)])
+            # print("Processing Stock Pickings")
+            for picking in stock_pickings.move_ids_without_package:
+                pol_src = self.env['purchase.order.line'].search([
+                    ('order_id', '=', picking.picking_id.po_id.id), 
+                    ('product_id', '=', picking.product_id.id)])
 
-                    bap_lines.append((0, 0, {
-                        'picking_id': picking.picking_id.id,
-                        'purchase_line_id':pol_src.id or False,
-                        'unit_price_po':pol_src.price_unit,
-                        'product_id': picking.product_id.id,
-                        'qty': picking.sisa_qty_bap,
-                        'unit_price': picking.purchase_line_id.price_unit,
-                        'tax_ids':picking.purchase_line_id.taxes_id.ids,
-                        'currency_id':picking.purchase_line_id.currency_id.id
-                    }))      
-                self.bap_ids = bap_lines
-            
-            elif len(stock_pickings.move_ids_without_package) > 1:
-                for picking in stock_pickings.move_ids_without_package:
-                    pol_src = self.env['purchase.order.line'].search([
-                        ('order_id', '=', picking.picking_id.po_id.id), 
-                        ('product_id', '=', picking.product_id.id)])
+                # Attempt to use sisa_qty_bap for all cases, handling singleton error by ensuring one record is used
+                sisa_qty_bap = picking.sisa_qty_bap if len(stock_pickings.move_ids_without_package) == 1 else sum(pick.sisa_qty_bap for pick in stock_pickings.move_ids_without_package.filtered(lambda p: p.id == picking.id))
 
-                    bap_lines.append((0, 0, {
-                        'picking_id': picking.picking_id.id,
-                        'purchase_line_id':pol_src.id or False,
-                        'unit_price_po':pol_src.price_unit,
-                        'product_id': picking.product_id.id,
-                        'qty': picking.product_uom_qty,
-                        'unit_price': picking.purchase_line_id.price_unit,
-                        'tax_ids':picking.purchase_line_id.taxes_id.ids,
-                        'currency_id':picking.purchase_line_id.currency_id.id
-                    }))      
-                self.bap_ids = bap_lines
-
+                bap_lines.append((0, 0, {
+                    'picking_id': picking.picking_id.id,
+                    'purchase_line_id': pol_src.id or False,
+                    'unit_price_po': pol_src.price_unit,
+                    'product_id': picking.product_id.id,
+                    'qty': sisa_qty_bap,
+                    'unit_price': picking.purchase_line_id.price_unit,
+                    'tax_ids': picking.purchase_line_id.taxes_id.ids,
+                    'currency_id': picking.purchase_line_id.currency_id.id
+                }))      
+            self.bap_ids = bap_lines
 
     @api.depends('bap_ids.sub_total', 'bap_ids.tax_ids')
     def compute_total_amount(self):
