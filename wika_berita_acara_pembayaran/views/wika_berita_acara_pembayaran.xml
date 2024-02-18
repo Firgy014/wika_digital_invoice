@@ -152,11 +152,24 @@
                                 <field name="last_retensi_total" groups="base.group_no_one"/>
                                 <field name="last_qty_dp" groups="base.group_no_one"/>
                                 <field name="last_qty_retensi" groups="base.group_no_one"/>
-                                <field name="test_rupiah" groups="base.group_no_one"/>
-                                <field name="test_rupiah_terbilang" readonly="1" groups="base.group_no_one"/>
+                                 <!-- nilai prestasi -->
                                 <field name="qty_sd_saatini" groups="base.group_no_one"/>
                                 <field name="price_sd_saatini" groups="base.group_no_one"/>
-                                <field name="total_sd_saatini" groups="base.group_no_one"/>
+                                <field name="total_sd_saatini" groups="base.group_no_one" />
+
+                                <!-- potongan uang muka -->
+                                <field name="qty_dp_saat_ini" groups="base.group_no_one"/>
+                                <field name="total_dp_saatini" groups="base.group_no_one"/>
+                                <field name="dp_sd_saatini" groups="base.group_no_one"/>
+
+                                <!-- potongan retensi -->
+                                <field name="qty_retensi_saat_ini" groups="base.group_no_one"/>
+                                <field name="total_retensi_saatini" groups="base.group_no_one"/>
+                                <field name="retensi_sd_saatini" groups="base.group_no_one"/>
+                                <field name="amount_pecentage_tmp" groups="base.group_no_one"/>
+                                <field name="amount_pecentage_retensi" groups="base.group_no_one"/>
+                                <field name="total_pembayaran" groups="base.group_no_one"/>
+                                <field name="terbilang" groups="base.group_no_one"/>
                             </group>
                         </group>
                         <notebook>
@@ -166,8 +179,10 @@
                                         attrs="{'invisible': [('bap_type', '!=', 'progress')],'readonly': [('state', '!=', 'draft')]}">
                                         <tree string="List BAP" editable="top" create="0" >
                                             <field name="picking_id"/>
+                                            <field name="stock_move_id" invisible="1"/>
                                             <field name="purchase_line_id" invisible="1"/>
                                             <field name="unit_price_po" invisible="1"/>
+                                             <field name="sisa_qty_bap_grses"/>
                                             <!-- <field name="account_move_line_id"/> -->
                                             <field name="product_id"/>
                                             <field name="product_uom"/>
