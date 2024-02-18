@@ -4,4 +4,5 @@ class DocumentsDocumentInherit(models.Model):
     _inherit = "documents.document"
 
     purchase_id = fields.Many2one('purchase.order', string='Nomor PO')
+    picking_id = fields.Many2one('stock.picking', string='Nomor GR/SES')
     is_po_doc = fields.Boolean(string='Is Purchase Orders Document')

@@ -30,7 +30,7 @@ class PurchaseOrderInherit(models.Model):
     picking_count = fields.Integer(string='Total GR/SES', compute='_compute_picking_count')
     kurs = fields.Float(string='Kurs')
     currency_name = fields.Char(string='Currency Name', related='currency_id.name', readonly=False)
-    signatory_name = fields.Char(string='Nama Penanda Tangan')
+    signatory_name = fields.Char(string='Nama Penanda Tangan Wika')
     vendor_signatory_name = fields.Char(string='Nama Penanda Tangan Vendor')
     position = fields.Char(string='Jabatan')
     vendor_position = fields.Char(string='Jabatan Vendor')

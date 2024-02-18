@@ -124,8 +124,8 @@
                         </div>
                         <group>
                             <group>
+                               <field name="partner_id" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
                                 <field name="po_id" domain="[('state', '=', 'approved')]"  attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
-                                <field name="partner_id" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
                                 <field name="bap_type" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
                                 <field name="signatory_name" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
                                 <field name="position" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>

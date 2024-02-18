@@ -226,6 +226,7 @@ class PickingInherit(models.Model):
                                 'tag_ids': tag.ids,
                                 'partner_id': self.purchase_id.partner_id.id,
                                 'purchase_id': self.purchase_id.id,
+                                'picking_id': self.id,
                                 'is_po_doc': True
                             })
                 if self.activity_ids:

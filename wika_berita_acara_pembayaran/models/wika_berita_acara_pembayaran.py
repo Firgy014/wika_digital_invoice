@@ -43,7 +43,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
         ('progress', 'Progress'),
         ('uang muka', 'Uang Muka'),], string='Jenis BAP', default='progress')
     price_cut_ids = fields.One2many('wika.bap.pricecut.line', 'po_id')
-    signatory_name = fields.Char(string='Nama Penanda Tangan', related="po_id.signatory_name")
+    signatory_name = fields.Char(string='Nama Penanda Tangan Wika', related="po_id.signatory_name")
     position = fields.Char(string='Jabatan', related="po_id.position")
     address = fields.Char(string='Alamat', related="po_id.address")
     job = fields.Char(string='Pekerjaan', related="po_id.job")
@@ -199,7 +199,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
                 record.last_retensi_total = 0.0
                 record.last_qty_dp = 0.0
                 record.last_qty_retensi = 0.0
-                
+
     # compute Total DP QTY
     @api.depends('price_cut_ids')
     def _compute_dp_qty(self):
@@ -237,14 +237,14 @@ class WikaBeritaAcaraPembayaran(models.Model):
         sequence_parts = sequence.split('/')
         sequence_number = sequence_parts[-1]
         return 'BAP/{}/{:03d}'.format(year, int(sequence_number))
-    
+
     @api.onchange('partner_id')
     def onchange_partner_id(self):
         if self.partner_id:
-            domain = [('partner_id', '=', self.partner_id.id)]
+            domain = [('partner_id', '=', self.partner_id.id),('state','=','approved')]
             return {'domain': {'po_id': domain}}
         else:
-            return {'domain': {'po_id': []}}
+            return {'domain': {'po_id': [('state','=','approved')]}}
 
     #compute total qty gr
     @api.depends('bap_ids.qty')
@@ -317,12 +317,9 @@ class WikaBeritaAcaraPembayaran(models.Model):
                     'product_id': picking.product_id.id,
                     'qty': picking.product_uom_qty,
                     'unit_price': picking.purchase_line_id.price_unit,
-                    # 'tax_ids': picking.purchase_line_id.taxes_id.ids,
-                    'currency_id': picking.purchase_line_id.currency_id.id
-                }))
-        
-            # Memperbarui value dari price_cut_ids dan bap_ids
-            self.price_cut_ids = price_cut_lines
+                    'tax_ids':picking.purchase_line_id.taxes_id.ids,
+                    'currency_id':picking.purchase_line_id.currency_id.id
+                }))      
             self.bap_ids = bap_lines
             self.price_cut_ids = price_cut_lines
 
@@ -542,7 +539,10 @@ class WikaBeritaAcaraPembayaran(models.Model):
             raise ValidationError('User Akses Anda tidak berhak Submit!')
 
     def action_approve(self):
-        user = self.env['res.users'].search([('id','=',self._uid)], limit=1)
+        for record in self:
+            if any(x.picking_id.state!='approved' for x in record.bap_ids):
+                raise ValidationError('Document GR/SES belum Lengkap silahkan lengkapi terlebih dahulu')
+
         documents_model = self.env['documents.document'].sudo()
         cek = False
         model_id = self.env['ir.model'].search([('model','=', 'wika.berita.acara.pembayaran')], limit=1)
@@ -690,7 +690,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
             'res_model': 'documents.document',
             'view_ids': [(view_kanban_id, 'kanban'),(view_tree_id, 'tree')],
             'res_id': self.id,
-            'domain': [('purchase_id', '=', self.po_id.id),('folder_id','in',('PO','GR/SES'))],
+            'domain': [('purchase_id', '=', self.po_id.id),('folder_id','in',('PO','GR/SES','BAP'))],
             'context': {'default_purchase_id': self.po_id.id},
         }
 
