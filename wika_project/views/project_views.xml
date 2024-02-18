@@ -6,34 +6,35 @@
             <field name="inherit_id" ref="project.edit_project"/>
             <field name="arch" type="xml">
                 <xpath expr="//group/group/field[@name='company_id']" position="after">
-                        <field name="code"/>
-                        <field name="branch_id"/>
-                        <field name="sap_code"/>
-                    </xpath>
-                    <xpath expr="//page[@name='description']" position="before">
-                        <page name="Info">
-                            <group col="4">
-                                <field name="manager"/>
-                                <field name="termin"/>
-                                <field name="isdivisi"/>
-                                <field name="lokasi"/>
-                                <field name="omset"/>
-                                <field name="kode_jurnal"/>
-                                <field name="bank_id"/>
-                                <field name="bank_partner_id"/>
-                            	<field name="tender"/>
-                                <field name="is_jo"/>
-                                <field name="is_pmcs"/>
-                                <field name="manager" attrs="{'invisible': [('isdivisi','==',True)]}"/>
-                                <field name="manager_kasie_keu" attrs="{'invisible': [('isdivisi','==',True)]}"/>
-                                <field name="manager_kasie_kom" attrs="{'invisible': [('isdivisi','==',True)]}"/>
-                                <field name="manager_kasie_dan" attrs="{'invisible': [('isdivisi','==',True)]}"/>
-                                <field name="staff_keu" attrs="{'invisible': [('isdivisi','==',True)]}"/>
-                                <field name="staff_kom" attrs="{'invisible': [('isdivisi','==',True)]}"/>
-                                <field name="staff_dan" attrs="{'invisible': [('isdivisi','==',True)]}"/>
-                            </group>
-                        </page>
-                    </xpath>
+                    <field name="code"/>
+                    <field name="branch_id"/>
+                    <field name="sap_code"/>
+                </xpath>
+                <xpath expr="//page[@name='description']" position="before">
+                    <page name="Info">
+                        <group col="4">
+                            <field name="manager"/>
+                            <field name="termin"/>
+                            <field name="isdivisi"/>
+                            <field name="lokasi"/>
+                            <field name="omset"/>
+                            <field name="kode_jurnal"/>
+                            <field name="bank_id"/>
+                            <field name="bank_partner_id"/>
+                            <field name="tender"/>
+                            <field name="is_jo"/>
+                            <field name="is_pmcs"/>
+                            <field name="manager" attrs="{'invisible': [('isdivisi','==',True)]}"/>
+                            <field name="manager_kasie_keu" attrs="{'invisible': [('isdivisi','==',True)]}"/>
+                            <field name="manager_kasie_kom" attrs="{'invisible': [('isdivisi','==',True)]}"/>
+                            <field name="manager_kasie_dan" attrs="{'invisible': [('isdivisi','==',True)]}"/>
+                            <field name="staff_keu" attrs="{'invisible': [('isdivisi','==',True)]}"/>
+                            <field name="staff_kom" attrs="{'invisible': [('isdivisi','==',True)]}"/>
+                            <field name="staff_dan" attrs="{'invisible': [('isdivisi','==',True)]}"/>
+                            <field name="long_name" />
+                        </group>
+                    </page>
+                </xpath>
             </field>
         </record>
 

@@ -32,6 +32,7 @@ class projek(models.Model):
     id_spk      = fields.Char(string='ID SPK')
     termin      = fields.Many2one(comodel_name='account.payment.term', string='Termin')
     sap_code    = fields.Char(string="Kode SAP")
+    long_name  = fields.Text(string='Long Name')
 
 
     def name_get(self):
