@@ -14,8 +14,8 @@ class WikaInheritedAccountMove(models.Model):
     reject_reason_account = fields.Text(string='Reject Reason')
     step_approve = fields.Integer(string='Step Approve',default=1)
     no_doc_sap = fields.Char(string='No Doc SAP')
-    no_invoice_vendor = fields.Char(string='Nomor Invoice Vendor')
-    invoice_number = fields.Char(string='Invoice Number')
+    no_invoice_vendor = fields.Char(string='Nomor Invoice Vendor',required=True)
+    invoice_number = fields.Char(string='Invoice Number',required=True)
     baseline_date = fields.Date(string='Baseline Date')
     retention_due = fields.Date(string='Retention Due')
     po_id = fields.Many2one('purchase.order', store=True, readonly=False,
@@ -28,7 +28,7 @@ class WikaInheritedAccountMove(models.Model):
         help='Edit Tax amounts if you encounter rounding issues.',
         exportable=False,
     )
-    special_gl_id = fields.Many2one('wika.special.gl', string='Special GL')
+    special_gl_id = fields.Many2one('wika.special.gl', string='Special GL',required=True)
     check_biro = fields.Boolean(compute="_cek_biro")
 
     @api.depends('department_id')
@@ -103,22 +103,38 @@ class WikaInheritedAccountMove(models.Model):
         ('btl', 'BTL')
     ], compute='_compute_get_lowest_valuation_class', string='Valuation Class')
 
-    # @api.depends('invoice_line_ids')
-    # def _compute_get_lowest_valuation_class(self):
-    #     field_valuation_class = min(line.product_id.valuation_class for line in self.invoice_line_ids if line.product_id and line.product_id.valuation_class)
-    #     if field_valuation_class:
-    #         self.valuation_class = field_valuation_class
-    #     else:
-    #         self.valuation_class = False
+    documents_count = fields.Integer(string='Total Doc', compute='_compute_documents_count')
+
+    def _compute_documents_count(self):
+        for record in self:
+            record.documents_count = self.env['documents.document'].search_count(
+                [('purchase_id', '=', record.po_id.id)])
 
     @api.depends('invoice_line_ids')
     def _compute_get_lowest_valuation_class(self):
-        valuation_classes = [line.product_id.valuation_class for line in self.invoice_line_ids if line.product_id and line.product_id.valuation_class]
+        valuation_classes = [line.product_id.valuation_class for line in self.invoice_line_ids if
+                             line.product_id and line.product_id.valuation_class]
         if valuation_classes:
             self.valuation_class = min(valuation_classes)
         else:
             self.valuation_class = False
 
+    def get_documents(self):
+        self.ensure_one()
+        view_kanban_id = self.env.ref("documents.document_view_kanban", raise_if_not_found=False)
+
+        view_tree_id = self.env.ref("documents.documents_view_list", raise_if_not_found=False)
+
+        return {
+            'name': _('Documents'),
+            'type': 'ir.actions.act_window',
+            'view_mode': 'kanban,tree',
+            'res_model': 'documents.document',
+            'view_ids': [(view_kanban_id, 'kanban'),(view_tree_id, 'tree')],
+            'res_id': self.id,
+            'domain': [('purchase_id', '=', self.po_id.id),('folder_id','in',('PO','GR/SES','BAP','Invoicing'))],
+            'context': {'default_purchase_id': self.po_id.id},
+        }
 
     @api.depends('project_id', 'branch_id', 'department_id')
     def _compute_level(self):
@@ -190,7 +206,7 @@ class WikaInheritedAccountMove(models.Model):
                     }))
                 else:
                     raise ValidationError("COA untuk Invoice ini tidak ditemukan, silakan hubungi Administrator!")
-                                    
+
         elif record.partner_id.bill_coa_type == '3rd_party':
             if record.level == 'Proyek' and record.valuation_class != False:
                 account_setting_id = account_setting_model.search([
@@ -208,7 +224,7 @@ class WikaInheritedAccountMove(models.Model):
                     }))
                 else:
                     raise ValidationError("COA untuk Invoice ini tidak ditemukan, silakan hubungi Administrator!")
-        
+
         # Replace the payable COA
         for line_coa in record.line_ids:
             if line_coa.account_id.name == 'Trade Receivable':
@@ -241,7 +257,7 @@ class WikaInheritedAccountMove(models.Model):
                     }))
                 else:
                     raise ValidationError("COA untuk Invoice ini tidak ditemukan, silakan hubungi Administrator!")
-                                    
+
         elif record.partner_id.bill_coa_type == '3rd_party':
             if record.level == 'Proyek' and record.valuation_class != False:
                 account_setting_id = account_setting_model.search([
@@ -259,7 +275,7 @@ class WikaInheritedAccountMove(models.Model):
                     }))
                 else:
                     raise ValidationError("COA untuk Invoice ini tidak ditemukan, silakan hubungi Administrator!")
-        
+
         # Replace the payable COA
         for line_coa in record.line_ids:
             if line_coa.account_id.name == 'Trade Receivable':
@@ -348,99 +364,246 @@ class WikaInheritedAccountMove(models.Model):
 
 
     def action_submit(self):
-        self.write({'state': 'upload'})
-        self.step_approve += 1
-        model_id = self.env['ir.model'].search([('model', '=', 'account.move')], limit=1)
-        model_wika_id = self.env['wika.approval.setting'].search([('model_id', '=', model_id.id)], limit=1)
-        user = self.env['res.users'].search([('branch_id', '=', self.branch_id.id)])
-        if model_wika_id:
-            groups_line = self.env['wika.approval.setting.line'].search([
-                ('branch_id', '=', self.branch_id.id),
-                ('sequence', '=', self.step_approve),
-                ('approval_id', '=', model_wika_id.id)
-            ], limit=1)
-            groups_id = groups_line.groups_id
-            
-            for x in groups_id.users:
-                activity_ids = self.env['mail.activity'].create({
-                        'activity_type_id': 4,
-                        'res_model_id': self.env['ir.model'].sudo().search([('model', '=', 'account.move')], limit=1).id,
-                        'res_id': self.id,
-                        'user_id': x.id,
-                        'summary': """ Need Approval Document Invoice """
-                    })
-
         for record in self:
             if any(not line.document for line in record.document_ids):
                 raise ValidationError('Document belum di unggah, mohon unggah file terlebih dahulu!')
+        cek = False
+        level=self.level
+        if level:
+            model_id = self.env['ir.model'].search([('model', '=', 'account.move')], limit=1)
+            approval_id = self.env['wika.approval.setting'].sudo().search(
+                [('model_id', '=', model_id.id), ('level', '=', level)], limit=1)
+            if not approval_id:
+                raise ValidationError(
+                    'Approval Setting untuk menu Invoice tidak ditemukan. Silakan hubungi Administrator!')
+            approval_line_id = self.env['wika.approval.setting.line'].search([
+                ('sequence', '=', 1),
+                ('approval_id', '=', approval_id.id)
+            ], limit=1)
+            print(approval_line_id)
+            groups_id = approval_line_id.groups_id
+            if groups_id:
+                for x in groups_id.users:
+                    if level == 'Proyek' and x.project_id == self.project_id and x.id == self._uid:
+                        cek = True
+                    if level == 'Divisi Operasi' and x.branch_id == self.branch_id and x.id == self._uid:
+                        cek = True
+                    if level == 'Divisi Fungsi' and x.department_id == self.department_id and x.id == self._uid:
+                        cek = True
+
+        if cek == True:
+            first_user=False
+            if self.activity_ids:
+                for x in self.activity_ids.filtered(lambda x: x.status != 'approved'):
+                    print("masuk")
+                    print(x.user_id)
+                    if x.user_id.id == self._uid:
+                        print(x.status)
+                        x.status = 'approved'
+                        x.action_done()
+                self.state = 'uploaded'
+                self.step_approve += 1
+                self.env['wika.invoice.approval.line'].sudo().create({
+                    'user_id': self._uid,
+                    'groups_id': groups_id.id,
+                    'date': datetime.now(),
+                    'note': 'Submit Document',
+                    'invoice_id': self.id
+                })
+                groups_line = self.env['wika.approval.setting.line'].search([
+                    ('level', '=', level),
+                    ('sequence', '=', self.step_approve),
+                    ('approval_id', '=', approval_id.id)
+                ], limit=1)
+                print("groups", groups_line)
+                groups_id_next = groups_line.groups_id
+                if groups_id_next:
+                    print(groups_id_next.name)
+                    for x in groups_id_next.users:
+                        if level == 'Proyek' and x.project_id == self.project_id:
+                            first_user = x.id
+                        if level == 'Divisi Operasi' and x.branch_id == self.branch_id:
+                            first_user = x.id
+                        if level == 'Divisi Fungsi' and x.department_id == self.department_id:
+                            first_user = x.id
+                    print(first_user)
+                    if first_user:
+                        self.env['mail.activity'].sudo().create({
+                            'activity_type_id': 4,
+                            'res_model_id': self.env['ir.model'].sudo().search(
+                                [('model', '=', 'account.move')], limit=1).id,
+                            'res_id': self.id,
+                            'user_id': first_user,
+                            'date_deadline': fields.Date.today() + timedelta(days=2),
+                            'state': 'planned',
+                            'status': 'to_approve',
+                            'summary': """Need Approval Document Invoice"""
+                        })
+        else:
+            raise ValidationError('User Akses Anda tidak berhak Submit!')
+
+
 
     def action_approve(self):
-        user = self.env['res.users'].search([('id','=',self._uid)], limit=1)
+        user = self.env['res.users'].search([('id', '=', self._uid)], limit=1)
         documents_model = self.env['documents.document'].sudo()
         cek = False
-        model_id = self.env['ir.model'].search([('model','=', 'account.move')], limit=1)
-        if model_id:
-            model_wika_id = self.env['wika.approval.setting'].search([('model_id','=',  model_id.id)], limit=1)
+        model_id = self.env['ir.model'].search([('model', '=', 'account.move')], limit=1)
+        level = self.level
+        if level:
+            approval_id = self.env['wika.approval.setting'].sudo().search(
+                [('model_id', '=', model_id.id), ('level', '=', level)], limit=1)
+            if not approval_id:
+                raise ValidationError(
+                    'Approval Setting untuk menu Invoice tidak ditemukan. Silakan hubungi Administrator!')
 
-        if user.branch_id.id==self.branch_id.id and model_wika_id:
-            groups_line = self.env['wika.approval.setting.line'].search(
-                [('branch_id', '=', self.branch_id.id), ('sequence',  '=', self.step_approve), ('approval_id', '=', model_wika_id.id )], limit=1)
-            groups_id = groups_line.groups_id
+            approval_line_id = self.env['wika.approval.setting.line'].search([
+                ('sequence', '=', self.step_approve),
+                ('approval_id', '=', approval_id.id)
+            ], limit=1)
+            print(approval_line_id)
+            groups_id = approval_line_id.groups_id
+            if groups_id:
+                print(groups_id.name)
+                for x in groups_id.users:
+                    if level == 'Proyek':
+                        if x.project_id == self.project_id or x.branch_id == self.branch_id or x.branch_id.parent_id.code=='Pusat':
+                            if x.id == self._uid:
+                                cek = True
+                    if level == 'Divisi Operasi' and x.branch_id == self.branch_id and x.id == self._uid:
+                        cek = True
+                    if level == 'Divisi Fungsi' and x.department_id == self.department_id and x.id == self._uid:
+                        cek = True
 
-            for x in groups_id.users:
-                if x.id == self._uid:
-                    cek = True
-        
         if cek == True:
-            if model_wika_id.total_approve == self.step_approve:
-                self.state = 'approve'
-                folder_id = self.env['documents.folder'].sudo().search([('name', '=', 'Invoice')], limit=1)
+            if approval_id.total_approve == self.step_approve:
+                self.state = 'approved'
+                self.env['wika.invoice.approval.line'].create({
+                    'user_id': self._uid,
+                    'groups_id': groups_id.id,
+                    'date': datetime.now(),
+                    'note': 'Approved',
+                    'invoice_id': self.id
+                })
+                folder_id = self.env['documents.folder'].sudo().search([('name', '=', 'Invoicing')], limit=1)
+                # print("TESTTTTTTTTTTTTTTTTTTTTT", folder_id)
                 if folder_id:
                     facet_id = self.env['documents.facet'].sudo().search([
-                        ('name', '=', 'Vendor Bills'),
+                        ('name', '=', 'Documents'),
                         ('folder_id', '=', folder_id.id)
                     ], limit=1)
-                    for doc in self.document_ids.filtered(lambda x: x.state == 'uploaded'):
-                        doc.state = 'verif'
+                    # print("TESTTTTTTTTTERRRRRRR", facet_id)
+                    for doc in self.document_ids.filtered(lambda x: x.state in ('uploaded', 'rejected')):
+                        doc.state = 'verified'
                         attachment_id = self.env['ir.attachment'].sudo().create({
                             'name': doc.filename,
                             'datas': doc.document,
                             'res_model': 'documents.document',
                         })
+                        # print("SSSIIIIUUUUUUUUUUUUUUUUUU", attachment_id)
                         if attachment_id:
+                            tag = self.env['documents.tag'].sudo().search([
+                                ('facet_id', '=', facet_id.id),
+                                ('name', '=', doc.document_id.name)
+                            ], limit=1)
                             documents_model.create({
                                 'attachment_id': attachment_id.id,
                                 'folder_id': folder_id.id,
-                                'tag_ids': facet_id.tag_ids.ids,
-                                'partner_id': doc.invoice_id.partner_id.id,
+                                'tag_ids': tag.ids,
+                                'partner_id': self.partner_id.id,
+                                'purchase_id': self.bap_id.po_id.id,
                             })
+                if self.activity_ids:
+                    for x in self.activity_ids.filtered(lambda x: x.status != 'approved'):
+                        print("masuk")
+                        print(x.user_id)
+                        if x.user_id.id == self._uid:
+                            print(x.status)
+                            x.status = 'approved'
+                            x.action_done()
             else:
-                self.step_approve += 1
+                first_user = False
+                # Createtodoactivity
+                groups_line_next = self.env['wika.approval.setting.line'].search([
+                    ('level', '=', level),
+                    ('sequence', '=', self.step_approve + 1),
+                    ('approval_id', '=', approval_id.id)
+                ], limit=1)
+                print("groups", groups_line_next)
+                groups_id_next = groups_line_next.groups_id
+                if groups_id_next:
+                    print(groups_id_next.name)
+                    for x in groups_id_next.users:
+                        if level == 'Proyek' :
+                            if x.project_id == self.project_id or x.branch_id == self.branch_id or x.branch_id.parent_id.code == 'Pusat':
+                                first_user = x.id
+                        if level == 'Divisi Operasi' and x.branch_id == self.branch_id:
+                            first_user = x.id
+                        if level == 'Divisi Fungsi' and x.department_id == self.department_id:
+                            first_user = x.id
 
-            self.env['wika.invoice.approval.line'].create({'user_id': self._uid,
-                'groups_id' :groups_id.id,
-                'date': datetime.now(),
-                'note': 'Approve',
-                'invoice_id': self.id
-                })
+                    print(first_user)
+                    if first_user:
+                        self.step_approve += 1
+                        self.env['mail.activity'].sudo().create({
+                            'activity_type_id': 4,
+                            'res_model_id': self.env['ir.model'].sudo().search(
+                                [('model', '=', 'account.move')], limit=1).id,
+                            'res_id': self.id,
+                            'user_id': first_user,
+                            'date_deadline': fields.Date.today() + timedelta(days=2),
+                            'state': 'planned',
+                            'status': 'to_approve',
+                            'summary': """Need Approval Document Invoicing"""
+                        })
+                        self.env['wika.invoice.approval.line'].create({
+                            'user_id': self._uid,
+                            'groups_id': groups_id.id,
+                            'date': datetime.now(),
+                            'note': 'Verified',
+                            'invoice_id': self.id
+                        })
+                        if self.activity_ids:
+                            for x in self.activity_ids.filtered(lambda x: x.status != 'approved'):
+                                print("masuk")
+                                print(x.user_id)
+                                if x.user_id.id == self._uid:
+                                    print(x.status)
+                                    x.status = 'approved'
+                                    x.action_done()
+                    else:
+                        raise ValidationError('User Role Next Approval Belum di Setting!')
+
         else:
             raise ValidationError('User Akses Anda tidak berhak Approve!')
 
     def action_reject(self):
         user = self.env['res.users'].search([('id', '=', self._uid)], limit=1)
         cek = False
-        model_id = self.env['ir.model'].search([('model','=', 'account.move')], limit=1)
-        if model_id:
-            model_wika_id = self.env['wika.approval.setting'].search([('model_id','=',  model_id.id)], limit=1)
-
-        if user.branch_id.id==self.branch_id.id and model_wika_id:
-            groups_line = self.env['wika.approval.setting.line'].search(
-                [('branch_id', '=', self.branch_id.id), ('sequence',  '=', self.step_approve), ('approval_id', '=', model_wika_id.id )], limit=1)
-            groups_id = groups_line.groups_id
-            for x in groups_id.users:
-                if x.id == self._uid:
-                    cek = True
-
+        level = self.level
+        if level:
+            model_id = self.env['ir.model'].search([('model', '=', 'account.move')], limit=1)
+            approval_id = self.env['wika.approval.setting'].sudo().search(
+                [('model_id', '=', model_id.id), ('level', '=', level)], limit=1)
+            if not approval_id:
+                raise ValidationError(
+                    'Approval Setting untuk menu Invoice tidak ditemukan. Silakan hubungi Administrator!')
+            approval_line_id = self.env['wika.approval.setting.line'].search([
+                ('sequence', '=', self.step_approve),
+                ('approval_id', '=', approval_id.id)
+            ], limit=1)
+            print(approval_line_id)
+            groups_id = approval_line_id.groups_id
+            if groups_id:
+                print(groups_id.name)
+                for x in groups_id.users:
+                    if x.project_id == self.project_id or x.branch_id == self.branch_id or x.branch_id.parent_id.code == 'Pusat':
+                        if x.id == self._uid:
+                            cek = True
+                    if level == 'Divisi Operasi' and x.branch_id == self.branch_id and x.id == self._uid:
+                        cek = True
+                    if level == 'Divisi Fungsi' and x.department_id == self.department_id and x.id == self._uid:
+                        cek = True
         if cek == True:
             action = {
                 'name': ('Reject Reason'),
@@ -455,6 +618,7 @@ class WikaInheritedAccountMove(models.Model):
             return action
         else:
             raise ValidationError('User Akses Anda tidak berhak Reject!')
+
 
     @api.onchange('partner_id')
     def _onchange_doc(self):

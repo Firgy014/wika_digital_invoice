@@ -14,7 +14,7 @@
                         <attribute name="invisible">1</attribute>
                     </xpath>
                    <xpath expr="//field[@name='partner_id']" position="after">
-                       <field name="l10n_id_tax_number"/>
+                       <field name="l10n_id_tax_number" required="1"/>
                    </xpath>
             </field>
         </record>
@@ -26,21 +26,22 @@
             <field name="arch" type="xml">
                 <!-- state -->
                 <xpath expr="//field[@name='state']" position="attributes">
-                    <attribute name="statusbar_visible">draft,upload,approve</attribute>
+                    <attribute name="statusbar_visible">draft,uploaded,approved</attribute>
                 </xpath>
-
+                    <div name="button_box" position="inside">
+                        <button class="oe_stat_button" type="object" name="get_documents" icon="fa-file-text-o">
+                            <field string="Documents" name="documents_count" widget="statinfo"/>
+                        </button>
+                    </div>
                 <!-- button -->
                 <xpath expr="/form/header/button[@name='action_invoice_sent']" position="before">
                     <button name="action_print_invoice" string="Print" type="object" class="oe_highlight"/>
                     <button name="action_submit" string="SUBMIT" type="object" class="oe_highlight" 
-                    attrs="{'invisible': ['|', ('state', '=', 'upload'), 
-                        ('state', '=', 'approve')]}"/>
-                    <button name="action_approve" string="APPROVE" type="object" class="oe_highlight" 
-                    attrs="{'invisible': ['|', ('state', '=', 'draft'), 
-                        ('state', '=', 'approve')]}"/>
-                     <button name="action_reject" string="REJECT" type="object" class="oe_highlight" 
-                    attrs="{'invisible': ['|', ('state', '=', 'draft'), 
-                        ('state', '=', 'approve') ]}"/>
+                    states="draft,rejected"/>
+                    <button name="action_approve" string="APPROVE" type="object" class="btn-success"
+                    states="uploaded"/>
+                     <button name="action_reject" string="REJECT" type="object" class="btn-danger"
+                     states="uploaded"/>
                 </xpath>
                 <xpath expr="/form/header/button[@name='action_post']" position="attributes">
                     <attribute name="invisible">1</attribute>
@@ -66,7 +67,7 @@
 
                 </xpath>
                 <xpath expr="//group[@id='header_right_group']/field[@name='currency_id']" position="before">
-                    <field name="baseline_date"/>
+                    <field name="baseline_date" required="1"/>
                 </xpath>
                 <xpath expr="//field[@name='invoice_date']" position="after">
                     <field name="branch_id" domain="[('biro', '=', False)]"
@@ -82,6 +83,7 @@
                 <xpath expr="//field[@name='payment_reference']" position="attributes">
                     <attribute name="invisible">1</attribute>
                 </xpath>
+
                 <xpath expr="//field[@name='partner_bank_id']" position="attributes">
                     <attribute name="invisible">1</attribute>
                 </xpath>
@@ -96,6 +98,7 @@
                 </xpath>
                 <xpath expr="//label[3][@for='ref']" position="attributes">
                     <attribute name="string">Header Text</attribute>
+                    <attribute name="required">1</attribute>
                 </xpath>
                 <!-- <xpath expr="//notebook/page[@name='other_info']" position="ass">
                     <field name="payment_reference" />

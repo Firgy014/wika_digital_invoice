@@ -84,18 +84,15 @@
                 </div>
                 <group>
                     <group>
-<<<<<<< HEAD
                         <field name="partner_id" string="Receive From" readonly="0"/>
                         <field name="po_id" string="Nomor PO"  readonly="0"/>
                         <field name="pick_type"  readonly="0"/>
-=======
                         <field name="partner_id" string="Receive From" readonly="1"/>
                         <field name="po_id" string="Nomor PO"  readonly="1"/>
                         <field name="pick_type"  readonly="1"/>
                         <field name="level"  invisible="1"/>
                         <field name="origin" attrs="{'invisible': [('pick_type', '=', 'gr')]}"/>
 
->>>>>>> 130978044bede62902dadf64331b09478c954436
                         <field name="start_date" string="Period Start" attrs="{'invisible': [('pick_type', '=', 'gr')], 'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
                         <field name="end_date" string="Period End" attrs="{'invisible': [('pick_type', '=', 'gr')], 'required': [('pick_type', '!=', 'gr')],'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
                     </group>
@@ -159,7 +156,6 @@
                                     <field name="product_id" required="1" context="{'default_detailed_type': 'product'}" attrs="{'readonly': ['|', '&amp;', ('state', '!=', 'draft'), ('additional', '=', False), ('move_lines_count', '&gt;', 0)]}"/>
                                     <field name="description_picking" string="Description" optional="hide"/>
                                     <field name="date" optional="hide"/>
-                                      <field name="qty_bap" invisible="1"/>
                                     <field name="date_deadline" optional="hide"/>
                                     <field name="is_initial_demand_editable" invisible="1"/>
                                     <field name="is_quantity_done_editable" invisible="1"/>
@@ -171,8 +167,8 @@
                                     <field name="reserved_availability" string="Reserved"
                                         attrs="{'column_invisible': ['|', '|', ('parent.state', 'in', ['draft', 'done']), ('parent.picking_type_code', 'in', ['incoming', 'outgoing']), ('parent.immediate_transfer', '=', True)]}"/>
                                     <field name="product_qty" invisible="1" readonly="1"/>
-                                    <field name="qty_bap"/>
-                                    <field name="sisa_qty_bap"/>
+                                    <field name="qty_bap" groups="base.group_no_one"/>
+                                    <field name="sisa_qty_bap" groups="base.group_no_one"/>
                                     <field name="quantity_done" string="Quantity" attrs="{'readonly': [('product_id', '=', False)], 'column_invisible':[('parent.state', '=', 'draft'), ('parent.immediate_transfer', '=', False)]}"/>
                                     <field name="price_subtotal" invisible="1" widget="monetary"/>
                                     <field name="product_uom" attrs="{'readonly': [('state', '!=', 'draft'), ('additional', '=', False)]}" options="{'no_open': True, 'no_create': True}" string="Unit of Measure" groups="uom.group_uom"/>

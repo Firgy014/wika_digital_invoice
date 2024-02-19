@@ -43,7 +43,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
         ('progress', 'Progress'),
         ('uang muka', 'Uang Muka'),], string='Jenis BAP', default='progress')
     price_cut_ids = fields.One2many('wika.bap.pricecut.line', 'po_id')
-    signatory_name = fields.Char(string='Nama Penanda Tangan', related="po_id.signatory_name")
+    signatory_name = fields.Char(string='Nama Penanda Tangan Wika', related="po_id.signatory_name")
     position = fields.Char(string='Jabatan', related="po_id.position")
     address = fields.Char(string='Alamat', related="po_id.address")
     job = fields.Char(string='Pekerjaan', related="po_id.job")
@@ -80,38 +80,41 @@ class WikaBeritaAcaraPembayaran(models.Model):
 
     # nilai saat ini
     dp_total = fields.Float(string='Total DP', compute='_compute_dp_total', store= True)
-    retensi_total = fields.Float(string='Total Retensi', compute='_compute_retensi_total', store= True)
+    amount_pecentage_tmp = fields.Float(string='amount persen DP', compute='_compute_amount_pecentage_tmp', store= True)
+    amount_pecentage_retensi = fields.Float(string='amount persen retensi', compute='_compute_amount_pecentage_retensi', store= True)
+    retensi_total = fields.Float(string='Total Retensi', compute='_compute_retensi_total_percentage', store= True)
     dp_qty_total = fields.Float(string='Total QTY DP', compute='_compute_dp_qty', store= True)
     retensi_qty_total = fields.Float(string='Total QTY RETENSI', compute='_compute_retensi_qty', store= True)
 
     # nilai yang lalu
     last_value = fields.Float(string='nilai yang lalu', compute='_compute_last_value')
     last_quantity = fields.Float(string='Qty yang lalu', compute='_compute_last_value')
-    last_dp_total = fields.Float('Total DP yang lalu')
-    last_retensi_total = fields.Float('Total retensi yang lalu')
-    last_qty_dp = fields.Float('Total Qty DP yang lalu')
-    last_qty_retensi = fields.Float('Total Qty Retensi yang lalu')
+    last_dp_total = fields.Float('Potongan uang muka lalu', compute='_compute_last_value')
+    last_retensi_total = fields.Float('Potongan retensi lalu', compute='_compute_last_value')
+    last_qty_dp = fields.Float('Potongan uang muka QTY lalu')
+    last_qty_retensi = fields.Float('Potongan retensi QTY lalu')
 
-    # terbilang
-    test_rupiah = fields.Float('Test Rupiah')
-    test_rupiah_terbilang = fields.Char('Test Rupiah Terbilang', compute='_compute_test_rupiah_terbilang')
-
-    # nilai s/d saat ini
+    # nilai prestasi s/d saat ini
     qty_sd_saatini = fields.Float('qty s/d saat ini', compute='_compute_qty_sd_saatini')
     price_sd_saatini = fields.Float('Price s/d saat ini', compute='_compute_price_po_sd_saatini')
     total_sd_saatini = fields.Float('Total s/d saat ini', compute='_compute_total_sd_saatini')
 
-    # # total nilai s/d saat ini
-    # @api.depends('bap_ids.qty', 'bap_ids.unit_price_po')
-    # def _compute_total_sd_saatini(self):
-    #     for record in self:
-    #         record.qty_sd_saatini = sum(record.bap_ids.mapped('qty'))
-    #         record.price_sd_saatini = sum(record.bap_ids.mapped('unit_price_po'))
-    #         record.total_sd_saatini = record.qty_sd_saatini * record.price_sd_saatini
+    # nilai potongan uang muka
+    qty_dp_saat_ini = fields.Float('Qty uang muka saat ini', compute='_compute_qty_dp_saat_ini', store=True)
+    total_dp_saatini = fields.Float('Uang muka saat ini', compute='_compute_total_dp_saatini', store=True)
+    dp_sd_saatini = fields.Float('Uang muka s/d saat ini' , compute='_compute_dp_sd_saatini', store=True)
+
+    # nilai potongan retensi
+    qty_retensi_saat_ini = fields.Float('Qty retensi saat ini', compute='_compute_qty_retensi_saat_ini', store=True)
+    total_retensi_saatini = fields.Float('Retensi saat ini', compute='_compute_total_retensi_saatini', store=True)
+    retensi_sd_saatini = fields.Float('Retensi s/d saat ini' , compute='_compute_retensi_sd_saatini', store=True)
+    total_pembayaran = fields.Float('Pembayaran', compute='compute_total_pembayaran')
+    terbilang = fields.Char('Terbilang', compute='_compute_rupiah_terbilang')
+
     @api.depends('project_id', 'branch_id', 'department_id')
     def _compute_level(self):
-        level=''
         for res in self:
+            level=''
             if res.project_id:
                 level = 'Proyek'
             elif res.branch_id and not res.department_id and not res.project_id:
@@ -133,28 +136,94 @@ class WikaBeritaAcaraPembayaran(models.Model):
             total_po = sum(record.bap_ids.mapped('unit_price_po'))
             record.price_sd_saatini = record.last_value + total_po
 
+    # total nilai s/d saat ini
     @api.depends('qty_sd_saatini', 'price_sd_saatini')
     def _compute_total_sd_saatini(self):
         for record in self:
             record.total_sd_saatini = record.qty_sd_saatini * record.price_sd_saatini
 
-    @api.depends('test_rupiah')
-    def _compute_test_rupiah_terbilang(self):
+    # Potongan uang muka computed
+    @api.depends('price_cut_ids', 'price_cut_ids.qty', 'price_cut_ids.product_id')
+    def _compute_qty_dp_saat_ini(self):
         for record in self:
-            if record.test_rupiah:
+            total_qty_dp = sum(price_line.qty for price_line in record.price_cut_ids if price_line.product_id.name == 'DP')
+            record.qty_dp_saat_ini = total_qty_dp
+
+    @api.depends('price_cut_ids', 'price_cut_ids.amount', 'price_cut_ids.product_id')
+    def _compute_total_dp_saatini(self):
+        for record in self:
+            total_qty_dp = sum(price_line.amount for price_line in record.price_cut_ids if price_line.product_id.name == 'DP')
+            record.total_dp_saatini = total_qty_dp
+
+    @api.depends('last_qty_dp', 'qty_dp_saat_ini', 'last_dp_total', 'total_dp_saatini')
+    def _compute_dp_sd_saatini(self):
+        for record in self:
+            record.dp_sd_saatini = (record.last_qty_dp + record.qty_dp_saat_ini) * (record.last_dp_total + record.total_dp_saatini)
+
+    # potongan retensi computed
+    @api.depends('price_cut_ids', 'price_cut_ids.qty', 'price_cut_ids.product_id')
+    def _compute_qty_retensi_saat_ini(self):
+        for record in self:
+            total_qty_retensi = sum(price_line.qty for price_line in record.price_cut_ids if price_line.product_id.name == 'RETENSI')
+            record.qty_retensi_saat_ini = total_qty_retensi
+
+    @api.depends('price_cut_ids', 'price_cut_ids.amount', 'price_cut_ids.product_id')
+    def _compute_total_retensi_saatini(self):
+        for record in self:
+            total_retensi = sum(price_line.amount for price_line in record.price_cut_ids if price_line.product_id.name == 'RETENSI')
+            record.total_retensi_saatini = total_retensi
+
+    @api.depends('last_qty_retensi', 'qty_retensi_saat_ini', 'last_retensi_total', 'total_retensi_saatini')
+    def _compute_retensi_sd_saatini(self):
+        for record in self:
+            record.retensi_sd_saatini = (record.last_qty_retensi + record.qty_retensi_saat_ini) * (record.last_retensi_total + record.total_retensi_saatini)
+
+    @api.depends('qty_sd_saatini', 'price_sd_saatini')
+    def _compute_total_sd_saatini(self):
+        for record in self:
+            record.total_sd_saatini = record.qty_sd_saatini * record.price_sd_saatini
+
+
+    @api.depends('price_cut_ids', 'price_cut_ids.percentage_amount', 'price_cut_ids.product_id')
+    def _compute_amount_pecentage_tmp(self):
+        for record in self:
+            total_amount_percentage = sum(price_line.percentage_amount for price_line in record.price_cut_ids if price_line.product_id.name == 'DP')
+            record.amount_pecentage_tmp = total_amount_percentage
+
+    @api.depends('price_cut_ids', 'price_cut_ids.percentage_amount', 'price_cut_ids.product_id')
+    def _compute_amount_pecentage_retensi(self):
+        for record in self:
+            total_amount_percentage_retensi = sum(price_line.percentage_amount for price_line in record.price_cut_ids if price_line.product_id.name == 'RETENSI')
+            record.amount_pecentage_retensi = total_amount_percentage_retensi
+
+    @api.depends('total_amount', 'dp_total', 'retensi_total', 'total_tax', 'total_pph')
+    def compute_total_pembayaran(self):
+        for record in self:
+            total_amount = record.total_amount or 0.0
+            dp_total = record.dp_total or 0.0
+            retensi_total = record.retensi_total or 0.0
+            total_tax = record.total_tax or 0.0
+            total_pph = record.total_pph or 0.0
+            record.total_pembayaran = total_amount - dp_total - retensi_total + total_tax - total_pph
+
+    # # funct terbilang
+    @api.depends('total_pembayaran')
+    def _compute_rupiah_terbilang(self):
+        for record in self:
+            if record.total_pembayaran:
                 # Convert float to integer representation of Rupiah
-                rupiah_int = int(record.test_rupiah)
+                rupiah_int = int(record.total_pembayaran)
                 # Convert the integer part to words
                 rupiah_terbilang = num2words(rupiah_int, lang='id') + " rupiah"
                 # If there are cents, add them as well
-                sen = int((record.test_rupiah - rupiah_int) * 100)
+                sen = int((record.terbilang - rupiah_int) * 100)
                 if sen > 0:
                     rupiah_terbilang += " dan " + num2words(sen, lang='id') + " sen"
-                record.test_rupiah_terbilang = rupiah_terbilang
+                record.terbilang = rupiah_terbilang
             else:
-                record.test_rupiah_terbilang = ""
+                record.terbilang = ""
 
-    @api.depends('bap_date','po_id')
+    # @api.depends('bap_date')
     def _compute_last_value(self):
         for record in self:
             if record.bap_date:
@@ -199,7 +268,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
                 record.last_retensi_total = 0.0
                 record.last_qty_dp = 0.0
                 record.last_qty_retensi = 0.0
-                
+
     # compute Total DP QTY
     @api.depends('price_cut_ids')
     def _compute_dp_qty(self):
@@ -215,18 +284,22 @@ class WikaBeritaAcaraPembayaran(models.Model):
             bap.retensi_qty_total = sum(retensi_lines.mapped('qty'))
 
     # compute DP
-    @api.depends('price_cut_ids')
+    @api.depends('total_amount', 'amount_pecentage_tmp')
     def _compute_dp_total(self):
         for bap in self:
-            retensi_lines = bap.price_cut_ids.filtered(lambda line: line.product_id.name == 'DP')
-            bap.dp_total = sum(retensi_lines.mapped('amount'))
+            if bap.amount_pecentage_tmp > 0:
+                bap.dp_total = (bap.total_amount / 100 ) * bap.amount_pecentage_tmp
+            else :
+                bap.dp_total = 0
 
     # compute retensi
-    @api.depends('price_cut_ids')
-    def _compute_retensi_total(self):
+    @api.depends('total_amount', 'amount_pecentage_retensi')
+    def _compute_retensi_total_percentage(self):
         for bap in self:
-            retensi_lines = bap.price_cut_ids.filtered(lambda line: line.product_id.name == 'RETENSI')
-            bap.retensi_total = sum(retensi_lines.mapped('amount'))
+            if bap.amount_pecentage_tmp > 0:
+                bap.retensi_total = (bap.total_amount / 100 ) * bap.amount_pecentage_retensi
+            else :
+                bap.retensi_total = 0
 
     # code sequence baru
     @api.model
@@ -237,14 +310,14 @@ class WikaBeritaAcaraPembayaran(models.Model):
         sequence_parts = sequence.split('/')
         sequence_number = sequence_parts[-1]
         return 'BAP/{}/{:03d}'.format(year, int(sequence_number))
-    
+
     @api.onchange('partner_id')
     def onchange_partner_id(self):
         if self.partner_id:
-            domain = [('partner_id', '=', self.partner_id.id)]
+            domain = [('partner_id', '=', self.partner_id.id),('state','=','approved')]
             return {'domain': {'po_id': domain}}
         else:
-            return {'domain': {'po_id': []}}
+            return {'domain': {'po_id': [('state','=','approved')]}}
 
     #compute total qty gr
     @api.depends('bap_ids.qty')
@@ -340,26 +413,21 @@ class WikaBeritaAcaraPembayaran(models.Model):
             
             stock_pickings = self.env['stock.picking'].search([('po_id', '=', self.po_id.id)])
             bap_lines = []
-
-            # print("Processing Stock Pickings")
-            for picking in stock_pickings.move_ids_without_package:
-                pol_src = self.env['purchase.order.line'].search([
-                    ('order_id', '=', picking.picking_id.po_id.id), 
-                    ('product_id', '=', picking.product_id.id)])
-
-                # Attempt to use sisa_qty_bap for all cases, handling singleton error by ensuring one record is used
-                sisa_qty_bap = picking.sisa_qty_bap if len(stock_pickings.move_ids_without_package) == 1 else sum(pick.sisa_qty_bap for pick in stock_pickings.move_ids_without_package.filtered(lambda p: p.id == picking.id))
-
+            for picking in stock_pickings.move_ids_without_package.filtered(lambda x: x.sisa_qty_bap>0):
                 bap_lines.append((0, 0, {
-                    'picking_id': picking.picking_id.id,
-                    'purchase_line_id': pol_src.id or False,
-                    'unit_price_po': pol_src.price_unit,
-                    'product_id': picking.product_id.id,
-                    'qty': sisa_qty_bap,
-                    'unit_price': picking.purchase_line_id.price_unit,
-                    'tax_ids': picking.purchase_line_id.taxes_id.ids,
-                    'currency_id': picking.purchase_line_id.currency_id.id
-                }))      
+                'picking_id': picking.picking_id.id,
+                'stock_move_id': picking.id,
+                'purchase_line_id':picking.purchase_line_id.id or False,
+                'unit_price_po':picking.purchase_line_id.price_unit,
+                # 'account_move_line_id':aml_src.id or False,
+                'product_uom':picking.product_uom,
+                'product_id': picking.product_id.id,
+                'qty': picking.sisa_qty_bap,
+                'unit_price': picking.purchase_line_id.price_unit,
+                'tax_ids':picking.purchase_line_id.taxes_id.ids,
+                'currency_id':picking.purchase_line_id.currency_id.id
+            }))
+
             self.bap_ids = bap_lines
 
     @api.depends('bap_ids.sub_total', 'bap_ids.tax_ids')
@@ -368,11 +436,15 @@ class WikaBeritaAcaraPembayaran(models.Model):
             total_amount_value = sum(record.bap_ids.mapped('sub_total'))
             record.total_amount = total_amount_value
 
-    @api.depends('bap_ids.sub_total', 'bap_ids.tax_ids')
+    @api.depends('total_amount', 'dp_total', 'retensi_total', 'bap_ids.tax_ids')
     def compute_total_tax(self):
         for record in self:
-            total_tax_value = sum(record.bap_ids.mapped('tax_amount'))
-            record.total_tax = total_tax_value
+            total_amount = record.total_amount or 0.0
+            dp_total = record.dp_total or 0.0
+            retensi_total = record.retensi_total or 0.0
+            tax_percentage = sum(record.bap_ids.tax_ids.mapped('amount')) / 100.0
+            total_tax = (total_amount - dp_total - retensi_total) * tax_percentage
+            record.total_tax = total_tax
     
     @api.depends('bap_ids.price_unit_po', 'bap_ids.qty')
     def compute_current_value(self):
@@ -386,12 +458,12 @@ class WikaBeritaAcaraPembayaran(models.Model):
             record.grand_total = record.total_amount + record.total_tax
 
     # compute total pph
-    @api.depends('total_amount', 'pph_ids.amount')
+    @api.depends('dp_total', 'pph_ids.amount')
     def compute_total_pph(self):
         for record in self:
             total_pph = 0.0
             for tax in record.pph_ids:
-                total_pph += tax.amount * record.total_amount / 100
+                total_pph += tax.amount * record.dp_total / 100
             record.total_pph = total_pph
 
     def action_reject(self):
@@ -577,7 +649,10 @@ class WikaBeritaAcaraPembayaran(models.Model):
             raise ValidationError('User Akses Anda tidak berhak Submit!')
 
     def action_approve(self):
-        user = self.env['res.users'].search([('id','=',self._uid)], limit=1)
+        for record in self:
+            if any(x.picking_id.state!='approved' for x in record.bap_ids):
+                raise ValidationError('Document GR/SES belum Lengkap silahkan lengkapi terlebih dahulu')
+
         documents_model = self.env['documents.document'].sudo()
         cek = False
         model_id = self.env['ir.model'].search([('model','=', 'wika.berita.acara.pembayaran')], limit=1)
@@ -725,7 +800,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
             'res_model': 'documents.document',
             'view_ids': [(view_kanban_id, 'kanban'),(view_tree_id, 'tree')],
             'res_id': self.id,
-            'domain': [('purchase_id', '=', self.po_id.id),('folder_id','in',('PO','GR/SES'))],
+            'domain': [('purchase_id', '=', self.po_id.id),('folder_id','in',('PO','GR/SES','BAP'))],
             'context': {'default_purchase_id': self.po_id.id},
         }
 
@@ -771,10 +846,12 @@ class WikaBeritaAcaraPembayaranLine(models.Model):
 
     bap_id = fields.Many2one('wika.berita.acara.pembayaran', string='')
     picking_id = fields.Many2one('stock.picking', string='NO GR/SES')
+    stock_move_id = fields.Many2one('stock.move', string='Stock Move')
+
     purchase_line_id= fields.Many2one('purchase.order.line', string='Purchase Line')
     unit_price_po = fields.Monetary(string='Price Unit PO')
     product_id = fields.Many2one('product.product', string='Product')
-    qty = fields.Integer(string='Quantity')
+    qty = fields.Float(string='Quantity')
     product_uom = fields.Many2one('uom.uom', string='Unit of Measure')
     tax_ids = fields.Many2many('account.tax', string='Tax')
     currency_id = fields.Many2one('res.currency', string='Currency')
@@ -782,12 +859,13 @@ class WikaBeritaAcaraPembayaranLine(models.Model):
     sub_total = fields.Monetary(string='Subtotal' , compute= 'compute_sub_total')
     tax_amount = fields.Monetary(string='Tax Amount', compute='compute_tax_amount')
     current_value = fields.Monetary(string='Current Value', compute='_compute_current_value')
-    sisa_qty_bap_grses = fields.Integer(string='Sisa BAP', related='picking_id.move_ids_without_package.sisa_qty_bap')
+    sisa_qty_bap_grses = fields.Float(string='Sisa BAP', related='picking_id.move_ids_without_package.sisa_qty_bap')
 
     @api.onchange('qty')
     def _onchange_product_qty(self):
         for line in self:
             if line.qty > line.sisa_qty_bap_grses:
+                line.qty=0.0
                 raise ValidationError('Quantity tidak boleh melebihi sisa quantity pada GR/SES!')
 
     @api.depends('tax_ids', 'sub_total')

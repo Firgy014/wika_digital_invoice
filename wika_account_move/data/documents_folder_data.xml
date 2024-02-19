@@ -22,7 +22,7 @@
     </record>
 
     <record id="documents_folder_wika_account_move" model="documents.folder">
-        <field name="name">Invoice</field>
+        <field name="name">Invoicing</field>
         <field name="facet_ids" eval="[(4, ref('wika_account_move.documents_facet_account_move'))]"/>
         <field name="group_ids" eval="[(6, 0, [ref('base.group_user')])]"/>
         <field name="read_group_ids" eval="[(6, 0, [ref('base.group_user')])]"/>
