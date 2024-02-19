@@ -238,49 +238,48 @@ class WikaInheritedAccountMove(models.Model):
         record = super(WikaInheritedAccountMove, self).write(values)
         self._check_invoice_totals()
 
-        # Assign the COA
-        lines_new_payable = []
-        if record.partner_id.bill_coa_type == 'relate':
-            if record.level == 'Proyek' and record.valuation_class != False:
-                account_setting_id = account_setting_model.search([
-                    # ('valuation_class', '=', line.product_id.valuation_class),
-                    ('valuation_class', '=', record.valuation_class),
-                    ('assignment', '=', record.level.lower()),
-                ], limit=1)
-                if account_setting_id != False:
-                    lines_new_payable.append((0, 0, {
-                        'account_id': account_setting_id.account_berelasi_id.id,
-                        'display_type': 'payment_term',
-                        'name': "Berelasi",
-                        'debit': 0.0,
-                        'credit': record.amount_total_footer
-                    }))
-                else:
-                    raise ValidationError("COA untuk Invoice ini tidak ditemukan, silakan hubungi Administrator!")
+        if isinstance(record, type(self.env['account.move'])):
+            # Assign the COA
+            lines_new_payable = []
+            if record.partner_id.bill_coa_type == 'relate':
+                if record.level == 'Proyek' and record.valuation_class:
+                    account_setting_id = account_setting_model.search([
+                        ('valuation_class', '=', record.valuation_class),
+                        ('assignment', '=', record.level.lower()),
+                    ], limit=1)
+                    if account_setting_id:
+                        lines_new_payable.append((0, 0, {
+                            'account_id': account_setting_id.account_berelasi_id.id,
+                            'display_type': 'payment_term',
+                            'name': "Berelasi",
+                            'debit': 0.0,
+                            'credit': record.amount_total_footer
+                        }))
+                    else:
+                        raise ValidationError("COA untuk Invoice ini tidak ditemukan, silakan hubungi Administrator!")
 
-        elif record.partner_id.bill_coa_type == '3rd_party':
-            if record.level == 'Proyek' and record.valuation_class != False:
-                account_setting_id = account_setting_model.search([
-                    # ('valuation_class', '=', line.product_id.valuation_class),
-                    ('valuation_class', '=', record.valuation_class),
-                    ('assignment', '=', record.level.lower()),
-                ])
-                if account_setting_id != False:
-                    lines_new_payable.append((0, 0, {
-                        'account_id': account_setting_id.account_pihak_ketiga_id.id,
-                        'display_type': 'payment_term',
-                        'name': "Pihak Ketiga",
-                        'debit': 0.0,
-                        'credit': record.amount_total_footer
-                    }))
-                else:
-                    raise ValidationError("COA untuk Invoice ini tidak ditemukan, silakan hubungi Administrator!")
+            elif record.partner_id.bill_coa_type == '3rd_party':
+                if record.level == 'Proyek' and record.valuation_class:
+                    account_setting_id = account_setting_model.search([
+                        ('valuation_class', '=', record.valuation_class),
+                        ('assignment', '=', record.level.lower()),
+                    ])
+                    if account_setting_id:
+                        lines_new_payable.append((0, 0, {
+                            'account_id': account_setting_id.account_pihak_ketiga_id.id,
+                            'display_type': 'payment_term',
+                            'name': "Pihak Ketiga",
+                            'debit': 0.0,
+                            'credit': record.amount_total_footer
+                        }))
+                    else:
+                        raise ValidationError("COA untuk Invoice ini tidak ditemukan, silakan hubungi Administrator!")
 
-        # Replace the payable COA
-        for line_coa in record.line_ids:
-            if line_coa.account_id.name == 'Trade Receivable':
-                for new_coa in lines_new_payable:
-                    line_coa.write(new_coa[2])
+            # Replace the payable COA
+            for line_coa in record.line_ids:
+                if line_coa.account_id.name == 'Trade Receivable':
+                    for new_coa in lines_new_payable:
+                        line_coa.write(new_coa[2])
 
         return record
 
