@@ -6,16 +6,16 @@
         <field name="name">stock.picking.tree.wika</field>
         <field name="model">stock.picking</field>
         <field eval="1" name="priority"/>
-        <field name="arch" type="xml">
+        <field name="arch" type="xml" >
             <!-- <tree string="Picking list" multi_edit="1" sample="1" create="false"> -->
-            <tree string="Picking list" multi_edit="1" sample="1">
+            <tree string="Picking list" multi_edit="1" sample="1" create="0">
                 <header>
                     <button name="do_unreserve" type="object" string="Unreserve"/>
                     <button name="action_assign" type="object" string="Check Availability"/>
                 </header>
                 <field name="priority" optional="show" widget="priority" nolabel="1"/>
                 <field name="pick_type"/>
-                <field name="name"/>
+                <field name="name" string="Nomor GR/SES"/>
                 <field name="branch_id"/>
                 <field name="department_id"/>
                 <field name="project_id"/>
