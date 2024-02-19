@@ -424,19 +424,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
         for record in self:
             record.grand_total = record.total_amount + record.total_tax
 
-<<<<<<< HEAD
-    # # compute total pph
-    # @api.depends('dp_total', 'pph_ids.amount')
-    # def compute_total_pph(self):
-    #     for record in self:
-    #         total_pph = 0.0
-    #         for tax in record.pph_ids:
-    #             total_pph += tax.amount * record.dp_total / 100
-    #         record.total_pph = total_pph
-
-=======
     # compute total pph
->>>>>>> 32279ed0f7b1e8379dd58d7e1f8ff09df6f81e9b
     # compute total pph revisi
     @api.depends('total_amount', 'pph_ids.amount')
     def compute_total_pph(self):
