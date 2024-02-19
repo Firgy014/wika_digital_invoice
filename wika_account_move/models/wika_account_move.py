@@ -31,6 +31,9 @@ class WikaInheritedAccountMove(models.Model):
     special_gl_id = fields.Many2one('wika.special.gl', string='Special GL',required=True)
     check_biro = fields.Boolean(compute="_cek_biro")
 
+    pph_ids = fields.Many2many('account.tax', string='PPH')
+    total_pph = fields.Monetary(string='Total PPH', readonly=False)
+
     @api.depends('department_id')
     def _cek_biro(self):
         for x in self:
@@ -306,13 +309,16 @@ class WikaInheritedAccountMove(models.Model):
 
     @api.onchange('bap_id')
     def _onchange_bap_id(self):
-        self.po_id =False
+        self.po_id = False
         if self.bap_id:
             lines = []
-            self.po_id=self.bap_id.po_id.id
-            self.branch_id=self.bap_id.branch_id.id
-            self.department_id=self.bap_id.department_id.id if self.bap_id.department_id else False
-            self.project_id=self.bap_id.project_id.id if self.bap_id.project_id else False
+            self.po_id = self.bap_id.po_id.id
+            self.branch_id = self.bap_id.branch_id.id
+            self.department_id = self.bap_id.department_id.id if self.bap_id.department_id else False
+            self.project_id = self.bap_id.project_id.id if self.bap_id.project_id else False
+
+            self.pph_ids = self.bap_id.pph_ids.ids
+            self.total_pph = self.bap_id.total_pph
 
             for bap_line in self.bap_id.bap_ids:
                 lines.append((0, 0, {

@@ -18,6 +18,7 @@
                    </xpath>
             </field>
         </record>
+
         <!-- form -->
         <record id="view_wika_account_move_form_inherit" model="ir.ui.view">
             <field name="name">wika.account.move.inherit.view.form</field>
@@ -33,6 +34,7 @@
                             <field string="Documents" name="documents_count" widget="statinfo"/>
                         </button>
                     </div>
+
                 <!-- button -->
                 <xpath expr="/form/header/button[@name='action_invoice_sent']" position="before">
                     <button name="action_print_invoice" string="Print" type="object" class="oe_highlight"/>
@@ -64,7 +66,6 @@
                     <field name="invoice_number"/>
                     <field name="amount_invoice"/>
                     <field name="amount_total_footer" invisible="1"/>
-
                 </xpath>
                 <xpath expr="//group[@id='header_right_group']/field[@name='currency_id']" position="before">
                     <field name="baseline_date" required="1"/>
@@ -111,6 +112,10 @@
                 </xpath>
                 <xpath expr="//field[@name='invoice_line_ids']/tree/field[13]" position="after">
                     <field name="bap_line_id" invisible="1"/>
+                </xpath>
+                <xpath expr="//field[@name='tax_totals']" position="before">
+                    <field name="pph_ids" widget="many2many_tags"/>
+                    <field name="total_pph"/>
                 </xpath>
                 <xpath expr="//notebook/page[@name='other_info']" position="after">
                     <page string="List Document">
