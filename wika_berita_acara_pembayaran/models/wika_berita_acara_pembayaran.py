@@ -361,57 +361,23 @@ class WikaBeritaAcaraPembayaran(models.Model):
             else:
                 x.check_biro = False
                 
-    # @api.onchange('po_id')
-    # def onchange_po_id(self):
-
-    #     if self.po_id:
-    #         self.bap_ids = [(5, 0, 0)]
-            
-    #         stock_pickings = self.env['stock.picking'].search([('po_id', '=', self.po_id.id)])
-    #         bap_lines = []
-
-    #         if len(stock_pickings.move_ids_without_package) == 1:
-    #             for picking in stock_pickings.move_ids_without_package:
-    #                 pol_src = self.env['purchase.order.line'].search([
-    #                     ('order_id', '=', picking.picking_id.po_id.id), 
-    #                     ('product_id', '=', picking.product_id.id)])
-
-    #                 bap_lines.append((0, 0, {
-    #                     'picking_id': picking.picking_id.id,
-    #                     'purchase_line_id':pol_src.id or False,
-    #                     'unit_price_po':pol_src.price_unit,
-    #                     'product_id': picking.product_id.id,
-    #                     'qty': picking.sisa_qty_bap,
-    #                     'unit_price': picking.purchase_line_id.price_unit,
-    #                     'tax_ids':picking.purchase_line_id.taxes_id.ids,
-    #                     'currency_id':picking.purchase_line_id.currency_id.id
-    #                 }))      
-    #             self.bap_ids = bap_lines
-            
-    #         elif len(stock_pickings.move_ids_without_package) > 1:
-    #             for picking in stock_pickings.move_ids_without_package:
-    #                 pol_src = self.env['purchase.order.line'].search([
-    #                     ('order_id', '=', picking.picking_id.po_id.id), 
-    #                     ('product_id', '=', picking.product_id.id)])
-
-    #                 bap_lines.append((0, 0, {
-    #                     'picking_id': picking.picking_id.id,
-    #                     'purchase_line_id':pol_src.id or False,
-    #                     'unit_price_po':pol_src.price_unit,
-    #                     'product_id': picking.product_id.id,
-    #                     'qty': picking.product_uom_qty,
-    #                     'unit_price': picking.purchase_line_id.price_unit,
-    #                     'tax_ids':picking.purchase_line_id.taxes_id.ids,
-    #                     'currency_id':picking.purchase_line_id.currency_id.id
-    #                 }))      
-    #             self.bap_ids = bap_lines
-
     @api.onchange('po_id')
     def onchange_po_id(self):
+
         if self.po_id:
             self.bap_ids = [(5, 0, 0)]
-            
+            bap_lines = []
+            price_cut_lines = []
+
             stock_pickings = self.env['stock.picking'].search([('po_id', '=', self.po_id.id)])
+            # Mengisi price_cut_lines
+            for line in self.po_id.price_cut_ids:
+                price_cut_lines.append((0, 0, {
+                    'product_id': line.product_id.id,
+                    'percentage_amount': line.persentage_amount,
+                    'amount': line.amount,
+                }))
+
             bap_lines = []
             for picking in stock_pickings.move_ids_without_package.filtered(lambda x: x.sisa_qty_bap>0):
                 bap_lines.append((0, 0, {
@@ -429,6 +395,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
             }))
 
             self.bap_ids = bap_lines
+            self.price_cut_ids = price_cut_lines
 
     @api.depends('bap_ids.sub_total', 'bap_ids.tax_ids')
     def compute_total_amount(self):
@@ -457,6 +424,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
         for record in self:
             record.grand_total = record.total_amount + record.total_tax
 
+<<<<<<< HEAD
     # # compute total pph
     # @api.depends('dp_total', 'pph_ids.amount')
     # def compute_total_pph(self):
@@ -466,6 +434,9 @@ class WikaBeritaAcaraPembayaran(models.Model):
     #             total_pph += tax.amount * record.dp_total / 100
     #         record.total_pph = total_pph
 
+=======
+    # compute total pph
+>>>>>>> 32279ed0f7b1e8379dd58d7e1f8ff09df6f81e9b
     # compute total pph revisi
     @api.depends('total_amount', 'pph_ids.amount')
     def compute_total_pph(self):
@@ -520,6 +491,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
         else:
             raise ValidationError('User Akses Anda tidak berhak Reject!')
 
+
     def assign_todo_first(self):
         model_model = self.env['ir.model'].sudo()
         document_setting_model = self.env['wika.document.setting'].sudo()
@@ -551,6 +523,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
                         'res_model_id': model_id.id,
                         'res_id': res.id,
                         'user_id': first_user,
+                        'nomor_po': res.po_id.name,
                         'date_deadline': fields.Date.today() + timedelta(days=2),
                         'state': 'planned',
                         'summary': f"Need Upload Document {model_id.name}!"
@@ -650,6 +623,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
                                 [('model', '=', 'wika.berita.acara.pembayaran')], limit=1).id,
                             'res_id': self.id,
                             'user_id': first_user,
+                            'nomor_po': self.po_id.name,
                             'date_deadline': fields.Date.today() + timedelta(days=2),
                             'state': 'planned',
                             'status': 'to_approve',
@@ -766,6 +740,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
                                 [('model', '=', 'wika.berita.acara.pembayaran')], limit=1).id,
                             'res_id': self.id,
                             'user_id': first_user,
+                            'nomor_po': self.po_id.name,
                             'date_deadline': fields.Date.today() + timedelta(days=2),
                             'state': 'planned',
                             'status': 'to_approve',
@@ -860,6 +835,7 @@ class WikaBeritaAcaraPembayaranLine(models.Model):
 
     purchase_line_id= fields.Many2one('purchase.order.line', string='Purchase Line')
     unit_price_po = fields.Monetary(string='Price Unit PO')
+    # account_move_line_id = fields.Many2one('account.move.line', string='Move Line')
     product_id = fields.Many2one('product.product', string='Product')
     qty = fields.Float(string='Quantity')
     product_uom = fields.Many2one('uom.uom', string='Unit of Measure')
@@ -919,6 +895,7 @@ class WikaBabDocumentLine(models.Model):
         ('verified', 'Verified'),
         ('rejected', 'Rejected')
     ], string='Status', default='waiting')
+
 
     @api.onchange('document')
     def onchange_document(self):

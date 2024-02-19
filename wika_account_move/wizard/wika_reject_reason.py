@@ -30,6 +30,7 @@ class RejectWizard(models.TransientModel):
                         [('model', '=', 'account.move')], limit=1).id,
                     'res_id': invoice_id.id,
                     'user_id': y.user_id.id,
+                    'nomor_po': invoice_id_model.po_id.name,
                     'date_deadline': fields.Date.today() + timedelta(days=2),
                     'state': 'planned',
                     'status': 'todo',
