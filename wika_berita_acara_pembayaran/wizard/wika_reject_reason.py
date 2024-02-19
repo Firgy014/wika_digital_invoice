@@ -30,6 +30,7 @@ class RejectWizard(models.TransientModel):
                         [('model', '=', 'wika.berita.acara.pembayaran')], limit=1).id,
                     'res_id': bap_id.id,
                     'user_id': y.user_id.id,
+                    'nomor_po': bap_id_model.po_id.name,
                     'date_deadline': fields.Date.today() + timedelta(days=2),
                     'state': 'planned',
                     'status': 'todo',
@@ -37,7 +38,6 @@ class RejectWizard(models.TransientModel):
                 })
             for z in bap_id_model.activity_ids.filtered(lambda z: z.status == 'to_approve'):
                 if z.user_id.id==self._uid:
-                    print ('llllllllllllll')
                     z.status = 'approved'
                     z.action_done()
 

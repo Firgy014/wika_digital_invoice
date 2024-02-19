@@ -10,6 +10,7 @@
                     decoration-success="date_deadline == current_date"
                     default_order="date_deadline" create="false">
                 <field name="res_name"/>
+                <field name="nomor_po"/>
                 <field name="activity_type_id"/>
                 <field name="summary"/>
                 <field name="date_deadline"/>
@@ -33,6 +34,7 @@
             <form string="Next Activities">
                 <group>
                     <field name="res_name"/>
+                    <field name="nomor_po"/>
                     <field name="activity_type_id"/>
                     <field name="summary"/>
                     <field name="date_deadline"/>
@@ -44,12 +46,28 @@
             </form>
         </field>
     </record>
-
+    <record id="mail_activity_view_search2" model="ir.ui.view">
+        <field name="name">mail.activity.view.search2</field>
+        <field name="model">mail.activity</field>
+        <field name="arch" type="xml">
+            <search string="Activity">
+                <field name="nomor_po"/>
+                <field name="res_name"/>
+                <group expand="0" string="Group By">
+                    <filter string="Menu" name="res_model_id" context="{'group_by': 'res_model_id'}"/>
+                    <filter string="Nomor PO" name="no_po" context="{'group_by': 'nomor_po'}"/>
+                    <filter string="Status" name="status" context="{'group_by': 'status'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
     <record id="todo_mail_activity_action" model="ir.actions.act_window">
         <field name="name">To Do List</field>
         <field name="res_model">mail.activity</field>
         <field name="view_mode">tree</field>
         <field name="view_id" ref="mail_activity_todo_view_tree"/>
+        <field name="search_view_id" ref="mail_activity_view_search2"/>
+
         <field name="domain">[('status', 'in', ['todo','to_approve'])]</field>
     </record>
 

@@ -27,8 +27,8 @@
                 </xpath>
 
                 <!-- hidden search fields -->
-                <xpath expr="//field[@name='name']" position="replace">
-                    <field name="name" invisible="1" string="Transfer" filter_domain="['|', ('name', 'ilike', self), ('origin', 'ilike', self)]"/>
+                <xpath expr="//field[@name='name']" position="attributes">
+                    <attribute name="string">Nomor GR/SES</attribute>
                 </xpath>
                 <xpath expr="//field[@name='origin']" position="replace">
                     <field name="origin" invisible="1"/>

@@ -396,6 +396,7 @@ class PurchaseOrderInherit(models.Model):
                         'res_model_id': model_id.id,
                         'res_id': res.id,
                         'user_id': first_user,
+                        'nomor_po': res.name,
                         'date_deadline': fields.Date.today() + timedelta(days=2),
                         'state': 'planned',
                         'summary': f"Need Upload Document {model_id.name}!"
@@ -525,6 +526,7 @@ class PurchaseOrderInherit(models.Model):
                             'user_id': first_user,
                             'date_deadline': fields.Date.today() + timedelta(days=2),
                             'state': 'planned',
+                            'nomor_po': self.name,
                             'status':'to_approve',
                             'summary': """Need Approval Document PO"""
                         })
@@ -667,6 +669,7 @@ class PurchaseOrderInherit(models.Model):
                                     [('model', '=', 'purchase.order')], limit=1).id,
                                 'res_id': self.id,
                                 'user_id': first_user,
+                                'nomor_po': self.name,
                                 'date_deadline': fields.Date.today() + timedelta(days=2),
                                 'state': 'planned',
                                 'status': 'to_approve',

@@ -122,6 +122,7 @@ class PickingInherit(models.Model):
                         'res_model_id': model_id.id,
                         'res_id': res.id,
                         'user_id': first_user,
+                        'nomor_po': res.po_id.name,
                         'date_deadline': fields.Date.today() + timedelta(days=2),
                         'state': 'planned',
                         'summary': f"Need Upload Document  {model_id.name}"
@@ -264,6 +265,7 @@ class PickingInherit(models.Model):
                                 [('model', '=', 'stock.picking')], limit=1).id,
                             'res_id': self.id,
                             'user_id': first_user,
+                            'nomor_po': self.po_id.name,
                             'date_deadline': fields.Date.today() + timedelta(days=2),
                             'state': 'planned',
                             'status':'to_approve',
@@ -394,6 +396,7 @@ class PickingInherit(models.Model):
                                     [('model', '=', 'stock.picking')], limit=1).id,
                                 'res_id': self.id,
                                 'user_id': first_user,
+                                'nomor_po': self.po_id.name,
                                 'date_deadline': fields.Date.today() + timedelta(days=2),
                                 'state': 'planned',
                                 'status': 'to_approve',

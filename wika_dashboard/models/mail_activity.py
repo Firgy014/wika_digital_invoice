@@ -4,6 +4,7 @@ class InheritMailActivity(models.Model):
     _inherit = "mail.activity"
 
     res_model_name = fields.Char(string='Menu', related='res_model_id.name')
+    nomor_po    =fields.Char(string='Nomor PO')
 
     def action_open_document(self):
         """ Opens the related record based on the model and ID """
