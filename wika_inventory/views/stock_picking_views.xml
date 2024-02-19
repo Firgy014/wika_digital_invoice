@@ -104,10 +104,7 @@
 
                         <label for="scheduled_date"/>
                         <div class="o_row">
-                            <field name="scheduled_date" string="Date" attrs="{'required': [('id', '!=', False)], 'readonly': [('state', 'in', ['uploaded', 'approved'])]}"
-                                decoration-warning="state not in ('done', 'cancel') and scheduled_date &lt; now"
-                                decoration-danger="state not in ('done', 'cancel') and scheduled_date &lt; current_date"
-                                decoration-bf="state not in ('done', 'cancel') and (scheduled_date &lt; current_date or scheduled_date &lt; now)"/>
+                            <field name="scheduled_date" string="Date" readonly="1" attrs="{'required': [('id', '!=', False)]}"/>
                         </div>
                     </group>
                 </group>

@@ -80,7 +80,7 @@
                             widget="section_and_note_one2many"
                             mode="tree,kanban"
                             context="{'default_state': 'po'}"
-                            readonly="0">
+                            readonly="1">
                             <tree string="Purchase Order Lines" editable="bottom">
                                 <control>
                                     <create name="add_product_control" string="Add a product"/>

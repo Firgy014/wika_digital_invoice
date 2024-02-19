@@ -30,6 +30,7 @@ class RejectWizardPicking(models.TransientModel):
                         [('model', '=', 'stock.picking')], limit=1).id,
                     'res_id': active_id,
                     'user_id': y.user_id.id,
+                    'nomor_po': picking_id_model.po_id.name,
                     'date_deadline': fields.Date.today() + timedelta(days=2),
                     'state': 'planned',
                     'status': 'todo',
@@ -37,7 +38,6 @@ class RejectWizardPicking(models.TransientModel):
                 })
             for z in picking_id_model.activity_ids.filtered(lambda z: z.status == 'to_approve'):
                 if z.user_id.id == self._uid:
-                    print('llllllllllllll')
                     z.status = 'approved'
                     z.action_done()
 
