@@ -457,14 +457,24 @@ class WikaBeritaAcaraPembayaran(models.Model):
         for record in self:
             record.grand_total = record.total_amount + record.total_tax
 
-    # compute total pph
-    @api.depends('dp_total', 'pph_ids.amount')
+    # # compute total pph
+    # @api.depends('dp_total', 'pph_ids.amount')
+    # def compute_total_pph(self):
+    #     for record in self:
+    #         total_pph = 0.0
+    #         for tax in record.pph_ids:
+    #             total_pph += tax.amount * record.dp_total / 100
+    #         record.total_pph = total_pph
+
+    # compute total pph revisi
+    @api.depends('total_amount', 'pph_ids.amount')
     def compute_total_pph(self):
         for record in self:
             total_pph = 0.0
-            for tax in record.pph_ids:
-                total_pph += tax.amount * record.dp_total / 100
+            for pph in record.pph_ids:
+                total_pph += (record.total_amount * pph.amount) / 100
             record.total_pph = total_pph
+
 
     def action_reject(self):
         user = self.env['res.users'].search([('id', '=', self._uid)], limit=1)
