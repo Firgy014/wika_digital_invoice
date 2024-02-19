@@ -201,6 +201,7 @@ class WikaInheritedAccountMove(models.Model):
                         'account_id': account_setting_id.account_berelasi_id.id,
                         'display_type': 'payment_term',
                         'name': "Berelasi",
+                        'partner_id': record.partner_id.id,
                         'debit': 0.0,
                         'credit': record.amount_total_footer
                     }))
@@ -218,6 +219,7 @@ class WikaInheritedAccountMove(models.Model):
                     lines_new_payable.append((0, 0, {
                         'account_id': account_setting_id.account_pihak_ketiga_id.id,
                         'display_type': 'payment_term',
+                        'partner_id':  record.partner_id.id,
                         'name': "Pihak Ketiga",
                         'debit': 0.0,
                         'credit': record.amount_total_footer
@@ -252,6 +254,7 @@ class WikaInheritedAccountMove(models.Model):
                             'account_id': account_setting_id.account_berelasi_id.id,
                             'display_type': 'payment_term',
                             'name': "Berelasi",
+                            'partner_id': record.partner_id.id,
                             'debit': 0.0,
                             'credit': record.amount_total_footer
                         }))
@@ -269,6 +272,7 @@ class WikaInheritedAccountMove(models.Model):
                             'account_id': account_setting_id.account_pihak_ketiga_id.id,
                             'display_type': 'payment_term',
                             'name': "Pihak Ketiga",
+                            'partner_id': record.partner_id.id,
                             'debit': 0.0,
                             'credit': record.amount_total_footer
                         }))
