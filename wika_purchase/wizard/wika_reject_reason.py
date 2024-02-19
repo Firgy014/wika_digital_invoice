@@ -14,13 +14,11 @@ class RejectWizard(models.TransientModel):
         purchase_model = self.env['purchase.order'].sudo()
         groups_id = self.env.context.get('groups_id')
         active_id = self.env.context.get('active_id')
-        print ("heheheeeeeeee")
         model_id = self.env['ir.model'].search([('model', '=', 'purchase.order')], limit=1)
         if model_id:
             model_wika_id = self.env['wika.approval.setting'].search([('model_id', '=', model_id.id)], limit=1)
 
         if active_id:
-            print (active_id)
             purchase_id = purchase_model.browse([active_id])
             purchase_id_model = purchase_model.search([('id', '=', active_id)], limit=1)
             for x in purchase_id_model.document_ids:
@@ -36,12 +34,12 @@ class RejectWizard(models.TransientModel):
                     'user_id': y.user_id.id,
                     'date_deadline': fields.Date.today() + timedelta(days=2),
                     'state': 'planned',
+                    'nomor_po': purchase_id.name,
                     'status': 'todo',
                     'summary': """Document has been Reject, Please Re-upload Document!"""
                 })
             for z in purchase_id_model.activity_ids.filtered(lambda z: z.status == 'to_approve'):
                 if z.user_id.id==self._uid:
-                    print ('llllllllllllll')
                     z.status = 'approved'
                     z.action_done()
 

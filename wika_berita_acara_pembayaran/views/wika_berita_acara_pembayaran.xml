@@ -146,6 +146,8 @@
                                 <field name="project_id" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
                                 <field name="end_date" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
                                 <field name="bap_date" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
+                                <field name="pph_ids" widget="many2many_tags"/>
+
                                 <field name="last_value" groups="base.group_no_one"/>
                                 <field name="last_quantity" groups="base.group_no_one"/>
                                 <field name="last_dp_total" groups="base.group_no_one"/>
@@ -168,7 +170,6 @@
                                 <field name="retensi_sd_saatini" groups="base.group_no_one"/>
                                 <field name="amount_pecentage_tmp" groups="base.group_no_one"/>
                                 <field name="amount_pecentage_retensi" groups="base.group_no_one"/>
-                                <field name="total_pembayaran" groups="base.group_no_one"/>
                                 <field name="terbilang" groups="base.group_no_one"/>
                             </group>
                         </group>
@@ -204,13 +205,15 @@
                                     </field>
                                     <group>
                                         <field colspan="2" name="notes" nolabel="1" placeholder="Define your terms and conditions ..."/>
-                                        <field name="pph_ids" widget="many2many_tags"/>
-                                        <field name="total_pph"/>
+
                                     </group>
                                     <group class="oe_subtotal_footer oe_right">
                                         <field name="total_amount"/>
-                                        <field name="total_tax"/>
-                                        <field name="grand_total"/>        
+                                        <field name="total_tax" string="Total PPN"/>
+                                        <field name="total_pph"/>
+                                        <field name="total_pembayaran"/>
+
+                                        <field name="grand_total" invisible="1"/>
                                         <field name="total_current_value" groups="base.group_no_one"/>
                                         <field name="total_qty_gr" invisible="1"/>
                                         <field name="total_unit_price_po" invisible="1"/>
