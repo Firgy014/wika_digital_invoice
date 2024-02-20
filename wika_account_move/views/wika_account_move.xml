@@ -2,30 +2,199 @@
 <odoo>
 
     <data>
-        <record id="view_wika_account_move_form_inherit2" model="ir.ui.view">
-             <field name="name">wika.account.move.inherit2.view.form</field>
+    <record id="view_wika_account_move" model="ir.ui.view">
+            <field name="name">wika.account.move.view.form</field>
             <field name="model">account.move</field>
-            <field name="inherit_id" ref="l10n_id_efaktur.account_move_efaktur_form_view"/>
-              <field name="arch" type="xml">
-                    <xpath expr="//field[@name='l10n_id_replace_invoice_id']" position="attributes">
-                        <attribute name="invisible">1</attribute>
-                    </xpath>
-                    <xpath expr="//field[@name='l10n_id_tax_number']" position="attributes">
-                        <attribute name="invisible">1</attribute>
-                    </xpath>
-                   <xpath expr="//field[@name='partner_id']" position="after">
-                       <field name="l10n_id_tax_number" required="1"/>
-                   </xpath>
-            </field>
-        </record>
+            <field name="priority" eval="1"/>
+            <field name="arch" type="xml">
+            <form string="Invoice Form">
+                <header>
+<!--
+                    <button name="action_print_invoice" string="Print" type="object" class="oe_highlight"/>
+-->
+                    <button name="action_submit" string="SUBMIT" type="object" class="oe_highlight"
+                    states="draft,rejected"/>
+                    <button name="action_approve" string="APPROVE" type="object" class="btn-success"
+                    states="uploaded"/>
+                     <button name="action_reject" string="REJECT" type="object" class="btn-danger"
+                     states="uploaded"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,uploaded,approved"/>
+                </header>
+                <sheet>
+                    <div name="button_box" position="inside">
+                       <button class="oe_stat_button" type="object" name="get_documents" icon="fa-file-text-o">
+                            <field string="Documents" name="documents_count" widget="statinfo"/>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" attrs="{'invisible':[('name', '=', '/')],
+                            'readonly': [('state', '!=', 'draft')]}" placeholder="Draft"/>
+                        </h1>
+                    </div>
+                    <group>
+                      <group id="header_left_group">
+                           <field name="partner_id" widget="res_partner_many2one" string="Vendor" />
+                            <field name="bap_id" domain="[('is_fully_invoiced', '=', False)]" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
+                           <field name="po_id" />
+                           <field name="no_invoice_vendor" />
+                           <field name="valuation_class" groups="base.group_no_one"/>
+                           <field name="invoice_number" />
+                           <field name="amount_invoice" />
+                           <field name="no_faktur_pajak" />
+                      </group>
+                      <group id="header_right_group">
+                            <field name="branch_id" domain="[('biro', '=', False)]"
+                                    attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
+                             <field name="check_biro" invisible="1"/>
+                            <field name="department_id" domain="[('biro', '=', True), ('parent_id', '=', branch_id)]"
+                                attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])], 'invisible': [('check_biro', '=', False)]}"/>
+                            <field name="project_id" attrs="{'readonly': [('state', 'in', ['upload', 'approved'])]}"/>
+                           <field name="step_approve" invisible="1"/>
+                           <field name="invoice_date"/>
+                           <field name="date"/>
+                          <field name="invoice_payment_term_id"/>
+                          <field name="invoice_date_due"/>
+                          <field name="baseline_date"/>
+                         <field name="move_type" invisible="1"/>
+                          <field name="company_id" invisible="1"/>
+                            <field name="payment_state" invisible="1"/>
 
+                      </group>
+                    </group>
+                    <notebook>
+                            <page id="invoice_tab"
+                                  name="invoice_tab"
+                                  string="Invoice Lines"
+                                  attrs="{'invisible': [('move_type', '=', 'entry')]}">
+                                <field name="invoice_line_ids"
+                                       widget="section_and_note_one2many"
+                                       >
+                                    <tree editable="bottom" create="0" delete="0" string="Journal Items" default_order="sequence, id">
+                                        <control>
+                                            <create name="add_line_control" string="Add a line"/>
+                                            <create name="add_section_control" string="Add a section" context="{'default_display_type': 'line_section'}"/>
+                                            <create name="add_note_control" string="Add a note" context="{'default_display_type': 'line_note'}"/>
+                                        </control>
+
+                                        <!-- Displayed fields -->
+                                        <field name="sequence" widget="handle"/>
+                                        <field name="product_id"
+                                               optional="show" readonly="1" force_save="1"
+                                               />
+                                        <field name="name" string="Item Text"/>
+                                        <field name="quantity" readonly="1" force_save="1"/>
+                                        <field name="product_uom_category_id" invisible="1"/>
+                                        <field name="product_uom_id" string="UoM" groups="uom.group_uom" readonly="1" force_save="1"/>
+                                        <field name="price_unit" string="Price" readonly="1" force_save="1"/>
+                                        <field name="discount" string="Disc.%" optional="hide"/>
+                                        <field name="tax_ids" widget="many2many_tags"
+                                               optional="show" readonly="1" force_save="1"/>
+                                        <field name="price_subtotal"
+                                               string="Subtotal"
+                                               groups="account.group_show_line_subtotals_tax_excluded"/>
+                                        <field name="price_total"
+                                               string="Total"
+                                               groups="account.group_show_line_subtotals_tax_included"/>
+                                        <field name="bap_line_id" invisible="1"/>
+
+                                        <!-- Others fields -->
+                                        <field name="partner_id" invisible="1"/>
+                                        <field name="currency_id" invisible="1"/>
+                                        <field name="company_id" invisible="1"/>
+                                        <field name="company_currency_id" invisible="1"/>
+                                        <field name="display_type" force_save="1" invisible="1"/>
+                                        <!-- /l10n_in_edi.test_edi_json -->
+                                        <!-- required for @api.onchange('product_id') -->
+                                    </tree>
+                                </field>
+                                <group col="12" class="oe_invoice_lines_tab">
+                                    <group colspan="8">
+                                        <field name="narration" placeholder="Terms and Conditions" colspan="2" nolabel="1"/>
+                                    </group>
+                                    <!-- Totals (only invoices / receipts) -->
+                                    <group colspan="4">
+                                        <group class="oe_subtotal_footer oe_right"
+                                            attrs="{'invisible': ['|', ('move_type', 'not in', ('out_invoice', 'out_refund', 'in_invoice', 'in_refund', 'out_receipt', 'in_receipt')),
+                                                                       ('payment_state' ,'=', 'invoicing_legacy')]}">
+
+                                            <field name="tax_totals" widget="account-tax-totals-field" nolabel="1" colspan="2"/>
+
+                                            <field name="invoice_payments_widget" colspan="2" nolabel="1" widget="payment"/>
+                                            <field name="amount_residual" class="oe_subtotal_footer_separator" attrs="{'invisible': [('state', '=', 'draft')]}"/>
+                                        </group>
+                                        <field name="invoice_outstanding_credits_debits_widget"
+                                            class="oe_invoice_outstanding_credits_debits"
+                                            colspan="2" nolabel="1" widget="payment"
+                                            attrs="{'invisible': ['|', ('state', '!=', 'posted'), ('move_type', 'in', ('out_receipt', 'in_receipt'))]}"/>
+                                    </group>
+                                </group>
+                            </page>
+                          <page id="other_tab" string="Other Info" name="other_info">
+
+                            <group id="other_tab_group">
+                                 <field name="payment_reference"/>
+                                <field name="pr_id" invisible="1"/>
+                                <field name="partner_bank_id" string="Bank Account"/>
+                                <field name="account_id"/>
+                                <field name="retention_due"/>
+                            </group>
+                          </page>
+                        <page string="List Document">
+                        <field name="document_ids" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}">
+                            <tree create="0" delete="0">
+                                <field name="document_id"/>
+                                <field name="document" widget="binary_button" filename="filename"/>
+                                <field name="filename" invisible="1"/>
+                                <field name="state"/>
+                            </tree>
+                            <form>
+                                <group>
+                                    <field name="document" widget="pdf_viewer" filename="filename"/>
+                                    <field name="filename" invisible="1"/>
+                                    <field name="state" invisible="1"/>
+                                </group>
+                            </form>
+                        </field>
+                    </page>
+                    <page string="Potongan Lain-lain dan PPH">
+                        <group string="PPH">
+                            <field name="pph_ids" nolable="1"/>
+                        </group>
+                        <group string="Potongan Lain Lain">
+                         <field name="price_cut_ids" nolable="1" attrs="{'readonly': [('state', 'in', ('uploaded', 'approved'))]}">
+                            <tree editable="top">
+                                <field name="move_id" invisible="1"/>
+                                <field name="product_id"/>
+                                <field name="account_id"/>
+                                <field name="percentage_amount"/>
+                                <field name="amount"/>
+                            </tree>
+                        </field>
+                        </group>
+                    </page>
+                    <page string="List Approval">
+                        <field name="history_approval_ids" readonly="1" force_save="1">
+                            <tree string="List Approval">
+                                <field name="user_id"/>
+                                <field name="groups_id"/>
+                                <field name="date"/>
+                                <field name="note"/>
+                            </tree>
+                        </field>
+                    </page>
+                    </notebook>
+                </sheet>
+            </form>
+            </field>
+    </record>
         <!-- form -->
-        <record id="view_wika_account_move_form_inherit" model="ir.ui.view">
+  <!--      <record id="view_wika_account_move_form_inherit" model="ir.ui.view">
             <field name="name">wika.account.move.inherit.view.form</field>
             <field name="model">account.move</field>
             <field name="inherit_id" ref="account.view_move_form"/>
             <field name="arch" type="xml">
-                <!-- state -->
+                &lt;!&ndash; state &ndash;&gt;
                 <xpath expr="//field[@name='state']" position="attributes">
                     <attribute name="statusbar_visible">draft,uploaded,approved</attribute>
                 </xpath>
@@ -35,7 +204,7 @@
                         </button>
                     </div>
 
-                <!-- button -->
+                &lt;!&ndash; button &ndash;&gt;
                 <xpath expr="/form/header/button[@name='action_invoice_sent']" position="before">
                     <button name="action_print_invoice" string="Print" type="object" class="oe_highlight"/>
                     <button name="action_submit" string="SUBMIT" type="object" class="oe_highlight" 
@@ -54,8 +223,41 @@
                 <xpath expr="//field[@name='purchase_vendor_bill_id']" position="attributes">
                     <attribute name="invisible">1</attribute>
                 </xpath>
-
-                <!-- field -->
+                &lt;!&ndash;<xpath expr="//field[@name='invoice_line_ids']/tree/field[@name='product_id]" position="attributes">
+                    <attribute name="force_save">1</attribute>
+                    <attribute name="readonly">1</attribute>
+                </xpath>&ndash;&gt;
+                 <xpath expr="//field[@name='invoice_line_ids']/tree/field[@name='account_id]" position="attributes">
+                    <attribute name="invisible">1</attribute>
+                </xpath>
+                &lt;!&ndash; <xpath expr="//field[@name='invoice_line_ids']/tree/field[@name='quantity]" position="attributes">
+                      <attribute name="force_save">1</attribute>
+                    <attribute name="readonly">1</attribute>
+                </xpath>
+                <xpath expr="//div[@name='journal_div']" position="attributes">
+                      <attribute name="force_save">1</attribute>
+                    <attribute name="invisible">1</attribute>
+                </xpath>
+                <xpath expr="//field[@name='invoice_line_ids']/tree/field[@name='product_uom_id]" position="attributes">
+                      <attribute name="force_save">1</attribute>
+                    <attribute name="readonly">1</attribute>
+                </xpath>
+                 <xpath expr="//field[@name='invoice_line_ids']/tree/field[@name='tax_ids]" position="attributes">
+                      <attribute name="force_save">1</attribute>
+                    <attribute name="readonly">1</attribute>
+                </xpath>
+                 <xpath expr="//field[@name='invoice_line_ids']/tree/field[@name='price_unit]" position="attributes">
+                      <attribute name="force_save">1</attribute>
+                    <attribute name="readonly">1</attribute>
+                </xpath>
+                 <xpath expr="//field[@name='invoice_line_ids']/tree]" position="attributes">
+                    <attribute name="create">0</attribute>
+                    <attribute name="delete">0</attribute>
+                </xpath>
+                 <xpath expr="//field[@name='invoice_line_ids']/tree/field[@name='name']" position="attributes">
+                    <attribute name="string">Item Text</attribute>
+                </xpath>&ndash;&gt;
+                &lt;!&ndash; field &ndash;&gt;
                 <xpath expr="//field[@name='partner_id']" position="after">
                     <field name="bap_id" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
                     <field name="po_id" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
@@ -77,7 +279,7 @@
                     <field name="department_id" domain="[('biro', '=', True), ('parent_id', '=', branch_id)]"
                         attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])], 'invisible': [('check_biro', '=', False)]}"/>
                     <field name="project_id" attrs="{'readonly': [('state', 'in', ['upload', 'approved'])]}"/>
-                    <!-- <field name="sap_doc_number" attrs="{'readonly': [('state', 'in', ['upload', 'approve'])]}"/> -->
+                    &lt;!&ndash; <field name="sap_doc_number" attrs="{'readonly': [('state', 'in', ['upload', 'approve'])]}"/> &ndash;&gt;
                     <field name="step_approve" invisible="1"/>
                 </xpath>
 
@@ -88,9 +290,9 @@
                 <xpath expr="//field[@name='partner_bank_id']" position="attributes">
                     <attribute name="invisible">1</attribute>
                 </xpath>
-                <!-- <xpath expr="//field[@name='partner_bank_id']" position="after">
+                &lt;!&ndash; <xpath expr="//field[@name='partner_bank_id']" position="after">
                     <field name="invoice_date_due" attrs="{'readonly': [('state', 'in', ['upload', 'approve'])]}"/>
-                </xpath> -->
+                </xpath> &ndash;&gt;
                 <xpath expr="//group/field[@name='date']" position="attributes">
                     <attribute name="string">Posting Date</attribute>
                 </xpath>
@@ -101,20 +303,19 @@
                     <attribute name="string">Header Text</attribute>
                     <attribute name="required">1</attribute>
                 </xpath>
-                <!-- <xpath expr="//notebook/page[@name='other_info']" position="ass">
-                    <field name="payment_reference" />
-                </xpath> -->
+
                 <xpath expr="//notebook/page[@name='other_info']//field[@name='company_id']" position="after">
                     <field name="payment_reference"/>
                     <field name="pr_id" invisible="1"/>
                     <field name="partner_bank_id" string="Bank Account"/>
+                    <field name="account_id"/>
                     <field name="retention_due"/>
                 </xpath>
                 <xpath expr="//field[@name='invoice_line_ids']/tree/field[13]" position="after">
                     <field name="bap_line_id" invisible="1"/>
                 </xpath>
                 <xpath expr="//field[@name='tax_totals']" position="before">
-                    <field name="pph_ids" widget="many2many_tags"/>
+                    <field name="pph_ids"/>
                     <field name="total_pph"/>
                 </xpath>
                 <xpath expr="//notebook/page[@name='other_info']" position="after">
@@ -159,7 +360,7 @@
                 </xpath>
             </field>      
         </record>
-
+-->
         <!-- tree -->
         <record id="view_wika_account_move_tree_inherited" model="ir.ui.view">
             <field name="name">wika.account.move.inherit.view.tree</field>

@@ -110,6 +110,19 @@ class WikaBeritaAcaraPembayaran(models.Model):
     retensi_sd_saatini = fields.Float('Retensi s/d saat ini' , compute='_compute_retensi_sd_saatini', store=True)
     total_pembayaran = fields.Float('Pembayaran', compute='compute_total_pembayaran')
     terbilang = fields.Char('Terbilang', compute='_compute_rupiah_terbilang')
+    is_fully_invoiced = fields.Boolean(string='Fully Invoiced', default=False, compute='_compute_fully_invoiced',
+                                       store=True)
+
+    @api.depends('bap_ids')
+    def _compute_fully_invoiced(self):
+        tots = 0.0
+        for bap_line in self.bap_ids:
+            tots += bap_line.qty
+
+        if tots == 0.0:
+            self.is_fully_invoiced = True
+        else:
+            self.is_fully_invoiced = False
 
     @api.depends('project_id', 'branch_id', 'department_id')
     def _compute_level(self):
