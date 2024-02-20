@@ -110,8 +110,9 @@ class WikaBeritaAcaraPembayaran(models.Model):
     retensi_sd_saatini = fields.Float('Retensi s/d saat ini' , compute='_compute_retensi_sd_saatini', store=True)
     total_pembayaran = fields.Float('Pembayaran', compute='compute_total_pembayaran')
     terbilang = fields.Char('Terbilang', compute='_compute_rupiah_terbilang')
-    is_fully_invoiced = fields.Boolean(string='Fully Invoiced', default=False, compute='_compute_fully_invoiced', store=True)
-    
+    is_fully_invoiced = fields.Boolean(string='Fully Invoiced', default=False, compute='_compute_fully_invoiced',
+                                       store=True)
+
     @api.depends('bap_ids')
     def _compute_fully_invoiced(self):
         tots = 0.0
@@ -399,6 +400,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
                 'purchase_line_id':picking.purchase_line_id.id or False,
                 'unit_price_po':picking.purchase_line_id.price_unit,
                 # 'account_move_line_id':aml_src.id or False,
+                 'sisa_qty_bap_grses':picking.sisa_qty_bap,
                 'product_uom':picking.product_uom,
                 'product_id': picking.product_id.id,
                 'qty': picking.sisa_qty_bap,
@@ -805,6 +807,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
                 raise ValidationError('Tidak dapat menghapus ketika status Berita Acara Pembayaran (BAP) dalam keadaan Upload atau Approve')
             if record.state=='draft' and record.activity_ids:
                 record.activity_ids.unlink()
+                record.bap_ids.unlink()
         return super(WikaBeritaAcaraPembayaran, self).unlink()
 
     def action_print_bap(self):
@@ -844,22 +847,20 @@ class WikaBeritaAcaraPembayaranLine(models.Model):
     sub_total = fields.Monetary(string='Subtotal', compute='compute_sub_total')
     tax_amount = fields.Monetary(string='Tax Amount', compute='compute_tax_amount')
     current_value = fields.Monetary(string='Current Value', compute='_compute_current_value')
-    sisa_qty_bap_grses = fields.Float(string='Sisa BAP', related='picking_id.move_ids_without_package.sisa_qty_bap')
-    qty_invoiced = fields.Float(string='Total Invoiced', compute='_compute_invoiced_bap_qty')
-    
-    @api.depends('bap_id')
-    def _compute_invoiced_bap_qty(self):
-        for record in self:
-            move_line_ids = self.env['account.move.line'].sudo().search([('bap_line_id', '=', record.id)])
-            total_invoiced_bap_qty = sum(move_line.quantity for move_line in move_line_ids)
-            record.qty_invoiced = total_invoiced_bap_qty
-            
+    sisa_qty_bap_grses = fields.Float(string='Sisa BAP')
+
+    @api.constrains('qty')
+    def _check_qty_limit(self):
+        for line in self:
+            if line.qty > line.sisa_qty_bap_grses:
+                raise ValidationError('Quantity tidak boleh melebihi sisa quantity pada GR/SES!')
+
     @api.onchange('qty')
     def _onchange_product_qty(self):
         for line in self:
             if line.qty > line.sisa_qty_bap_grses:
-                line.qty=0.0
                 raise ValidationError('Quantity tidak boleh melebihi sisa quantity pada GR/SES!')
+
 
     @api.depends('tax_ids', 'sub_total')
     def compute_sub_total(self):

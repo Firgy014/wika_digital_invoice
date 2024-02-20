@@ -28,14 +28,14 @@ class WikaInheritedAccountMove(models.Model):
         help='Edit Tax amounts if you encounter rounding issues.',
         exportable=False,
     )
-    special_gl_id = fields.Many2one('wika.special.gl', string='Special GL',required=True)
+    special_gl_id = fields.Many2one('wika.special.gl', string='Special GL')
     check_biro = fields.Boolean(compute="_cek_biro")
 
     pph_ids = fields.Many2many('account.tax', string='PPH')
     total_pph = fields.Monetary(string='Total PPH', readonly=False)
 
     price_cut_ids = fields.One2many('wika.account.move.pricecut.line', 'move_id', string='Other Price Cut')
-
+    account_id=fields.Many2one(comodel_name='account.account')
     @api.depends('department_id')
     def _cek_biro(self):
         for x in self:
@@ -110,6 +110,7 @@ class WikaInheritedAccountMove(models.Model):
     ], compute='_compute_get_lowest_valuation_class', string='Valuation Class')
 
     documents_count = fields.Integer(string='Total Doc', compute='_compute_documents_count')
+    no_faktur_pajak=fields.Char(string='Tax Number')
 
     def _compute_documents_count(self):
         for record in self:
@@ -177,120 +178,49 @@ class WikaInheritedAccountMove(models.Model):
                 amount_total_footer += price_subtotal
 
             move.amount_total_footer = amount_total_footer
+    @api.onchange('partner_id','valuation_class')
+    def onchange_account_payable(self):
+        for record in self:
+            record.account_id=False
+            account_setting_model = self.env['wika.setting.account.payable'].sudo()
 
-    @api.model_create_multi
-    def create(self, values):
-        account_setting_model = self.env['wika.setting.account.payable'].sudo()
-        record = super(WikaInheritedAccountMove, self).create(values)
-        record._check_invoice_totals()
-        record.assign_todo_first()
-
-        # Delete the duplicated COGS first
-        i = 0
-        lines_new_payable = []
-        while i < len(record.line_ids) - 1:
-            if record.line_ids[i].account_id.name == record.line_ids[i+1].account_id.name:
-                record.line_ids[i].unlink()
-            i += 1
-
-        # Assign the COA
-        # for line in record.line_ids:
-        if record.partner_id.bill_coa_type == 'relate':
-            if record.level == 'Proyek' and record.valuation_class != False:
-                account_setting_id = account_setting_model.search([
-                    # ('valuation_class', '=', line.product_id.valuation_class),
-                    ('valuation_class', '=', record.valuation_class),
-                    ('assignment', '=', record.level.lower()),
-                ], limit=1)
-                if account_setting_id != False:
-                    lines_new_payable.append((0, 0, {
-                        'account_id': account_setting_id.account_berelasi_id.id,
-                        'display_type': 'payment_term',
-                        'name': "Berelasi",
-                        'partner_id': record.partner_id.id,
-                        'debit': 0.0,
-                        'credit': record.amount_total_footer
-                    }))
-                else:
-                    raise ValidationError("COA untuk Invoice ini tidak ditemukan, silakan hubungi Administrator!")
-
-        elif record.partner_id.bill_coa_type == '3rd_party':
-            if record.level == 'Proyek' and record.valuation_class != False:
-                account_setting_id = account_setting_model.search([
-                    # ('valuation_class', '=', line.product_id.valuation_class),
-                    ('valuation_class', '=', record.valuation_class),
-                    ('assignment', '=', record.level.lower()),
-                ])
-                if account_setting_id != False:
-                    lines_new_payable.append((0, 0, {
-                        'account_id': account_setting_id.account_pihak_ketiga_id.id,
-                        'display_type': 'payment_term',
-                        'partner_id':  record.partner_id.id,
-                        'name': "Pihak Ketiga",
-                        'debit': 0.0,
-                        'credit': record.amount_total_footer
-                    }))
-                else:
-                    raise ValidationError("COA untuk Invoice ini tidak ditemukan, silakan hubungi Administrator!")
-
-        # Replace the payable COA
-        for line_coa in record.line_ids:
-            if line_coa.account_id.name == 'Trade Receivable':
-                for new_coa in lines_new_payable:
-                    line_coa.write(new_coa[2])
-
-        return record
-
-    def write(self, values):
-        account_setting_model = self.env['wika.setting.account.payable'].sudo()
-        record = super(WikaInheritedAccountMove, self).write(values)
-        self._check_invoice_totals()
-
-        if isinstance(record, type(self.env['account.move'])):
-            # Assign the COA
-            lines_new_payable = []
             if record.partner_id.bill_coa_type == 'relate':
                 if record.level == 'Proyek' and record.valuation_class:
                     account_setting_id = account_setting_model.search([
                         ('valuation_class', '=', record.valuation_class),
                         ('assignment', '=', record.level.lower()),
                     ], limit=1)
-                    if account_setting_id:
-                        lines_new_payable.append((0, 0, {
-                            'account_id': account_setting_id.account_berelasi_id.id,
-                            'display_type': 'payment_term',
-                            'name': "Berelasi",
-                            'partner_id': record.partner_id.id,
-                            'debit': 0.0,
-                            'credit': record.amount_total_footer
-                        }))
-                    else:
-                        raise ValidationError("COA untuk Invoice ini tidak ditemukan, silakan hubungi Administrator!")
-
+                    record.account_id= account_setting_id.account_berelasi_id.id
+                elif record.level != 'Proyek' and record.valuation_class:
+                    account_setting_id = account_setting_model.search([
+                        ('valuation_class', '=', record.valuation_class),
+                        ('assignment', '=', 'nonproyek'),
+                    ], limit=1)
+                    record.account_id= account_setting_id.account_berelasi_id.id
             elif record.partner_id.bill_coa_type == '3rd_party':
                 if record.level == 'Proyek' and record.valuation_class:
                     account_setting_id = account_setting_model.search([
                         ('valuation_class', '=', record.valuation_class),
                         ('assignment', '=', record.level.lower()),
-                    ])
-                    if account_setting_id:
-                        lines_new_payable.append((0, 0, {
-                            'account_id': account_setting_id.account_pihak_ketiga_id.id,
-                            'display_type': 'payment_term',
-                            'name': "Pihak Ketiga",
-                            'partner_id': record.partner_id.id,
-                            'debit': 0.0,
-                            'credit': record.amount_total_footer
-                        }))
-                    else:
-                        raise ValidationError("COA untuk Invoice ini tidak ditemukan, silakan hubungi Administrator!")
+                    ], limit=1)
+                    record.account_id= account_setting_id.account_pihak_ketiga_id.id
+                elif record.level != 'Proyek' and record.valuation_class:
+                    account_setting_id = account_setting_model.search([
+                        ('valuation_class', '=', record.valuation_class),
+                        ('assignment', '=', 'nonproyek'),
+                    ], limit=1)
+                    record.account_id= account_setting_id.account_pihak_ketiga_id.id
 
-            # Replace the payable COA
-            for line_coa in record.line_ids:
-                if line_coa.account_id.name == 'Trade Receivable':
-                    for new_coa in lines_new_payable:
-                        line_coa.write(new_coa[2])
+    @api.model_create_multi
+    def create(self, vals_list):
+        record = super(WikaInheritedAccountMove, self).create(vals_list)
+        record._check_invoice_totals()
+        record.assign_todo_first()
+        return record
 
+    def write(self, values):
+        record = super(WikaInheritedAccountMove, self).write(values)
+        self._check_invoice_totals()
         return record
 
 
@@ -322,6 +252,7 @@ class WikaInheritedAccountMove(models.Model):
             price_cut_lines = []
 
             self.po_id = self.bap_id.po_id.id
+            self.partner_id = self.bap_id.po_id.partner_id.id
             self.branch_id = self.bap_id.branch_id.id
             self.department_id = self.bap_id.department_id.id if self.bap_id.department_id else False
             self.project_id = self.bap_id.project_id.id if self.bap_id.project_id else False
@@ -330,7 +261,9 @@ class WikaInheritedAccountMove(models.Model):
             self.total_pph = self.bap_id.total_pph
 
             for bap_line in self.bap_id.bap_ids:
+                print (bap_line.qty)
                 invoice_lines.append((0, 0, {
+                    'display_type':'product',
                     'product_id': bap_line.product_id.id,
                     'purchase_line_id': bap_line.purchase_line_id.id,
                     'bap_line_id': bap_line.id,
@@ -747,6 +680,7 @@ class AccountMovePriceCutList(models.Model):
 
     move_id = fields.Many2one('account.move', string='Invoice')
     move_line_id = fields.Many2one('account.move.line', string='Invoice Line')
+    special_gl_id = fields.Many2one('wika.special.gl', string='Special GL')
     product_id = fields.Many2one('product.product', string='Product')
     account_id = fields.Many2one('account.account', string='Account', compute='_compute_account_pricecut')
     percentage_amount = fields.Float(string='Percentage Amount')
