@@ -122,6 +122,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
             elif res.branch_id and res.department_id and not res.project_id:
                 level = 'Divisi Fungsi'
             res.level = level
+
     # qty s/d saat ini
     @api.depends('bap_ids.qty')
     def _compute_qty_sd_saatini(self):
@@ -822,18 +823,25 @@ class WikaBeritaAcaraPembayaranLine(models.Model):
 
     purchase_line_id= fields.Many2one('purchase.order.line', string='Purchase Line')
     unit_price_po = fields.Monetary(string='Price Unit PO')
-    # account_move_line_id = fields.Many2one('account.move.line', string='Move Line')
     product_id = fields.Many2one('product.product', string='Product')
     qty = fields.Float(string='Quantity')
     product_uom = fields.Many2one('uom.uom', string='Unit of Measure')
     tax_ids = fields.Many2many('account.tax', string='Tax')
     currency_id = fields.Many2one('res.currency', string='Currency')
     unit_price = fields.Monetary(string='Unit Price')
-    sub_total = fields.Monetary(string='Subtotal' , compute= 'compute_sub_total')
+    sub_total = fields.Monetary(string='Subtotal', compute='compute_sub_total')
     tax_amount = fields.Monetary(string='Tax Amount', compute='compute_tax_amount')
     current_value = fields.Monetary(string='Current Value', compute='_compute_current_value')
     sisa_qty_bap_grses = fields.Float(string='Sisa BAP', related='picking_id.move_ids_without_package.sisa_qty_bap')
-
+    qty_invoiced = fields.Float(string='Total Invoiced', compute='_compute_invoiced_bap_qty')
+    
+    @api.depends('bap_id')
+    def _compute_invoiced_bap_qty(self):
+        for record in self:
+            move_line_ids = self.env['account.move.line'].sudo().search([('bap_line_id', '=', record.id)])
+            total_invoiced_bap_qty = sum(move_line.quantity for move_line in move_line_ids)
+            record.qty_invoiced = total_invoiced_bap_qty
+            
     @api.onchange('qty')
     def _onchange_product_qty(self):
         for line in self:
