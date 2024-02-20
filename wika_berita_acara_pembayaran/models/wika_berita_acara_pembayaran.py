@@ -135,6 +135,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
             elif res.branch_id and res.department_id and not res.project_id:
                 level = 'Divisi Fungsi'
             res.level = level
+
     # qty s/d saat ini
     @api.depends('bap_ids.qty')
     def _compute_qty_sd_saatini(self):
@@ -837,14 +838,13 @@ class WikaBeritaAcaraPembayaranLine(models.Model):
 
     purchase_line_id= fields.Many2one('purchase.order.line', string='Purchase Line')
     unit_price_po = fields.Monetary(string='Price Unit PO')
-    # account_move_line_id = fields.Many2one('account.move.line', string='Move Line')
     product_id = fields.Many2one('product.product', string='Product')
     qty = fields.Float(string='Quantity')
     product_uom = fields.Many2one('uom.uom', string='Unit of Measure')
     tax_ids = fields.Many2many('account.tax', string='Tax')
     currency_id = fields.Many2one('res.currency', string='Currency')
     unit_price = fields.Monetary(string='Unit Price')
-    sub_total = fields.Monetary(string='Subtotal' , compute= 'compute_sub_total')
+    sub_total = fields.Monetary(string='Subtotal', compute='compute_sub_total')
     tax_amount = fields.Monetary(string='Tax Amount', compute='compute_tax_amount')
     current_value = fields.Monetary(string='Current Value', compute='_compute_current_value')
     sisa_qty_bap_grses = fields.Float(string='Sisa BAP')
@@ -890,7 +890,7 @@ class WikaBeritaAcaraPembayaranLine(models.Model):
         for record in self:
             record.current_value = record.qty * record.unit_price_po
 
-class WikaBabDocumentLine(models.Model):
+class WikaBapDocumentLine(models.Model):
     _name = 'wika.bap.document.line'
 
     bap_id = fields.Many2one('wika.berita.acara.pembayaran', string='')
@@ -916,7 +916,7 @@ class WikaBabDocumentLine(models.Model):
             if record.filename and not record.filename.lower().endswith('.pdf'):
                 raise ValidationError('Tidak dapat mengunggah file selain berformat PDF!')
 
-class WikaBabApprovalLine(models.Model):
+class WikaBapApprovalLine(models.Model):
     _name = 'wika.bap.approval.line'
 
     bap_id = fields.Many2one('wika.berita.acara.pembayaran', string='')

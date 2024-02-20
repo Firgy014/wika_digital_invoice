@@ -264,7 +264,7 @@
                      <field name="no_doc_sap"/>
                     <field name="no_invoice_vendor"/>
                     <field name="special_gl_id"/>
-                    <field name="valuation_class"/>
+                    <field name="valuation_class" invisible="1"/>
                     <field name="invoice_number"/>
                     <field name="amount_invoice"/>
                     <field name="amount_total_footer" invisible="1"/>

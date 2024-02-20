@@ -19,7 +19,7 @@ class StockMoveInherit(models.Model):
         for x in self:
             query = """select sum(qty) from wika_berita_acara_pembayaran_line where stock_move_id=%s
             """% (x.id)
-            print (query)
+            # print (query)
             self.env.cr.execute(query)
             result = self.env.cr.fetchone()
             # bap_line_model = self.env['wika.berita.acara.pembayaran.line'].sudo()
