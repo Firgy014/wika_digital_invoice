@@ -110,6 +110,18 @@ class WikaBeritaAcaraPembayaran(models.Model):
     retensi_sd_saatini = fields.Float('Retensi s/d saat ini' , compute='_compute_retensi_sd_saatini', store=True)
     total_pembayaran = fields.Float('Pembayaran', compute='compute_total_pembayaran')
     terbilang = fields.Char('Terbilang', compute='_compute_rupiah_terbilang')
+    is_fully_invoiced = fields.Boolean(string='Fully Invoiced', default=False, compute='_compute_fully_invoiced', store=True)
+    
+    @api.depends('bap_ids')
+    def _compute_fully_invoiced(self):
+        tots = 0.0
+        for bap_line in self.bap_ids:
+            tots += bap_line.qty
+
+        if tots == 0.0:
+            self.is_fully_invoiced = True
+        else:
+            self.is_fully_invoiced = False
 
     @api.depends('project_id', 'branch_id', 'department_id')
     def _compute_level(self):
@@ -877,7 +889,7 @@ class WikaBeritaAcaraPembayaranLine(models.Model):
         for record in self:
             record.current_value = record.qty * record.unit_price_po
 
-class WikaBabDocumentLine(models.Model):
+class WikaBapDocumentLine(models.Model):
     _name = 'wika.bap.document.line'
 
     bap_id = fields.Many2one('wika.berita.acara.pembayaran', string='')
@@ -903,7 +915,7 @@ class WikaBabDocumentLine(models.Model):
             if record.filename and not record.filename.lower().endswith('.pdf'):
                 raise ValidationError('Tidak dapat mengunggah file selain berformat PDF!')
 
-class WikaBabApprovalLine(models.Model):
+class WikaBapApprovalLine(models.Model):
     _name = 'wika.bap.approval.line'
 
     bap_id = fields.Many2one('wika.berita.acara.pembayaran', string='')
