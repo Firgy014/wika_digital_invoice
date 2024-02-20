@@ -34,6 +34,8 @@ class WikaInheritedAccountMove(models.Model):
     pph_ids = fields.Many2many('account.tax', string='PPH')
     total_pph = fields.Monetary(string='Total PPH', readonly=False)
 
+    price_cut_ids = fields.One2many('wika.account.move.pricecut.line', 'move_id', string='Other Price Cut')
+
     @api.depends('department_id')
     def _cek_biro(self):
         for x in self:
@@ -45,6 +47,7 @@ class WikaInheritedAccountMove(models.Model):
                     x.check_biro = False
             else:
                 x.check_biro = False
+
     # invoice_line_ids = fields.One2many(  # /!\ invoice_line_ids is just a subset of line_ids.
     #     'account.move.line',
     #     'move_id',
@@ -315,7 +318,9 @@ class WikaInheritedAccountMove(models.Model):
     def _onchange_bap_id(self):
         self.po_id = False
         if self.bap_id:
-            lines = []
+            invoice_lines = []
+            price_cut_lines = []
+
             self.po_id = self.bap_id.po_id.id
             self.branch_id = self.bap_id.branch_id.id
             self.department_id = self.bap_id.department_id.id if self.bap_id.department_id else False
@@ -325,7 +330,7 @@ class WikaInheritedAccountMove(models.Model):
             self.total_pph = self.bap_id.total_pph
 
             for bap_line in self.bap_id.bap_ids:
-                lines.append((0, 0, {
+                invoice_lines.append((0, 0, {
                     'product_id': bap_line.product_id.id,
                     'purchase_line_id': bap_line.purchase_line_id.id,
                     'bap_line_id': bap_line.id,
@@ -335,7 +340,17 @@ class WikaInheritedAccountMove(models.Model):
                     'product_uom_id': bap_line.product_uom.id,
                 }))
 
-            self.invoice_line_ids = lines
+            for cut_line in self.bap_id.price_cut_ids:
+                price_cut_lines.append((0, 0, {
+                    'move_id': self.id,
+                    'product_id': cut_line.product_id.id,
+                    # 'account_id': cut_line.account_id.id,
+                    'percentage_amount': cut_line.percentage_amount,
+                    'amount': cut_line.amount,
+                }))
+
+            self.invoice_line_ids = invoice_lines
+            self.price_cut_ids = price_cut_lines
 
     def assign_todo_first(self):
         model_model = self.env['ir.model'].sudo()
@@ -726,3 +741,18 @@ class WikaInvoiceApprovalLine(models.Model):
     groups_id = fields.Many2one('res.groups', string='Groups')
     date = fields.Datetime(string='Date')
     note = fields.Char(string='Note')
+
+class AccountMovePriceCutList(models.Model):
+    _name = 'wika.account.move.pricecut.line'
+
+    move_id = fields.Many2one('account.move', string='Invoice')
+    move_line_id = fields.Many2one('account.move.line', string='Invoice Line')
+    product_id = fields.Many2one('product.product', string='Product')
+    account_id = fields.Many2one('account.account', string='Account', compute='_compute_account_pricecut')
+    percentage_amount = fields.Float(string='Percentage Amount')
+    amount = fields.Float(string='Amount')
+    
+    def _compute_account_pricecut(self):
+        move_id = self.env['account.move'].browse([self.move_id.id])
+        if move_id:            
+            self.account_id = move_id.line_ids[0].account_id.id

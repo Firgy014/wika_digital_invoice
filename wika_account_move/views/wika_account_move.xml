@@ -135,6 +135,17 @@
                             </form>
                         </field>
                     </page>
+                    <page string="Potongan Lain-lain">
+                        <field name="price_cut_ids" attrs="{'readonly': [('state', 'in', ('uploaded', 'approved'))]}">
+                            <tree editable="top">
+                                <field name="move_id" invisible="1"/>
+                                <field name="product_id"/>
+                                <field name="account_id"/>
+                                <field name="percentage_amount"/>
+                                <field name="amount"/>
+                            </tree>
+                        </field>
+                    </page>
                     <page string="List Approval">
                         <field name="history_approval_ids" attrs="{'readonly': [('state', 'in', ['upload', 'approve'])]}">
                             <tree string="List Approval">
