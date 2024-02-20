@@ -185,14 +185,14 @@
                                             <field name="unit_price_po" invisible="1"/>
                                              <field name="sisa_qty_bap_grses" invisible="1"/>
                                             <!-- <field name="account_move_line_id"/> -->
-                                            <field name="product_id"  attrs="{'readonly': [('stock_move_id', '!=',False)]}"/>
-                                            <field name="product_uom" attrs="{'readonly': [('stock_move_id', '!=',False)]}"/>
+                                            <field name="product_id"/>
+                                            <field name="product_uom"/>
 
                                             <field name="qty"/>
                                             <field name="tax_ids" widget="many2many_tags"/>
-                                            <field name="currency_id" attrs="{'readonly': [('stock_move_id', '!=',False)]}"/>
-                                            <field name="unit_price" attrs="{'readonly': [('stock_move_id', '!=',False)]}"/>
-                                            <field name="sub_total" attrs="{'readonly': [('stock_move_id', '!=',False)]}"/>
+                                            <field name="currency_id"/>
+                                            <field name="unit_price"/>
+                                            <field name="sub_total"/>
                                         </tree>
                                     </field>
                                     <field name="price_cut_ids" attrs="{'invisible': [('bap_type', '=', 'progress')]}" 
