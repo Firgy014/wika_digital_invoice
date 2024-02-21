@@ -78,16 +78,13 @@
                         </div>
                         <group>
                             <group>
-<<<<<<< HEAD
+
                                 <!-- <field name="partner_id" attrs="{'readonly': [('state', 'in', [ 'request', 'approve'])]}"/> -->
                                 <field name="invoice_id" attrs="{'readonly': [('state', 'in', [ 'request', 'approve'])]}"/>
-=======
-                                <field name="partner_id" attrs="{'readonly': [('state', 'in', [ 'request', 'approve'])]}"/>
->>>>>>> 7f85c8c5963dd985cd14e4e01864492b3762ec76
                                 <field name="date" attrs="{'readonly': [('state', 'in', [ 'request', 'approve'])]}"/>
                                 <field name="assignment" attrs="{'readonly': [('state', 'in', [ 'request', 'approve'])]}"/>
                                 <field name="reference" attrs="{'readonly': [('state', 'in', [ 'request', 'approve'])]}"/>
-                                <field name="payment_block" attrs="{'readonly': [('state', 'in', [ 'request', 'approve'])]}"/>
+                                <field name="payment_block" attrs="{'readonly': [('state', 'in', [ 'request', 'approve'])],'invisible': [('state', '!=', 'approve')]}"/>
                                 <field name="payment_method" attrs="{'readonly': [('state', 'in', [ 'request', 'approve'])]}"/>
                                 <field name="total" attrs="{'readonly': [('state', 'in', [ 'request', 'approve'])]}"/>
                                 <field name="step_approve" invisible="1" attrs="{'readonly': [('state', 'in', [ 'request', 'approve'])]}"/>
@@ -95,11 +92,7 @@
                             <group>
                                 <field name="check_biro" invisible="1"/>
                                 <field name="level" invisible="1"/>
-<<<<<<< HEAD
-                                <field name="branch_id" domain="[('biro', '=', False)]" 
-=======
                                 <field name="branch_id" domain="[('biro', '=', False)]"
->>>>>>> 7f85c8c5963dd985cd14e4e01864492b3762ec76
                                     attrs="{'readonly': [('state', 'in', [ 'request', 'approve'])]}"/>
                                 <field name="department_id" domain="[('biro', '=', True), ('parent_id', '=', branch_id)]" 
                                     attrs="{'readonly': [('state', 'in', [ 'request', 'approve'])], 'invisible': [('check_biro', '=', False)]}"/>
@@ -111,17 +104,8 @@
                             <page string="List Invoice">
                                 <group>   
                                     <field name="invoice_ids" mode="tree" nolabel="1"  colspan="2" 
-<<<<<<< HEAD
-                                        domain="[
-                                            ('payment_id', '=', False), 
-                                            ('move_type', '=', 'in_invoice'), 
-                                            ('pr_id', '=', False), 
-                                            ]" 
-                                        attrs="{'readonly': [('state', 'in', [ 'request', 'approve'])]}"></field>    
-=======
                                         domain="[('payment_id', '=', False), ('move_type', '=', 'in_invoice'), ('pr_id', '=', False)]" 
                                         attrs="{'readonly': [('state', 'in', [ 'request', 'approve'])]}"></field>
->>>>>>> 7f85c8c5963dd985cd14e4e01864492b3762ec76
                                 </group>
                             </page>
                             <!-- <page string="List Document">

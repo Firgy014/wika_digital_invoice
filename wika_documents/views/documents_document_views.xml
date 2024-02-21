@@ -10,6 +10,8 @@
                     <field name="purchase_id" string="Nomor PO"/>
                     <field name="picking_id" string="Nomor GR/SES"/>
                     <field name="invoice_id" string="No Invoice"/>
+                    <field name="invoice_id" string="No Invoice"/>
+
                 </xpath>
                 <xpath expr="//field[@name='create_date']" position="after">
                     <field name="is_po_doc" invisible="1"/>

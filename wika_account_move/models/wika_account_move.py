@@ -472,6 +472,8 @@ class WikaInheritedAccountMove(models.Model):
                                 'partner_id': self.partner_id.id,
                                 'purchase_id': self.bap_id.po_id.id,
                                 'invoice_id': self.id,
+
+                                'invoice_id': self.id,
                             })
                 if self.activity_ids:
                     for x in self.activity_ids.filtered(lambda x: x.status != 'approved'):
