@@ -72,16 +72,13 @@
                         <div>
                             <div class="oe_title">
                                 <h1>
-                                    <field name="name"/>
-                                </h1>
+                                    <field name="name"/>                              
+                                </h1>                            
                             </div>
                         </div>
-
                         <group>
                             <group>
-<!--
-                                <field name="partner_id" attrs="{'readonly': [('state', 'in', [ 'request', 'approve'])]}"/>
--->
+
                                 <field name="date" attrs="{'readonly': [('state', 'in', [ 'request', 'approve'])]}"/>
                                 <field name="assignment" attrs="{'readonly': [('state', 'in', [ 'request', 'approve'])]}"/>
                                 <field name="reference" attrs="{'readonly': [('state', 'in', [ 'request', 'approve'])]}"/>

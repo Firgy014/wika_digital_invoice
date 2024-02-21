@@ -77,18 +77,17 @@ class WikaInheritedAccountMove(models.Model):
             raise ValidationError("Document Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
         else:
             pass
-
+    
     @api.onchange('date')
     def _onchange_posting_date(self):
+        if not self.date or not self.bap_id or not self.bap_id.bap_date:
+            return
         if isinstance(self, bool):
             return self
         if len(self) != 1:
             raise ValidationError("Hanya satu record yang diharapkan diperbarui!")
-
-        if self.date != False and self.date < self.bap_id.bap_date:
+        if self.date < self.bap_id.bap_date:
             raise ValidationError("Posting Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
-        else:
-            pass
 
     # invoice_line_ids = fields.One2many(  # /!\ invoice_line_ids is just a subset of line_ids.
     #     'account.move.line',
