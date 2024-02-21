@@ -52,7 +52,7 @@
                             <field name="project_id" attrs="{'readonly': [('state', 'in', ['upload', 'approved'])]}"/>
                            <field name="step_approve" invisible="1"/>
                            <field name="invoice_date"/>
-                           <field name="date"/>
+                           <field name="date" string="Posting Date"/>
                           <field name="invoice_payment_term_id"/>
                           <field name="invoice_date_due"/>
                           <field name="baseline_date"/>
