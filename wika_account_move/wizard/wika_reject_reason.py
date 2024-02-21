@@ -49,7 +49,7 @@ class RejectWizard(models.TransientModel):
                 'invoice_id': active_id,
             })
             invoice_id_model.write({
-                'step_approve': invoice_id_model.step_approve  -1,
+                'step_approve': 1,
                 'state':'rejected'})
 
             return {'type': 'ir.actions.act_window_close'}
