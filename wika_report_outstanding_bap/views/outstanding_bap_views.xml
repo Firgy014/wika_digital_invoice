@@ -11,22 +11,28 @@
                 <tree string="">
                     <field name="branch_id"/>
                     <field name="purchase_id"/>
-                    <field name="sequence_po"/>
+                    <!--<field name="sequence_po"/>-->
                     <field name="product_po_id"/>
-                    <field name="qty_po"/>
+                 <!--   <field name="qty_po"/>
                     <field name="sub_total_po"/>
-                    <field name="picking_id"/>  
-                    <field name="sequence_gr"/>
-                    <field name="product_gr_id"/>
-                    <field name="qty_gr"/>
-                    <field name="sub_total_gr"/>
+                    <field name="picking_id"/>  -->
+                   <!-- <field name="sequence_gr"/>
+                    <field name="product_gr_id"/>-->
+                  <!--  <field name="qty_gr"/>
+                    <field name="sub_total_gr"/>-->
                     <field name="date_bap"/>
                     <field name="bap_id"/>
+<!--
                     <field name="product_bap_id"/>
+-->
+<!--
                     <field name="unit_price_bap" invisible="1"/>
+-->
                     <field name="qty_bap"/>
                     <field name="sub_total_bap"/>
+<!--
                     <field name="price_subtotal_invoice"/>
+-->
                     <field name="potongan_uang_muka_dp"/>
                     <field name="potongan_retensi"/>
                     <field name="potongan_uang_muka_qty_dp"/>
