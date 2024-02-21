@@ -36,6 +36,7 @@ class WikaInheritedAccountMove(models.Model):
 
     price_cut_ids = fields.One2many('wika.account.move.pricecut.line', 'move_id', string='Other Price Cut')
     account_id = fields.Many2one(comodel_name='account.account')
+    date = fields.Date(string='Posting Date', default=lambda self: fields.Date.today())
     
     @api.depends('department_id')
     def _cek_biro(self):
@@ -52,9 +53,24 @@ class WikaInheritedAccountMove(models.Model):
     @api.onchange('baseline_date')
     def _onchange_baseline_date(self):
         if self.baseline_date != False and self.baseline_date < self.date:
-            raise ValidationError("Baseline Date harus lebih dan/atau sama dengan Posting Date!")
+            raise ValidationError("Baseline Date harus lebih atau sama dengan Posting Date!")
         else:
             pass
+
+    @api.onchange('invoice_date')
+    def _onchange_invoice_date(self):
+        if self.invoice_date != False and self.invoice_date < self.bap_id.bap_date:
+            raise ValidationError("Document Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
+        else:
+            pass
+
+    @api.onchange('date')
+    def _onchange_posting_date(self):
+        if self.date != False and self.date < self.bap_id.bap_date:
+            raise ValidationError("Posting Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
+        else:
+            pass
+        
 
     # invoice_line_ids = fields.One2many(  # /!\ invoice_line_ids is just a subset of line_ids.
     #     'account.move.line',
@@ -170,15 +186,12 @@ class WikaInheritedAccountMove(models.Model):
         else:
             return {'domain': {'bap_id': []}}
 
-
     @api.depends('line_ids.price_unit', 'line_ids.quantity', 'line_ids.discount', 'line_ids.tax_ids')
     def _compute_amount_total(self):
         for move in self:
             amount_total_footer = 0.0
             for line in move.line_ids:
-                
                 price_subtotal = line.price_unit * line.quantity
-                
                 price_subtotal -= line.discount
                 for tax in line.tax_ids:
                     price_subtotal += price_subtotal * tax.amount / 100
@@ -186,6 +199,7 @@ class WikaInheritedAccountMove(models.Model):
                 amount_total_footer += price_subtotal
 
             move.amount_total_footer = amount_total_footer
+
     @api.onchange('partner_id','valuation_class')
     def onchange_account_payable(self):
         for record in self:
@@ -225,8 +239,21 @@ class WikaInheritedAccountMove(models.Model):
         record._check_invoice_totals()
         record.assign_todo_first()
 
+        # baseline date
         if record.baseline_date != False and record.baseline_date < record.date:
-            raise ValidationError("Baseline Date harus lebih dan/atau sama dengan Posting Date!")
+            raise ValidationError("Baseline Date harus lebih atau sama dengan Posting Date!")
+        else:
+            pass
+        
+        # document date
+        if record.invoice_date != False and record.invoice_date < record.bap_id.bap_date:
+            raise ValidationError("Document Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
+        else:
+            pass
+
+        # posting date
+        if record.date != False and record.date < record.bap_id.bap_date:
+            raise ValidationError("Posting Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
         else:
             pass
 
@@ -236,8 +263,21 @@ class WikaInheritedAccountMove(models.Model):
         record = super(WikaInheritedAccountMove, self).write(values)
         self._check_invoice_totals()
 
+        # baseline date
         if record.baseline_date != False and record.baseline_date < record.date:
-            raise ValidationError("Baseline Date harus lebih dan/atau sama dengan Posting Date!")
+            raise ValidationError("Baseline Date harus lebih atau sama dengan Posting Date!")
+        else:
+            pass
+        
+        # document date
+        if record.invoice_date != False and record.invoice_date < record.bap_id.bap_date:
+            raise ValidationError("Document Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
+        else:
+            pass
+
+        # posting date
+        if record.date != False and record.date < record.bap_id.bap_date:
+            raise ValidationError("Posting Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
         else:
             pass
 
