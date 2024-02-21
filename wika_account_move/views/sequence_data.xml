@@ -3,7 +3,7 @@
         <!-- Sequence -->
  
         <record id="seq_wika_acc_move" model="ir.sequence">
-            <field name="name">Pembuatan Invoice</field>
+            <field name="name">Invoice</field>
             <field name="code">account.move</field>
             <field name="prefix">INV/2023/</field>
             <field name="padding">4</field>
