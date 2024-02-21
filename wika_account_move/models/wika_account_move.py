@@ -35,8 +35,7 @@ class WikaInheritedAccountMove(models.Model):
     total_pph = fields.Monetary(string='Total PPH', readonly=False)
 
     price_cut_ids = fields.One2many('wika.account.move.pricecut.line', 'move_id', string='Other Price Cut')
-    account_id = fields.Many2one(comodel_name='account.account')
-    
+    account_id=fields.Many2one(comodel_name='account.account')
     @api.depends('department_id')
     def _cek_biro(self):
         for x in self:
@@ -48,13 +47,6 @@ class WikaInheritedAccountMove(models.Model):
                     x.check_biro = False
             else:
                 x.check_biro = False
-
-    @api.onchange('baseline_date')
-    def _onchange_baseline_date(self):
-        if self.baseline_date != False and self.baseline_date < self.date:
-            raise ValidationError("Baseline Date harus lebih dan/atau sama dengan Posting Date!")
-        else:
-            pass
 
     # invoice_line_ids = fields.One2many(  # /!\ invoice_line_ids is just a subset of line_ids.
     #     'account.move.line',

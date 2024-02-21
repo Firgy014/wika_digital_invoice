@@ -242,7 +242,7 @@
                         <div class="clearfix"/>
                     </page>
                     <page string="Potongan Lain-lain">
-                        <field name="price_cut_ids" attrs="{'readonly': [('state', 'in', ('uploaded', 'approved'))]}">
+                        <field name="price_cut_ids" readonly="1">
                             <tree editable="top">
                                 <field name="purchase_id" invisible="1"/>
                                 <field name="product_id"/>

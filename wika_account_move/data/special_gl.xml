@@ -1,0 +1,44 @@
+<odoo>
+    <data>
+        <record id="special_gl_1" model="wika.special.gl">
+            <field name="code">1</field>
+            <field name="name">UM MATERIAL PIHAK BERELASI</field>
+            <field name="valuation_class">material</field>
+            <field name="bill_coa_type">relate</field>
+        </record>
+        <record id="special_gl_2" model="wika.special.gl">
+            <field name="code">2</field>
+            <field name="name">UM MATERIAL PIHAK KETIGA</field>
+            <field name="valuation_class">material</field>
+            <field name="bill_coa_type">3rd_party</field>
+        </record>
+        <record id="special_gl_3" model="wika.special.gl">
+            <field name="code">3</field>
+            <field name="name">UM SUBKON PIHAK BERELASI</field>
+            <field name="valuation_class">subkont</field>
+            <field name="bill_coa_type">relate</field>
+        </record>
+        <record id="special_gl_4" model="wika.special.gl">
+            <field name="code">4</field>
+            <field name="name">UM SUBKON PIHAK KETIGA</field>
+            <field name="valuation_class">subkont</field>
+            <field name="bill_coa_type">3rd_party</field>
+        </record>
+         <record id="special_gl_5" model="wika.special.gl">
+            <field name="code">5</field>
+            <field name="name">UM MANDOR</field>
+        </record>
+         <record id="special_gl_6" model="wika.special.gl">
+            <field name="code">6</field>
+            <field name="name">UM PENYERTAAN</field>
+        </record>
+        <record id="special_gl_7" model="wika.special.gl">
+            <field name="code">7</field>
+            <field name="name">UM LAIN-LAIN</field>
+        </record>
+         <record id="special_gl_8" model="wika.special.gl">
+            <field name="code">R</field>
+            <field name="name">Retensi</field>
+        </record>
+    </data>
+</odoo>

@@ -10,6 +10,10 @@ class WikaSpecialGl(models.Model):
         ('material', 'Material'),
         ('alat', 'Alat'),
         ('upah', 'Upah'),
-        ('subkont', 'Subkont'),
+        ('subkont', 'Subkon'),
         ('btl', 'BTL')
     ], string='Valuation Class')
+    bill_coa_type = fields.Selection([
+        ('relate', 'Berelasi'),
+        ('3rd_party', 'Pihak Ketiga')
+    ], string='Bill Chart of Accounts Type')
