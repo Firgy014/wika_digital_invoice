@@ -145,7 +145,7 @@
                                 <field name="project_id" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
                                 <field name="end_date" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
                                 <field name="bap_date" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
-                                <field name="pph_ids" widget="many2many_tags"/>
+                                <field name="pph_ids" domain="[('tax_group_id', '!=', 'PPN')]" widget="many2many_tags"/>
 
                                 <field name="last_value" groups="base.group_no_one"/>
                                 <field name="last_quantity" groups="base.group_no_one"/>
