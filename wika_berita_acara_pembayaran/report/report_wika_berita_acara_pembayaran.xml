@@ -382,7 +382,7 @@
                         </p>
                     </div>
                     <div style="display: flex; justify-content: space-between; font-size: 14px; margin-top: -10px;">
-                        <table clas="table table-borderless" style="width: 100%; font-size: 14px; margin-top: 10px;">
+                        <table class="table table-borderless" style="width: 100%; font-size: 14px; margin-top: 10px;">
                             <tr>
                                 <td style="width: 50%; vertical-align: top;">
                                     <div style="margin-bottom: 5px;">
