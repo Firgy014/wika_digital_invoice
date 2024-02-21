@@ -39,7 +39,6 @@
                            <field name="po_id" />
                            <field name="no_invoice_vendor" />
                            <field name="valuation_class" groups="base.group_no_one"/>
-                           <field name="invoice_number" />
                            <field name="amount_invoice" />
                            <field name="no_faktur_pajak" />
                       </group>
@@ -135,9 +134,11 @@
                             <group id="other_tab_group">
                                  <field name="payment_reference"/>
                                 <field name="pr_id" invisible="1"/>
+                                  <field name="invoice_number" readonly="1" attrs="{'invisible': [('state', '!=', 'approved')]}"/>
                                 <field name="partner_bank_id" string="Bank Account"/>
                                 <field name="account_id"/>
                                 <field name="retention_due"/>
+                                 <field name="amount_total_footer" invisible="1"/>
                             </group>
                           </page>
                         <page string="List Document">
@@ -171,6 +172,7 @@
                             <tree editable="top">
                                 <field name="move_id" invisible="1"/>
                                 <field name="product_id"/>
+                                 <field name="special_gl_id"/>
                                 <field name="account_id"/>
                                 <field name="percentage_amount"/>
                                 <field name="amount"/>

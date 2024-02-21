@@ -555,6 +555,11 @@ class WikaBeritaAcaraPembayaran(models.Model):
         for record in self:
             if any(not line.document for line in record.document_ids):
                 raise ValidationError('Document belum di unggah, mohon unggah file terlebih dahulu!')
+
+        for record in self:
+            if any(line.state =='rejected' for line in record.document_ids):
+                raise ValidationError('Document belum di ubah setelah reject, silahkan cek terlebih dahulu!')
+
         cek = False
         level=self.level
         if level:

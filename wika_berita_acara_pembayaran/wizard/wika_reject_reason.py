@@ -49,7 +49,7 @@ class RejectWizard(models.TransientModel):
                 'bap_id': active_id,
             })
             bap_id_model.write({
-                'step_approve': bap_id_model.step_approve  -1,
+                'step_approve': 1,
                 'state':'rejected'})
 
             return {'type': 'ir.actions.act_window_close'}

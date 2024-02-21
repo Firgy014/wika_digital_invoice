@@ -35,6 +35,7 @@
         'views/action.xml',
         'views/filter.xml',
         'views/wika_special_gl.xml',
+        'data/special_gl.xml',
         # 'views/wika_account_move_line',
         'wizard/wika_reject_reason.xml',
         'views/menu.xml',
