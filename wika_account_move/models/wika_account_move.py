@@ -120,6 +120,14 @@ class WikaInheritedAccountMove(models.Model):
     documents_count = fields.Integer(string='Total Doc', compute='_compute_documents_count')
     no_faktur_pajak=fields.Char(string='Tax Number')
 
+    @api.onchange('baseline_date')
+    def _onchange_baseline_date(self):
+        if self.baseline_date != False and self.baseline_date < self.date:
+            raise ValidationError("Baseline Date harus lebih dan/atau sama dengan Posting Date!")
+        else:
+            pass
+
+
     def _compute_documents_count(self):
         for record in self:
             record.documents_count = self.env['documents.document'].search_count(
@@ -224,7 +232,6 @@ class WikaInheritedAccountMove(models.Model):
         record = super(WikaInheritedAccountMove, self).create(vals_list)
         record._check_invoice_totals()
         record.assign_todo_first()
-
         if record.baseline_date != False and record.baseline_date < record.date:
             raise ValidationError("Baseline Date harus lebih dan/atau sama dengan Posting Date!")
         else:
@@ -235,12 +242,10 @@ class WikaInheritedAccountMove(models.Model):
     def write(self, values):
         record = super(WikaInheritedAccountMove, self).write(values)
         self._check_invoice_totals()
-
         if record.baseline_date != False and record.baseline_date < record.date:
             raise ValidationError("Baseline Date harus lebih dan/atau sama dengan Posting Date!")
         else:
             pass
-
         return record
 
 
