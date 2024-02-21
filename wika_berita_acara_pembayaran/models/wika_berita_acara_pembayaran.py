@@ -110,6 +110,19 @@ class WikaBeritaAcaraPembayaran(models.Model):
     retensi_sd_saatini = fields.Float('Retensi s/d saat ini' , compute='_compute_retensi_sd_saatini', store=True)
     total_pembayaran = fields.Float('Pembayaran', compute='compute_total_pembayaran')
     terbilang = fields.Char('Terbilang', compute='_compute_rupiah_terbilang')
+    is_fully_invoiced = fields.Boolean(string='Fully Invoiced', default=False, compute='_compute_fully_invoiced',
+                                       store=True)
+
+    @api.depends('bap_ids')
+    def _compute_fully_invoiced(self):
+        tots = 0.0
+        for bap_line in self.bap_ids:
+            tots += bap_line.qty
+
+        if tots == 0.0:
+            self.is_fully_invoiced = True
+        else:
+            self.is_fully_invoiced = False
 
     @api.depends('project_id', 'branch_id', 'department_id')
     def _compute_level(self):
@@ -122,6 +135,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
             elif res.branch_id and res.department_id and not res.project_id:
                 level = 'Divisi Fungsi'
             res.level = level
+
     # qty s/d saat ini
     @api.depends('bap_ids.qty')
     def _compute_qty_sd_saatini(self):
@@ -386,6 +400,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
                 'purchase_line_id':picking.purchase_line_id.id or False,
                 'unit_price_po':picking.purchase_line_id.price_unit,
                 # 'account_move_line_id':aml_src.id or False,
+                 'sisa_qty_bap_grses':picking.sisa_qty_bap,
                 'product_uom':picking.product_uom,
                 'product_id': picking.product_id.id,
                 'qty': picking.sisa_qty_bap,
@@ -793,6 +808,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
                 raise ValidationError('Tidak dapat menghapus ketika status Berita Acara Pembayaran (BAP) dalam keadaan Upload atau Approve')
             if record.state=='draft' and record.activity_ids:
                 record.activity_ids.unlink()
+                record.bap_ids.unlink()
         return super(WikaBeritaAcaraPembayaran, self).unlink()
 
     def action_print_bap(self):
@@ -823,24 +839,29 @@ class WikaBeritaAcaraPembayaranLine(models.Model):
 
     purchase_line_id= fields.Many2one('purchase.order.line', string='Purchase Line')
     unit_price_po = fields.Monetary(string='Price Unit PO')
-    # account_move_line_id = fields.Many2one('account.move.line', string='Move Line')
     product_id = fields.Many2one('product.product', string='Product')
     qty = fields.Float(string='Quantity')
     product_uom = fields.Many2one('uom.uom', string='Unit of Measure')
     tax_ids = fields.Many2many('account.tax', string='Tax')
     currency_id = fields.Many2one('res.currency', string='Currency')
     unit_price = fields.Monetary(string='Unit Price')
-    sub_total = fields.Monetary(string='Subtotal' , compute= 'compute_sub_total')
+    sub_total = fields.Monetary(string='Subtotal', compute='compute_sub_total')
     tax_amount = fields.Monetary(string='Tax Amount', compute='compute_tax_amount')
     current_value = fields.Monetary(string='Current Value', compute='_compute_current_value')
-    sisa_qty_bap_grses = fields.Float(string='Sisa BAP', related='picking_id.move_ids_without_package.sisa_qty_bap')
+    sisa_qty_bap_grses = fields.Float(string='Sisa BAP')
+
+    @api.constrains('qty')
+    def _check_qty_limit(self):
+        for line in self:
+            if line.qty > line.sisa_qty_bap_grses:
+                raise ValidationError('Quantity tidak boleh melebihi sisa quantity pada GR/SES!')
 
     @api.onchange('qty')
     def _onchange_product_qty(self):
         for line in self:
             if line.qty > line.sisa_qty_bap_grses:
-                line.qty=0.0
                 raise ValidationError('Quantity tidak boleh melebihi sisa quantity pada GR/SES!')
+
 
     @api.depends('tax_ids', 'sub_total')
     def compute_sub_total(self):
@@ -870,7 +891,7 @@ class WikaBeritaAcaraPembayaranLine(models.Model):
         for record in self:
             record.current_value = record.qty * record.unit_price_po
 
-class WikaBabDocumentLine(models.Model):
+class WikaBapDocumentLine(models.Model):
     _name = 'wika.bap.document.line'
 
     bap_id = fields.Many2one('wika.berita.acara.pembayaran', string='')
@@ -896,7 +917,7 @@ class WikaBabDocumentLine(models.Model):
             if record.filename and not record.filename.lower().endswith('.pdf'):
                 raise ValidationError('Tidak dapat mengunggah file selain berformat PDF!')
 
-class WikaBabApprovalLine(models.Model):
+class WikaBapApprovalLine(models.Model):
     _name = 'wika.bap.approval.line'
 
     bap_id = fields.Many2one('wika.berita.acara.pembayaran', string='')

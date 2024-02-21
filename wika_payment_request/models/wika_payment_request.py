@@ -41,7 +41,7 @@ class WikaPaymentRequest(models.Model):
         ('" "', 'Free For Payment (Sudah Approve)'),
         ('K', 'Dokumen Kembali'),
     ], string='Payment Block')
-    # partner_id = fields.Many2one('res.partner', string='Vendor')
+    partner_id = fields.Many2one('res.partner', string='Vendor')
     payment_method = fields.Selection([
         ('transfer tunai', 'Transfer Tunai (TT)'),
         ('fasilitas', 'Fasilitas'),
@@ -53,34 +53,6 @@ class WikaPaymentRequest(models.Model):
         ('Divisi Fungsi', 'Divisi Fungsi'),
         ('Pusat', 'Pusat')
     ], string='Level',compute='_compute_level')
-    documents_count = fields.Integer(string='Total Doc', compute='_compute_documents_count')
-
-    def _compute_documents_count(self):
-        for record in self:
-            record.documents_count = self.env['documents.document'].search_count(
-                [('invoice_id', '=', record.invoice_id.id)])
-            # print("TESTTTTTTT" , record.documents_count)
-            # record.documents_count = self.env['documents.document'].search(
-            #     [('invoice_id', '=', record.invoice_id.id)])
-            # print("TESTTTTTTT" , record.documents_count)
-
-
-    def get_documents(self):
-        self.ensure_one()
-        view_kanban_id = self.env.ref("documents.document_view_kanban", raise_if_not_found=False)
-
-        view_tree_id = self.env.ref("documents.documents_view_list", raise_if_not_found=False)
-
-        return {
-            'name': _('Documents'),
-            'type': 'ir.actions.act_window',
-            'view_mode': 'kanban,tree',
-            'res_model': 'documents.document',
-            'view_ids': [(view_kanban_id, 'kanban'),(view_tree_id.id, 'tree')],
-            'res_id': self.id,
-            'domain': [('invoice_id', '=', self.invoice_id.id),('folder_id','in',('Invoicing'))],
-            'context': {'default_invoice_id': self.invoice_id.id},
-        }    
 
     @api.depends('project_id', 'branch_id', 'department_id')
     def _compute_level(self):
@@ -105,13 +77,13 @@ class WikaPaymentRequest(models.Model):
                     x.check_biro = False
             else:
                 x.check_biro = False
-                
+
     # onchange otomatis incoive
-    # @api.onchange('partner_id')
-    # def onchange_partner_id(self):
-    #     if self.partner_id:
-    #         invoices = self.env['account.move'].search([('partner_id', '=', self.partner_id.id)])
-    #         self.invoice_ids = [(6, 0, invoices.ids)]  
+    @api.onchange('partner_id')
+    def onchange_partner_id(self):
+        if self.partner_id:
+            invoices = self.env['account.move'].search([('partner_id', '=', self.partner_id.id)])
+            self.invoice_ids = [(6, 0, invoices.ids)]
 
     @api.model
     def create(self, vals):
@@ -174,7 +146,6 @@ class WikaPaymentRequest(models.Model):
                         'user_id': x.id,
                         'summary': """ Need Approval Document PO """
                     })
-            
             for record in self:
                 if any(not line.document for line in record.document_ids):
                     raise ValidationError('Document belum di unggah, mohon unggah file terlebih dahulu!')

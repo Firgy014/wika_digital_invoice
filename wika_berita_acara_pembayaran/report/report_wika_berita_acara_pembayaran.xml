@@ -387,12 +387,16 @@
                                 <td style="width: 50%; vertical-align: top;">
                                     <div style="margin-bottom: 5px;">
                                         <p style="text-align: left; margin-top: 0px; margin-bottom: 0px;"><strong>PIHAK KEDUA</strong></p>
-                                        <p style="margin-top: 0px; margin-bottom: 0px;"><t t-esc="o.vendor_signatory_name"/></p>
+                                        <p style="margin-top: 0px; margin-bottom: 0px;"><t t-esc="o.partner_id.name"/></p>
                                         <p style="margin-top: 0px; margin-bottom: 0px; color: transparent;">spasi invisible</p>
                                         <br/>
                                         <br/>
                                         <br/>
+<<<<<<< HEAD
                                         <p style="margin-top: 0px; margin-bottom: 0px;"><t t-esc="o.partner_id.name"/></p>
+=======
+                                        <p style="margin-top: 0px; margin-bottom: 0px;"><t t-esc="o.vendor_signatory_name"/></p>
+>>>>>>> 7f85c8c5963dd985cd14e4e01864492b3762ec76
                                         <p style="text-align: left; margin-top: 0px; margin-bottom: 0px;"><t t-esc="o.vendor_position"/></p>
                                     </div>
                                 </td>
