@@ -85,7 +85,7 @@ class WikaOutstandingBap(models.Model):
             stock_move sm ON sp.id = sm.picking_id
         LEFT JOIN 
             account_move_line aml ON bal.id = aml.bap_line_id
-        WHERE bap.state = 'draft'
+        WHERE bap.state = 'approve'
         """
 
     def init(self):

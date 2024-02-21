@@ -61,7 +61,7 @@
                             </tr>
                         </table>
                     </div>
-                    <div class="d-flex justify-content-center" style="margin-top: -8px; width: auto;">
+                    <div class="d-flex justify-content-center" style="margin-top: -8px; width: 100%;">
                         <table class="table table-borderless" style="width:100%;">
                             <tbody>
                                 <tr style="text-align: left;">
@@ -382,7 +382,7 @@
                         </p>
                     </div>
                     <div style="display: flex; justify-content: space-between; font-size: 14px; margin-top: -10px;">
-                        <table style="width: 100%; font-size: 14px; margin-top: 10px;">
+                        <table clas="table table-borderless" style="width: 100%; font-size: 14px; margin-top: 10px;">
                             <tr>
                                 <td style="width: 50%; vertical-align: top;">
                                     <div style="margin-bottom: 5px;">
@@ -392,11 +392,7 @@
                                         <br/>
                                         <br/>
                                         <br/>
-<<<<<<< HEAD
-                                        <p style="margin-top: 0px; margin-bottom: 0px;"><t t-esc="o.partner_id.name"/></p>
-=======
                                         <p style="margin-top: 0px; margin-bottom: 0px;"><t t-esc="o.vendor_signatory_name"/></p>
->>>>>>> 7f85c8c5963dd985cd14e4e01864492b3762ec76
                                         <p style="text-align: left; margin-top: 0px; margin-bottom: 0px;"><t t-esc="o.vendor_position"/></p>
                                     </div>
                                 </td>

@@ -167,14 +167,11 @@ class WikaInheritedAccountMove(models.Model):
     def _compute_amount_total(self):
         for move in self:
             amount_total_footer = 0.0
-            for line in move.line_ids:
-                
+            for line in move.line_ids:            
                 price_subtotal = line.price_unit * line.quantity
-                
                 price_subtotal -= line.discount
                 for tax in line.tax_ids:
                     price_subtotal += price_subtotal * tax.amount / 100
-
                 amount_total_footer += price_subtotal
 
             move.amount_total_footer = amount_total_footer
@@ -235,6 +232,7 @@ class WikaInheritedAccountMove(models.Model):
 
     def _check_invoice_totals(self):
         if self.amount_invoice and self.amount_invoice != self.amount_total_footer:
+            # print("TESTTTTT AMOUNT TOTAL FOOTER", self.amount_total_footer)
             raise ValidationError("Amount Invoice harus sama dengan Amount Total!")
 
     def _check_partner_payable_accounts(self):
