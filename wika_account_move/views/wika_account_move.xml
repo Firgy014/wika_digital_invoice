@@ -51,7 +51,7 @@
                                 attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])], 'invisible': [('check_biro', '=', False)]}"/>
                             <field name="project_id" attrs="{'readonly': [('state', 'in', ['upload', 'approved'])]}"/>
                            <field name="step_approve" invisible="1"/>
-                           <field name="invoice_date"/>
+                           <field name="invoice_date" string="Document Date"/>
                            <field name="date" string="Posting Date"/>
                           <field name="invoice_payment_term_id"/>
                           <field name="invoice_date_due"/>
@@ -160,6 +160,11 @@
                     <page string="Potongan Lain-lain dan PPH">
                         <group string="PPH">
                             <field name="pph_ids" domain="[('tax_group_id', '!=', 'PPN')]" nolable="1"/>
+                        </group>
+                        <group string="Total PPH">
+                            <div>
+                                <field name="total_pph"/> 
+                            </div>
                         </group>
                         <group string="Potongan Lain Lain">
                          <field name="price_cut_ids" nolable="1" attrs="{'readonly': [('state', 'in', ('uploaded', 'approved'))]}">

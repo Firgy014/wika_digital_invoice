@@ -32,10 +32,15 @@ class WikaInheritedAccountMove(models.Model):
     check_biro = fields.Boolean(compute="_cek_biro")
 
     pph_ids = fields.Many2many('account.tax', string='PPH')
-    total_pph = fields.Monetary(string='Total PPH', readonly=False)
+    total_pph = fields.Monetary(string='Total PPH', readonly=False, compute='')
 
     price_cut_ids = fields.One2many('wika.account.move.pricecut.line', 'move_id', string='Other Price Cut')
     account_id = fields.Many2one(comodel_name='account.account')
+    date = fields.Date(string='Posting Date', default=lambda self: fields.Date.today())
+
+    @api.onchange('pph_ids')
+    def _onchange_pph_ids(self):
+        pass
     
     @api.depends('department_id')
     def _cek_biro(self):
@@ -51,10 +56,38 @@ class WikaInheritedAccountMove(models.Model):
 
     @api.onchange('baseline_date')
     def _onchange_baseline_date(self):
+        if isinstance(self, bool):
+            return self
+        if len(self) != 1:
+            raise ValidationError("Hanya satu record yang diharapkan diperbarui!")
+        
         if self.baseline_date != False and self.baseline_date < self.date:
-            raise ValidationError("Baseline Date harus lebih dan/atau sama dengan Posting Date!")
+            raise ValidationError("Baseline Date harus lebih atau sama dengan Posting Date!")
         else:
             pass
+
+    @api.onchange('invoice_date')
+    def _onchange_invoice_date(self):
+        if isinstance(self, bool):
+            return self
+        if len(self) != 1:
+            raise ValidationError("Hanya satu record yang diharapkan diperbarui!")
+
+        if self.invoice_date != False and self.invoice_date < self.bap_id.bap_date:
+            raise ValidationError("Document Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
+        else:
+            pass
+    
+    @api.onchange('date')
+    def _onchange_posting_date(self):
+        if not self.date or not self.bap_id or not self.bap_id.bap_date:
+            return
+        if isinstance(self, bool):
+            return self
+        if len(self) != 1:
+            raise ValidationError("Hanya satu record yang diharapkan diperbarui!")
+        if self.date < self.bap_id.bap_date:
+            raise ValidationError("Posting Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
 
     # invoice_line_ids = fields.One2many(  # /!\ invoice_line_ids is just a subset of line_ids.
     #     'account.move.line',
@@ -178,19 +211,20 @@ class WikaInheritedAccountMove(models.Model):
         else:
             return {'domain': {'bap_id': []}}
 
-
     @api.depends('line_ids.price_unit', 'line_ids.quantity', 'line_ids.discount', 'line_ids.tax_ids')
     def _compute_amount_total(self):
         for move in self:
             amount_total_footer = 0.0
-            for line in move.line_ids:            
+            for line in move.line_ids:
                 price_subtotal = line.price_unit * line.quantity
                 price_subtotal -= line.discount
                 for tax in line.tax_ids:
                     price_subtotal += price_subtotal * tax.amount / 100
+
                 amount_total_footer += price_subtotal
 
             move.amount_total_footer = amount_total_footer
+
     @api.onchange('partner_id','valuation_class')
     def onchange_account_payable(self):
         for record in self:
@@ -229,8 +263,27 @@ class WikaInheritedAccountMove(models.Model):
         record = super(WikaInheritedAccountMove, self).create(vals_list)
         record._check_invoice_totals()
         record.assign_todo_first()
+
+        if isinstance(record, bool):
+            return record
+        if len(record) != 1:
+            raise ValidationError("Hanya satu record yang diharapkan diperbarui!")
+
+        # baseline date
         if record.baseline_date != False and record.baseline_date < record.date:
-            raise ValidationError("Baseline Date harus lebih dan/atau sama dengan Posting Date!")
+            raise ValidationError("Baseline Date harus lebih atau sama dengan Posting Date!")
+        else:
+            pass
+        
+        # document date
+        if record.invoice_date != False and record.invoice_date < record.bap_id.bap_date:
+            raise ValidationError("Document Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
+        else:
+            pass
+
+        # posting date
+        if record.date != False and record.date < record.bap_id.bap_date:
+            raise ValidationError("Posting Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
         else:
             pass
 
@@ -239,8 +292,27 @@ class WikaInheritedAccountMove(models.Model):
     def write(self, values):
         record = super(WikaInheritedAccountMove, self).write(values)
         self._check_invoice_totals()
+
+        if isinstance(record, bool):
+            return record
+        if len(record) != 1:
+            raise ValidationError("Hanya satu record yang diharapkan diperbarui!")
+
+        # baseline date
         if record.baseline_date != False and record.baseline_date < record.date:
-            raise ValidationError("Baseline Date harus lebih dan/atau sama dengan Posting Date!")
+            raise ValidationError("Baseline Date harus lebih atau sama dengan Posting Date!")
+        else:
+            pass
+        
+        # document date
+        if record.invoice_date != False and record.invoice_date < record.bap_id.bap_date:
+            raise ValidationError("Document Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
+        else:
+            pass
+
+        # posting date
+        if record.date != False and record.date < record.bap_id.bap_date:
+            raise ValidationError("Posting Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
         else:
             pass
         return record
@@ -257,7 +329,6 @@ class WikaInheritedAccountMove(models.Model):
 
     def _check_invoice_totals(self):
         if self.amount_invoice and self.amount_invoice != self.amount_total_footer:
-            # print("TESTTTTT AMOUNT TOTAL FOOTER", self.amount_total_footer)
             raise ValidationError("Amount Invoice harus sama dengan Amount Total!")
 
     def _check_partner_payable_accounts(self):
@@ -496,7 +567,6 @@ class WikaInheritedAccountMove(models.Model):
                                 'purchase_id': self.bap_id.po_id.id,
                                 'invoice_id': self.id,
 
-                                'invoice_id': self.id,
                             })
                 if self.activity_ids:
                     for x in self.activity_ids.filtered(lambda x: x.status != 'approved'):
