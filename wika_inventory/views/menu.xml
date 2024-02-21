@@ -4,7 +4,7 @@
 
         <!-- New Stock Picking Menu -->
         <menuitem id="menu_picking_wika_stock" parent="menu_gr_ses" name="GR/SES" action="action_wika_stock_picking" sequence="3"/>
-        <menuitem id="menu_stock_move_tree_wika" name="Items" parent="menu_gr_ses" action="action_stock_move_tree_wika" sequence="7"/>
+        <menuitem id="menu_stock_move_tree_wika" name="Items" parent="menu_gr_ses" action="action_stock_move_tree_wika" sequence="7" groups="base.group_no_one"/>
 
     </data>
 </odoo>

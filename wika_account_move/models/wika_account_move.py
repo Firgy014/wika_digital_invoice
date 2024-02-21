@@ -15,7 +15,7 @@ class WikaInheritedAccountMove(models.Model):
     step_approve = fields.Integer(string='Step Approve',default=1)
     no_doc_sap = fields.Char(string='No Doc SAP')
     no_invoice_vendor = fields.Char(string='Nomor Invoice Vendor',required=True)
-    invoice_number = fields.Char(string='Invoice Number',required=True)
+    invoice_number = fields.Char(string='Invoice Number')
     baseline_date = fields.Date(string='Baseline Date')
     retention_due = fields.Date(string='Retention Due')
     po_id = fields.Many2one('purchase.order', store=True, readonly=False,

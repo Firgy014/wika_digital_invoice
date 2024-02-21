@@ -1,7 +1,4 @@
 <odoo>
-    <record id="documents_facet_account_move" model="documents.facet">
-        <field name="name">Documents</field>
-    </record>
 
 
     <record id="documents_tag_invoice" model="documents.tag">
