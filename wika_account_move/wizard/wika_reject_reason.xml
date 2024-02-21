@@ -6,6 +6,7 @@
             <field name="arch" type="xml">
                 <form>
                     <group>
+                        <field name="document_id" domain="[('name','in',['Invoice','Faktur Pajak'])]"/>
                         <field name="reject_reason"/>
                     </group>
                     <footer>

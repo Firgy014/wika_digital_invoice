@@ -6,6 +6,7 @@ class RejectWizard(models.TransientModel):
     _description = 'Reject Wizard'
 
     reject_reason = fields.Text(string='Reject Reason')
+    document_id = fields.Many2one('wika.document.setting', string='Document')
 
     def cancel(self):
         return
@@ -20,9 +21,12 @@ class RejectWizard(models.TransientModel):
             invoice_id = am_model.browse([active_id])
             invoice_id_model = am_model.search([('id', '=', active_id)], limit=1)
             for x in invoice_id.document_ids:
-                x.write({
-                    'state': 'rejected'
-                })
+                if x.document_id.name == self.document_id.name:
+                    x.write({
+                        'state': 'rejected'
+                    })
+                    rejected_docname = self.document_id.name
+
             for y in min(invoice_id_model.history_approval_ids, key=lambda x: x.id):
                 self.env['mail.activity'].sudo().create({
                     'activity_type_id': 4,
@@ -45,7 +49,7 @@ class RejectWizard(models.TransientModel):
                 'user_id': self._uid,
                 'groups_id': groups_id,
                 'date': datetime.now(),
-                'note': "Reject (" + self.reject_reason + ")",
+                'note': f"Reject ({rejected_docname}): {self.reject_reason}",
                 'invoice_id': active_id,
             })
             invoice_id_model.write({

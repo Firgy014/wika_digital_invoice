@@ -103,6 +103,7 @@ class WikaInheritedAccountMove(models.Model):
     #     domain=[('display_type', 'in', ('product', 'line_section', 'line_note'))],
     #     states={'draft': [('readonly', False)]},
     # )
+    
     state = fields.Selection(
         selection=[
             ('draft', 'Draft'),
@@ -164,7 +165,6 @@ class WikaInheritedAccountMove(models.Model):
             raise ValidationError("Baseline Date harus lebih dan/atau sama dengan Posting Date!")
         else:
             pass
-
 
     def _compute_documents_count(self):
         for record in self:
@@ -449,7 +449,7 @@ class WikaInheritedAccountMove(models.Model):
                         cek = True
 
         if cek == True:
-            first_user=False
+            first_user = False
             if self.activity_ids:
                 for x in self.activity_ids.filtered(lambda x: x.status != 'approved'):
                     print("masuk")
@@ -499,8 +499,6 @@ class WikaInheritedAccountMove(models.Model):
                         })
         else:
             raise ValidationError('User Akses Anda tidak berhak Submit!')
-
-
 
     def action_approve(self):
         user = self.env['res.users'].search([('id', '=', self._uid)], limit=1)
