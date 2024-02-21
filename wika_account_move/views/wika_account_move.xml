@@ -159,7 +159,7 @@
                     </page>
                     <page string="Potongan Lain-lain dan PPH">
                         <group string="PPH">
-                            <field name="pph_ids" nolable="1"/>
+                            <field name="pph_ids" domain="[('tax_group_id', '!=', 'PPN')]" nolable="1"/>
                         </group>
                         <group string="Potongan Lain Lain">
                          <field name="price_cut_ids" nolable="1" attrs="{'readonly': [('state', 'in', ('uploaded', 'approved'))]}">

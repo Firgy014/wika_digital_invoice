@@ -849,6 +849,14 @@ class WikaBeritaAcaraPembayaranLine(models.Model):
     tax_amount = fields.Monetary(string='Tax Amount', compute='compute_tax_amount')
     current_value = fields.Monetary(string='Current Value', compute='_compute_current_value')
     sisa_qty_bap_grses = fields.Float(string='Sisa BAP')
+    qty_invoiced = fields.Float(string='Total Invoiced', compute='_compute_invoiced_bap_qty')
+
+    @api.depends('bap_id')
+    def _compute_invoiced_bap_qty(self):
+        for record in self:
+            move_line_ids = self.env['account.move.line'].sudo().search([('bap_line_id', '=', record.id)])
+            total_invoiced_bap_qty = sum(move_line.quantity for move_line in move_line_ids)
+            record.qty_invoiced = total_invoiced_bap_qty
 
     @api.constrains('qty')
     def _check_qty_limit(self):
