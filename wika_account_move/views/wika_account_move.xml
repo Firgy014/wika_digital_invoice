@@ -159,8 +159,11 @@
                         </field>
                     </page>
                     <page string="Potongan Lain-lain dan PPH">
-                        <group string="PPH">
-                            <field name="pph_ids" domain="[('tax_group_id', '!=', 'PPN')]" nolable="1"/>
+                        <group string="List PPH">
+                            <field name="pph_ids" domain="[('tax_group_id', '!=', 'PPN')]"/>
+                                <tree>
+                                    <field name="name" string="Nama PPH"/>
+                                </tree>
                         </group>
                         <group string="Total PPH">
                             <div>
