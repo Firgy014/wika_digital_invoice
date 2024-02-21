@@ -52,7 +52,7 @@
                             <field name="project_id" attrs="{'readonly': [('state', 'in', ['upload', 'approved'])]}"/>
                            <field name="step_approve" invisible="1"/>
                            <field name="invoice_date"/>
-                           <field name="date"/>
+                           <field name="date" string="Posting Date"/>
                           <field name="invoice_payment_term_id"/>
                           <field name="invoice_date_due"/>
                           <field name="baseline_date"/>
@@ -259,9 +259,9 @@
                 </xpath>&ndash;&gt;
                 &lt;!&ndash; field &ndash;&gt;
                 <xpath expr="//field[@name='partner_id']" position="after">
-                    <field name="bap_id" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
+                    <field name="bap_id" domain="[('is_fully_invoiced', '=', False)]" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
                     <field name="po_id" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
-                     <field name="no_doc_sap"/>
+                    <field name="no_doc_sap"/>
                     <field name="no_invoice_vendor"/>
                     <field name="special_gl_id"/>
                     <field name="valuation_class" invisible="1"/>
