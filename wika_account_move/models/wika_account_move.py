@@ -32,15 +32,20 @@ class WikaInheritedAccountMove(models.Model):
     check_biro = fields.Boolean(compute="_cek_biro")
 
     pph_ids = fields.Many2many('account.tax', string='PPH')
-    total_pph = fields.Monetary(string='Total PPH', readonly=False, compute='')
+    total_pph = fields.Monetary(string='Total PPH', readonly=False, compute='_compute_total_pph')
 
     price_cut_ids = fields.One2many('wika.account.move.pricecut.line', 'move_id', string='Other Price Cut')
     account_id = fields.Many2one(comodel_name='account.account')
     date = fields.Date(string='Posting Date', default=lambda self: fields.Date.today())
 
-    @api.onchange('pph_ids')
-    def _onchange_pph_ids(self):
-        pass
+    @api.depends('tax_totals', 'pph_ids.amount')
+    def _compute_total_pph(self):
+        for record in self:
+            print(record.tax_totals)
+            total_pph = 0.0
+            for pph in record.pph_ids:
+                total_pph += (record.tax_totals['amount_untaxed'] * pph.amount) / 100
+            record.total_pph = total_pph
     
     @api.depends('department_id')
     def _cek_biro(self):
