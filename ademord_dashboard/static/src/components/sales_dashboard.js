@@ -12,69 +12,69 @@ import { routeToUrl } from "@web/core/browser/router_service"
 
 export class OwlSalesDashboard extends Component {
     // top products
-    async getTopProducts(){
-        let domain = [['state', 'in', ['sale', 'done']]]
+    async getTopProjects(){
+        let domain = [['branch_id', '!=', false], ['sap_code', '!=', false]]
         if (this.state.period > 0){
-            domain.push(['date','>', this.state.current_date])
+            domain.push(['create_date','>', this.state.current_date])
         }
 
-        const data = await this.orm.readGroup("sale.report", domain, ['product_id', 'price_total'], ['product_id'], { limit: 5, orderby: "price_total desc" })
+        const data = await this.orm.readGroup("project.project", domain, ['branch_id', 'task_count'], ['branch_id'], { limit: 5, orderby: "task_count desc" })
 
-        this.state.topProducts = {
+        this.state.topProjects = {
             data: {
-                labels: data.map(d => d.product_id[1]),
+                labels: data.map(d => d.branch_id[1]),
                   datasets: [
                   {
-                    label: 'Total',
-                    data: data.map(d => d.price_total),
+                    label: 'Tasks',
+                    data: data.map(d => d.task_count),
                     hoverOffset: 4,
                     backgroundColor: data.map((_, index) => getColor(index)),
                   },{
-                    label: 'Count',
-                    data: data.map(d => d.product_id_count),
+                    label: 'Branches',
+                    data: data.map((d, index) => index + 1), // Creatively showing branch ranking based on task count
                     hoverOffset: 4,
-                    backgroundColor: data.map((_, index) => getColor(index)),
+                    backgroundColor: data.map((_, index) => getColor(index + 5)), // Offset color index for variety
                 }]
             },
             domain,
-            label_field: 'product_id',
+            label_field: 'branch_id',
         }
     }
 
     // top sales people
-    async getTopSalesPeople(){
-        let domain = [['state', 'in', ['sale', 'done']]]
-        if (this.state.period > 0){
-            domain.push(['date','>', this.state.current_date])
-        }
+    // async getTopSalesPeople(){
+    //     let domain = [['state', 'in', ['sale', 'done']]]
+    //     if (this.state.period > 0){
+    //         domain.push(['date','>', this.state.current_date])
+    //     }
 
-        const data = await this.orm.readGroup("sale.report", domain, ['user_id', 'price_total'], ['user_id'], { limit: 5, orderby: "price_total desc" })
+    //     const data = await this.orm.readGroup("sale.report", domain, ['user_id', 'price_total'], ['user_id'], { limit: 5, orderby: "price_total desc" })
 
-        if (data === undefined){
-            console.log(typeof(data))
-            console.log("DATA", data)
-            console.log("NO WAY HOME")
-        } else {
-            console.log(typeof(data))
-            console.log("DATA", data)
-            console.log("MUCH WAY TO GOING HOME")
-        }
+    //     if (data === undefined){
+    //         console.log(typeof(data))
+    //         console.log("DATA", data)
+    //         console.log("NO WAY HOME")
+    //     } else {
+    //         console.log(typeof(data))
+    //         console.log("DATA", data)
+    //         console.log("MUCH WAY TO GOING HOME")
+    //     }
 
-        this.state.topSalesPeople = {
-            data: {
-                labels: data.map(d => d.user_id[1]),
-                  datasets: [
-                  {
-                    label: 'Total',
-                    data: data.map(d => d.price_total),
-                    hoverOffset: 4,
-                    backgroundColor: data.map((_, index) => getColor(index)),
-                  }]
-            },
-            domain,
-            label_field: 'user_id',
-        }
-    }
+    //     this.state.topSalesPeople = {
+    //         data: {
+    //             labels: data.map(d => d.user_id[1]),
+    //               datasets: [
+    //               {
+    //                 label: 'Total',
+    //                 data: data.map(d => d.price_total),
+    //                 hoverOffset: 4,
+    //                 backgroundColor: data.map((_, index) => getColor(index)),
+    //               }]
+    //         },
+    //         domain,
+    //         label_field: 'user_id',
+    //     }
+    // }
 
 
     // top sales people
@@ -106,43 +106,43 @@ export class OwlSalesDashboard extends Component {
     // }
 
     // digital invoice by stages
-    // async getDigitalInvoiceReport() {
-    //     let domainPo = [['state', 'in', ['po', 'uploaded', 'approved']]];
-    //     let domainGrses = [['state', 'in', ['waits', 'uploaded', 'approved']]];
-    //     let domainBap = [['state', 'in', ['draft', 'upload', 'approve']]];
-    //     let domainInv = [['state', 'in', ['draft', 'upload', 'approve']]];
-    //     let domainPr = [['state', 'in', ['draft', 'upload', 'request', 'approve']]];
+    async getDigitalInvoiceReport() {
+        let domainPo = [['state', 'in', ['po', 'uploaded', 'approved']]];
+        let domainGrses = [['state', 'in', ['waits', 'uploaded', 'approved']]];
+        let domainBap = [['state', 'in', ['draft', 'upload', 'approve']]];
+        let domainInv = [['state', 'in', ['draft', 'upload', 'approve']]];
+        let domainPr = [['state', 'in', ['draft', 'upload', 'request', 'approve']]];
     
-    //     const totalPo = await this.orm.searchCount("purchase.order", domainPo);
-    //     const totalGrses = await this.orm.searchCount("stock.picking", domainGrses);
-    //     const totalBap = await this.orm.searchCount("wika.berita.acara.pembayaran", domainBap);
-    //     const totalInv = await this.orm.searchCount("account.move", domainInv);
-    //     const totalPr = await this.orm.searchCount("wika.payment.request", domainPr);
+        const totalPo = await this.orm.searchCount("purchase.order", domainPo);
+        const totalGrses = await this.orm.searchCount("stock.picking", domainGrses);
+        const totalBap = await this.orm.searchCount("wika.berita.acara.pembayaran", domainBap);
+        const totalInv = await this.orm.searchCount("account.move", domainInv);
+        const totalPr = await this.orm.searchCount("wika.payment.request", domainPr);
     
-    //     const data = [
-    //         { label: 'Purchase Orders in Digital Invoicing', count: totalPo },
-    //         { label: 'GR/SES in Digital Invoicing', count: totalGrses },
-    //         { label: 'Berita Acara Pembayaran in Digital Invoicing', count: totalBap },
-    //         { label: 'Invoice in Digital Invoicing', count: totalInv },
-    //         { label: 'Pengajuan Pembayaran in Digital Invoicing', count: totalPr },
-    //     ];
+        const data = [
+            { label: 'Purchase Orders in Digital Invoicing', count: totalPo },
+            { label: 'GR/SES in Digital Invoicing', count: totalGrses },
+            { label: 'Berita Acara Pembayaran in Digital Invoicing', count: totalBap },
+            { label: 'Invoice in Digital Invoicing', count: totalInv },
+            { label: 'Pengajuan Pembayaran in Digital Invoicing', count: totalPr },
+        ];
     
-    //     this.state.digitalInvoiceReport = {
-    //         data: {
-    //             labels: data.map(d => d.label),
-    //             datasets: [
-    //                 {
-    //                     label: 'Total',
-    //                     data: data.map(d => d.count),
-    //                     hoverOffset: 4,
-    //                     backgroundColor: data.map((_, index) => getColor(index)),
-    //                 },
-    //             ],
-    //         },
-    //         domain: [domainPo, domainGrses, domainBap, domainInv, domainPr],
-    //         label_field: 'label',
-    //     };
-    // }
+        this.state.digitalInvoiceReport = {
+            data: {
+                labels: data.map(d => d.label),
+                datasets: [
+                    {
+                        label: 'Total',
+                        data: data.map(d => d.count),
+                        hoverOffset: 4,
+                        backgroundColor: data.map((_, index) => getColor(index)),
+                    },
+                ],
+            },
+            domain: [domainPo, domainGrses, domainBap, domainInv, domainPr],
+            label_field: 'label',
+        };
+    }
     
 
     // monthly sales
@@ -164,16 +164,27 @@ export class OwlSalesDashboard extends Component {
                 labels: labels,
                   datasets: [
                   {
-                    label: 'Purchase Orders',
+                    label: 'Proyek',
                     data: labels.map(l=>quotations.filter(q=>l==q.date).map(j=>j.price_total).reduce((a,c)=>a+c,0)),
                     hoverOffset: 4,
                     backgroundColor: "red",
                   },{
-                    label: 'Vendor Bills',
+                    label: 'Divisi Operasi',
                     data: labels.map(l=>orders.filter(q=>l==q.date).map(j=>j.price_total).reduce((a,c)=>a+c,0)),
                     hoverOffset: 4,
                     backgroundColor: "green",
-                }]
+                  },{
+                    label: 'Divisi Fungsi',
+                    data: labels.map(l=>quotations.filter(q=>l==q.date).map(j=>j.price_total).reduce((a,c)=>a+c,0)),
+                    hoverOffset: 4,
+                    backgroundColor: "magenta",
+                  },{
+                    label: 'Pusat',
+                    data: labels.map(l=>orders.filter(q=>l==q.date).map(j=>j.price_total).reduce((a,c)=>a+c,0)),
+                    hoverOffset: 4,
+                    backgroundColor: "blue",
+                  }
+            ]
             },
             domain,
             label_field: 'date',
@@ -182,47 +193,35 @@ export class OwlSalesDashboard extends Component {
 
     // partner orders
     async getPartnerOrders(){
-        let domain = [['state', 'in', ['draft','sent','sale', 'done']]]
+        let domain = [['sap_code', '!=', false]]
         if (this.state.period > 0){
-            domain.push(['date','>', this.state.current_date])
+            domain.push(['create_date','>', this.state.current_date])
         }
 
-        const data = await this.orm.readGroup("sale.report", domain, ['partner_id', 'price_total', 'product_uom_qty'], ['partner_id'], { orderby: "partner_id", lazy: false })
+        const data = await this.orm.searchRead("res.partner", domain, ['name', 'sap_code'])
         console.log(data)
+
+        const sapCodeCount = data.filter(d => d.sap_code).length;
 
         this.state.partnerOrders = {
             data: {
-                labels: data.map(d => d.partner_id[1]),
+                labels: data.map(d => d.name),
                   datasets: [
                   {
-                    label: 'Total Amount',
-                    data: data.map(d => d.price_total),
+                    label: 'Partners',
+                    data: data.map(d => d.sap_code),
                     hoverOffset: 4,
                     backgroundColor: "orange",
-                    yAxisID: 'Total',
-                    order: 1,
-                  },{
-                    label: 'Ordered Qty',
-                    data: data.map(d => d.product_uom_qty),
+                },
+                {
+                    label: 'SAP Code Count',
+                    data: [sapCodeCount],
                     hoverOffset: 4,
-                    //backgroundColor: "blue",
-                    type:"line",
-                    borderColor: "blue",
-                    yAxisID: 'Qty',
-                    order: 0,
+                    backgroundColor: "blue",
                 }]
             },
-            scales: {
-                /*Qty: {
-                    position: 'right',
-                }*/
-                yAxes: [
-                    { id: 'Qty', position: 'right' },
-                    { id: 'Total', position: 'left' },
-                ]
-            },
             domain,
-            label_field: 'partner_id',
+            label_field: 'name',
         }
     }
 
@@ -369,12 +368,12 @@ export class OwlSalesDashboard extends Component {
             await this.getPrUrlLate()
 
             // New Pie
-            // await this.getDigitalInvoiceReport()
+            await this.getDigitalInvoiceReport()
             
             // Existings
             await this.getOrders()
-            await this.getTopProducts()
-            await this.getTopSalesPeople()
+            await this.getTopProjects()
+            // await this.getTopSalesPeople()
             await this.getMonthlySales()
             await this.getPartnerOrders()
         })
@@ -434,13 +433,13 @@ export class OwlSalesDashboard extends Component {
         await this.getPrUrlLate()
         
         // New Pie
-        // await this.getDigitalInvoiceReport()
+        await this.getDigitalInvoiceReport()
         
 
         // Existings
         await this.getOrders()
-        await this.getTopProducts()
-        await this.getTopSalesPeople()
+        await this.getTopProjects()
+        // await this.getTopSalesPeople()
         await this.getMonthlySales()
         await this.getPartnerOrders()
     }
@@ -545,7 +544,7 @@ export class OwlSalesDashboard extends Component {
     // === BAP COUNTERS ===
     async getTotalBAP(){
         let domainTotal = [
-            ['state', 'in', ['draft','upload','approve']],
+            ['state', 'in', ['draft','uploaded','approved']],
         ]
         const dataTotal = await this.orm.searchCount("wika.berita.acara.pembayaran", domainTotal)
         this.state.bap.total = dataTotal
@@ -581,7 +580,7 @@ export class OwlSalesDashboard extends Component {
     // === INVOICE COUNTERS ===
     async getTotalINV(){
         let domainTotal = [
-            ['state', 'in', ['draft','upload','approve']],
+            ['state', 'in', ['draft','uploaded','approved']],
         ]
         const dataTotal = await this.orm.searchCount("account.move", domainTotal)
         this.state.inv.total = dataTotal
@@ -617,7 +616,7 @@ export class OwlSalesDashboard extends Component {
     // === PR COUNTERS ===
     async getTotalPR(){
         let domainTotal = [
-            ['state', 'in', ['draft','upload','request','approve']],
+            ['state', 'in', ['draft','uploaded','request','approved']],
         ]
         const dataTotal = await this.orm.searchCount("wika.payment.request", domainTotal)
         this.state.pr.total = dataTotal
