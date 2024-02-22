@@ -449,6 +449,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
                 total_pph += (record.total_amount * pph.amount) / 100
             record.total_pph = total_pph
 
+
     def action_reject(self):
         user = self.env['res.users'].search([('id', '=', self._uid)], limit=1)
         cek = False

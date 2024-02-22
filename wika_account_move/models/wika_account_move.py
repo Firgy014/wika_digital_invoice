@@ -81,7 +81,7 @@ class WikaInheritedAccountMove(models.Model):
             raise ValidationError("Document Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
         else:
             pass
-
+    
     @api.onchange('date')
     def _onchange_posting_date(self):
         if not self.date or not self.bap_id or not self.bap_id.bap_date:
@@ -187,7 +187,6 @@ class WikaInheritedAccountMove(models.Model):
             raise ValidationError("Baseline Date harus lebih dan/atau sama dengan Posting Date!")
         else:
             pass
-
 
     def _compute_documents_count(self):
         for record in self:
@@ -475,7 +474,7 @@ class WikaInheritedAccountMove(models.Model):
                         cek = True
 
         if cek == True:
-            first_user=False
+            first_user = False
             if self.activity_ids:
                 for x in self.activity_ids.filtered(lambda x: x.status != 'approved'):
                     print("masuk")
@@ -525,8 +524,6 @@ class WikaInheritedAccountMove(models.Model):
                         })
         else:
             raise ValidationError('User Akses Anda tidak berhak Submit!')
-
-
 
     def action_approve(self):
         user = self.env['res.users'].search([('id', '=', self._uid)], limit=1)

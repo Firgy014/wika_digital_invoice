@@ -35,7 +35,7 @@
                     <group>
                       <group id="header_left_group">
                            <field name="partner_id" widget="res_partner_many2one" string="Vendor" />
-                            <field name="bap_id" domain="[('is_fully_invoiced', '=', False)]" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
+                            <field name="bap_id" domain="[('is_fully_invoiced', '=', False), ('state', 'in', ['draft','uploaded','approved'])]" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
                            <field name="po_id" />
                            <field name="no_invoice_vendor" />
                            <field name="valuation_class" groups="base.group_no_one"/>
@@ -222,7 +222,7 @@
         <record id="view_wika_account_move_tree_inherited" model="ir.ui.view">
             <field name="name">wika.account.move.inherit.view.tree</field>
             <field name="model">account.move</field>
-             <field name="priority" eval="1"/>
+            <field name="priority" eval="1"/>
             <field name="inherit_id" ref="account.view_in_invoice_bill_tree"/>
             <field name="arch" type="xml">
                 <xpath expr="//field[@name='name']" position="after">
