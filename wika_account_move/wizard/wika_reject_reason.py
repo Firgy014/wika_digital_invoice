@@ -26,6 +26,8 @@ class RejectWizard(models.TransientModel):
                         'state': 'rejected'
                     })
                     rejected_docname = self.document_id.name
+                else:
+                    rejected_docname = ''
 
             for y in min(invoice_id_model.history_approval_ids, key=lambda x: x.id):
                 self.env['mail.activity'].sudo().create({
@@ -45,13 +47,22 @@ class RejectWizard(models.TransientModel):
                     z.status = 'approved'
                     z.action_done()
 
-            self.env['wika.invoice.approval.line'].create({
-                'user_id': self._uid,
-                'groups_id': groups_id,
-                'date': datetime.now(),
-                'note': f"Reject ({rejected_docname}): {self.reject_reason}",
-                'invoice_id': active_id,
-            })
+            if rejected_docname != '':
+                self.env['wika.invoice.approval.line'].create({
+                    'user_id': self._uid,
+                    'groups_id': groups_id,
+                    'date': datetime.now(),
+                    'note': f"Reject ({rejected_docname}): {self.reject_reason}",
+                    'invoice_id': active_id,
+                })
+            else:
+                self.env['wika.invoice.approval.line'].create({
+                    'user_id': self._uid,
+                    'groups_id': groups_id,
+                    'date': datetime.now(),
+                    'note': f"Reject ({self.reject_reason})",
+                    'invoice_id': active_id,
+                })
             invoice_id_model.write({
                 'step_approve': invoice_id_model.step_approve  -1,
                 'state':'rejected'})
