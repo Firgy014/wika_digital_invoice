@@ -38,13 +38,12 @@ class WikaInheritedAccountMove(models.Model):
     account_id = fields.Many2one(comodel_name='account.account')
     date = fields.Date(string='Posting Date', default=lambda self: fields.Date.today())
 
-    @api.depends('tax_totals', 'pph_ids.amount')
+    @api.depends('total_line', 'pph_ids.amount')
     def _compute_total_pph(self):
         for record in self:
-            print(record.tax_totals)
             total_pph = 0.0
             for pph in record.pph_ids:
-                total_pph += (record.tax_totals['amount_untaxed'] * pph.amount) / 100
+                total_pph += (record.total_line* pph.amount) / 100
             record.total_pph = total_pph
     
     @api.depends('department_id')
@@ -103,6 +102,7 @@ class WikaInheritedAccountMove(models.Model):
     #     domain=[('display_type', 'in', ('product', 'line_section', 'line_note'))],
     #     states={'draft': [('readonly', False)]},
     # )
+
     state = fields.Selection(
         selection=[
             ('draft', 'Draft'),
@@ -161,8 +161,9 @@ class WikaInheritedAccountMove(models.Model):
     retensi_total = fields.Float(string='Total Retensi', compute='_compute_potongan_total', store= True)
 
     amount_total_payment = fields.Float(string='Total Invoice', compute='_compute_amount_total_payment', store= True)
+    total_line = fields.Float(string='Total Line', compute='_compute_total_line')
 
-    @api.depends('amount_untaxed', 'price_cut_ids.percentage_amount','price_cut_ids.product_id')
+    @api.depends('total_line', 'price_cut_ids.percentage_amount','price_cut_ids.product_id')
     def _compute_potongan_total(self):
         for x in self:
             persentage_dp=sum(line.percentage_amount for line in x.price_cut_ids  if line.product_id.name == 'DP')
@@ -170,14 +171,15 @@ class WikaInheritedAccountMove(models.Model):
             x.dp_total = 0.0
             x.retensi_total=0.0
             if persentage_dp > 0:
-                x.dp_total = (x.amount_untaxed / 100 ) * persentage_dp
+                x.dp_total = (x.total_line / 100 ) * persentage_dp
             if persentage_retensi >0:
-                x.retensi_total = (x.amount_untaxed / 100 ) * persentage_retensi
+                x.retensi_total = (x.total_line / 100 ) * persentage_retensi
 
-    @api.depends('amount_untaxed', 'dp_total', 'retensi_total','total_pph','amount_tax')
+    @api.depends('total_line', 'dp_total', 'retensi_total','total_pph','amount_tax')
     def _compute_amount_total_payment(self):
         for x in self:
-            x.amount_total_payment= x.amount_untaxed-x.dp_total-x.retensi_total + x.amount_tax -x.total_pph
+            x.amount_total_payment= x.total_line-x.dp_total-x.retensi_total + x.amount_tax -x.total_pph
+
 
     @api.onchange('baseline_date')
     def _onchange_baseline_date(self):
@@ -237,10 +239,18 @@ class WikaInheritedAccountMove(models.Model):
         else:
             return {'domain': {'bap_id': []}}
 
-    @api.depends('amount_untaxed', 'total_pph','dp_total','retensi_total')
+    @api.depends('invoice_line_ids.price_unit','invoice_line_ids.quantity')
+    def _compute_total_line(self):
+        for x in self:
+            total = 0
+            for z in x.invoice_line_ids:
+                total += z.price_unit *z.quantity
+            x.total_line = total
+
+    @api.depends('total_line', 'total_pph','dp_total','retensi_total')
     def _compute_amount_total(self):
         for move in self:
-            move.amount_total_footer = move.amount_untaxed-move.dp_total-move.retensi_total -move.total_pph
+            move.amount_total_footer = move.total_line-move.dp_total-move.retensi_total -move.total_pph
 
     @api.onchange('partner_id','valuation_class')
     def onchange_account_payable(self):
@@ -437,6 +447,9 @@ class WikaInheritedAccountMove(models.Model):
         for record in self:
             if any(not line.document for line in record.document_ids):
                 raise ValidationError('Document belum di unggah, mohon unggah file terlebih dahulu!')
+        for record in self:
+            if any(line.state =='rejected' for line in record.document_ids):
+                raise ValidationError('Document belum di ubah setelah reject, silahkan cek terlebih dahulu!')
         cek = False
         level=self.level
         if level:
@@ -700,7 +713,6 @@ class WikaInheritedAccountMove(models.Model):
             model_model = self.env['ir.model'].sudo()
             document_setting_model = self.env['wika.document.setting'].sudo()
             model_id = model_model.search([('model', '=', 'account.move')], limit=1)
-            print("partner_id----------TEST--------", model_id)
             doc_setting_id = document_setting_model.search([('model_id', '=', model_id.id)])
 
             if doc_setting_id:

@@ -87,12 +87,8 @@
                         <field name="partner_id" string="Receive From" readonly="1"/>
                         <field name="po_id" string="Nomor PO"  readonly="1"/>
                         <field name="pick_type"  readonly="1"/>
-                        <field name="partner_id" string="Receive From" readonly="1"/>
-                        <field name="po_id" string="Nomor PO"  readonly="1"/>
-                        <field name="pick_type"  readonly="1"/>
                         <field name="level"  invisible="1"/>
                         <field name="origin" attrs="{'invisible': [('pick_type', '=', 'gr')]}"/>
-
                         <field name="start_date" string="Period Start" attrs="{'invisible': [('pick_type', '=', 'gr')], 'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
                         <field name="end_date" string="Period End" attrs="{'invisible': [('pick_type', '=', 'gr')], 'required': [('pick_type', '!=', 'gr')],'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
                     </group>

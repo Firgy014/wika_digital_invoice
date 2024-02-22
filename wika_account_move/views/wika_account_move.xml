@@ -58,7 +58,6 @@
                          <field name="move_type" invisible="1"/>
                           <field name="company_id" invisible="1"/>
                             <field name="payment_state" invisible="1"/>
-
                       </group>
                     </group>
                     <notebook>
@@ -114,10 +113,17 @@
                                     <!-- Totals (only invoices / receipts) -->
                                     <group colspan="4">
                                         <group class="oe_subtotal_footer oe_right">
+<!--
                                                 <field name="amount_untaxed"/>
                                                 <field name="amount_tax" string="Total PPN"/>
-                                                <field name="total_pph"/>
-                                                <field name="amount_total_payment"/>
+-->
+
+                                            <field name="tax_totals"  widget="account-tax-totals-field" nolabel="1" colspan="2"/>
+                                            <field name="total_pph"/>
+                                            <field name="amount_total_payment"/>
+                                            <field name="invoice_payments_widget" invisible="1" colspan="2" nolabel="1" widget="payment"/>
+                                            <field name="amount_residual" invisible="1" class="oe_subtotal_footer_separator" attrs="{'invisible': [('state', '=', 'draft')]}"/>
+
                                         </group>
 <!--                                        <group class="oe_subtotal_footer oe_right"
                                             attrs="{'invisible': ['|', ('move_type', 'not in', ('out_invoice', 'out_refund', 'in_invoice', 'in_refund', 'out_receipt', 'in_receipt')),
@@ -145,19 +151,21 @@
                                 <field name="account_id"/>
                                 <field name="retention_due"/>
                                  <field name="amount_total_footer" groups="base.group_no_one"/>
+                                                        <field name="total_line" groups="base.group_no_one"/>
+
                             </group>
                           </page>
                         <page string="List Document">
-                        <field name="document_ids" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}">
+                        <field name="document_ids" attrs="{'readonly': [('state', '!=', 'draft')]}">
                             <tree create="0" delete="0">
                                 <field name="document_id"/>
-                                <field name="document" widget="binary_button" filename="filename"/>
+                                <field name="document" attrs="{'readonly': [('state', '!=', 'waiting')]}" widget="binary_button" filename="filename"/>
                                 <field name="filename" invisible="1"/>
                                 <field name="state"/>
                             </tree>
                             <form>
                                 <group>
-                                    <field name="document" widget="pdf_viewer" filename="filename"/>
+                                    <field name="document" attrs="{'readonly': [('state', '!=', 'waiting')]}" widget="pdf_viewer" filename="filename"/>
                                     <field name="filename" invisible="1"/>
                                     <field name="state" invisible="1"/>
                                 </group>
