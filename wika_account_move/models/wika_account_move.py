@@ -190,7 +190,7 @@ class WikaInheritedAccountMove(models.Model):
     def _compute_documents_count(self):
         for record in self:
             record.documents_count = self.env['documents.document'].search_count(
-                [('purchase_id', '=', record.po_id.id),('bap_id', '=', record.bap_id.id)])
+                ['|',('purchase_id', '=', record.po_id.id),('bap_id', '=', record.bap_id.id)])
 
     @api.depends('invoice_line_ids')
     def _compute_get_lowest_valuation_class(self):
@@ -214,7 +214,7 @@ class WikaInheritedAccountMove(models.Model):
             'res_model': 'documents.document',
             'view_ids': [(view_kanban_id, 'kanban'),(view_tree_id, 'tree')],
             'res_id': self.id,
-            'domain': [('bap_id', '=', self.bap_id.id),('purchase_id', '=', self.po_id.id),('folder_id','in',('PO','GR/SES','BAP','Invoicing'))],
+            'domain': ['|','|',('bap_id', '=', self.bap_id.id),('purchase_id', '=', self.po_id.id),('folder_id','in',('PO','GR/SES','BAP','Invoicing'))],
             'context': {'default_purchase_id': self.po_id.id},
         }
 
