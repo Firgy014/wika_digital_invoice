@@ -40,7 +40,6 @@ class WikaPaymentRequest(models.Model):
         ('" "', 'Free For Payment (Sudah Approve)'),
         ('K', 'Dokumen Kembali'),
     ], string='Payment Block',default='B')
-    #partner_id = fields.Many2one('res.partner', string='Vendor')
     payment_method = fields.Selection([
         ('transfer tunai', 'Transfer Tunai (TT)'),
         ('fasilitas', 'Fasilitas'),
@@ -168,7 +167,6 @@ class WikaPaymentRequest(models.Model):
                         'user_id': x.id,
                         'summary': """ Need Approval Document PO """
                     })
-
             for record in self:
                 if any(not line.document for line in record.document_ids):
                     raise ValidationError('Document belum di unggah, mohon unggah file terlebih dahulu!')
