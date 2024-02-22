@@ -58,6 +58,7 @@
                          <field name="move_type" invisible="1"/>
                           <field name="company_id" invisible="1"/>
                             <field name="payment_state" invisible="1"/>
+
                       </group>
                     </group>
                     <notebook>
@@ -120,7 +121,8 @@
 
                                             <field name="tax_totals"  widget="account-tax-totals-field" nolabel="1" colspan="2"/>
                                             <field name="total_pph"/>
-                                            <field name="amount_total_payment"/>
+                                             <field name="amount_total_footer" string="Total Without PPN"/>
+                                            <field name="amount_total_payment" string="Total With PPN"/>
                                             <field name="invoice_payments_widget" invisible="1" colspan="2" nolabel="1" widget="payment"/>
                                             <field name="amount_residual" invisible="1" class="oe_subtotal_footer_separator" attrs="{'invisible': [('state', '=', 'draft')]}"/>
 
@@ -156,16 +158,16 @@
                             </group>
                           </page>
                         <page string="List Document">
-                        <field name="document_ids" attrs="{'readonly': [('state', '!=', 'draft')]}">
+                        <field name="document_ids" attrs="{'readonly': [('state', 'not in', ['draft','rejected'])]}">
                             <tree create="0" delete="0">
                                 <field name="document_id"/>
-                                <field name="document" attrs="{'readonly': [('state', '!=', 'waiting')]}" widget="binary_button" filename="filename"/>
+                                <field name="document" attrs="{'readonly': [('state', 'not in', ['waiting','rejected'])]}" widget="binary_button" filename="filename"/>
                                 <field name="filename" invisible="1"/>
                                 <field name="state"/>
                             </tree>
                             <form>
                                 <group>
-                                    <field name="document" attrs="{'readonly': [('state', '!=', 'waiting')]}" widget="pdf_viewer" filename="filename"/>
+                                    <field name="document" attrs="{'readonly': [('state', 'not in', ['waiting','rejected'])]}" widget="pdf_viewer" filename="filename"/>
                                     <field name="filename" invisible="1"/>
                                     <field name="state" invisible="1"/>
                                 </group>
