@@ -96,6 +96,7 @@
                     <field name="partner_id"/>
                     <field name="po_id"/>
                     <field name="state"/>
+                    <field name="is_fully_invoiced" groups="base.group_no_one"/>
                 </tree>
             </field>
         </record>
@@ -131,7 +132,7 @@
                                 <field name="address" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
                                 <field name="job" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
                                 <field name="step_approve" invisible="1"/>
-                                 <field name="is_fully_invoiced" invisible="1"/>
+                                 <field name="is_fully_invoiced" groups="base.group_no_one"/>
 
                             </group>
                             <group>
