@@ -8,3 +8,4 @@ class DocumentsDocumentInherit(models.Model):
     invoice_id = fields.Many2one('account.move', string='No Invoice')
     is_po_doc = fields.Boolean(string='Is Purchase Orders Document')
     invoice_id = fields.Many2one('account.move', string='No Invoice')
+    bap_id = fields.Many2one('wika.berita.acara.pembayaran', string='No BAP')

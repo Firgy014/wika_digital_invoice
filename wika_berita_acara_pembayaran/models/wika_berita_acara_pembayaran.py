@@ -710,6 +710,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
                                 'tag_ids': tag.ids,
                                 'partner_id': doc.bap_id.partner_id.id,
                                 'purchase_id': self.po_id.id,
+                                'bap_id': self.id,
                             })
                 if self.activity_ids:
                     for x in self.activity_ids.filtered(lambda x: x.status  != 'approved'):

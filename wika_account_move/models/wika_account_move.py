@@ -158,6 +158,27 @@ class WikaInheritedAccountMove(models.Model):
 
     documents_count = fields.Integer(string='Total Doc', compute='_compute_documents_count')
     no_faktur_pajak=fields.Char(string='Tax Number')
+    dp_total = fields.Float(string='Total DP', compute='_compute_potongan_total', store= True)
+    retensi_total = fields.Float(string='Total Retensi', compute='_compute_potongan_total', store= True)
+
+    amount_total_payment = fields.Float(string='Total Invoice', compute='_compute_amount_total_payment', store= True)
+
+    @api.depends('amount_untaxed', 'price_cut_ids.percentage_amount','price_cut_ids.product_id')
+    def _compute_potongan_total(self):
+        for x in self:
+            persentage_dp=sum(line.percentage_amount for line in x.price_cut_ids  if line.product_id.name == 'DP')
+            persentage_retensi=sum(line.percentage_amount for line in x.price_cut_ids  if line.product_id.name == 'RETENSI')
+            x.dp_total = 0.0
+            x.retensi_total=0.0
+            if persentage_dp > 0:
+                x.dp_total = (x.amount_untaxed / 100 ) * persentage_dp
+            if persentage_retensi >0:
+                x.retensi_total = (x.amount_untaxed / 100 ) * persentage_retensi
+
+    @api.depends('amount_untaxed', 'dp_total', 'retensi_total','total_pph','amount_tax')
+    def _compute_amount_total_payment(self):
+        for x in self:
+            x.amount_total_payment= x.amount_untaxed-x.dp_total-x.retensi_total + x.amount_tax -x.total_pph
 
     @api.onchange('baseline_date')
     def _onchange_baseline_date(self):
@@ -169,7 +190,7 @@ class WikaInheritedAccountMove(models.Model):
     def _compute_documents_count(self):
         for record in self:
             record.documents_count = self.env['documents.document'].search_count(
-                [('purchase_id', '=', record.po_id.id)])
+                ['|',('purchase_id', '=', record.po_id.id),('bap_id', '=', record.bap_id.id)])
 
     @api.depends('invoice_line_ids')
     def _compute_get_lowest_valuation_class(self):
@@ -193,7 +214,7 @@ class WikaInheritedAccountMove(models.Model):
             'res_model': 'documents.document',
             'view_ids': [(view_kanban_id, 'kanban'),(view_tree_id, 'tree')],
             'res_id': self.id,
-            'domain': [('purchase_id', '=', self.po_id.id),('folder_id','in',('PO','GR/SES','BAP','Invoicing'))],
+            'domain': ['|','|',('bap_id', '=', self.bap_id.id),('purchase_id', '=', self.po_id.id),('folder_id','in',('PO','GR/SES','BAP','Invoicing'))],
             'context': {'default_purchase_id': self.po_id.id},
         }
 
@@ -216,19 +237,10 @@ class WikaInheritedAccountMove(models.Model):
         else:
             return {'domain': {'bap_id': []}}
 
-    @api.depends('line_ids.price_unit', 'line_ids.quantity', 'line_ids.discount', 'line_ids.tax_ids')
+    @api.depends('amount_untaxed', 'total_pph','dp_total','retensi_total')
     def _compute_amount_total(self):
         for move in self:
-            amount_total_footer = 0.0
-            for line in move.line_ids:
-                price_subtotal = line.price_unit * line.quantity
-                price_subtotal -= line.discount
-                for tax in line.tax_ids:
-                    price_subtotal += price_subtotal * tax.amount / 100
-
-                amount_total_footer += price_subtotal
-
-            move.amount_total_footer = amount_total_footer
+            move.amount_total_footer = move.amount_untaxed-move.dp_total-move.retensi_total -move.total_pph
 
     @api.onchange('partner_id','valuation_class')
     def onchange_account_payable(self):
@@ -333,8 +345,9 @@ class WikaInheritedAccountMove(models.Model):
     #         return {'warning': warning}
 
     def _check_invoice_totals(self):
-        if self.amount_invoice and self.amount_invoice != self.amount_total_footer:
-            raise ValidationError("Amount Invoice harus sama dengan Amount Total!")
+        if self.amount_invoice < self.amount_total_footer or self.amount_invoice > self.amount_total_footer:
+            raise ValidationError('Amount Invoice Harus sama dengan Total !')
+
 
     def _check_partner_payable_accounts(self):
         if self.partner_id.category_id != False:
