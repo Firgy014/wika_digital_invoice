@@ -38,6 +38,7 @@
         'data/special_gl.xml',
         # 'views/wika_account_move_line',
         'wizard/wika_reject_reason.xml',
+        'wizard/wika_approval_account_move.xml',
         'views/menu.xml',
     ],
     # only loaded in demonstration mode
