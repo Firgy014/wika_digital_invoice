@@ -62,18 +62,10 @@
             <field name="name">wika.todo.overview.kanban</field>
             <field name="model">wika.todo.overview</field>
             <field name="arch" type="xml">
-            <div class="o_onboarding">
-                <!-- Your onboarding content here -->
-                <div class="o_onboarding_content">
-                    <!-- Example: -->
-                    <h1>Welcome to Odoo!</h1>
-                    <p>Get started with configuring your tasks...</p>
-                </div>
-            </div>
-                <kanban class="o_kanban_static">
+                <kanban class="o_kanban_static" create="0">
                     <templates>
                         <t t-name="kanban-box">
-                            <div class="oe_kanban_global_click" style="border-radius: 16px; background-color: #fff5e0; border-right-width: thick;" >
+                            <div class="oe_kanban_global_click" style="border-radius: 16px; background-color: #fff; border-right-width: thick;" >
                             <!-- <div class="oe_kanban_color_11"> -->
                                 <div class="oe_kanban_details">
                                     <div class="kanban-title">                                        
@@ -164,7 +156,6 @@
             </field>
         </record>
 
-        <menuitem id="menu_wika_todo_overview_kanban_action" name="Overview" action="action_wika_todo_overview_kanban" parent="wika_dashboard.menu_board_wika"/>
-
+        <menuitem id="menu_wika_todo_overview_kanban_action" name="Overview" action="action_wika_todo_overview_kanban" parent="wika_dashboard.menu_board_wika" groups="base.group_no_one"/>
     </data>
 </odoo>
