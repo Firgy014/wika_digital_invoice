@@ -56,19 +56,18 @@
                         <field name="department_id" domain="[('biro', '=', True), ('parent_id', '=', branch_id)]" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])], 'invisible': [('check_biro', '=', False)]}"/>
                         <field name="project_id"  readonly="0"/>
                         <field name="begin_date" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
-                        <field name="end_date" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
+                        <field name="end_date" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}" style="background-color: #dddded;"/>
                     </group>
                      <group>
-                        <field name="vendor_signatory_name" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
-                        <field name="vendor_position" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
-                        <field name="address" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
-                        <field name="job" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
-
+                        <field name="vendor_signatory_name" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}" style="background-color: #dddded;"/>
+                        <field name="vendor_position" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}" style="background-color: #dddded;"/>
+                        <field name="address" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}" style="background-color: #dddded;"/>
+                        <field name="job" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}" style="background-color: #dddded;"/>
                     </group>
                     <group>
-                        <field name="sap_doc_number" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
-                        <field name="signatory_name" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
-                        <field name="position" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
+                        <field name="sap_doc_number" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}" style="background-color: #dddded;"/>
+                        <field name="signatory_name" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}" style="background-color: #dddded;"/>
+                        <field name="position" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}" style="background-color: #dddded;"/>
 
                     </group>
                 </group>

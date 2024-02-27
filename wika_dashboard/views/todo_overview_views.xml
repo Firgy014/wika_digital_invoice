@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+
+        <record id="view_wika_todo_overview_form" model="ir.ui.view">
+            <field name="name">wika.todo.overview.form</field>
+            <field name="model">wika.todo.overview</field>
+            <field name="arch" type="xml">
+                <form string="To Do Lists Overview">
+                    <sheet>
+                        <group>
+                            <field name="name"/>
+                            <field name="kanban_type"/>
+                            <field name="fa_icon"/>
+                            <!-- <field name="count_total" groups="base.group_no_one"/>
+                            <field name="count_to_upload" groups="base.group_no_one"/>
+                            <field name="count_to_approve" groups="base.group_no_one"/>
+                            <field name="count_late" groups="base.group_no_one"/> -->
+
+                            <field name="count_po_total" groups="base.group_no_one"/>
+                            <field name="count_po_to_upload" groups="base.group_no_one"/>
+                            <field name="count_po_to_approve" groups="base.group_no_one"/>
+                            <field name="count_po_late" groups="base.group_no_one"/>
+                            
+                            <field name="count_grses_total" groups="base.group_no_one"/>
+                            <field name="count_grses_to_upload" groups="base.group_no_one"/>
+                            <field name="count_grses_to_approve" groups="base.group_no_one"/>
+                            <field name="count_grses_late" groups="base.group_no_one"/>
+                            
+                            <field name="count_bap_total" groups="base.group_no_one"/>
+                            <field name="count_bap_to_upload" groups="base.group_no_one"/>
+                            <field name="count_bap_to_approve" groups="base.group_no_one"/>
+                            <field name="count_bap_late" groups="base.group_no_one"/>
+                            
+                            <field name="count_inv_total" groups="base.group_no_one"/>
+                            <field name="count_inv_to_upload" groups="base.group_no_one"/>
+                            <field name="count_inv_to_approve" groups="base.group_no_one"/>
+                            <field name="count_inv_late" groups="base.group_no_one"/>
+                            
+                            <field name="count_pp_total" groups="base.group_no_one"/>
+                            <field name="count_pp_to_upload" groups="base.group_no_one"/>
+                            <field name="count_pp_to_approve" groups="base.group_no_one"/>
+                            <field name="count_pp_late" groups="base.group_no_one"/>
+                        </group>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+
+        <record id="view_wika_todo_overview_tree" model="ir.ui.view">
+            <field name="name">wika.todo.overview.tree</field>
+            <field name="model">wika.todo.overview</field>
+            <field name="arch" type="xml">
+                <tree string="To Do Lists Overview">
+                    <field name="name"/>
+                    <field name="kanban_type"/>
+                </tree>
+            </field>
+        </record>
+
+        <record id="view_wika_todo_overview_kanban" model="ir.ui.view">
+            <field name="name">wika.todo.overview.kanban</field>
+            <field name="model">wika.todo.overview</field>
+            <field name="arch" type="xml">
+                <kanban class="o_kanban_static" create="0">
+                    <templates>
+                        <t t-name="kanban-box">
+                            <div class="oe_kanban_global_click" style="border-radius: 16px; background-color: #fff; border-right-width: thick;" >
+                            <!-- <div class="oe_kanban_color_11"> -->
+                                <div class="oe_kanban_details">
+                                    <div class="kanban-title">                                        
+                                        <div class="container" style="padding-top: 6px; padding-bottom: 6px;">
+                                            <h2>
+                                                <!-- <i class="fa fa-file-text"/> -->
+                                                <span><i t-attf-class="{{record.fa_icon}}"/></span>
+                                                <span>&#xA0;</span>
+                                                <span style="color:#008B8B;"><field name="name"/></span>
+                                            </h2>
+                                        </div>
+                                        <div style="border-bottom: 2px solid darkcyan; margin-bottom: 1px;"></div>
+                                    </div>
+                                    
+                                    <field name="kanban_type" invisible="1"/>
+                                    
+                                    <div class="container" style="padding-top: 17px;">
+                                        <h2>
+                                            <button class="btn btn-primary" type="object" name="action_method_total">
+                                                <field name="count_po_total" attrs="{'invisible': [('kanban_type', 'in', ['grses','bap','inv','pp'])]}"/>
+                                                <field name="count_grses_total" attrs="{'invisible': [('kanban_type', 'in', ['po','bap','inv','pp'])]}"/>
+                                                <field name="count_bap_total" attrs="{'invisible': [('kanban_type', 'in', ['po','grses','inv','pp'])]}"/>
+                                                <field name="count_inv_total" attrs="{'invisible': [('kanban_type', 'in', ['po','grses','bap','pp'])]}"/>
+                                                <field name="count_pp_total" attrs="{'invisible': [('kanban_type', 'in', ['po','grses','bap','inv'])]}"/> Total
+                                            </button>
+                                        </h2>
+                                        <h2>
+                                            <button class="btn btn-primary" type="object" name="action_method_to_upload">
+                                                <field name="count_po_to_upload" attrs="{'invisible': [('kanban_type', 'in', ['grses','bap','inv','pp'])]}"/>
+                                                <field name="count_grses_to_upload" attrs="{'invisible': [('kanban_type', 'in', ['po','bap','inv','pp'])]}"/>
+                                                <field name="count_bap_to_upload" attrs="{'invisible': [('kanban_type', 'in', ['po','grses','inv','pp'])]}"/>
+                                                <field name="count_inv_to_upload" attrs="{'invisible': [('kanban_type', 'in', ['po','grses','bap','pp'])]}"/>
+                                                <field name="count_pp_to_upload" attrs="{'invisible': [('kanban_type', 'in', ['po','grses','bap','inv'])]}"/> To Upload
+                                            </button>
+
+                                        </h2>
+                                    </div>
+
+                                    <div class="container" style="padding-bottom: 6px;">
+                                        <h2>
+                                            <button class="btn btn-primary" type="object" name="action_method_to_approve">
+                                                <field name="count_po_to_approve" attrs="{'invisible': [('kanban_type', 'in', ['grses','bap','inv','pp'])]}"/>
+                                                <field name="count_grses_to_approve" attrs="{'invisible': [('kanban_type', 'in', ['po','bap','inv','pp'])]}"/>
+                                                <field name="count_bap_to_approve" attrs="{'invisible': [('kanban_type', 'in', ['po','grses','inv','pp'])]}"/>
+                                                <field name="count_inv_to_approve" attrs="{'invisible': [('kanban_type', 'in', ['po','grses','bap','pp'])]}"/>
+                                                <field name="count_pp_to_approve" attrs="{'invisible': [('kanban_type', 'in', ['po','grses','bap','inv'])]}"/> To Approve
+                                            </button>
+                                        </h2>
+                                        <h2>
+                                            <button class="btn btn-primary" type="object" name="action_method_late">
+                                                <field name="count_po_late" attrs="{'invisible': [('kanban_type', 'in', ['grses','bap','inv','pp'])]}"/>
+                                                <field name="count_grses_late" attrs="{'invisible': [('kanban_type', 'in', ['po','bap','inv','pp'])]}"/>
+                                                <field name="count_bap_late" attrs="{'invisible': [('kanban_type', 'in', ['po','grses','inv','pp'])]}"/>
+                                                <field name="count_inv_late" attrs="{'invisible': [('kanban_type', 'in', ['po','grses','bap','pp'])]}"/>
+                                                <field name="count_pp_late" attrs="{'invisible': [('kanban_type', 'in', ['po','grses','bap','inv'])]}"/> Late
+                                            </button>
+                                        </h2>
+                                        <!-- <t t-if="record.fa_icon"> -->
+                                            <span t-att-class="record.fa_icon"/>
+                                        <!-- </t> -->
+                                        <!-- <i t-att-class="'fa fa-file-text'" style="color:#008B8B; font-size: xx-large;"/> -->
+                                        <!-- <img t-att-src="'/report/barcode/QR/%s' % 'My text in qr code'"/> -->
+
+                                    </div>
+                                    
+                                </div>
+                            </div>
+                        </t>
+                    </templates>
+                </kanban>
+            </field>
+        </record>
+
+        <record id="action_wika_todo_overview_kanban" model="ir.actions.act_window">
+            <field name="name">DI Todo Lists Overview</field>
+            <field name="res_model">wika.todo.overview</field>
+            <field name="view_mode">kanban,form,tree</field>
+            <field name="domain">[('kanban_type', 'in', ('po','grses','bap','inv','pp'))]</field>
+            <field name="view_ids" eval="[(5, 0, 0),
+                (0, 0, {'view_mode': 'kanban', 'view_id': ref('wika_dashboard.view_wika_todo_overview_kanban')}),
+                (0, 0, {'view_mode': 'form', 'view_id': ref('wika_dashboard.view_wika_todo_overview_form')}),
+                (0, 0, {'view_mode': 'tree', 'view_id': ref('wika_dashboard.view_wika_todo_overview_tree')}),
+            ]"/>
+            <field name="help" type="html">
+                <p class="o_view_nocontent_smiling_face">
+                    Create a new To Do Lists Overview
+                </p>
+            </field>
+        </record>
+
+        <menuitem id="menu_wika_todo_overview_kanban_action" name="Overview" action="action_wika_todo_overview_kanban" parent="wika_dashboard.menu_board_wika" groups="base.group_no_one"/>
+    </data>
+</odoo>
