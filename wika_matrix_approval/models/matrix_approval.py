@@ -80,3 +80,4 @@ class WikaApprovalSettingLine(models.Model):
         ('gr','GR'),
         ('ses', 'SES')
     ],string='Transaction Type',related='approval_id.transaction_type')
+    check_approval = fields.Boolean('Check')

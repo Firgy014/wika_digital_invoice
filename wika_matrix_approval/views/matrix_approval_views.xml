@@ -41,6 +41,7 @@
                                     <field name="level_role"/>
                                     <field name="user_id" attrs="{'readonly': [('state', '=', 'confirm')]}" />
                                     <field name="groups_id" attrs="{'readonly': [('state', '=', 'confirm')]}" />
+                                    <field name="check_approval" attrs="{'readonly': [('state', '=', 'confirm')]}" />
                                 </tree>
                             </field>
                         </page>

@@ -172,6 +172,7 @@ class WikaInheritedAccountMove(models.Model):
 
     amount_total_payment = fields.Float(string='Total Invoice', compute='_compute_amount_total_payment', store= True)
     total_line = fields.Float(string='Total Line', compute='_compute_total_line')
+    is_approval_checked = fields.Boolean(string="Approval Checked")
 
     @api.depends('total_line', 'invoice_line_ids', 'dp_total','retensi_total', 'invoice_line_ids.tax_ids')
     def compute_total_tax(self):
@@ -549,6 +550,51 @@ class WikaInheritedAccountMove(models.Model):
         model_id = self.env['ir.model'].search([('model', '=', 'account.move')], limit=1)
         level = self.level
         if level:
+            keterangan = ''
+            if level == 'Proyek':
+                keterangan = '''<p><strong>Dengan ini Kami Menyatakan:</strong></p>
+                                <ol>
+                                    <li>Bahwa Menjamin dan Bertanggung Jawab Atas Kebenaran, Keabsahan
+                                    Bukti Transaksi Beserta Bukti Pendukungnya, Dan Dokumen Yang Telah Di
+                                    Upload Sesuai Dengan Aslinya.</li>
+                                    <li>Bahwa Mitra Kerja Tersebut telah melaksanakan pekerjaan Sebagaimana
+                                    Yang Telah Dipersyaratkan di Dalam Kontrak, Sehingga Memenuhi Syarat
+                                    Untuk Dibayar.</li>
+                                </ol>
+                                <p>Copy Dokumen Bukti Transaksi :</p>
+                                <ul>
+                                    <li>PO SAP</li>
+                                    <li>Dokumen Kontrak Lengkap</li>
+                                    <li>GR/SES</li>
+                                    <li>Surat Jalan (untuk material)</li>
+                                    <li>BAP</li>
+                                    <li>Invoice</li>
+                                    <li>Faktur Pajak</li>
+                                </ul>'''
+            elif level == 'Divisi Operasi':
+                keterangan = '''<p>Kami Telah Melakukan Verifikasi Kelengkapan, Keabsahan Bukti Transaksi Dan Setuju Untuk Dibayarkan</p>
+                                <p>Copy Dokumen Bukti Transaksi :</p>
+                                <ul>
+                                    <li>PO SAP</li>
+                                    <li>Dokumen Kontrak Lengkap</li>
+                                    <li>GR/SES</li>
+                                    <li>Surat Jalan (untuk material)</li>
+                                    <li>BAP</li>
+                                    <li>Invoice</li>
+                                    <li>Faktur Pajak</li>
+                                </ul>'''
+            elif level == 'Divisi Fungsi':
+                keterangan = '''<p>Kami Telah Melakukan Verifikasi Kelengkapan Dokumen Dan Menyetujui Pembayaran Transaksi ini.</p>
+                                <p>Copy Dokumen Bukti Transaksi :</p>
+                                <ul>
+                                    <li>PO SAP</li>
+                                    <li>Dokumen Kontrak Lengkap</li>
+                                    <li>GR/SES</li>
+                                    <li>Surat Jalan (untuk material)</li>
+                                    <li>BAP</li>
+                                    <li>Invoice</li>
+                                    <li>Faktur Pajak</li>
+                                </ul>'''
             approval_id = self.env['wika.approval.setting'].sudo().search(
                 [('model_id', '=', model_id.id), ('level', '=', level)], limit=1)
             if not approval_id:
@@ -622,6 +668,7 @@ class WikaInheritedAccountMove(models.Model):
                             print(x.status)
                             x.status = 'approved'
                             x.action_done()
+
             else:
                 first_user = False
                 # Createtodoactivity
@@ -757,9 +804,19 @@ class WikaInheritedAccountMove(models.Model):
 
         self.filtered(lambda m: not m.name and not move.quick_edit_mode).name = '/'
         self._inverse_name()
-    
+
     def action_print_invoice(self):
-        return self.env.ref('wika_account_move.report_wika_account_move_action').report_action(self)   
+        if self.level == 'Proyek':
+            return self.env.ref('wika_account_move.report_wika_account_move_proyek_action').report_action(self)
+        elif self.level == 'Divisi Operasi':
+            return self.env.ref('wika_account_move.report_wika_account_move_divisi_action').report_action(self)
+        elif self.level == 'Divisi Fungsi':
+            return self.env.ref('wika_account_move.report_wika_account_move_keuangan_action').report_action(self)
+        elif self.level == 'Pusat':
+            return self.env.ref('wika_account_move.report_wika_account_move_keuangan_action').report_action(self)
+        else:
+            return super(WikaInheritedAccountMove, self).action_print_invoice()
+
 
 class WikaInvoiceDocumentLine(models.Model):
     _name = 'wika.invoice.document.line'

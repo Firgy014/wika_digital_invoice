@@ -9,9 +9,7 @@
             <field name="arch" type="xml">
             <form string="Invoice Form">
                 <header>
-<!--
-                    <button name="action_print_invoice" string="Print" type="object" class="oe_highlight"/>
--->
+                    <button name="action_print_invoice"  groups="base.group_no_one" string="Print" type="object" class="oe_highlight"/>
                     <button name="action_submit" string="SUBMIT" type="object" class="oe_highlight"
                     states="draft,rejected"/>
                     <button name="action_approve" string="APPROVE" type="object" class="btn-success"
@@ -57,6 +55,7 @@
                           <field name="move_type" invisible="1"/>
                           <field name="company_id" invisible="1"/>
                           <field name="payment_state" invisible="1"/>
+                          <field name="is_approval_checked" groups="base.group_no_one"/>
 
                       </group>
                     </group>
