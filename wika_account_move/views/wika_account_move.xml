@@ -9,14 +9,14 @@
             <field name="arch" type="xml">
             <form string="Invoice Form">
                 <header>
-
-                <button name="action_print_invoice" string="Print" type="object" class="oe_highlight" states="approved"/>                    
+                    <button name="action_print_invoice" string="Print" type="object" class="oe_highlight"
+                        attrs="{'invisible': [('is_approval_checked', '=', False)]}"/>                
                     <button name="action_submit" string="SUBMIT" type="object" class="oe_highlight"
-                    states="draft,rejected"/>
+                        states="draft,rejected"/>
                     <button name="action_approve" string="APPROVE" type="object" class="btn-success"
-                    states="uploaded"/>
-                     <button name="action_reject" string="REJECT" type="object" class="btn-danger"
-                     states="uploaded"/>
+                        states="uploaded"/>
+                    <button name="action_reject" string="REJECT" type="object" class="btn-danger"
+                        states="uploaded"/>
                     <field name="state" widget="statusbar" statusbar_visible="draft,uploaded,approved"/>
                 </header>
                 <sheet>
@@ -34,7 +34,7 @@
                     <group>
                       <group id="header_left_group">
                            <field name="partner_id" widget="res_partner_many2one" string="Vendor" />
-                            <field name="bap_id" domain="[('is_fully_invoiced', '=', False)]" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
+                            <field name="bap_id" domain="[('is_fully_invoiced', '=', False), ('state', 'in', ['draft','uploaded','approved'])]" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
                            <field name="po_id" />
                            <field name="no_invoice_vendor" />
                            <field name="valuation_class" groups="base.group_no_one"/>
@@ -57,7 +57,7 @@
                          <field name="move_type" invisible="1"/>
                           <field name="company_id" invisible="1"/>
                             <field name="payment_state" invisible="1"/>
-
+                            <field name="is_approval_checked" />
 
                       </group>
                     </group>
@@ -113,7 +113,21 @@
                                     </group>
                                     <!-- Totals (only invoices / receipts) -->
                                     <group colspan="4">
-                                        <group class="oe_subtotal_footer oe_right"
+                                        <group class="oe_subtotal_footer oe_right">
+<!--
+                                                <field name="amount_untaxed"/>
+                                                <field name="amount_tax" string="Total PPN"/>
+-->
+
+                                            <field name="tax_totals"  widget="account-tax-totals-field" nolabel="1" colspan="2"/>
+                                            <field name="total_pph"/>
+                                             <field name="amount_total_footer" string="Total Without PPN"/>
+                                            <field name="amount_total_payment" string="Total With PPN"/>
+                                            <field name="invoice_payments_widget" invisible="1" colspan="2" nolabel="1" widget="payment"/>
+                                            <field name="amount_residual" invisible="1" class="oe_subtotal_footer_separator" attrs="{'invisible': [('state', '=', 'draft')]}"/>
+
+                                        </group>
+<!--                                        <group class="oe_subtotal_footer oe_right"
                                             attrs="{'invisible': ['|', ('move_type', 'not in', ('out_invoice', 'out_refund', 'in_invoice', 'in_refund', 'out_receipt', 'in_receipt')),
                                                                        ('payment_state' ,'=', 'invoicing_legacy')]}">
 
@@ -121,7 +135,7 @@
 
                                             <field name="invoice_payments_widget" colspan="2" nolabel="1" widget="payment"/>
                                             <field name="amount_residual" class="oe_subtotal_footer_separator" attrs="{'invisible': [('state', '=', 'draft')]}"/>
-                                        </group>
+                                        </group>-->
                                         <field name="invoice_outstanding_credits_debits_widget"
                                             class="oe_invoice_outstanding_credits_debits"
                                             colspan="2" nolabel="1" widget="payment"
@@ -134,24 +148,26 @@
                             <group id="other_tab_group">
                                  <field name="payment_reference"/>
                                 <field name="pr_id" invisible="1"/>
-                                  <field name="invoice_number" readonly="1" attrs="{'invisible': [('state', '!=', 'approved')]}"/>
+                                <field name="invoice_number" readonly="1" attrs="{'invisible': [('state', '!=', 'approved')]}"/>
                                 <field name="partner_bank_id" string="Bank Account"/>
                                 <field name="account_id"/>
                                 <field name="retention_due"/>
-                                 <field name="amount_total_footer" invisible="1"/>
+                                 <field name="amount_total_footer" groups="base.group_no_one"/>
+                                                        <field name="total_line" groups="base.group_no_one"/>
+
                             </group>
                           </page>
                         <page string="List Document">
-                        <field name="document_ids" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}">
+                        <field name="document_ids" attrs="{'readonly': [('state', 'not in', ['draft','rejected'])]}">
                             <tree create="0" delete="0">
                                 <field name="document_id"/>
-                                <field name="document" widget="binary_button" filename="filename"/>
+                                <field name="document" attrs="{'readonly': [('state', 'not in', ['waiting','rejected'])]}" widget="binary_button" filename="filename"/>
                                 <field name="filename" invisible="1"/>
                                 <field name="state"/>
                             </tree>
                             <form>
                                 <group>
-                                    <field name="document" widget="pdf_viewer" filename="filename"/>
+                                    <field name="document" attrs="{'readonly': [('state', 'not in', ['waiting','rejected'])]}" widget="pdf_viewer" filename="filename"/>
                                     <field name="filename" invisible="1"/>
                                     <field name="state" invisible="1"/>
                                 </group>
@@ -159,8 +175,8 @@
                         </field>
                     </page>
                     <page string="Potongan Lain-lain dan PPH">
-                        <group string="PPH">
-                            <field name="pph_ids" domain="[('tax_group_id', '!=', 'PPN')]" nolable="1"/>
+                        <group string="List PPH">
+                            <field name="pph_ids" domain="[('tax_group_id', '!=', 'PPN')]"/>
                         </group>
                         <group string="Total PPH">
                             <div>
@@ -178,6 +194,12 @@
                                 <field name="amount"/>
                             </tree>
                         </field>
+                        </group>
+                        <group string="Total Potongan">
+
+                            <field name="dp_total"/>
+                            <field name="retensi_total"/>
+
                         </group>
                     </page>
                     <page string="List Approval">
@@ -214,7 +236,7 @@
         <record id="view_wika_account_move_tree_inherited" model="ir.ui.view">
             <field name="name">wika.account.move.inherit.view.tree</field>
             <field name="model">account.move</field>
-             <field name="priority" eval="1"/>
+            <field name="priority" eval="1"/>
             <field name="inherit_id" ref="account.view_in_invoice_bill_tree"/>
             <field name="arch" type="xml">
                 <xpath expr="//field[@name='name']" position="after">
@@ -232,8 +254,9 @@
                 </xpath>
                  <xpath expr="//field[@name='amount_total_signed']" position="before">
                     <field name="amount_untaxed"/>
-                     <field name="amount_tax"/>
-                     <field name="amount_total"/>
+                     <field name="amount_tax" string="Total PPN"/>
+                     <field name="total_pph" string="Total PPH"/>
+                     <field name="amount_total_payment"/>
                  </xpath>
                  <xpath expr="field[@name='amount_total_signed']" position="attributes">
                     <attribute name="invisible">1</attribute>
@@ -271,6 +294,10 @@
                 <xpath expr="field[@name='amount_residual_signed']" position="attributes">
                     <attribute name="invisible">1</attribute>
                 </xpath>
+                <!--<xpath expr="field[@name='amount_total']" position="attributes">
+                    <attribute name="invisible">1</attribute>
+                </xpath>-->
+
                 <xpath expr="field[@name='currency_id']" position="attributes">
                     <attribute name="invisible">1</attribute>
                 </xpath>
@@ -282,6 +309,7 @@
                 </xpath>
             </field>
         </record>
+
 
     </data>
     
