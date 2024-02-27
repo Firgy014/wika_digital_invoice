@@ -6,12 +6,16 @@
         <record id="action_wika_account_move" model="ir.actions.act_window">
             <field name="name">Invoice</field>
             <field name="res_model">account.move</field>
+            <field name="domain">[('move_type', '=', 'in_invoice'),('payment_block', '=', 'B')]</field>
+            <field name="context">{'default_move_type': 'in_invoice'}</field>
+           <field name="search_view_id" ref="wika_account_move.view_wika_account_move_filter"/>
             <field name="view_mode">tree,form</field>
            <field name="view_ids" eval="[(5, 0, 0),
-                (0, 0, {'view_mode': 'tree', 'view_id': ref('account.view_in_invoice_bill_tree')}),
+                (0, 0, {'view_mode': 'tree', 'view_id': ref('wika_account_move.view_wika_account_move_tree')}),
                 (0, 0, {'view_mode': 'form', 'view_id': ref('wika_account_move.view_wika_account_move')}),
             ]"/>
         </record>
+
 
        <record id="action_wika_account_payable_setting" model="ir.actions.act_window">
             <field name="name">WiKA Payable Account Setting</field>

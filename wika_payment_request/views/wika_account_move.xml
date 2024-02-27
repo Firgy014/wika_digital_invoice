@@ -1,15 +1,23 @@
-<!-- <?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
     <data>
     
-        <record id="view_wika_account_move_tree_inherit" model="ir.ui.view">
-            <field name="name">wika.account.move.inherit.view.tree</field>
+        <record id="view_inherit_partial_payment" model="ir.ui.view">
+            <field name="name">wika.account.move.partial.inherit.view.tree</field>
             <field name="model">account.move</field>
-            <field name="inherit_id" ref="account.view_in_invoice_bill_tree"/>
+            <field name="inherit_id" ref="wika_account_move.view_wika_account_move"/>
             <field name="arch" type="xml">
-                <xpath expr="//field[@name='name']" position="after">
-                    <field name="pr_id"/>
+                <xpath expr="//page[@name='approval_page']" position="after">
+                    <page string="Partial Payment Request">
+                        <field name="partial_request_ids" />
+                          <group>
+                            <field name="total_partial_pr"/>
+                            <field name="amount_sisa_pr"/>
+
+                        </group>
+                    </page>
+
                 </xpath>
             </field>
         </record>
@@ -17,4 +25,4 @@
     </data>
     
 
-</odoo> -->
+</odoo>

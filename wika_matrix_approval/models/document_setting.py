@@ -10,5 +10,5 @@ class DocumentSettingModels(models.Model):
         ('BTL', 'BTL'),
         ('BL', 'BL'),
         ('gr', 'GR'),
-        ('ses', 'SES')
+        ('ses', 'SES'),
     ],string='Transaction Type')
