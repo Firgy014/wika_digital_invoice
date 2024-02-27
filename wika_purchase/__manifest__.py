@@ -46,4 +46,10 @@
     'demo': [
         'demo/demo.xml',
     ],
+    'assets': {
+        'web.assets_backend': [
+            'wika_purchase/static/src/css/custom_styles.css',
+        ],
+    },
+
 }
