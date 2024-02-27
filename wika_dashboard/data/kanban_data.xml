@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="kanban_po" model="wika.todo.overview">
+        <field name="name">Purchase Orders</field>
+        <field name="kanban_type">po</field>
+        <field name="fa_icon">fa fa-file-text</field>
+    </record>
+
+    <record id="kanban_grses" model="wika.todo.overview">
+        <field name="name">GR/SES</field>
+        <field name="kanban_type">grses</field>
+        <field name="fa_icon">fa fa-archive</field>
+    </record>
+
+    <record id="kanban_bap" model="wika.todo.overview">
+        <field name="name">Berita Acara Pembayaran</field>
+        <field name="kanban_type">bap</field>
+        <field name="fa_icon">fa fa-files-o</field>
+    </record>
+
+    <record id="kanban_inv" model="wika.todo.overview">
+        <field name="name">Invoice</field>
+        <field name="kanban_type">inv</field>
+        <field name="fa_icon">fa fa-money</field>
+    </record>
+
+    <record id="kanban_pp" model="wika.todo.overview">
+        <field name="name">Pengajuan Pembayaran</field>
+        <field name="kanban_type">pp</field>
+        <field name="fa_icon">fa fa-credit-card</field>
+    </record>
+
+</odoo>
