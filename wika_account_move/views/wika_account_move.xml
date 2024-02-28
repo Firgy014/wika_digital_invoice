@@ -37,10 +37,10 @@
                            <field name="partner_id" widget="res_partner_many2one" string="Vendor" />
                             <field name="bap_id" domain="[('is_fully_invoiced', '=', False), ('state', 'in', ['draft','uploaded','approved'])]" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
                            <field name="po_id" />
-                           <field name="no_invoice_vendor" />
+                           <field name="no_invoice_vendor" style="background-color: #dddded;"/>
                            <field name="valuation_class" groups="base.group_no_one"/>
-                           <field name="amount_invoice" />
-                           <field name="no_faktur_pajak" />
+                           <field name="amount_invoice" style="background-color: #dddded;"/>
+                           <field name="no_faktur_pajak" style="background-color: #dddded;"/>
                       </group>
                       <group id="header_right_group">
                             <field name="branch_id" domain="[('biro', '=', False)]"
@@ -50,9 +50,9 @@
                                 attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])], 'invisible': [('check_biro', '=', False)]}"/>
                             <field name="project_id" attrs="{'readonly': [('state', 'in', ['upload', 'approved'])]}"/>
                            <field name="step_approve" invisible="1"/>
-                           <field name="invoice_date" string="Document Date"/>
-                           <field name="date" string="Posting Date"/>
-                          <field name="invoice_payment_term_id"/>
+                           <field name="invoice_date" string="Document Date" style="background-color: #dddded;"/>
+                           <field name="date" string="Posting Date" style="background-color: #dddded;"/>
+                          <field name="invoice_payment_term_id" style="background-color: #dddded;"/>
                           <field name="invoice_date_due"/>
                           <field name="baseline_date"/>
                          <field name="move_type" invisible="1"/>
