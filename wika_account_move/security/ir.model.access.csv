@@ -5,3 +5,4 @@ access_reject_wizard_account_move, Reject Wizard,model_reject_wizard_account_mov
 access_wika_special_gl, Special GL,model_wika_special_gl,,1,1,1,1
 access_wika_setting_account_payable,Setting Payable Account,model_wika_setting_account_payable,,1,1,1,1
 access_wika_account_move_pricecut_line,List of Other Price Cut,model_wika_account_move_pricecut_line,,1,1,1,1
+access_approval_wizard_account_move, Approval Wizard,model_approval_wizard_account_move,,1,1,1,1

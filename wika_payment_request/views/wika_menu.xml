@@ -3,11 +3,19 @@
 
     <data>
 
+      <menuitem id="wika_payment_menu_root" sequence="4" name="Payment Proposal" />
+        <menuitem
+            id="partial_pr_menu"
+            name="Partial Payment Request"
+            action="action_wika_partial_payment_request"
+            parent="wika_payment_menu_root"
+            sequence="10"/>
+
         <menuitem
             id="wika_payement_request_menu"
-            name="Pengajuan Pembayaran"
+            name="Payment Request"
             action="wika_payment_request.action_window"
-            parent="wika_berita_acara_pembayaran.wika_berita_acara_pembayaran_menu_root"
+            parent="wika_payment_menu_root"
             sequence="20"/>
     </data>
     

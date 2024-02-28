@@ -4,35 +4,43 @@
     <data>
 
         <!-- filter inherit -->
-        <record id="view_wika_account_move_filter_inherit" model="ir.ui.view">
-            <field name="name">model.name.view.filter.inherit</field>
+        <record id="view_wika_account_move_filter" model="ir.ui.view">
+            <field name="name">model.name.view.filter</field>
             <field name="model">account.move</field>
-            <field name="inherit_id" ref="account.view_account_invoice_filter"/>
             <field name="arch" type="xml">
-                <!-- search -->
-                <xpath expr="//field[@name='partner_id']" position="after">
-                    <field name="branch_id" string="Divisi"/>
-                    <field name="department_id" string="Department"/>
-                    <field name="project_id" string="Project"/>
-                </xpath>
+                <search string="Search Invoice">
+                    <field name="name" string="Invoice" filter_domain="[                                 '|', '|' , '|', '|',                                 ('name', 'ilike', self), ('invoice_origin', 'ilike', self),                                 ('ref', 'ilike', self), ('payment_reference', 'ilike', self),                                 ('partner_id', 'child_of', self)]"/>
+                    <field name="partner_id" />
+                    <field name="po_id" />
+                    <field name="bap_id" />
+                    <field name="branch_id" />
+                    <field name="project_id" />
+                    <field name="line_ids" string="Invoice Item"/>
+                    <filter domain="[('invoice_user_id', '=', uid)]" name="myinvoices" help="My Invoices"/>
+                    <separator/>
+                    <filter name="draft" string="Draft" domain="[('state','=','draft')]"/>
+                    <filter name="upload" string="Uploaded" domain="[('state', '=', 'uploaded')]"/>
+                    <filter name="approved" string="Approved" domain="[('state', '=', 'approved')]"/>
 
-                <!-- filters -->
-                <!-- <xpath expr="//filter[@name='cancel']" position="after">
-                    <filter name="branch_id" string="Divisi" domain="[('invoice_user_id', '=', uid)]"/>
-                    <filter name="department_id" string="Department" domain="[('invoice_user_id', '=', uid)]"/>
-                    <filter name="project_id" string="Project" domain="[('invoice_user_id', '=', uid)]"/>
-                    <filter name="po_id" string="Nomor PO" domain="[('invoice_user_id', '=', uid)]"/>
-                </xpath> -->
+                    <group expand="0" string="Group By">
+                        <filter string="Divisi" name="branch_id" domain="[]" context="{'group_by': 'branch_id'}"/>
+                        <filter string="Department" name="department_id" domain="[]" context="{'group_by': 'department_id'}"/>
+                        <filter string="Project" name="project_id" domain="[]" context="{'group_by': 'project_id'}"/>
 
-                <!-- group by -->
-                <xpath expr="//filter[@name='salesperson']" position="after">
-                    <filter string="Divisi" name="branch_id" domain="[]" context="{'group_by': 'branch_id'}"/>
-                    <filter string="Department" name="department_id" domain="[]" context="{'group_by': 'department_id'}"/>
-                    <filter string="Project" name="project_id" domain="[]" context="{'group_by': 'project_id'}"/>
-                </xpath>
+                        <separator/>
+                         <filter string="Nomor PO" name="po_id" domain="[]" context="{'group_by': 'po_id'}"/>
+                         <filter string="BAP" name="bap_id" domain="[]" context="{'group_by': 'bap_id'}"/>
+                         <filter string="Vendor" name="partner_id" domain="[]" context="{'group_by': 'partner_id'}"/>
+
+                          <separator/>
+                        <filter string="Document Date" name="invoicedate" context="{'group_by': 'invoice_date'}"/>
+                        <filter string="Due Date" name="duedate" context="{'group_by': 'invoice_date_due'}"/>
+
+                    </group>
+               </search>
             </field>
         </record>
-    
+
     </data>
     
 

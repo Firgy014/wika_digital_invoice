@@ -37,14 +37,32 @@ class WikaInheritedAccountMove(models.Model):
     price_cut_ids = fields.One2many('wika.account.move.pricecut.line', 'move_id', string='Other Price Cut')
     account_id = fields.Many2one(comodel_name='account.account')
     date = fields.Date(string='Posting Date', default=lambda self: fields.Date.today())
+    approval_stage = fields.Selection([
+        ('Proyek', 'Proyek'),
+        ('Divisi Operasi', 'Divisi Operasi'),
+        ('Divisi Fungsi', 'Divisi Fungsi'),
+        ('Pusat', 'Pusat'),
+    ], string='Status Invoice')
+    payment_block = fields.Selection([
+        ('B', 'Default Invoice'),
+        ('C', 'Pengajuan Ke Divisi'),
+        ('D', 'Pengajuan Ke Pusat'),
+        ('" "', 'Free For Payment (Sudah Approve)'),
+        ('K', 'Dokumen Kembali'),
+    ], string='Payment Block', default='B')
+    payment_method = fields.Selection([
+        ('transfer tunai', 'Transfer Tunai (TT)'),
+        ('fasilitas', 'Fasilitas'),
+    ], string='Payment Method')
+    payment_request_date= fields.Date(string='Payment Request Date')
+    nomor_payment_request= fields.Char(string='Nomor Payment Request')
 
-    @api.depends('tax_totals', 'pph_ids.amount')
+    @api.depends('total_line', 'pph_ids.amount')
     def _compute_total_pph(self):
         for record in self:
-            print(record.tax_totals)
             total_pph = 0.0
             for pph in record.pph_ids:
-                total_pph += (record.tax_totals['amount_untaxed'] * pph.amount) / 100
+                total_pph += (record.total_line* pph.amount) / 100
             record.total_pph = total_pph
     
     @api.depends('department_id')
@@ -59,17 +77,7 @@ class WikaInheritedAccountMove(models.Model):
             else:
                 x.check_biro = False
 
-    @api.onchange('baseline_date')
-    def _onchange_baseline_date(self):
-        if isinstance(self, bool):
-            return self
-        if len(self) != 1:
-            raise ValidationError("Hanya satu record yang diharapkan diperbarui!")
-        
-        if self.baseline_date != False and self.baseline_date < self.date:
-            raise ValidationError("Baseline Date harus lebih atau sama dengan Posting Date!")
-        else:
-            pass
+
 
     @api.onchange('invoice_date')
     def _onchange_invoice_date(self):
@@ -103,7 +111,7 @@ class WikaInheritedAccountMove(models.Model):
     #     domain=[('display_type', 'in', ('product', 'line_section', 'line_note'))],
     #     states={'draft': [('readonly', False)]},
     # )
-    
+
     state = fields.Selection(
         selection=[
             ('draft', 'Draft'),
@@ -160,10 +168,23 @@ class WikaInheritedAccountMove(models.Model):
     no_faktur_pajak=fields.Char(string='Tax Number')
     dp_total = fields.Float(string='Total DP', compute='_compute_potongan_total', store= True)
     retensi_total = fields.Float(string='Total Retensi', compute='_compute_potongan_total', store= True)
+    total_tax = fields.Monetary(string='Total Tax', compute='compute_total_tax')
 
     amount_total_payment = fields.Float(string='Total Invoice', compute='_compute_amount_total_payment', store= True)
+    total_line = fields.Float(string='Total Line', compute='_compute_total_line')
+    is_approval_checked = fields.Boolean(string="Approval Checked")
 
-    @api.depends('amount_untaxed', 'price_cut_ids.percentage_amount','price_cut_ids.product_id')
+    @api.depends('total_line', 'invoice_line_ids', 'dp_total','retensi_total', 'invoice_line_ids.tax_ids')
+    def compute_total_tax(self):
+        for record in self:
+            total_line = record.total_line or 0.0
+            dp_total = record.dp_total or 0.0
+            retensi_total = record.retensi_total or 0.0
+            tax_percentage = sum(record.invoice_line_ids.tax_ids.mapped('amount')) / 100.0
+            total_tax = (total_line - dp_total - retensi_total) * tax_percentage
+            record.total_tax = total_tax
+
+    @api.depends('total_line', 'price_cut_ids.percentage_amount','price_cut_ids.product_id')
     def _compute_potongan_total(self):
         for x in self:
             persentage_dp=sum(line.percentage_amount for line in x.price_cut_ids  if line.product_id.name == 'DP')
@@ -171,21 +192,15 @@ class WikaInheritedAccountMove(models.Model):
             x.dp_total = 0.0
             x.retensi_total=0.0
             if persentage_dp > 0:
-                x.dp_total = (x.amount_untaxed / 100 ) * persentage_dp
+                x.dp_total = (x.total_line / 100 ) * persentage_dp
             if persentage_retensi >0:
-                x.retensi_total = (x.amount_untaxed / 100 ) * persentage_retensi
+                x.retensi_total = (x.total_line / 100 ) * persentage_retensi
 
-    @api.depends('amount_untaxed', 'dp_total', 'retensi_total','total_pph','amount_tax')
+    @api.depends('total_line', 'dp_total', 'retensi_total','total_pph','total_tax')
     def _compute_amount_total_payment(self):
         for x in self:
-            x.amount_total_payment= x.amount_untaxed-x.dp_total-x.retensi_total + x.amount_tax -x.total_pph
+            x.amount_total_payment= x.total_line-x.dp_total-x.retensi_total + x.total_tax -x.total_pph
 
-    @api.onchange('baseline_date')
-    def _onchange_baseline_date(self):
-        if self.baseline_date != False and self.baseline_date < self.date:
-            raise ValidationError("Baseline Date harus lebih dan/atau sama dengan Posting Date!")
-        else:
-            pass
 
     def _compute_documents_count(self):
         for record in self:
@@ -237,10 +252,18 @@ class WikaInheritedAccountMove(models.Model):
         else:
             return {'domain': {'bap_id': []}}
 
-    @api.depends('amount_untaxed', 'total_pph','dp_total','retensi_total')
+    @api.depends('invoice_line_ids.price_unit','invoice_line_ids.quantity')
+    def _compute_total_line(self):
+        for x in self:
+            total = 0
+            for z in x.invoice_line_ids:
+                total += z.price_unit *z.quantity
+            x.total_line = total
+
+    @api.depends('total_line', 'total_pph','dp_total','retensi_total')
     def _compute_amount_total(self):
         for move in self:
-            move.amount_total_footer = move.amount_untaxed-move.dp_total-move.retensi_total -move.total_pph
+            move.amount_total_footer = move.total_line-move.dp_total-move.retensi_total -move.total_pph
 
     @api.onchange('partner_id','valuation_class')
     def onchange_account_payable(self):
@@ -286,11 +309,6 @@ class WikaInheritedAccountMove(models.Model):
         if len(record) != 1:
             raise ValidationError("Hanya satu record yang diharapkan diperbarui!")
 
-        # baseline date
-        if record.baseline_date != False and record.baseline_date < record.date:
-            raise ValidationError("Baseline Date harus lebih atau sama dengan Posting Date!")
-        else:
-            pass
         
         # document date
         if record.invoice_date != False and record.invoice_date < record.bap_id.bap_date:
@@ -315,11 +333,7 @@ class WikaInheritedAccountMove(models.Model):
         if len(record) != 1:
             raise ValidationError("Hanya satu record yang diharapkan diperbarui!")
 
-        # baseline date
-        if record.baseline_date != False and record.baseline_date < record.date:
-            raise ValidationError("Baseline Date harus lebih atau sama dengan Posting Date!")
-        else:
-            pass
+
         
         # document date
         if record.invoice_date != False and record.invoice_date < record.bap_id.bap_date:
@@ -345,16 +359,10 @@ class WikaInheritedAccountMove(models.Model):
     #         return {'warning': warning}
 
     def _check_invoice_totals(self):
-        if self.amount_invoice < self.amount_total_footer or self.amount_invoice > self.amount_total_footer:
+        print (self.total_line)
+        if self.amount_invoice < round(self.total_line) or self.amount_invoice > round(self.total_line):
             raise ValidationError('Amount Invoice Harus sama dengan Total !')
 
-
-    def _check_partner_payable_accounts(self):
-        if self.partner_id.category_id != False:
-            if self.partner_id.category_id.name == 'Berelasi':
-                for lines in self.invoice_line_ids:
-                    print(lines.name)
-            # print(self.partner_id.category_id.name)
 
     @api.onchange('bap_id')
     def _onchange_bap_id(self):
@@ -401,6 +409,7 @@ class WikaInheritedAccountMove(models.Model):
         model_model = self.env['ir.model'].sudo()
         model_id = model_model.search([('model', '=', 'account.move')], limit=1)
         for res in self:
+
             level=res.level
             first_user = False
             if level:
@@ -431,12 +440,32 @@ class WikaInheritedAccountMove(models.Model):
                         'state': 'planned',
                         'summary': f"Need Upload Document  {model_id.name}"
                     })
+                    res.approval_stage=level
+            model_model = self.env['ir.model'].sudo()
+            document_setting_model = self.env['wika.document.setting'].sudo()
+            model_id = model_model.search([('model', '=', 'account.move')], limit=1)
+            doc_setting_id = document_setting_model.search([('model_id', '=', model_id.id)])
 
+            document_list = []
+            doc_setting_id = document_setting_model.search([('model_id', '=', model_id.id)])
+            if doc_setting_id:
+                for document_line in doc_setting_id:
+                    document_list.append((0, 0, {
+                        'invoice_id': self.id,
+                        'document_id': document_line.id,
+                        'state': 'waiting'
+                    }))
+                self.document_ids = document_list
+            else:
+                raise AccessError("Data dokumen tidak ada!")
 
     def action_submit(self):
         for record in self:
             if any(not line.document for line in record.document_ids):
                 raise ValidationError('Document belum di unggah, mohon unggah file terlebih dahulu!')
+        for record in self:
+            if any(line.state =='rejected' for line in record.document_ids):
+                raise ValidationError('Document belum di ubah setelah reject, silahkan cek terlebih dahulu!')
         cek = False
         level=self.level
         if level:
@@ -472,6 +501,7 @@ class WikaInheritedAccountMove(models.Model):
                         x.status = 'approved'
                         x.action_done()
                 self.state = 'uploaded'
+                self.approval_stage = approval_line_id.level_role
                 self.step_approve += 1
                 self.env['wika.invoice.approval.line'].sudo().create({
                     'user_id': self._uid,
@@ -520,6 +550,51 @@ class WikaInheritedAccountMove(models.Model):
         model_id = self.env['ir.model'].search([('model', '=', 'account.move')], limit=1)
         level = self.level
         if level:
+            keterangan = ''
+            if level == 'Proyek':
+                keterangan = '''<p><strong>Dengan ini Kami Menyatakan:</strong></p>
+                                <ol>
+                                    <li>Bahwa Menjamin dan Bertanggung Jawab Atas Kebenaran, Keabsahan
+                                    Bukti Transaksi Beserta Bukti Pendukungnya, Dan Dokumen Yang Telah Di
+                                    Upload Sesuai Dengan Aslinya.</li>
+                                    <li>Bahwa Mitra Kerja Tersebut telah melaksanakan pekerjaan Sebagaimana
+                                    Yang Telah Dipersyaratkan di Dalam Kontrak, Sehingga Memenuhi Syarat
+                                    Untuk Dibayar.</li>
+                                </ol>
+                                <p>Copy Dokumen Bukti Transaksi :</p>
+                                <ul>
+                                    <li>PO SAP</li>
+                                    <li>Dokumen Kontrak Lengkap</li>
+                                    <li>GR/SES</li>
+                                    <li>Surat Jalan (untuk material)</li>
+                                    <li>BAP</li>
+                                    <li>Invoice</li>
+                                    <li>Faktur Pajak</li>
+                                </ul>'''
+            elif level == 'Divisi Operasi':
+                keterangan = '''<p>Kami Telah Melakukan Verifikasi Kelengkapan, Keabsahan Bukti Transaksi Dan Setuju Untuk Dibayarkan</p>
+                                <p>Copy Dokumen Bukti Transaksi :</p>
+                                <ul>
+                                    <li>PO SAP</li>
+                                    <li>Dokumen Kontrak Lengkap</li>
+                                    <li>GR/SES</li>
+                                    <li>Surat Jalan (untuk material)</li>
+                                    <li>BAP</li>
+                                    <li>Invoice</li>
+                                    <li>Faktur Pajak</li>
+                                </ul>'''
+            elif level == 'Divisi Fungsi':
+                keterangan = '''<p>Kami Telah Melakukan Verifikasi Kelengkapan Dokumen Dan Menyetujui Pembayaran Transaksi ini.</p>
+                                <p>Copy Dokumen Bukti Transaksi :</p>
+                                <ul>
+                                    <li>PO SAP</li>
+                                    <li>Dokumen Kontrak Lengkap</li>
+                                    <li>GR/SES</li>
+                                    <li>Surat Jalan (untuk material)</li>
+                                    <li>BAP</li>
+                                    <li>Invoice</li>
+                                    <li>Faktur Pajak</li>
+                                </ul>'''
             approval_id = self.env['wika.approval.setting'].sudo().search(
                 [('model_id', '=', model_id.id), ('level', '=', level)], limit=1)
             if not approval_id:
@@ -547,6 +622,7 @@ class WikaInheritedAccountMove(models.Model):
         if cek == True:
             if approval_id.total_approve == self.step_approve:
                 self.state = 'approved'
+                self.approval_stage = approval_line_id.level_role
                 self.env['wika.invoice.approval.line'].create({
                     'user_id': self._uid,
                     'groups_id': groups_id.id,
@@ -592,6 +668,7 @@ class WikaInheritedAccountMove(models.Model):
                             print(x.status)
                             x.status = 'approved'
                             x.action_done()
+
             else:
                 first_user = False
                 # Createtodoactivity
@@ -605,6 +682,7 @@ class WikaInheritedAccountMove(models.Model):
                 if groups_id_next:
                     print(groups_id_next.name)
                     for x in groups_id_next.users:
+                        print("ssssssssssssssssssss")
                         if level == 'Proyek' :
                             if x.project_id == self.project_id or x.branch_id == self.branch_id or x.branch_id.parent_id.code == 'Pusat':
                                 first_user = x.id
@@ -616,6 +694,7 @@ class WikaInheritedAccountMove(models.Model):
                     print(first_user)
                     if first_user:
                         self.step_approve += 1
+                        self.approval_stage = groups_line_next.level_role
                         self.env['mail.activity'].sudo().create({
                             'activity_type_id': 4,
                             'res_model_id': self.env['ir.model'].sudo().search(
@@ -692,28 +771,7 @@ class WikaInheritedAccountMove(models.Model):
             raise ValidationError('User Akses Anda tidak berhak Reject!')
 
 
-    @api.onchange('partner_id')
-    def _onchange_doc(self):
-        if self.partner_id:
-            model_model = self.env['ir.model'].sudo()
-            document_setting_model = self.env['wika.document.setting'].sudo()
-            model_id = model_model.search([('model', '=', 'account.move')], limit=1)
-            print("partner_id----------TEST--------", model_id)
-            doc_setting_id = document_setting_model.search([('model_id', '=', model_id.id)])
 
-            if doc_setting_id:
-                self.document_ids.unlink()
-
-                document_list = []
-                for document_line in doc_setting_id:
-                    document_list.append((0, 0, {
-                        'invoice_id': self.id,
-                        'document_id': document_line.id,
-                        'state': 'waiting'
-                    }))
-                self.document_ids = document_list
-            else:
-                raise AccessError("Data dokumen tidak ada!")
 
     def unlink(self):
         for record in self:
@@ -746,9 +804,19 @@ class WikaInheritedAccountMove(models.Model):
 
         self.filtered(lambda m: not m.name and not move.quick_edit_mode).name = '/'
         self._inverse_name()
-    
+
     def action_print_invoice(self):
-        return self.env.ref('wika_account_move.report_wika_account_move_action').report_action(self)   
+        if self.level == 'Proyek':
+            return self.env.ref('wika_account_move.report_wika_account_move_proyek_action').report_action(self)
+        elif self.level == 'Divisi Operasi':
+            return self.env.ref('wika_account_move.report_wika_account_move_divisi_action').report_action(self)
+        elif self.level == 'Divisi Fungsi':
+            return self.env.ref('wika_account_move.report_wika_account_move_keuangan_action').report_action(self)
+        elif self.level == 'Pusat':
+            return self.env.ref('wika_account_move.report_wika_account_move_keuangan_action').report_action(self)
+        else:
+            return super(WikaInheritedAccountMove, self).action_print_invoice()
+
 
 class WikaInvoiceDocumentLine(models.Model):
     _name = 'wika.invoice.document.line'
