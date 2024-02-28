@@ -203,11 +203,21 @@
                     <page string="List Approval" name="approval_page">
                         <field name="history_approval_ids" readonly="1" force_save="1">
                             <tree string="List Approval">
-                                <field name="user_id"/>
-                                <field name="groups_id"/>
-                                <field name="date"/>
-                                <field name="note"/>
-                            </tree>
+                                    <field name="user_id"/>
+                                    <field name="groups_id"/>
+                                    <field name="date"/>
+                                    <field name="note"/>
+                                    <field name="information" widget="html"/>
+                                </tree>
+                                <form>
+                                    <group>
+                                        <field name="user_id"/>
+                                        <field name="groups_id"/>
+                                        <field name="date"/>
+                                        <field name="note"/>
+                                        <field name="information" widget="html"/>
+                                    </group>
+                                </form>
                         </field>
                     </page>
                     </notebook>
