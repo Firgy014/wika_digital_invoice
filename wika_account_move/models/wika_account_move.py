@@ -623,13 +623,7 @@ class WikaInheritedAccountMove(models.Model):
             if approval_id.total_approve == self.step_approve:
                 self.state = 'approved'
                 self.approval_stage = approval_line_id.level_role
-                self.env['wika.invoice.approval.line'].create({
-                    'user_id': self._uid,
-                    'groups_id': groups_id.id,
-                    'date': datetime.now(),
-                    'note': 'Approved',
-                    'invoice_id': self.id
-                })
+
                 folder_id = self.env['documents.folder'].sudo().search([('name', '=', 'Invoicing')], limit=1)
                 # print("TESTTTTTTTTTTTTTTTTTTTTT", folder_id)
                 if folder_id:
@@ -668,6 +662,29 @@ class WikaInheritedAccountMove(models.Model):
                             print(x.status)
                             x.status = 'approved'
                             x.action_done()
+                self.env['wika.invoice.approval.line'].create({
+                    'user_id': self._uid,
+                    'groups_id': groups_id.id,
+                    'date': datetime.now(),
+                    'note': 'Approved',
+                    'invoice_id': self.id,
+                    'information': keterangan if approval_line_id.check_approval else False,
+                })
+                if approval_line_id.check_approval:
+                    print("Approval Line ID :", approval_line_id.check_approval)
+                    action = {
+                        'type': 'ir.actions.act_window',
+                        'name': 'Approval Wizard',
+                        'res_model': 'approval.wizard.account.move',
+                        'view_type': "form",
+                        'view_mode': 'form',
+                        'target': 'new',
+                        'context': {
+                            'default_keterangan': keterangan
+                        },
+                        'view_id': self.env.ref('wika_account_move.approval_wizard_form').id,
+                    }
+                    return action
 
             else:
                 first_user = False
@@ -707,13 +724,7 @@ class WikaInheritedAccountMove(models.Model):
                             'status': 'to_approve',
                             'summary': """Need Approval Document Invoicing"""
                         })
-                        self.env['wika.invoice.approval.line'].create({
-                            'user_id': self._uid,
-                            'groups_id': groups_id.id,
-                            'date': datetime.now(),
-                            'note': 'Verified',
-                            'invoice_id': self.id
-                        })
+
                         if self.activity_ids:
                             for x in self.activity_ids.filtered(lambda x: x.status != 'approved'):
                                 print("masuk")
@@ -722,6 +733,31 @@ class WikaInheritedAccountMove(models.Model):
                                     print(x.status)
                                     x.status = 'approved'
                                     x.action_done()
+                        self.env['wika.invoice.approval.line'].create({
+                            'user_id': self._uid,
+                            'groups_id': groups_id.id,
+                            'date': datetime.now(),
+                            'note': 'Verified',
+                            'invoice_id': self.id,
+                            'information': keterangan if approval_line_id.check_approval else False,
+
+                        })
+                        if approval_line_id.check_approval:
+                            print("Approval Line ID:", approval_line_id.check_approval)
+                            action = {
+                                'type': 'ir.actions.act_window',
+                                'name': 'Approval Wizard',
+                                'res_model': 'approval.wizard.account.move',
+                                'view_type': "form",
+                                'view_mode': 'form',
+                                'target': 'new',
+                                'context': {
+                                    'default_keterangan': keterangan
+                                },
+                                'view_id': self.env.ref('wika_account_move.approval_wizard_form').id,
+                            }
+                            return action
+
                     else:
                         raise ValidationError('User Role Next Approval Belum di Setting!')
 
@@ -854,6 +890,7 @@ class WikaInvoiceApprovalLine(models.Model):
     groups_id = fields.Many2one('res.groups', string='Groups')
     date = fields.Datetime(string='Date')
     note = fields.Char(string='Note')
+    information = fields.Char(string='Keterangan')
 
 class AccountMovePriceCutList(models.Model):
     _name = 'wika.account.move.pricecut.line'
