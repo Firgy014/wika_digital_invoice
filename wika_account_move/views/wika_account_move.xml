@@ -33,12 +33,11 @@
                       <group id="header_left_group">
                            <field name="partner_id" options="{'no_create': True, 'no_create_edit':True}" widget="res_partner_many2one" string="Vendor" />
                             <field name="bap_id" options="{'no_create': True, 'no_create_edit':True}" domain="[('is_fully_invoiced', '=', False), ('state', 'in', ['draft','uploaded','approved'])]" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
-                           <field name="po_id" options="{'no_create': True, 'no_create_edit':True}" />
-                           <field name="no_invoice_vendor" />
+                           <field name="po_id" options="{'no_create': True, 'no_create_edit':True}"/>
+                           <field name="no_invoice_vendor" style="background-color: #dddded;"/>
                            <field name="valuation_class" groups="base.group_no_one"/>
-                           <field name="amount_invoice" />
-                           <field name="no_faktur_pajak" />
-                           <field name="payment_request_date" invisible="1"/>
+                           <field name="amount_invoice" style="background-color: #dddded;"/>
+                           <field name="no_faktur_pajak" style="background-color: #dddded;"/>
                       </group>
                       <group id="header_right_group">
                             <field name="branch_id" domain="[('biro', '=', False)]"
@@ -48,14 +47,15 @@
                                 attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])], 'invisible': [('check_biro', '=', False)]}"/>
                             <field name="project_id" attrs="{'readonly': [('state', 'in', ['upload', 'approved'])]}"/>
                            <field name="step_approve" invisible="1"/>
-                           <field name="invoice_date" string="Document Date"/>
-                           <field name="date" string="Posting Date"/>
-                          <field name="invoice_payment_term_id"/>
+                           <field name="invoice_date" string="Document Date" style="background-color: #dddded;"/>
+                           <field name="date" string="Posting Date" style="background-color: #dddded;"/>
+                          <field name="invoice_payment_term_id" style="background-color: #dddded;"/>
                           <field name="invoice_date_due"/>
                           <field name="move_type" invisible="1"/>
                           <field name="company_id" invisible="1"/>
                           <field name="payment_state" invisible="1"/>
                           <field name="is_approval_checked" groups="base.group_no_one"/>
+                          <field name="payment_request_date" groups="base.group_no_one"/>
 
                       </group>
                     </group>
