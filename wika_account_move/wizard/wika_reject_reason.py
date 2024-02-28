@@ -65,7 +65,9 @@ class RejectWizard(models.TransientModel):
                 })
             invoice_id_model.write({
                 'step_approve': 1,
-                'state':'rejected'})
+                'state':'rejected',
+                'approval_stage': invoice_id_model.level,
+            })
 
             return {'type': 'ir.actions.act_window_close'}
 

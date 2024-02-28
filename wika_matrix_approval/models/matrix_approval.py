@@ -27,7 +27,8 @@ class WikaApprovalSetting(models.Model):
         ('BTL', 'BTL'),
         ('BL', 'BL'),
         ('gr', 'GR'),
-        ('ses', 'SES')
+        ('ses', 'SES'),
+        ('pr', 'Payment Request')
     ],string='Transaction Type')
 
 
@@ -67,9 +68,16 @@ class WikaApprovalSettingLine(models.Model):
         ('Divisi Fungsi','Divisi Fungsi'),
         ('Pusat', 'Pusat')
     ], string='Level',related='approval_id.level')
+    level_role = fields.Selection([
+        ('Proyek', 'Proyek'),
+        ('Divisi Operasi', 'Divisi Operasi'),
+        ('Divisi Fungsi','Divisi Fungsi'),
+        ('Pusat', 'Pusat')
+    ], string='Level')
     transaction_type = fields.Selection([
         ('BTL', 'BTL'),
         ('BL', 'BL'),
         ('gr','GR'),
         ('ses', 'SES')
     ],string='Transaction Type',related='approval_id.transaction_type')
+    check_approval = fields.Boolean('Check')

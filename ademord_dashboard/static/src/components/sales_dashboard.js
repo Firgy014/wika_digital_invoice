@@ -118,7 +118,7 @@ export class OwlSalesDashboard extends Component {
         const totalBap = await this.orm.searchCount("wika.berita.acara.pembayaran", domainBap);
         const totalInv = await this.orm.searchCount("account.move", domainInv);
         const totalPr = await this.orm.searchCount("wika.payment.request", domainPr);
-    
+
         const data = [
             { label: 'Purchase Orders in Digital Invoicing', count: totalPo },
             { label: 'GR/SES in Digital Invoicing', count: totalGrses },

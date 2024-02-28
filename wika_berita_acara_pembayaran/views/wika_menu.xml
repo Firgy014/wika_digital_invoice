@@ -3,7 +3,7 @@
 
     <data>
     
-        <menuitem id="wika_berita_acara_pembayaran_menu_root" sequence="3" name="Invoice"  web_icon="wika_berita_acara_pembayaran,static/description/icon.png"/>
+        <menuitem id="wika_berita_acara_pembayaran_menu_root" sequence="3" name="BAP &amp; Invoice"  web_icon="wika_berita_acara_pembayaran,static/description/icon.png"/>
         
         <menuitem id="main_menu_wika_berita_acara_pembayaran" name="BAP"   
             parent="wika_berita_acara_pembayaran_menu_root" 

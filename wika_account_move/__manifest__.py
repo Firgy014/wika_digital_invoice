@@ -20,7 +20,7 @@
     'version': '0.1',
 
     # any module necessary for this one to work correctly
-    'depends': ['base', 'branch', 'project', 'account', 'wika_payment_request', 'wika_berita_acara_pembayaran', 'wika_matrix_approval'],
+    'depends': ['base', 'branch', 'project','account', 'wika_berita_acara_pembayaran', 'wika_matrix_approval'],
 
     # always loaded
     'data': [
@@ -31,13 +31,19 @@
         'views/wika_account_move.xml',
         'data/documents_folder_data.xml',
         'report/report_action.xml',
-        'report/report_wika_account_move.xml',
-        'views/action.xml',
-        'views/filter.xml',
+        'report/report_wika_account_move_divisi.xml',
+        'report/report_wika_account_move_keuangan.xml',
+        'report/report_wika_account_move_proyek.xml',
         'views/wika_special_gl.xml',
         'data/special_gl.xml',
+        'views/filter.xml',
+        'views/action.xml',
+        'views/action.xml',
+
         # 'views/wika_account_move_line',
         'wizard/wika_reject_reason.xml',
+        'wizard/wika_approval_account_move.xml',
+
         'views/menu.xml',
     ],
     # only loaded in demonstration mode
