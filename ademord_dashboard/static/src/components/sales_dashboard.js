@@ -112,7 +112,7 @@ export class OwlSalesDashboard extends Component {
         let domainBap = [['state', 'in', ['draft', 'upload', 'approve']]];
         let domainInv = [['state', 'in', ['draft', 'upload', 'approve']]];
         let domainPr = [['state', 'in', ['draft', 'upload', 'request', 'approve']]];
-
+    
         const totalPo = await this.orm.searchCount("purchase.order", domainPo);
         const totalGrses = await this.orm.searchCount("stock.picking", domainGrses);
         const totalBap = await this.orm.searchCount("wika.berita.acara.pembayaran", domainBap);
@@ -126,7 +126,7 @@ export class OwlSalesDashboard extends Component {
             { label: 'Invoice in Digital Invoicing', count: totalInv },
             { label: 'Pengajuan Pembayaran in Digital Invoicing', count: totalPr },
         ];
-
+    
         this.state.digitalInvoiceReport = {
             data: {
                 labels: data.map(d => d.label),
@@ -143,7 +143,7 @@ export class OwlSalesDashboard extends Component {
             label_field: 'label',
         };
     }
-
+    
 
     // monthly sales
     async getMonthlySales(){
