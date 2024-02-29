@@ -36,7 +36,12 @@ class WikaPartialPaymentRequest(models.Model):
     history_approval_ids = fields.One2many('wika.partial.approval.line', 'pr_id',
                                            string='Partial Payment Request  Approval')
     document_ids = fields.One2many('wika.partial.document.line', 'pr_id', string='Document Lines')
-
+    approval_stage = fields.Selection([
+        ('Proyek', 'Proyek'),
+        ('Divisi Operasi', 'Divisi Operasi'),
+        ('Divisi Fungsi', 'Divisi Fungsi'),
+        ('Pusat', 'Pusat'),
+    ], string='Status Invoice')
     # documents_count = fields.Integer(string='Total Doc', compute='_compute_documents_count')
     # @api.depends('invoice_ids')
     # def _compute_documents_count(self):
@@ -96,7 +101,7 @@ class WikaPartialPaymentRequest(models.Model):
                         'state': 'planned',
                         'summary': f"Need Upload Document {model_id.name}!"
                     })
-
+                    res.approval_stage = level
             document_list = []
             doc_setting_id = document_setting_model.search([('model_id', '=', model_id.id)])
 

@@ -44,6 +44,7 @@
                     <field name="date"/>
                     <field name="partial_amount" sum="Total Partial"/>
                     <field name="state"/>
+                    <field name="approval_stage"/>
 
                 </tree>
             </field>

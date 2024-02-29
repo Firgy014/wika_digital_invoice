@@ -219,17 +219,21 @@ class WikaInheritedAccountMove(models.Model):
     def get_documents(self):
         self.ensure_one()
         view_kanban_id = self.env.ref("documents.document_view_kanban", raise_if_not_found=False)
-
         view_tree_id = self.env.ref("documents.documents_view_list", raise_if_not_found=False)
+
+        domain = [
+            ('folder_id', 'in', ['PO', 'GR/SES', 'BAP', 'Invoicing']),
+            '|', ('bap_id', '=', self.bap_id.id), ('purchase_id', '=', self.po_id.id)
+        ]
 
         return {
             'name': _('Documents'),
             'type': 'ir.actions.act_window',
             'view_mode': 'kanban,tree',
             'res_model': 'documents.document',
-            'view_ids': [(view_kanban_id, 'kanban'),(view_tree_id, 'tree')],
+            'view_ids': [(view_kanban_id.id, 'kanban'), (view_tree_id.id, 'tree')],
             'res_id': self.id,
-            'domain': ['|','|',('bap_id', '=', self.bap_id.id),('purchase_id', '=', self.po_id.id),('folder_id','in',('PO','GR/SES','BAP','Invoicing'))],
+            'domain': domain,
             'context': {'default_purchase_id': self.po_id.id},
         }
 

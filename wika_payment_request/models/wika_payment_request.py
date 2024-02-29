@@ -8,19 +8,37 @@ class WikaPaymentRequest(models.Model):
     _description = 'Wika Payment Request'
     _inherit = ['mail.thread']
 
+    @api.model
+    def _getdefault_branch(self):
+        user_obj = self.env['res.users']
+        branch_id = user_obj.browse(self.env.user.id).branch_id or False
+        project_id = user_obj.browse(self.env.user.id).project_id or False
+        if branch_id and not project_id:
+            branch_id=branch_id.id
+        elif project_id and not branch_id:
+            branch_id=project_id.branch_id.id
+        return branch_id
+
+    @api.model
+    def _getdefault_project(self):
+        user_obj = self.env['res.users']
+        project_id = user_obj.browse(self.env.user.id).project_id or False
+        if project_id:
+            project_id=project_id.id
+        return project_id
+
     name = fields.Char(string='Nomor Payment Request', readonly=True ,default='/')
-    date = fields.Date(string='Tanggal Payement Request', required=True, default=fields.Date.today)
+    date = fields.Date(string='Tanggal Payment Request', required=True, default=fields.Date.today)
     state = fields.Selection([
         ('draft', 'Draft'),
         ('request', 'Requested'),
         ('approve', 'Approved'),
         ('reject', 'Rejected'),
     ], readonly=True, string='status', default='draft')
-    branch_id = fields.Many2one('res.branch', string='Divisi', required=True)
+    branch_id = fields.Many2one('res.branch', string='Divisi', required=True,default=_getdefault_branch)
     department_id = fields.Many2one('res.branch', string='Department')
-    project_id = fields.Many2one('project.project', string='Project', required=True)
+    project_id = fields.Many2one('project.project', string='Project', required=True,default=_getdefault_project)
     invoice_ids = fields.Many2many('account.move', string='Invoice', required=True)
-    document_ids = fields.One2many('wika.pr.document.line', 'pr_id', string='Document Line')
     history_approval_ids = fields.One2many('wika.pr.approval.line', 'pr_id', string='Approval Line')
     total = fields.Integer(string='Total', compute='compute_total')
     step_approve = fields.Integer(string='Step Approve')
@@ -53,6 +71,15 @@ class WikaPaymentRequest(models.Model):
     ], string='Level',compute='_compute_level')
 
     documents_count = fields.Integer(string='Total Doc', compute='_compute_documents_count')
+
+    @api.model
+    def _getdefault_branch(self):
+        user_obj = self.env['res.users']
+        branch_id = user_obj.browse(self.env.user.id).branch_id or False
+        if branch_id:
+            branch_id=branch_id.id
+        return branch_id
+
     @api.depends('invoice_ids')
     def _compute_documents_count(self):
         for record in self:
@@ -114,67 +141,47 @@ class WikaPaymentRequest(models.Model):
     @api.depends('invoice_ids')
     def compute_total(self):
         for record in self:
-            total_amount = sum(record.invoice_ids.mapped('amount_total_signed'))
+            total_amount = sum(record.invoice_ids.mapped('amount_sisa_pr'))
             record.total = total_amount
 
-    @api.onchange('invoice_ids')
-    def _onchange_(self):
-        if self.invoice_ids:
-            model_model = self.env['ir.model'].sudo()
-            document_setting_model = self.env['wika.document.setting'].sudo()
-            model_id = model_model.search([('model', '=', 'wika.payment.request')], limit=1)
-            print("invoice_ids----------TEST--------", model_id)
-            doc_setting_id = document_setting_model.search([('model_id', '=', model_id.id)])
-
-            if doc_setting_id:
-                self.document_ids.unlink()
-
-                document_list = []
-                for document_line in doc_setting_id:
-                    document_list.append((0, 0, {
-                        'pr_id': self.id,
-                        'document_id': document_line.id,
-                        'state': 'waiting'
-                    }))
-                self.document_ids = document_list
-            else:
-                raise AccessError("Data dokumen tidak ada!")
-
     def action_submit(self):
-        # if any (doc.state != 'verif'  for doc in self.document_ids):
-        #     raise UserError('Tidak bisa submit karena ada dokumen yang belum diverifikasi!')
         self.write({'state': 'request'})
         self.step_approve += 1
-        model_id = self.env['ir.model'].search([('model', '=', 'wika.payment.request')], limit=1)
-        model_wika_id = self.env['wika.approval.setting'].search([('model_id', '=', model_id.id)], limit=1)
-        user = self.env['res.users'].search([('branch_id', '=', self.branch_id.id)])
-        groups_id = None
+        # model_id = self.env['ir.model'].search([('model', '=', 'wika.payment.request')], limit=1)
+        # groups_id = None
+        # level = self.level
+        # if level:
+        #     approval_id = self.env['wika.approval.setting'].sudo().search(
+        #         [('model_id', '=', model_id.id), ('level', '=', level), ('transaction_type', '=', 'pr')], limit=1)
+        #     approval_line_id = self.env['wika.approval.setting.line'].search([
+        #         ('sequence', '=', 1),
+        #         ('approval_id', '=', approval_id.id)
+        #     ], limit=1)
+        #     groups_id = approval_line_id.groups_id
+        #     if groups_id:
+        #         for x in groups_id.users:
+        #             if level == 'Proyek' and x.project_id == self.project_id:
+        #                 first_user = x.id
+        #             if level == 'Divisi Operasi' and x.branch_id == self.branch_id:
+        #                 first_user = x.id
+        #             if level == 'Divisi Fungsi' and x.department_id == self.department_id:
+        #                 first_user = x.id
+        #
+        # if groups_id:
+        #     for x in groups_id.users:
+        #         activity_ids = self.env['mail.activity'].create({
+        #                 'activity_type_id': 4,
+        #                 'res_model_id': self.env['ir.model'].sudo().search([('model', '=', 'wika.payment.request')], limit=1).id,
+        #                 'res_id': self.id,
+        #                 'user_id': x.id,
+        #                 'summary': """ Need Approval Document PO """
+        #             })
 
-        if model_wika_id:
-            groups_line = self.env['wika.approval.setting.line'].search([
-                ('branch_id', '=', self.branch_id.id),
-                ('sequence', '=', self.step_approve),
-                ('approval_id', '=', model_wika_id.id)
-            ], limit=1)
-            groups_id = groups_line.groups_id
-
-        if groups_id:
-            for x in groups_id.users:
-                activity_ids = self.env['mail.activity'].create({
-                        'activity_type_id': 4,
-                        'res_model_id': self.env['ir.model'].sudo().search([('model', '=', 'wika.payment.request')], limit=1).id,
-                        'res_id': self.id,
-                        'user_id': x.id,
-                        'summary': """ Need Approval Document PO """
-                    })
-            for record in self:
-                if any(not line.document for line in record.document_ids):
-                    raise ValidationError('Document belum di unggah, mohon unggah file terlebih dahulu!')
-        
     def action_request(self):
         self.write({'state': 'request'})
 
     def action_approve(self):
+
         user = self.env['res.users'].search([('id','=',self._uid)], limit=1)
         cek = False
         model_id = self.env['ir.model'].search([('model','=', 'wika.payment.request')], limit=1)
@@ -211,8 +218,7 @@ class WikaPaymentRequest(models.Model):
         else:
             raise ValidationError('User Akses Anda tidak berhak Approve!')
 
-    def action_cancel(self):
-        self.write({'state': 'draft'})
+
 
     def action_reject(self):
         action = self.env.ref('wika_payment_request.action_reject_pr_wizard').read()[0]
@@ -224,37 +230,6 @@ class WikaPaymentRequest(models.Model):
                 raise ValidationError('Tidak dapat menghapus ketika status Payment Request dalam keadaan Request atau Approve')
         return super(WikaPaymentRequest, self).unlink()
 
-class WikaPrDocumentLine(models.Model):
-    _name = 'wika.pr.document.line'
-    _description = 'PR Document Line'
-
-    pr_id = fields.Many2one('wika.payment.request', string='pr id')
-    document_id = fields.Many2one('wika.document.setting', string='Document')
-    document = fields.Binary(string="Upload File", attachment=True, store=True)
-    filename = fields.Char(string="File Name")
-    state = fields.Selection([
-        ('waiting', 'Waiting'),
-        ('uploaded', 'Uploaded'),
-        ('verif', 'Verif'),
-    ], string='Status', default='waiting')
-    
-    @api.depends('document')
-    def _compute_state(self):
-        for rec in self:
-            if rec.document:
-                rec.state = 'uploaded'
-
-    @api.onchange('document')
-    def _onchange_document(self):
-        if self.document:
-            self.state = 'uploaded'
-
-    @api.constrains('document', 'filename')
-    def _check_attachment_format(self):
-        for record in self:
-            if record.filename and not record.filename.lower().endswith('.pdf'):
-                raise ValidationError('Tidak dapat mengunggah file selain berformat PDF!')
-            
 class WikaPrApprovalLine(models.Model):
     _name = 'wika.pr.approval.line'
     _description = 'Wika Approval Line'

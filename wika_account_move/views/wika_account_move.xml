@@ -33,11 +33,11 @@
                       <group id="header_left_group">
                            <field name="partner_id" options="{'no_create': True, 'no_create_edit':True}" widget="res_partner_many2one" string="Vendor" />
                             <field name="bap_id" options="{'no_create': True, 'no_create_edit':True}" domain="[('is_fully_invoiced', '=', False), ('state', 'in', ['draft','uploaded','approved'])]" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
-                           <field name="po_id" options="{'no_create': True, 'no_create_edit':True}"/>
-                           <field name="no_invoice_vendor" style="background-color: #dddded;"/>
-                           <field name="valuation_class" groups="base.group_no_one"/>
-                           <field name="amount_invoice" style="background-color: #dddded;"/>
-                           <field name="no_faktur_pajak" style="background-color: #dddded;"/>
+                           <field name="po_id" options="{'no_create': True, 'no_create_edit':True}" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
+                           <field name="no_invoice_vendor" style="background-color: #dddded;" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
+                           <field name="valuation_class" groups="base.group_no_one" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
+                           <field name="amount_invoice" style="background-color: #dddded;" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
+                           <field name="no_faktur_pajak" style="background-color: #dddded;" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
                       </group>
                       <group id="header_right_group">
                             <field name="branch_id" domain="[('biro', '=', False)]"
@@ -47,10 +47,10 @@
                                 attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])], 'invisible': [('check_biro', '=', False)]}"/>
                             <field name="project_id" attrs="{'readonly': [('state', 'in', ['upload', 'approved'])]}"/>
                            <field name="step_approve" invisible="1"/>
-                           <field name="invoice_date" string="Document Date" style="background-color: #dddded;"/>
-                           <field name="date" string="Posting Date" style="background-color: #dddded;"/>
-                          <field name="invoice_payment_term_id" style="background-color: #dddded;"/>
-                          <field name="invoice_date_due"/>
+                           <field name="invoice_date" string="Document Date" style="background-color: #dddded;" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
+                           <field name="date" string="Posting Date" style="background-color: #dddded;" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
+                          <field name="invoice_payment_term_id" style="background-color: #dddded;" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
+                          <field name="invoice_date_due" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
                           <field name="move_type" invisible="1"/>
                           <field name="company_id" invisible="1"/>
                           <field name="payment_state" invisible="1"/>
@@ -112,12 +112,7 @@
                                     <!-- Totals (only invoices / receipts) -->
                                     <group colspan="4">
                                         <group class="oe_subtotal_footer oe_right">
-<!--
-                                                <field name="amount_untaxed"/>
-                                                <field name="amount_tax" string="Total PPN"/>
--->
 
-<!--                                            <field name="tax_totals"  widget="account-tax-totals-field" nolabel="1" colspan="2"/>-->
                                             <field name="total_line" string="Untaxed Amount"/>
                                             <field name="total_tax" string="PPN"/>
                                             <field name="total_pph" readonly="1" force_save="1" string="PPH"/>
@@ -127,15 +122,6 @@
                                             <field name="amount_residual" invisible="1" class="oe_subtotal_footer_separator" attrs="{'invisible': [('state', '=', 'draft')]}"/>
 
                                         </group>
-<!--                                        <group class="oe_subtotal_footer oe_right"
-                                            attrs="{'invisible': ['|', ('move_type', 'not in', ('out_invoice', 'out_refund', 'in_invoice', 'in_refund', 'out_receipt', 'in_receipt')),
-                                                                       ('payment_state' ,'=', 'invoicing_legacy')]}">
-
-                                            <field name="tax_totals" widget="account-tax-totals-field" nolabel="1" colspan="2"/>
-
-                                            <field name="invoice_payments_widget" colspan="2" nolabel="1" widget="payment"/>
-                                            <field name="amount_residual" class="oe_subtotal_footer_separator" attrs="{'invisible': [('state', '=', 'draft')]}"/>
-                                        </group>-->
                                         <field name="invoice_outstanding_credits_debits_widget"
                                             class="oe_invoice_outstanding_credits_debits"
                                             colspan="2" nolabel="1" widget="payment"
@@ -146,7 +132,7 @@
                           <page id="other_tab" string="Other Info" name="other_info">
 
                             <group id="other_tab_group">
-                                 <field name="payment_reference"/>
+                                 <field name="payment_reference" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
                                 <field name="payment_block" groups="base.group_no_one"/>
                                 <field name="payment_method" groups="base.group_no_one"/>
                                 <field name="approval_stage" readonly="1" force_save="1"/>
@@ -154,8 +140,8 @@
 
                                 <field name="invoice_number" readonly="1" attrs="{'invisible': [('state', '!=', 'approved')]}"/>
                                 <field name="partner_bank_id" string="Bank Account"/>
-                                <field name="account_id"/>
-                                <field name="retention_due"/>
+                                <field name="account_id" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
+                                <field name="retention_due" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
 
                             </group>
                           </page>
@@ -178,7 +164,7 @@
                     </page>
                     <page string="Potongan Lain-lain dan PPH">
                         <group string="PPH">
-                            <field name="pph_ids" domain="[('tax_group_id', '!=', 'PPN')]"/>
+                            <field name="pph_ids" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}" domain="[('tax_group_id', '!=', 'PPN')]"/>
                         </group>
 
                         <group string="Potongan Lain Lain">

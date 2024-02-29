@@ -9,6 +9,7 @@ class InheritAccountMove(models.Model):
     partial_request_ids= fields.One2many('wika.partial.payment.request', 'invoice_id',string='Partial Payment Request')
     total_partial_pr=fields.Float(string='Total Partial Payment Request',compute='_compute_amount_pr')
     amount_sisa_pr=fields.Float(string='Sisa Partial Payment Request',compute='_compute_amount_pr')
+    is_partial_pr=fields.Boolean(string='Partial Payment Request',default=False,compute='_compute_is_partial_pr')
 
     @api.depends('partial_request_ids','total_line')
     def _compute_amount_pr(self):
@@ -20,3 +21,10 @@ class InheritAccountMove(models.Model):
                 x.total_partial_pr=0.0
                 x.amount_sisa_pr = x.total_line
 
+    @api.depends('total_partial_pr')
+    def _compute_is_partial_pr(self):
+        for x in self:
+            if x.total_partial_pr>0:
+                x.is_partial_pr =True
+            else:
+                x.is_partial_pr=False
