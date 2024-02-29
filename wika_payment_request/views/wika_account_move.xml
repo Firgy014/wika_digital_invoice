@@ -14,6 +14,8 @@
                           <group>
                             <field name="total_partial_pr"/>
                             <field name="amount_sisa_pr"/>
+                            <field name="pr_id" invisible="1"/>
+                            <field name="is_partial_pr" invisible="1"/>
 
                         </group>
                     </page>
