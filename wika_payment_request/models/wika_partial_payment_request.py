@@ -392,8 +392,10 @@ class WikaPartialPaymentRequest(models.Model):
             groups_id = approval_line_id.groups_id
             if groups_id:
                 for x in groups_id.users:
-                    if level == 'Proyek' and x.project_id == self.project_id and x.id == self._uid:
-                        cek = True
+                    if level == 'Proyek':
+                        if x.project_id == self.project_id or x.branch_id == self.branch_id or x.branch_id.parent_id.code == 'Pusat':
+                            if x.id == self._uid:
+                                cek = True
                     if level == 'Divisi Operasi' and x.branch_id == self.branch_id and x.id == self._uid:
                         cek = True
                     if level == 'Divisi Fungsi' and x.department_id == self.department_id and x.id == self._uid:
