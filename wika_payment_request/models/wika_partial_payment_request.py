@@ -269,8 +269,10 @@ class WikaPartialPaymentRequest(models.Model):
         groups_id = approval_line_id.groups_id
         if groups_id:
             for x in groups_id.users:
-                if level == 'Proyek' and x.project_id == self.project_id and x.id == self._uid:
-                    cek = True
+                if level == 'Proyek':
+                    if x.project_id == self.project_id or x.branch_id == self.branch_id or x.branch_id.parent_id.code == 'Pusat':
+                        if x.id == self._uid:
+                            cek = True
                 if level == 'Divisi Operasi' and x.branch_id == self.branch_id and x.id == self._uid:
                     cek = True
                 if level == 'Divisi Fungsi' and x.department_id == self.department_id and x.id == self._uid:
@@ -331,8 +333,9 @@ class WikaPartialPaymentRequest(models.Model):
                 groups_id_next = groups_line_next.groups_id
                 if groups_id_next:
                     for x in groups_id_next.users:
-                        if level == 'Proyek' and x.project_id == self.project_id:
-                            first_user = x.id
+                        if level == 'Proyek' :
+                            if x.project_id == self.project_id or x.branch_id == self.branch_id or x.branch_id.parent_id.code == 'Pusat':
+                                first_user = x.id
                         if level == 'Divisi Operasi' and x.branch_id == self.branch_id:
                             first_user = x.id
                         if level == 'Divisi Fungsi' and x.department_id == self.department_id:
