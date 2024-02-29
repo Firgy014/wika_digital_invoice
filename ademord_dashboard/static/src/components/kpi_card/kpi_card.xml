@@ -11,7 +11,7 @@
                     <t t-elif="props.name === 'GR/SES'">
                         <i class="fa fa-archive" style="margin-right: 10px;"></i>
                     </t>
-                    <t t-elif="props.name === 'Berita Acara Pembayaran'">
+                    <t t-elif="props.name === 'BAP'">
                         <i class="fa fa-files-o" style="margin-right: 10px;"></i>
                     </t>
                     <t t-elif="props.name === 'Invoice'">
@@ -29,58 +29,65 @@
                     
                     <!-- PO -->
                     <t t-if="props.name === 'Purchase Orders'">
-                        <div class="col-12">                        
-                            <a t-attf-href="{{props.urlwait}}" type="object"><span t-esc="props.waits"/> To Upload</a>
-                        </div>
-                        <div class="col-12">
-                            <a t-attf-href="{{props.urlupload}}" type="object"><span t-esc="props.uploaded"/> To Approve</a>
-                        </div>
-                        <div class="col-12">
-                            <a t-attf-href="{{props.urllate}}" type="object"><span t-esc="props.late"/> Late</a>
+                        <div style="padding-left: 1vw;">
+                            <div class="col-12" style="text-align-last: left;">
+                                <a t-attf-href="{{props.urlwait}}" t-attf-style="{{props.waits >= 1 ? 'color: red;' : ''}}" type="object"><span t-esc="props.waits"/> To Upload</a>
+                            </div>
+                            <div class="col-12" style="text-align-last: left;">
+                                <a t-attf-href="{{props.urlupload}}" t-attf-style="{{props.uploaded >= 1 ? 'color: red;' : ''}}" type="object"><span t-esc="props.uploaded"/> To Approve</a>
+                            </div>
+                            <div class="col-12" style="text-align-last: left;">
+                                <a t-attf-href="{{props.urllate}}" t-attf-style="{{props.late >= 1 ? 'color: red;' : ''}}" type="object"><span t-esc="props.late"/> Late</a>
+                            </div>
                         </div>
                     </t>
                     
                     <!-- GRSES -->
                     <t t-elif="props.name === 'GR/SES'">
-                        <div class="col-12">
-                            <a t-attf-href="{{props.urlwaitgrses}}" type="object"><span t-esc="props.grseswaits"/> To Upload</a>
-                        </div>
-                        <div class="col-12">
-                            <a t-attf-href="{{props.urluploadgrses}}" type="object"><span t-esc="props.grsesuploaded"/> To Approve</a>
-                        </div>
-                        <div class="col-12">
-                            <a t-attf-href="{{props.urllategrses}}" type="object"><span t-esc="props.grseslate"/> Late</a>
+                        <div style="padding-left: 2vw;">
+                            <div class="col-12" style="text-align-last: left;">
+                                <a t-attf-href="{{props.urlwaitgrses}}" t-attf-style="{{props.grseswaits >= 1 ? 'color: red;' : ''}}" type="object"><span t-esc="props.grseswaits"/> To Upload</a>
+                            </div>
+                            <div class="col-12" style="text-align-last: left;">
+                                <a t-attf-href="{{props.urluploadgrses}}" t-attf-style="{{props.grsesuploaded >= 1 ? 'color: red;' : ''}}" type="object"><span t-esc="props.grsesuploaded"/> To Approve</a>
+                            </div>
+                            <div class="col-12" style="text-align-last: left;">
+                                <a t-attf-href="{{props.urllategrses}}" t-attf-style="{{props.grseslate >= 1 ? 'color: red;' : ''}}" type="object"><span t-esc="props.grseslate"/> Late</a>
+                            </div>
                         </div>
                     </t>
 
                     <!-- BAP -->
-                    <t t-elif="props.name === 'Berita Acara Pembayaran'">
-                        <div class="col-12">
-                            <a t-attf-href="{{props.urlwaitbap}}" type="object"><span t-esc="props.bapwaits"/> To Upload</a>
-                        </div>
-                        <div class="col-12">
-                            <a t-attf-href="{{props.urluploadbap}}" type="object"><span t-esc="props.bapuploaded"/> To Approve</a>
-                        </div>
-                        <div class="col-12">
-                            <a t-attf-href="{{props.urllatebap}}" type="object"><span t-esc="props.baplate"/> Late</a>
+                    <t t-elif="props.name === 'BAP'">
+                        <div style="padding-left: 2vw;">
+                            <div class="col-12" style="text-align-last: left;">
+                                <a t-attf-href="{{props.urlwaitbap}}" t-attf-style="{{props.bapwaits >= 1 ? 'color: red;' : ''}}" type="object"><span t-esc="props.bapwaits"/> To Upload</a>
+                            </div>
+                            <div class="col-12" style="text-align-last: left;">
+                                <a t-attf-href="{{props.urluploadbap}}" t-attf-style="{{props.bapuploaded >= 1 ? 'color: red;' : ''}}" type="object"><span t-esc="props.bapuploaded"/> To Approve</a>
+                            </div>
+                            <div class="col-12" style="text-align-last: left;">
+                                <a t-attf-href="{{props.urllatebap}}" t-attf-style="{{props.baplate >= 1 ? 'color: red;' : ''}}" type="object"><span t-esc="props.baplate"/> Late</a>
+                            </div>
                         </div>
                     </t>
 
                     <!-- INVOICE -->
                     <t t-elif="props.name === 'Invoice'">
-                        <div class="col-12">
-                            <a t-attf-href="{{props.urlwaitinv}}" type="object"><span t-esc="props.invwaits"/> To Upload</a>
-                        </div>
-                        <div class="col-12">
-                            <a t-attf-href="{{props.urluploadinv}}" type="object"><span t-esc="props.invuploaded"/> To Approve</a>
-                        </div>
-                        <div class="col-12">
-                            <a t-attf-href="{{props.urllateinv}}" type="object"><span t-esc="props.invlate"/> Late</a>
+                        <div style="padding-left: 2vw;">
+                            <div class="col-12" style="text-align-last: left;">
+                                <a t-attf-href="{{props.urlwaitinv}}" t-attf-style="{{props.invwaits >= 1 ? 'color: red;' : ''}}" type="object"><span t-esc="props.invwaits"/> To Upload</a>
+                            </div>
+                            <div class="col-12" style="text-align-last: left;">
+                                <a t-attf-href="{{props.urluploadinv}}" t-attf-style="{{props.invuploaded >= 1 ? 'color: red;' : ''}}" type="object"><span t-esc="props.invuploaded"/> To Approve</a>
+                            </div>
+                            <div class="col-12" style="text-align-last: left;">
+                                <a t-attf-href="{{props.urllateinv}}" t-attf-style="{{props.invlate >= 1 ? 'color: red;' : ''}}" type="object"><span t-esc="props.invlate"/> Late</a>
+                            </div>
                         </div>
                     </t>
-
                     <!-- PR -->
-                    <t t-elif="props.name === 'Pengajuan Pembayaran'">
+                    <!-- <t t-elif="props.name === 'Pengajuan Pembayaran'">
                         <div class="col-12">
                             <a t-attf-href="{{props.urlwaitpr}}" type="object"><span t-esc="props.prwaits"/> To Upload</a>
                         </div>
@@ -90,8 +97,7 @@
                         <div class="col-12">
                             <a t-attf-href="{{props.urllatepr}}" type="object"><span t-esc="props.prlate"/> Late</a>
                         </div>
-                    </t>
-                    
+                    </t> -->
                 </div>
             </div>
         </div>
