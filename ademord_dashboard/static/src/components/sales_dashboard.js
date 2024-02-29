@@ -141,7 +141,7 @@ export class OwlSalesDashboard extends Component {
             },
             domain: [domainPo, domainGrses, domainBap, domainInv, domainPr],
             label_field: 'label',
-        };
+        }
     }
     
 
@@ -190,6 +190,47 @@ export class OwlSalesDashboard extends Component {
             label_field: 'date',
         }
     }
+
+    // invoice monitoring
+    async getInvoiceMonitoringData(){
+        let domainProyek = [['approval_stage', '=', 'Proyek']]
+        let domainOperasi = [['approval_stage', '=', 'Divisi Operasi']]
+        let domainFungsi = [['approval_stage', '=', 'Divisi Fungsi']]
+        let domainPusat = [['approval_stage', '=', 'Pusat']]
+
+        // if (this.state.period > 0){
+        //     domain.push(['date','>', this.state.current_date])
+        // }
+
+        const dataProyek = await this.orm.searchCount("account.move", domainProyek)
+        const dataOperasi = await this.orm.searchCount("account.move", domainOperasi)
+        const dataFungsi = await this.orm.searchCount("account.move", domainFungsi)
+        const dataPusat = await this.orm.searchCount("account.move", domainPusat)
+        
+        const dataInvMonitoring = [
+            { label: 'Invoice di Proyek', count: dataProyek },
+            { label: 'Invoice di Divisi Operasi', count: dataOperasi },
+            { label: 'Invoice di Divisi Fungsi', count: dataFungsi },
+            { label: 'Invoice di Pusat', count: dataPusat },
+        ];
+
+        this.state.invoiceMonitoring = {
+            data: {
+                labels: dataInvMonitoring.map(d => d.label),
+                datasets: [
+                    {
+                        label: 'Total',
+                        data: dataInvMonitoring.map(d => d.count),
+                        hoverOffset: 4,
+                        backgroundColor: dataInvMonitoring.map((_, index) => getColor(index)),
+                    },
+                ],
+            },
+            domain: [domainProyek, domainOperasi, domainFungsi, domainPusat],
+            label_field: 'label',
+        }
+    }
+
 
     // partner orders
     async getPartnerOrders(){
@@ -375,6 +416,7 @@ export class OwlSalesDashboard extends Component {
             await this.getTopProjects()
             // await this.getTopSalesPeople()
             await this.getMonthlySales()
+            await this.getInvoiceMonitoringData()
             await this.getPartnerOrders()
         })
     }
@@ -441,6 +483,7 @@ export class OwlSalesDashboard extends Component {
         await this.getTopProjects()
         // await this.getTopSalesPeople()
         await this.getMonthlySales()
+        await this.getInvoiceMonitoringData()
         await this.getPartnerOrders()
     }
 
@@ -498,7 +541,7 @@ export class OwlSalesDashboard extends Component {
     async getLatePO(){
         let domainLate = [
             ['res_model', '=', 'purchase.order'],
-            ['state', '=', 'overdue']
+            ['is_expired', '=', true]
         ]
         const dataLate = await this.orm.searchCount("mail.activity", domainLate)
         this.state.po.late = dataLate
@@ -534,7 +577,7 @@ export class OwlSalesDashboard extends Component {
     async getLateGRSES(){
         let domainLate = [
             ['res_model', '=', 'stock.picking'],
-            ['state', '=', 'overdue']
+            ['is_expired', '=', true]
         ]
         const dataLate = await this.orm.searchCount("mail.activity", domainLate)
         this.state.grses.late = dataLate
@@ -570,7 +613,7 @@ export class OwlSalesDashboard extends Component {
     async getLateBAP(){
         let domainLate = [
             ['res_model', '=', 'wika.berita.acara.pembayaran'],
-            ['state', '=', 'overdue']
+            ['is_expired', '=', true]
         ]
         const dataLate = await this.orm.searchCount("mail.activity", domainLate)
         this.state.bap.late = dataLate
@@ -606,7 +649,7 @@ export class OwlSalesDashboard extends Component {
     async getLateINV(){
         let domainLate = [
             ['res_model', '=', 'account.move'],
-            ['state', '=', 'overdue']
+            ['is_expired', '=', true]
         ]
         const dataLate = await this.orm.searchCount("mail.activity", domainLate)
         this.state.inv.late = dataLate
@@ -642,7 +685,7 @@ export class OwlSalesDashboard extends Component {
     async getLatePR(){
         let domainLate = [
             ['res_model', '=', 'wika.payment.request'],
-            ['state', '=', 'overdue']
+            ['is_expired', '=', true]
         ]
         const dataLate = await this.orm.searchCount("mail.activity", domainLate)
         this.state.pr.late = dataLate
@@ -744,28 +787,33 @@ export class OwlSalesDashboard extends Component {
         }
     }
     async getPoUrlLate(){
+        // tesssss
+        // debugger
         // let today = new Date().toISOString().slice(0, 10).replace(/-/g, '/')
         let domainView = [['name', '=', 'mail.activity.todo.view.tree'], ['model', '=', 'mail.activity']]
         let domainMenu = [['name', '=', 'Dashboard'], ['web_icon', 'ilike', 'wika_dashboard']]
-        let domainAction = [['name', '=', 'Late Purchase Orders Approval'], ['domain', '=', "[('res_model', '=', 'purchase.order'), ('state', '=', 'overdue')]"]]
+        let domainAction = [['name', '=', 'Late Purchase Orders Approval'], ['domain', '=', "[('res_model', '=', 'purchase.order'), ('is_expired', '=', True)]"]]
         const viewId = await this.orm.search("ir.ui.view", domainView)
         const existingAction = await this.orm.search("ir.actions.act_window", domainAction)
         const menuId = await this.orm.search("ir.ui.menu", domainMenu)
 
         if (existingAction[0] === 0 || existingAction.length === 0) {
+            // debugger
             const actionId = await this.orm.create('ir.actions.act_window', [{
                 name: 'Late Purchase Orders Approval',
                 res_model: 'mail.activity',
                 view_mode: 'tree',
                 view_id: viewId[0],
-                domain: "[('res_model', '=', 'purchase.order'), ('state', '=', 'overdue')]"
+                domain: "[('res_model', '=', 'purchase.order'), ('is_expired', '=', True)]"
             }])
             let url = `/web#model=mail.activity&view_type=list&action=${actionId}&menu_id=${menuId}`
             this.state.po.url.late = url
         } else {
+            // debugger
             let url = `/web#model=mail.activity&view_type=list&action=${existingAction}&menu_id=${menuId}`
             this.state.po.url.late = url
         }
+        console.log("LATE PO URL --->", this.state.po.url.late)
     }
     // === PO URL BUILDERS ===
     
@@ -825,7 +873,7 @@ export class OwlSalesDashboard extends Component {
     async getGrsesUrlLate(){
         let domainView = [['name', '=', 'mail.activity.todo.view.tree'], ['model', '=', 'mail.activity']]
         let domainMenu = [['name', '=', 'Dashboard'], ['web_icon', 'ilike', 'wika_dashboard']]
-        let domainAction = [['name', '=', 'Late GR/SES Approval'], ['domain', '=', "[('res_model', '=', 'stock.picking'), ('state', '=', 'overdue')]"]]
+        let domainAction = [['name', '=', 'Late GR/SES Approval'], ['domain', '=', "[('res_model', '=', 'stock.picking'), ('is_expired', '=', True)]"]]
         const viewId = await this.orm.search("ir.ui.view", domainView)
         const existingAction = await this.orm.search("ir.actions.act_window", domainAction)
         const menuId = await this.orm.search("ir.ui.menu", domainMenu)
@@ -836,7 +884,7 @@ export class OwlSalesDashboard extends Component {
                 res_model: 'mail.activity',
                 view_mode: 'tree',
                 view_id: viewId[0],
-                domain: "[('res_model', '=', 'stock.picking'), ('state', '=', 'overdue')]"
+                domain: "[('res_model', '=', 'stock.picking'), ('is_expired', '=', True)]"
             }])
             let url = `/web#model=mail.activity&view_type=list&action=${actionId}&menu_id=${menuId}`
             this.state.grses.url.late = url
@@ -844,6 +892,7 @@ export class OwlSalesDashboard extends Component {
             let url = `/web#model=mail.activity&view_type=list&action=${existingAction}&menu_id=${menuId}`
             this.state.grses.url.late = url
         }
+        console.log("LATE GR URL --->", this.state.grses.url.late)
     }
     // === GRSES URL BUILDERS ===
 
@@ -903,7 +952,7 @@ export class OwlSalesDashboard extends Component {
     async getBapUrlLate(){
         let domainView = [['name', '=', 'mail.activity.todo.view.tree'], ['model', '=', 'mail.activity']]
         let domainMenu = [['name', '=', 'Dashboard'], ['web_icon', 'ilike', 'wika_dashboard']]
-        let domainAction = [['name', '=', 'Late Berita Acara Pembayaran Approval'], ['domain', '=', "[('res_model', '=', 'wika.berita.acara.pembayaran'), ('state', '=', 'overdue')]"]]
+        let domainAction = [['name', '=', 'Late Berita Acara Pembayaran Approval'], ['domain', '=', "[('res_model', '=', 'wika.berita.acara.pembayaran'), ('is_expired', '=', True)]"]]
         const viewId = await this.orm.search("ir.ui.view", domainView)
         const existingAction = await this.orm.search("ir.actions.act_window", domainAction)
         const menuId = await this.orm.search("ir.ui.menu", domainMenu)
@@ -914,7 +963,7 @@ export class OwlSalesDashboard extends Component {
                 res_model: 'mail.activity',
                 view_mode: 'tree',
                 view_id: viewId[0],
-                domain: "[('res_model', '=', 'wika.berita.acara.pembayaran'), ('state', '=', 'overdue')]"
+                domain: "[('res_model', '=', 'wika.berita.acara.pembayaran'), ('is_expired', '=', True)]"
             }])
             let url = `/web#model=mail.activity&view_type=list&action=${actionId}&menu_id=${menuId}`
             this.state.bap.url.late = url
@@ -922,6 +971,7 @@ export class OwlSalesDashboard extends Component {
             let url = `/web#model=mail.activity&view_type=list&action=${existingAction}&menu_id=${menuId}`
             this.state.bap.url.late = url
         }
+        console.log("LATE BAP URL --->", this.state.bap.url.late)
     }
     // === BAP URL BUILDERS ===
 
@@ -981,7 +1031,7 @@ export class OwlSalesDashboard extends Component {
     async getInvUrlLate(){
         let domainView = [['name', '=', 'mail.activity.todo.view.tree'], ['model', '=', 'mail.activity']]
         let domainMenu = [['name', '=', 'Dashboard'], ['web_icon', 'ilike', 'wika_dashboard']]
-        let domainAction = [['name', '=', 'Late Invoice Approval'], ['domain', '=', "[('res_model', '=', 'account.move'), ('state', '=', 'overdue')]"]]
+        let domainAction = [['name', '=', 'Late Invoice Approval'], ['domain', '=', "[('res_model', '=', 'account.move'), ('is_expired', '=', True)]"]]
         const viewId = await this.orm.search("ir.ui.view", domainView)
         const existingAction = await this.orm.search("ir.actions.act_window", domainAction)
         const menuId = await this.orm.search("ir.ui.menu", domainMenu)
@@ -992,7 +1042,7 @@ export class OwlSalesDashboard extends Component {
                 res_model: 'mail.activity',
                 view_mode: 'tree',
                 view_id: viewId[0],
-                domain: "[('res_model', '=', 'account.move'), ('state', '=', 'overdue')]"
+                domain: "[('res_model', '=', 'account.move'), ('is_expired', '=', True)]"
             }])
             let url = `/web#model=mail.activity&view_type=list&action=${actionId}&menu_id=${menuId}`
             this.state.inv.url.late = url
@@ -1000,6 +1050,7 @@ export class OwlSalesDashboard extends Component {
             let url = `/web#model=mail.activity&view_type=list&action=${existingAction}&menu_id=${menuId}`
             this.state.inv.url.late = url
         }
+        console.log("LATE INV URL --->", this.state.inv.url.late)
     }
     // === INV URL BUILDERS ===
 
@@ -1059,7 +1110,7 @@ export class OwlSalesDashboard extends Component {
     async getPrUrlLate(){
         let domainView = [['name', '=', 'mail.activity.todo.view.tree'], ['model', '=', 'mail.activity']]
         let domainMenu = [['name', '=', 'Dashboard'], ['web_icon', 'ilike', 'wika_dashboard']]
-        let domainAction = [['name', '=', 'Late Pengajuan Pembayaran Approval'], ['domain', '=', "[('res_model', '=', 'wika.payment.request'), ('state', '=', 'overdue')]"]]
+        let domainAction = [['name', '=', 'Late Pengajuan Pembayaran Approval'], ['domain', '=', "[('res_model', '=', 'wika.payment.request'), ('is_expired', '=', True)]"]]
         const viewId = await this.orm.search("ir.ui.view", domainView)
         const existingAction = await this.orm.search("ir.actions.act_window", domainAction)
         const menuId = await this.orm.search("ir.ui.menu", domainMenu)
@@ -1070,7 +1121,7 @@ export class OwlSalesDashboard extends Component {
                 res_model: 'mail.activity',
                 view_mode: 'tree',
                 view_id: viewId[0],
-                domain: "[('res_model', '=', 'wika.payment.request'), ('state', '=', 'overdue')]"
+                domain: "[('res_model', '=', 'wika.payment.request'), ('is_expired', '=', True)]"
             }])
             let url = `/web#model=mail.activity&view_type=list&action=${actionId}&menu_id=${menuId}`
             this.state.pr.url.late = url
@@ -1078,9 +1129,9 @@ export class OwlSalesDashboard extends Component {
             let url = `/web#model=mail.activity&view_type=list&action=${existingAction}&menu_id=${menuId}`
             this.state.pr.url.late = url
         }
+        console.log("LATE PR URL --->", this.state.pr.url.late)
     }
     // === PR URL BUILDERS ===
-
 
 
     async viewQuotations(){

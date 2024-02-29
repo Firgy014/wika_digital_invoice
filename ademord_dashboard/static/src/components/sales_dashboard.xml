@@ -103,7 +103,7 @@
                                         <span class="fa fa-arrow-right text-white"/>
                                     </div>
                                 </div>
-                                <ChartRenderer type="'bar'" title="'Invoice Monitoring'" config="state.monthlySales"/>
+                                <ChartRenderer type="'bar'" title="'Invoice Monitoring'" config="state.invoiceMonitoring"/>
                             </div>
                         </div>
                     </div>
