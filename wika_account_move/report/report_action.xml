@@ -1,8 +1,8 @@
 <odoo>
  
     <!-- action report Invoice -->
-    
-    <record id="report_wika_account_move_divisi_action" model="ir.actions.report">
+        
+    <record id="report_wika_account_move_divisi_divisi_action" model="ir.actions.report">
         <field name="name">Report Invoice(PDF) Divisi</field>
         <field name="model">account.move</field>
         <field name="report_type">qweb-html</field>
@@ -13,12 +13,35 @@
     </record>
 
     <record id="report_wika_account_move_proyek_action" model="ir.actions.report">
+        <field name="name">Report Invoice(PDF) Proyek Divisi</field>
+        <field name="model">account.move</field>
+        <field name="report_type">qweb-html</field>
+        <field name="report_name">wika_account_move.report_wika_account_move_divisi</field>
+        <field name="print_report_name">'Wika Account Move - Divisi %s' % (object.name)</field>
+        <field name="binding_model_id" eval="False"/>
+        <field name="binding_view_types">form</field>
+    </record>
+
+    <record id="report_wika_account_move_proyek_action" model="ir.actions.report">
         <field name="name">Report Invoice(PDF) Proyek</field>
         <field name="model">account.move</field>
         <field name="report_type">qweb-html</field>
         <field name="report_name">wika_account_move.report_wika_account_move_proyek</field>
         <field name="print_report_name">'Wika Account Move - Proyek %s' % (object.name)</field>
+        <field name="binding_model_id" eval="False"/>
+        <field name="report_name">wika_account_move.report_wika_account_move_proyek</field>
+        <field name="print_report_name">'Wika Account Move - Proyek %s' % (object.name)</field>
         <field name="binding_model_id" ref="model_account_move"/>
+        <field name="binding_view_types">form</field>
+    </record>
+
+    <record id="report_wika_account_move_keuangan_action" model="ir.actions.report">
+        <field name="name">Report Invoice(PDF) Keuangan</field>
+        <field name="model">account.move</field>
+        <field name="report_type">qweb-html</field>
+        <field name="report_name">wika_account_move.report_wika_account_move_keuangan</field>
+        <field name="print_report_name">'Wika Account Move - Keuangan %s' % (object.name)</field>
+        <field name="binding_model_id" eval="False"/>
         <field name="binding_view_types">form</field>
     </record>
 

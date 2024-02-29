@@ -145,8 +145,8 @@
                                     attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])], 'invisible': [('check_biro', '=', False)]}"/>
                                 <field name="project_id" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
                                 <field name="end_date" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
-                                <field name="bap_date" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
-                                <field name="pph_ids" domain="[('tax_group_id', '!=', 'PPN')]" widget="many2many_tags"/>
+                                <field name="bap_date" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}" style="background-color: #dddded;"/>
+                                <field name="pph_ids" domain="[('tax_group_id', '!=', 'PPN')]" widget="many2many_tags" style="background-color: #dddded;"/>
 
                                 <field name="last_value" groups="base.group_no_one"/>
                                 <field name="last_quantity" groups="base.group_no_one"/>

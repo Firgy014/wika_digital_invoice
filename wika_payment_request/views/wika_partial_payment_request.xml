@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <data>
+
+        <!-- filter -->
+        <record id="wika_partial_payment_request_view_search" model="ir.ui.view">
+            <field name="name">wika.partial.payment.request.search</field>
+            <field name="model">wika.partial.payment.request</field>
+            <field name="arch" type="xml">
+                <search>
+                    <field name="invoice_id"/>
+
+                    <field name="branch_id"/>
+                    <field name="department_id"/>
+                    <field name="project_id"/>
+                    <field name="date"/>
+                    <field name="name"/>
+                    <field name="partner_id"/>
+
+                    <group expand="0" string="Group By">
+                        <filter name="divisi" string="Divisi" context="{'group_by': 'branch_id'}"/>
+                        <filter name="dept" string="Department" context="{'group_by': 'department_id'}"/>
+                        <filter name="project" string="Project" context="{'group_by': 'project_id'}"/>
+                        <filter name="date" string="Date" context="{'group_by': 'date'}"/>
+                        <filter name="invoice_id" string="Invoice" context="{'group_by': 'invoice_id'}"/>
+
+                        <filter name="vendor" string="Vendor" context="{'group_by': 'partner_id'}"/>
+                    </group>
+                </search>
+            </field>
+        </record>
+
+        <!-- tree -->
+        <record id="wika_partial_payment_request_view_tree" model="ir.ui.view">
+            <field name="name">wika.partial.payment.request.view.tree</field>
+            <field name="model">wika.partial.payment.request</field>
+            <field name="arch" type="xml">
+                <tree string="Payment Partial Request">
+                   <field name="name"/>
+                   <field name="invoice_id"/>
+                    <field name="branch_id"/>
+                    <field name="project_id"/>
+                    <field name="date"/>
+                    <field name="partial_amount" sum="Total Partial"/>
+                    <field name="state"/>
+
+                </tree>
+            </field>
+        </record>
+
+        <!-- form -->
+        <record id="wika_partial_payment_request_view_form" model="ir.ui.view">
+            <field name="name">wika.partial.payment.request.view.form</field>
+            <field name="model">wika.partial.payment.request</field>
+            <field name="arch" type="xml">
+                <form string="Partial Payment Request">
+                    <header>
+                        <button name="action_submit" type="object" string="Request" states="draft,rejected" class="btn-primary"/>
+                        <!-- <button name="action_request" type="object" string="REQUEST" states="upload" class="btn-primary"/> -->
+                        <button name="action_approve" type="object" string="APPROVE" states="requested" class="btn-success"/>
+                        <button name="action_reject" type="object" string="REJECT" states="requested" class="btn-danger"/>
+                        <field name="state" widget="statusbar" statusbar_visible="draft,requested,approved"/>
+                    </header>
+                    <sheet>
+<!--                        <div name="button_box" position="inside">
+                            <button class="oe_stat_button" type="object" name="get_documents" icon="fa-file-text-o">
+                                <field string="Documents" name="documents_count" widget="statinfo"/>
+                            </button>
+                        </div>-->
+                        <div>
+                            <div class="oe_title">
+                                <h1>
+                                    <field name="name"/>                              
+                                </h1>                            
+                            </div>
+                        </div>
+                        <group>
+                            <group>
+                                <field name="invoice_id" attrs="{'readonly': [('state', 'in', [ 'requested', 'approved'])]}"/>
+                                <field name="partner_id" attrs="{'readonly': [('state', 'in', [ 'requested', 'approved'])]}"/>
+                                <field name="total_invoice" attrs="{'readonly': [('state', 'in', [ 'requested', 'approved'])]}"/>
+                                <field name="sisa_partial_amount" attrs="{'readonly': [('state', 'in', [ 'requested', 'approved'])],'invisible': [('state', '!=', 'approve')]}"/>
+                                <field name="partial_amount" attrs="{'readonly': [('state', 'in', [ 'requested', 'approved'])]}"/>
+                                <field name="step_approve" invisible="1" attrs="{'readonly': [('state', 'in', [ 'requested', 'approved'])]}"/>
+                                <field name="accounting_doc" invisible="1"/>
+                            </group>
+                            <group>
+                                <field name="check_biro" invisible="1"/>
+                                <field name="level" invisible="1"/>
+                                <field name="branch_id" domain="[('biro', '=', False)]"
+                                    attrs="{'readonly': [('state', 'in', [ 'request', 'approve'])]}"/>
+                                <field name="department_id" domain="[('biro', '=', True), ('parent_id', '=', branch_id)]" 
+                                    attrs="{'readonly': [('state', 'in', [ 'request', 'approve'])], 'invisible': [('check_biro', '=', False)]}"/>
+                                <field name="project_id" 
+                                    attrs="{'readonly': [('state', 'in', [ 'request', 'approve'])]}"/>
+                            </group>
+                        </group>
+                        <notebook>
+
+                             <page string="List Document">
+                                <field name="document_ids" attrs="{'readonly': [('state', 'not in', ['draft','rejected'])]}">
+                                    <tree string="List Document" delete="0" create="0">
+                                        <field name="document_id"/>
+                                        <field name="document" widget="binary_button" filename="filename"/>
+                                        <field name="filename" invisible="1"/>
+                                        <field name="state"/>
+                                    </tree>
+                                    <form string='List Document'>
+                                        <group>
+                                            <field name="document" widget="pdf_viewer" filename="filename"/>
+                                            <field name="filename" invisible="1"/>
+                                            <field name="state" invisible="1"/>
+                                        </group>
+                                    </form>
+                                </field>
+                            </page>
+                            <page string="List Approval">
+                                <group>
+                                    <field name="history_approval_ids" mode="tree" nolabel="1"  colspan="2" 
+                                        readonly="1">
+                                        <tree string="List Approval">
+                                            <field name="user_id"/>
+                                            <field name="groups_id"/>
+                                            <field name="date"/>
+                                            <field name="note"/>
+                                        </tree>
+                                        <form string='List Approval'>
+                                            <group>
+                                                <field name="user_id"/>
+                                                <field name="groups_id"/>
+                                                <field name="date"/>
+                                                <field name="note"/>
+                                            </group>
+                                        </form>
+                                    </field>
+                                </group>
+                            </page>
+                        </notebook>
+                    </sheet>
+                    <div class="oe_chatter">
+                        <field name="message_follower_ids"/>
+                        <field name="activity_ids"/>
+                        <field name="message_ids"/>
+                    </div>
+                </form>
+            </field>
+        </record>
+        
+        <!-- action -->
+        <record id="action_wika_partial_payment_request" model="ir.actions.act_window">
+            <field name="name">Partial Payment Request</field>
+            <field name="res_model">wika.partial.payment.request</field>
+            <field name="view_mode">tree,form</field>
+            <field name="search_view_id" ref="wika_partial_payment_request_view_search"/>
+        </record>
+    
+    </data>
+    
+
+</odoo>
