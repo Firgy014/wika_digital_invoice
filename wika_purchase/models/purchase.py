@@ -35,7 +35,7 @@ class PurchaseOrderInherit(models.Model):
     position = fields.Char(string='Jabatan')
     vendor_position = fields.Char(string='Jabatan Vendor')
     address = fields.Char(string='Alamat')
-    job = fields.Char(string='Pekerjaan')
+    job = fields.Char(string='Jenis Pekerjaan')
     price_cut_ids = fields.One2many('wika.po.pricecut.line', 'purchase_id', string='Other Price Cut')
     active = fields.Boolean(string='Active',default=True)
     tgl_create_sap= fields.Date(string='Tgl Create SAP')
@@ -193,14 +193,13 @@ class PurchaseOrderInherit(models.Model):
 
     def get_gr(self):
         url_config = self.env['wika.integration'].search([('name', '=', 'URL GR')], limit=1).url
-        print("-------------------------------")
-        print(url_config)
         headers = {
             'Authorization': 'Basic V0lLQV9JTlQ6SW5pdGlhbDEyMw==',
             'Content-Type': 'application/json'
         }
         payload = json.dumps({
             "IV_EBELN": "%s",
+            "IV_REVERSE": "O",
             "IW_CPUDT_RANGE": {
                 "CPUDT_LOW": "%s",
                 "CPUTM_LOW": "00:00:00",
@@ -228,8 +227,6 @@ class PurchaseOrderInherit(models.Model):
                         # Create a new list with the current item
                         mat_doc_dict[mat_doc] = [hasil]
                 for mat_doc, items in mat_doc_dict.items():
-                    print(f"MAT_DOC: {mat_doc}")
-                    print("hehe")
                     vals = []
                     for item in items:
                         # if item['REVERSE']=='X':
@@ -259,11 +256,8 @@ class PurchaseOrderInherit(models.Model):
                             'purchase_line_id':po_line.id,
                             'name': hasil['PO_NUMBER']
                         }))
-                        print(item['DOC_DATE'])
                         docdate = hasil['DOC_DATE']
-                    print(vals)
                     if vals:
-                        print("ppppppppppppppppppppp")
                         picking_create = self.env['stock.picking'].sudo().create({
                             'name': mat_doc,
                             'po_id': self.id,
@@ -302,8 +296,6 @@ class PurchaseOrderInherit(models.Model):
                         # Create a new list with the current item
                         ses_number_dict[ses_number] = [hasil]
                 for ses_number, items in ses_number_dict.items():
-                    print(f"SES_DOC: {ses_number}")
-                    print("hehe")
                     vals = []
                     for item in items:
                         # if item['REVERSE'] == 'X':
@@ -333,12 +325,9 @@ class PurchaseOrderInherit(models.Model):
                             'purchase_line_id': po_line.id,
                             'name': hasil['PO_NUMBER']
                         }))
-                        print(item['DOC_DATE'])
                         docdate = hasil['DOC_DATE']
                         matdoc = item['MAT_DOC']
-                    print(vals)
                     if vals:
-                        print("ppppppppppppppppppppp")
                         picking_create = self.env['stock.picking'].sudo().create({
                             'name': ses_number,
                             'po_id': self.id,

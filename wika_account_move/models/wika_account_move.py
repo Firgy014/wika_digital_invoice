@@ -281,7 +281,7 @@ class WikaInheritedAccountMove(models.Model):
             record.account_id=False
             account_setting_model = self.env['wika.setting.account.payable'].sudo()
 
-            if record.partner_id.bill_coa_type == 'relate':
+            if record.partner_id.bill_coa_type == 'ZN01':
                 if record.level == 'Proyek' and record.valuation_class:
                     account_setting_id = account_setting_model.search([
                         ('valuation_class', '=', record.valuation_class),
@@ -294,7 +294,7 @@ class WikaInheritedAccountMove(models.Model):
                         ('assignment', '=', 'nonproyek'),
                     ], limit=1)
                     record.account_id= account_setting_id.account_berelasi_id.id
-            elif record.partner_id.bill_coa_type == '3rd_party':
+            elif record.partner_id.bill_coa_type == 'ZN02':
                 if record.level == 'Proyek' and record.valuation_class:
                     account_setting_id = account_setting_model.search([
                         ('valuation_class', '=', record.valuation_class),
