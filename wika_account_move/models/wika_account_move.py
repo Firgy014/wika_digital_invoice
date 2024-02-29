@@ -172,7 +172,13 @@ class WikaInheritedAccountMove(models.Model):
 
     amount_total_payment = fields.Float(string='Total Invoice', compute='_compute_amount_total_payment', store= True)
     total_line = fields.Float(string='Total Line', compute='_compute_total_line')
-    is_approval_checked = fields.Boolean(string="Approval Checked")
+    is_approval_checked = fields.Boolean(string="Approval Checked", compute='_compute_is_approval_checked')
+
+    @api.depends('history_approval_ids.is_show_wizard', 'history_approval_ids.user_id')
+    def _compute_is_approval_checked(self):
+        current_user = self.env.user
+        for move in self:
+            move.is_approval_checked = any(line.is_show_wizard for line in move.history_approval_ids if line.user_id == current_user)
 
     @api.depends('total_line', 'invoice_line_ids', 'dp_total','retensi_total', 'invoice_line_ids.tax_ids')
     def compute_total_tax(self):
@@ -673,6 +679,8 @@ class WikaInheritedAccountMove(models.Model):
                     'note': 'Approved',
                     'invoice_id': self.id,
                     'information': keterangan if approval_line_id.check_approval else False,
+                    'is_show_wizard': True if approval_line_id.check_approval else False,
+
                 })
                 if approval_line_id.check_approval:
                     print("Approval Line ID :", approval_line_id.check_approval)
@@ -744,6 +752,7 @@ class WikaInheritedAccountMove(models.Model):
                             'note': 'Verified',
                             'invoice_id': self.id,
                             'information': keterangan if approval_line_id.check_approval else False,
+                            'is_show_wizard': True if approval_line_id.check_approval else False,
 
                         })
                         if approval_line_id.check_approval:
@@ -895,6 +904,7 @@ class WikaInvoiceApprovalLine(models.Model):
     date = fields.Datetime(string='Date')
     note = fields.Char(string='Note')
     information = fields.Char(string='Keterangan')
+    is_show_wizard = fields.Boolean('check')
 
 class AccountMovePriceCutList(models.Model):
     _name = 'wika.account.move.pricecut.line'
