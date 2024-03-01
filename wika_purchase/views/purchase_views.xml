@@ -63,6 +63,7 @@
                         <field name="vendor_position" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}" style="background-color: #dddded;"/>
                         <field name="address" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}" style="background-color: #dddded;"/>
                         <field name="job" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}" style="background-color: #dddded;"/>
+                        <field name="is_qty_available" groups="base.group_no_one"/>
                     </group>
                     <group>
                         <field name="sap_doc_number" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}" style="background-color: #dddded;"/>
@@ -128,6 +129,8 @@
                                 <field name="subtotal_idr" attrs="{'column_invisible': [('parent.currency_name', '=', 'IDR')]}"/>
                                 <field name="price_total" invisible="1"/>
                                 <field name="price_tax" invisible="1"/>
+                                <field name="qty_bap" groups="base.group_no_one"/>
+                                <field name="sisa_qty_bap" groups="base.group_no_one"/>
                             </tree>
                             <form string="Purchase Order Line">
                                     <field name="state" invisible="1"/>
@@ -325,12 +328,4 @@
         </field>
     </record>
 
-       <!-- <record id="get_gr_action_po" model="ir.actions.server">
-        <field name="name">Get GR</field>
-        <field name="model_id" ref="model_purchase_order"/>
-        <field name="binding_model_id" ref="model_purchase_order"/>
-        <field name="binding_view_types">list</field>
-        <field name="state">code</field>
-        <field name="code">records.get_gr()</field>
-    </record>-->
 </odoo>

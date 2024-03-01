@@ -327,11 +327,22 @@ class WikaBeritaAcaraPembayaran(models.Model):
 
     @api.onchange('partner_id')
     def onchange_partner_id(self):
+        domain = [('state', '=', 'approved')]
         if self.partner_id:
-            domain = [('partner_id', '=', self.partner_id.id),('state','=','approved')]
-            return {'domain': {'po_id': domain}}
-        else:
-            return {'domain': {'po_id': [('state','=','approved')]}}
+            domain += [('partner_id', '=', self.partner_id.id)]
+
+            # Mencari pesanan pembelian yang tidak memenuhi kriteria is_qty_available True
+            purchase_orders = self.env['purchase.order'].search([
+                ('partner_id', '=', self.partner_id.id),
+                ('is_qty_available', '=', True)  # Mencari item yang is_qty_available False
+            ])
+
+            # Mengumpulkan nomor PO yang harus dikecualikan
+            exclude_po_ids = purchase_orders.ids
+            if exclude_po_ids:
+                domain += [('id', 'not in', exclude_po_ids)]
+
+        return {'domain': {'po_id': domain}}
 
     #compute total qty gr
     @api.depends('bap_ids.qty')
