@@ -78,9 +78,9 @@
                             <group>
 
                                 <field name="date" attrs="{'readonly': [('state', 'in', [ 'request', 'approve'])]}"/>
-                                <field name="assignment" attrs="{'readonly': [('state', 'in', [ 'request', 'approve'])]}"/>
-                                <field name="reference" attrs="{'readonly': [('state', 'in', [ 'request', 'approve'])]}"/>
-                                <field name="payment_block" attrs="{'readonly': [('state', 'in', [ 'request', 'approve'])],'invisible': [('state', '!=', 'approve')]}"/>
+                                <field name="assignment"  groups="base.group_no_one" attrs="{'readonly': [('state', 'in', [ 'request', 'approve'])]}"/>
+                                <field name="reference"  groups="base.group_no_one" attrs="{'readonly': [('state', 'in', [ 'request', 'approve'])]}"/>
+                                <field name="payment_block" required="1" attrs="{'readonly': [('state', 'in', [ 'request', 'approve'])],'invisible': [('state', '!=', 'approve')]}"/>
                                 <field name="payment_method" attrs="{'readonly': [('state', 'in', [ 'request', 'approve'])]}"/>
                                 <field name="total" readonly="1" force_save="1" attrs="{'readonly': [('state', 'in', [ 'request', 'approve'])]}"/>
                                 <field name="step_approve" invisible="1" attrs="{'readonly': [('state', 'in', [ 'request', 'approve'])]}"/>
@@ -110,7 +110,7 @@
                                             <field name="po_id"/>
                                             <field name="invoice_date" string="Document Date"/>
                                             <field name="invoice_date_due"/>
-                                            <field name="amount_sisa_pr" string="Amount Request"/>
+                                            <field name="total_partial_pr" string="Amount Request"/>
                                             <field name="is_partial_pr"/>
                                             <field name="state"/>
                                         </tree>

@@ -399,7 +399,6 @@ class PurchaseOrderInherit(models.Model):
                         'state': 'planned',
                         'summary': f"Need Upload Document {model_id.name}!"
                     })
-
             # Get Document Setting
             document_list = []
             doc_setting_id = document_setting_model.search([('model_id', '=', model_id.id)])
@@ -720,11 +719,12 @@ class PurchaseOrderLineInherit(models.Model):
 
     def _compute_qty_bap(self):
         for x in self:
-            query = """select sum(qty) from wika_berita_acara_pembayaran_line where purchase_line_id=%s
-            """% (x.id)
-            # print ("TEEESSSTTTTTT-----------", query)
-            self.env.cr.execute(query)
-            result = self.env.cr.fetchone()
+            x.qty_bap = 0.0
+            # query = """select sum(qty) from wika_berita_acara_pembayaran_line where purchase_line_id=%s
+            # """% (x.id)
+            # # print ("TEEESSSTTTTTT-----------", query)
+            # self.env.cr.execute(query)
+            # result = self.env.cr.fetchone()
             # bap_line_model = self.env['wika.berita.acara.pembayaran.line'].sudo()
             #
             # total_qty = 0
@@ -733,10 +733,10 @@ class PurchaseOrderLineInherit(models.Model):
             #
             # for bap_line in bap_lines:
             #     total_qty += bap_line.qty
-            if result:
-                x.qty_bap = result[0]
-            else:
-                x.qty_bap=0.0
+            # if result:
+            #     x.qty_bap = result[0]
+            # else:
+            #     x.qty_bap=0.0
 
     @api.depends('product_qty','qty_bap')
     def _compute_sisa_qty_bap(self):

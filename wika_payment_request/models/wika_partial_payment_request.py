@@ -183,10 +183,13 @@ class WikaPartialPaymentRequest(models.Model):
 
         cek = False
         level = self.level
+        model_model = self.env['ir.model'].sudo()
+        model_id = model_model.search([('model', '=', 'wika.partial.payment.request')], limit=1)
+
         if level:
             approval_id = self.env['wika.approval.setting'].sudo().search(
                 [('level', '=', level),
-                 ('transaction_type', '=', 'pr')], limit=1)
+                 ('transaction_type', '=', 'pr'),('model_id', '=', model_id.id),], limit=1)
             if not approval_id:
                 raise ValidationError(
                     'Approval Setting untuk menu PR tidak ditemukan. Silakan hubungi Administrator!')
@@ -211,6 +214,7 @@ class WikaPartialPaymentRequest(models.Model):
                         x.status = 'approved'
                         x.action_done()
                 self.state = 'requested'
+                self.approval_stage = approval_line_id.level_role
                 self.step_approve += 1
                 self.env['wika.partial.approval.line'].sudo().create({
                     'user_id': self._uid,
@@ -255,10 +259,12 @@ class WikaPartialPaymentRequest(models.Model):
         cek = False
         level=self.level
         documents_model = self.env['documents.document'].sudo()
+        model_model = self.env['ir.model'].sudo()
+        model_id = model_model.search([('model', '=', 'wika.partial.payment.request')], limit=1)
 
         approval_id = self.env['wika.approval.setting'].sudo().search(
             [('level', '=', level),
-             ('transaction_type', '=', 'pr')], limit=1)
+             ('transaction_type', '=', 'pr'),('model_id', '=', model_id.id),], limit=1)
         if not approval_id:
             raise ValidationError(
                 'Approval Setting untuk menu PR tidak ditemukan. Silakan hubungi Administrator!')
@@ -281,6 +287,7 @@ class WikaPartialPaymentRequest(models.Model):
         if cek == True:
             if approval_id.total_approve == self.step_approve:
                 self.state = 'approved'
+                self.approval_stage = approval_line_id.level_role
                 self.env['wika.partial.approval.line'].create({
                     'user_id': self._uid,
                     'groups_id': groups_id.id,
@@ -344,6 +351,7 @@ class WikaPartialPaymentRequest(models.Model):
                     print(first_user)
                     if first_user:
                         self.step_approve += 1
+                        self.approval_stage = approval_line_id.level_role
                         self.env['mail.activity'].sudo().create({
                             'activity_type_id': 4,
                             'res_model_id': self.env['ir.model'].sudo().search(

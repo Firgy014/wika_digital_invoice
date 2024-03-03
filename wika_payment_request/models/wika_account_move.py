@@ -18,7 +18,7 @@ class InheritAccountMove(models.Model):
                 x.total_partial_pr = sum(line.partial_amount for line in x.partial_request_ids if line.state == 'approved')
                 x.amount_sisa_pr = x.total_line-x.total_partial_pr
             else:
-                x.total_partial_pr=0.0
+                x.total_partial_pr=x.total_line
                 x.amount_sisa_pr = x.total_line
 
     @api.depends('total_partial_pr')

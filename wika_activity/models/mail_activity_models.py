@@ -15,7 +15,7 @@ class Wika_Activity(models.Model):
         ('today', 'Today'),
         ('planned', 'Planned')
     ], 'State', compute='_compute_state', store=True)
-    is_expired = fields.Boolean(string='Is Expired', compute='_compute_is_expired',store=True)
+    is_expired = fields.Boolean(string='Is Expired', compute='_compute_is_expired')
 
     @api.depends('date_deadline')
     def _compute_is_expired(self):

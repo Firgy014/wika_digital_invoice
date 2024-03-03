@@ -214,7 +214,7 @@
     </record>
 
         <!-- tree -->
-   <record id="view_wika_account_move_tree" model="ir.ui.view">
+    <record id="view_wika_account_move_tree" model="ir.ui.view">
             <field name="name">wika.account.move.view.tree</field>
             <field name="model">account.move</field>
             <field name="priority" eval="1"/>
@@ -228,15 +228,16 @@
                         <field name="invoice_date" string="Document Date"/>
                         <field name="invoice_date_due"/>
                         <field name="total_line" string="Untaxed Amount"/>
-                        <field name="payment_state"/>
-                        <field name="state"/>
+                        <field name="state" invisible="1"/>
+                        <field name="status_invoice"/>
                         <field name="approval_stage"  widget="badge"  optional="show"/>
+                        <field name="payment_state"/>
                         <field name="currency_id" invisible="1"/>
                     </tree>
             </field>
         </record>
 
-        <record id="view_wika_account_move_pr_tree" model="ir.ui.view">
+    <record id="view_wika_account_move_pr_tree" model="ir.ui.view">
             <field name="name">wika.account.move.pr.view.tree</field>
             <field name="model">account.move</field>
             <field name="priority" eval="1"/>
@@ -251,7 +252,7 @@
                         <field name="invoice_date_due"/>
                         <field name="total_line" string="Untaxed Amount"/>
                         <field name="state"/>
-                         <field name="payment_block"  widget="badge"  optional="show"/>
+                        <field name="payment_block"  widget="badge"  optional="show"/>
                          <field name="nomor_payment_request"  widget="badge"  optional="show"/>
                          <field name="payment_method"/>
                          <field name="payment_request_date"/>
