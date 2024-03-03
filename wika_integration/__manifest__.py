@@ -20,7 +20,7 @@
     'version': '0.1',
 
     # any module necessary for this one to work correctly
-    'depends': ['base','inherit_for_api','base_setup'],
+    'depends': ['base','inherit_for_api','base_setup','wika_account_move'],
 
     # always loaded
     'data': [

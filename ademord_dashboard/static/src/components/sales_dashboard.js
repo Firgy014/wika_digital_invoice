@@ -206,7 +206,7 @@ export class OwlSalesDashboard extends Component {
         const dataOperasi = await this.orm.searchCount("account.move", domainOperasi)
         const dataFungsi = await this.orm.searchCount("account.move", domainFungsi)
         const dataPusat = await this.orm.searchCount("account.move", domainPusat)
-
+        
         const dataInvMonitoring = [
             { label: 'Invoice di Proyek', count: dataProyek },
             { label: 'Invoice di Divisi Operasi', count: dataOperasi },
