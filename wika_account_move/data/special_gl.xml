@@ -4,25 +4,25 @@
             <field name="code">1</field>
             <field name="name">UM MATERIAL PIHAK BERELASI</field>
             <field name="valuation_class">material</field>
-            <field name="bill_coa_type">relate</field>
+            <field name="bill_coa_type">ZN01</field>
         </record>
         <record id="special_gl_2" model="wika.special.gl">
             <field name="code">2</field>
             <field name="name">UM MATERIAL PIHAK KETIGA</field>
             <field name="valuation_class">material</field>
-            <field name="bill_coa_type">3rd_party</field>
+            <field name="bill_coa_type">ZN02</field>
         </record>
         <record id="special_gl_3" model="wika.special.gl">
             <field name="code">3</field>
             <field name="name">UM SUBKON PIHAK BERELASI</field>
             <field name="valuation_class">subkont</field>
-            <field name="bill_coa_type">relate</field>
+            <field name="bill_coa_type">ZN01</field>
         </record>
         <record id="special_gl_4" model="wika.special.gl">
             <field name="code">4</field>
             <field name="name">UM SUBKON PIHAK KETIGA</field>
             <field name="valuation_class">subkont</field>
-            <field name="bill_coa_type">3rd_party</field>
+            <field name="bill_coa_type">ZN02</field>
         </record>
          <record id="special_gl_5" model="wika.special.gl">
             <field name="code">5</field>

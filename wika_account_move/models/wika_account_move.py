@@ -8,7 +8,7 @@ class WikaInheritedAccountMove(models.Model):
     bap_id = fields.Many2one('wika.berita.acara.pembayaran', string='BAP', required=True,domain=[('state','=','approved')])
     branch_id = fields.Many2one('res.branch', string='Divisi', required=True)
     department_id = fields.Many2one('res.branch', string='Department')
-    project_id = fields.Many2one('project.project', string='Project', required=True, readonly=True)
+    project_id = fields.Many2one('project.project', string='Project')
     document_ids = fields.One2many('wika.invoice.document.line', 'invoice_id', string='Document Line', required=True)
     history_approval_ids = fields.One2many('wika.invoice.approval.line', 'invoice_id', string='History Approval Line')
     reject_reason_account = fields.Text(string='Reject Reason')
@@ -37,12 +37,15 @@ class WikaInheritedAccountMove(models.Model):
     price_cut_ids = fields.One2many('wika.account.move.pricecut.line', 'move_id', string='Other Price Cut')
     account_id = fields.Many2one(comodel_name='account.account')
     date = fields.Date(string='Posting Date', default=lambda self: fields.Date.today())
+    status_invoice = fields.Char(string='Status Invoice',compute='_compute_status_invoice')
+    status_invoice_rel = fields.Char(string='Status Invoice',related='status_invoice',store=True)
+
     approval_stage = fields.Selection([
         ('Proyek', 'Proyek'),
         ('Divisi Operasi', 'Divisi Operasi'),
         ('Divisi Fungsi', 'Divisi Fungsi'),
         ('Pusat', 'Pusat'),
-    ], string='Status Invoice')
+    ], string='Position')
     payment_block = fields.Selection([
         ('B', 'Default Invoice'),
         ('C', 'Pengajuan Ke Divisi'),
@@ -56,6 +59,7 @@ class WikaInheritedAccountMove(models.Model):
     ], string='Payment Method')
     payment_request_date= fields.Date(string='Payment Request Date')
     nomor_payment_request= fields.Char(string='Nomor Payment Request')
+    create_uid = fields.Integer(string='Created by', readonly=True)
 
     @api.depends('total_line', 'pph_ids.amount')
     def _compute_total_pph(self):
@@ -64,7 +68,19 @@ class WikaInheritedAccountMove(models.Model):
             for pph in record.pph_ids:
                 total_pph += (record.total_line* pph.amount) / 100
             record.total_pph = total_pph
-    
+
+
+    @api.depends('history_approval_ids')
+    def _compute_status_invoice(self):
+        for record in self:
+            max_id = max(record.history_approval_ids.mapped('id'), default=False)
+            current_user = record.user_id
+            if max_id:
+                max_record = record.history_approval_ids.filtered(lambda x: x.id == max_id)
+                record.status_invoice = f"{max_record.note} by {max_record.groups_id.name}"
+            else:
+                record.status_invoice = f"Created by {current_user.name}"
+
     @api.depends('department_id')
     def _cek_biro(self):
         for x in self:
@@ -102,21 +118,12 @@ class WikaInheritedAccountMove(models.Model):
         if self.date < self.bap_id.bap_date:
             raise ValidationError("Posting Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
 
-    # invoice_line_ids = fields.One2many(  # /!\ invoice_line_ids is just a subset of line_ids.
-    #     'account.move.line',
-    #     'move_id',
-    #     string='Invoice lines',
-    #     copy=False,
-    #     readonly=True,
-    #     domain=[('display_type', 'in', ('product', 'line_section', 'line_note'))],
-    #     states={'draft': [('readonly', False)]},
-    # )
-
     state = fields.Selection(
         selection=[
             ('draft', 'Draft'),
             ('uploaded', 'Uploaded'),
             ('approved', 'Approved'),
+            ('verified', 'Verified'),
             ('rejected', 'Rejected'),
             ('posted', 'Posted'),
             ('cancel', 'Cancelled'),
@@ -129,25 +136,6 @@ class WikaInheritedAccountMove(models.Model):
         default='draft',
     )
 
-    message_follower_ids = fields.One2many(
-        'mail.followers', 'res_id', string='Followers', groups='base.group_user')
-    activity_ids = fields.One2many(
-        'mail.activity', 'res_id', 'Activities',
-        auto_join=True,
-        groups="base.group_user",)
-
-    partner_id = fields.Many2one(
-        'res.partner',
-        string='Vendors',
-        readonly=True,
-        tracking=True,
-        states={'draft': [('readonly', False)]},
-        inverse='_inverse_partner_id',
-        check_company=True,
-        change_default=True,
-        index=True,
-        ondelete='restrict',
-    )
 
     amount_total_footer = fields.Float(string='Amount Total', compute='_compute_amount_total', store=True)
     level = fields.Selection([
@@ -281,7 +269,7 @@ class WikaInheritedAccountMove(models.Model):
             record.account_id=False
             account_setting_model = self.env['wika.setting.account.payable'].sudo()
 
-            if record.partner_id.bill_coa_type == 'relate':
+            if record.partner_id.bill_coa_type == 'ZN01':
                 if record.level == 'Proyek' and record.valuation_class:
                     account_setting_id = account_setting_model.search([
                         ('valuation_class', '=', record.valuation_class),
@@ -294,7 +282,7 @@ class WikaInheritedAccountMove(models.Model):
                         ('assignment', '=', 'nonproyek'),
                     ], limit=1)
                     record.account_id= account_setting_id.account_berelasi_id.id
-            elif record.partner_id.bill_coa_type == '3rd_party':
+            elif record.partner_id.bill_coa_type == 'ZN02':
                 if record.level == 'Proyek' and record.valuation_class:
                     account_setting_id = account_setting_model.search([
                         ('valuation_class', '=', record.valuation_class),

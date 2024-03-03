@@ -39,6 +39,8 @@ class WikaPaymentRequest(models.Model):
     department_id = fields.Many2one('res.branch', string='Department')
     project_id = fields.Many2one('project.project', string='Project', required=True,default=_getdefault_project)
     invoice_ids = fields.Many2many('account.move', string='Invoice', required=True)
+    #invoice_ids = fields.One2many('wika.payment.request.line', string='Invoice', required=True)
+
     history_approval_ids = fields.One2many('wika.pr.approval.line', 'pr_id', string='Approval Line')
     total = fields.Integer(string='Total', compute='compute_total')
     step_approve = fields.Integer(string='Step Approve')
@@ -147,6 +149,12 @@ class WikaPaymentRequest(models.Model):
     def action_submit(self):
         self.write({'state': 'request'})
         self.step_approve += 1
+        if self.level=='Proyek':
+            for x in self.invoice_ids:
+                x.write({'payment_block': 'C'})
+        if self.level == 'Divisi Operasi':
+            for x in self.invoice_ids:
+                x.write({'payment_block': 'C'})
         # model_id = self.env['ir.model'].search([('model', '=', 'wika.payment.request')], limit=1)
         # groups_id = None
         # level = self.level
@@ -239,3 +247,16 @@ class WikaPrApprovalLine(models.Model):
     groups_id = fields.Many2one('res.groups', string='Groups')
     date = fields.Datetime(string='Date')
     note = fields.Char(string='Note')
+#
+# class WikaPrLine(models.Model):
+#     _name = 'wika.payment.request.line'
+#     _description = 'Wika Payment Request Line'
+#
+#     pr_id = fields.Many2one('wika.payment.request', string='pr id')
+#     invoice_id = fields.Many2one('account.move', string='Invoice')
+#     partner_id = fields.Many2one('res.partner', related='invoice_id.partner_id',string='Vendor')
+#     branch_id = fields.Many2one('res.branch',related='invoice_id.branch_id',string='Divisi')
+#     project_id = fields.Many2one('project.project',related='invoice_id.project_id',string='Project')
+#     department_id = fields.Many2one('res.branch',related='invoice_id.department_id',string='Project')
+#     amount=fields.Float(string='Amount Request')
+#     is_partial_pr=fields.Boolean(string='Partial Payment Request',default=False)

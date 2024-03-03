@@ -88,13 +88,13 @@
                         <field name="po_id" string="Nomor PO"  readonly="1"/>
                         <field name="pick_type"  readonly="1"/>
                         <field name="level"  invisible="1"/>
-                        <field name="origin" attrs="{'invisible': [('pick_type', '=', 'gr')]}"/>
+                        <field name="origin" readonly="1" force_save="1" attrs="{'invisible': [('pick_type', '=', 'gr')]}"/>
 
                         <field name="start_date" string="Period Start" attrs="{'invisible': [('pick_type', '=', 'gr')], 'readonly': [('state', 'in', ['uploaded', 'approved'])]}" style="background-color: #dddded;"/>
                         <field name="end_date" string="Period End" attrs="{'invisible': [('pick_type', '=', 'gr')], 'required': [('pick_type', '!=', 'gr')],'readonly': [('state', 'in', ['uploaded', 'approved'])]}" style="background-color: #dddded;"/>
                     </group>
                     <group>
-                        <field name="branch_id" string="Divisi" domain="[('biro', '=', False)]"  readonly="1"/>
+                        <field name="branch_id" string="Divisi" domain="[('biro', '=', False)]"  readonly="1" force_save="1"/>
                         <field name="department_id" string="Dept" domain="[('biro', '=', True), ('parent_id', '=', branch_id)]" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])], 'invisible': [('check_biro', '=', False)]}"/>
                         <field name="project_id" string="Project" readonly="1"/>
                         <field name="check_biro" invisible="1"/>

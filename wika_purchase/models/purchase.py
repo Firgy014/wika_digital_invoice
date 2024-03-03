@@ -35,7 +35,7 @@ class PurchaseOrderInherit(models.Model):
     position = fields.Char(string='Jabatan')
     vendor_position = fields.Char(string='Jabatan Vendor')
     address = fields.Char(string='Alamat')
-    job = fields.Char(string='Pekerjaan')
+    job = fields.Char(string='Jenis Pekerjaan')
     price_cut_ids = fields.One2many('wika.po.pricecut.line', 'purchase_id', string='Other Price Cut')
     active = fields.Boolean(string='Active',default=True)
     tgl_create_sap= fields.Date(string='Tgl Create SAP')
@@ -50,6 +50,15 @@ class PurchaseOrderInherit(models.Model):
         ('Divisi Fungsi', 'Divisi Fungsi'),
         ('Pusat', 'Pusat')
     ], string='Level',compute='_compute_level')
+    is_qty_available = fields.Boolean(string='Qty Tersedia', compute='_compute_is_qty_available')
+
+    @api.depends('order_line.sisa_qty_bap')
+    def _compute_is_qty_available(self):
+        for order in self:
+            if all(line.sisa_qty_bap == 0 for line in order.order_line):
+                order.is_qty_available = True
+            else:
+                order.is_qty_available = False
 
     @api.depends('project_id','branch_id','department_id')
     def _compute_level(self):
@@ -193,14 +202,13 @@ class PurchaseOrderInherit(models.Model):
 
     def get_gr(self):
         url_config = self.env['wika.integration'].search([('name', '=', 'URL GR')], limit=1).url
-        print("-------------------------------")
-        print(url_config)
         headers = {
             'Authorization': 'Basic V0lLQV9JTlQ6SW5pdGlhbDEyMw==',
             'Content-Type': 'application/json'
         }
         payload = json.dumps({
             "IV_EBELN": "%s",
+            "IV_REVERSE": "O",
             "IW_CPUDT_RANGE": {
                 "CPUDT_LOW": "%s",
                 "CPUTM_LOW": "00:00:00",
@@ -228,8 +236,6 @@ class PurchaseOrderInherit(models.Model):
                         # Create a new list with the current item
                         mat_doc_dict[mat_doc] = [hasil]
                 for mat_doc, items in mat_doc_dict.items():
-                    print(f"MAT_DOC: {mat_doc}")
-                    print("hehe")
                     vals = []
                     for item in items:
                         # if item['REVERSE']=='X':
@@ -259,11 +265,8 @@ class PurchaseOrderInherit(models.Model):
                             'purchase_line_id':po_line.id,
                             'name': hasil['PO_NUMBER']
                         }))
-                        print(item['DOC_DATE'])
                         docdate = hasil['DOC_DATE']
-                    print(vals)
                     if vals:
-                        print("ppppppppppppppppppppp")
                         picking_create = self.env['stock.picking'].sudo().create({
                             'name': mat_doc,
                             'po_id': self.id,
@@ -302,8 +305,6 @@ class PurchaseOrderInherit(models.Model):
                         # Create a new list with the current item
                         ses_number_dict[ses_number] = [hasil]
                 for ses_number, items in ses_number_dict.items():
-                    print(f"SES_DOC: {ses_number}")
-                    print("hehe")
                     vals = []
                     for item in items:
                         # if item['REVERSE'] == 'X':
@@ -333,12 +334,9 @@ class PurchaseOrderInherit(models.Model):
                             'purchase_line_id': po_line.id,
                             'name': hasil['PO_NUMBER']
                         }))
-                        print(item['DOC_DATE'])
                         docdate = hasil['DOC_DATE']
                         matdoc = item['MAT_DOC']
-                    print(vals)
                     if vals:
-                        print("ppppppppppppppppppppp")
                         picking_create = self.env['stock.picking'].sudo().create({
                             'name': ses_number,
                             'po_id': self.id,
@@ -401,7 +399,6 @@ class PurchaseOrderInherit(models.Model):
                         'state': 'planned',
                         'summary': f"Need Upload Document {model_id.name}!"
                     })
-
             # Get Document Setting
             document_list = []
             doc_setting_id = document_setting_model.search([('model_id', '=', model_id.id)])
@@ -709,6 +706,45 @@ class PurchaseOrderLineInherit(models.Model):
     unit_price_idr = fields.Float(string='Unit Price IDR')
     subtotal_idr = fields.Float(string='Subtotal IDR')
     active      = fields.Boolean(string='Active',default=True)
+    qty_bap = fields.Float('QTY BAP', compute='_compute_qty_bap')
+    sisa_qty_bap = fields.Float('Sisa QTY BAP', compute='_compute_sisa_qty_bap')
+
+    # @api.depends('sisa_qty_bap')
+    # def _compute_is_qty_available(self):
+    #     for order_line in self:
+    #         if all(line.sisa_qty_bap == 0 for line in order_line.order_id.order_line):
+    #             order_line.order_id.is_qty_available = True
+    #         else:
+    #             order_line.order_id.is_qty_available = False
+
+    def _compute_qty_bap(self):
+        for x in self:
+            x.qty_bap = 0.0
+            # query = """select sum(qty) from wika_berita_acara_pembayaran_line where purchase_line_id=%s
+            # """% (x.id)
+            # # print ("TEEESSSTTTTTT-----------", query)
+            # self.env.cr.execute(query)
+            # result = self.env.cr.fetchone()
+            # bap_line_model = self.env['wika.berita.acara.pembayaran.line'].sudo()
+            #
+            # total_qty = 0
+            # bap_line_ids = bap_line_model.search([('stock_move_id', '=', self.id)]).qty
+            # bap_lines = bap_line_model.browse(bap_line_ids)
+            #
+            # for bap_line in bap_lines:
+            #     total_qty += bap_line.qty
+            # if result:
+            #     x.qty_bap = result[0]
+            # else:
+            #     x.qty_bap=0.0
+
+    @api.depends('product_qty','qty_bap')
+    def _compute_sisa_qty_bap(self):
+        for x in self:
+            if x.qty_bap>0:
+                x.sisa_qty_bap = x.product_qty - x.qty_bap
+            else:
+                x.sisa_qty_bap= x.product_qty
 
 class PurchaseOrderDocumentLine(models.Model):
     _name = 'wika.po.document.line'
