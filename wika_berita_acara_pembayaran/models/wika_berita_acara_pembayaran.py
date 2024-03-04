@@ -5,8 +5,8 @@ import pytz
 # import terbilang
 from num2words import num2words
 # from terbilang import terbilang
-
-
+# import requests
+            
 class WikaBeritaAcaraPembayaran(models.Model):
     _name = 'wika.berita.acara.pembayaran'
     _description = 'Berita Acara Pembayaran'
@@ -112,6 +112,29 @@ class WikaBeritaAcaraPembayaran(models.Model):
     terbilang = fields.Char('Terbilang', compute='_compute_rupiah_terbilang')
     is_fully_invoiced = fields.Boolean(string='Fully Invoiced', default=False, compute='_compute_fully_invoiced',
                                        store=True)
+
+    def send_picking_data(company_code, document_no, matdoc_year):
+        # Buat payload untuk dikirim
+        payload = {
+            "input": [
+                {
+                    "company_code": company_code,
+                    "document_no": document_no,
+                    "matdoc_year": matdoc_year
+                }
+            ]
+        }
+
+        # Kirim payload ke URL menggunakan Basic Auth
+        url = "http://wtapperp-dev.wika.co.id:8010/ywikafi017?sap-client=110"
+        auth = ("WIKA_INT", "Initial123")
+        response = requests.post(url, json=payload, auth=auth)
+
+        # Jika status response adalah 200 OK, kembalikan respons JSON
+        if response.status_code == 200:
+            return {"message": "Data Picking berhasil dikirim"}, 200
+        else:
+            return {"error": "Gagal mengirim data Picking"}, response.status_code
 
     @api.depends('bap_ids')
     def _compute_fully_invoiced(self):
@@ -332,6 +355,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
     #         return {'domain': {'po_id': domain}}
     #     else:
     #         return {'domain': {'po_id': [('state','=','approved')]}}
+
 
     @api.onchange('partner_id')
     def onchange_partner_id(self):
@@ -568,8 +592,8 @@ class WikaBeritaAcaraPembayaran(models.Model):
                     "Either approval and/or document settings are not found. Please configure it first in the settings menu.")
 
     def action_submit(self):
-        if not self.bap_ids:
-            raise ValidationError('List BAP tidak boleh kosong. Mohon isi List BAP terlebih dahulu!')
+        # if not self.bap_ids:
+        #     raise ValidationError('List BAP tidak boleh kosong. Mohon isi List BAP terlebih dahulu!')
 
         for record in self:
             if any(not line.document for line in record.document_ids):
@@ -937,7 +961,7 @@ class WikaBapDocumentLine(models.Model):
         ('verified', 'Verified'),
         ('rejected', 'Rejected')
     ], string='Status', default='waiting')
-
+    # text_upload_here = fields.Char('')
 
     @api.onchange('document')
     def onchange_document(self):
@@ -950,6 +974,9 @@ class WikaBapDocumentLine(models.Model):
             if record.filename and not record.filename.lower().endswith('.pdf'):
                 raise ValidationError('Tidak dapat mengunggah file selain berformat PDF!')
 
+    def buttonClickEvent(self):
+        return
+        
 class WikaBapApprovalLine(models.Model):
     _name = 'wika.bap.approval.line'
 
