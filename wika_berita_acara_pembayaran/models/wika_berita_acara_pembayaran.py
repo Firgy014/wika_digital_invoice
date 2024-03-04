@@ -592,8 +592,8 @@ class WikaBeritaAcaraPembayaran(models.Model):
                     "Either approval and/or document settings are not found. Please configure it first in the settings menu.")
 
     def action_submit(self):
-        # if not self.bap_ids:
-        #     raise ValidationError('List BAP tidak boleh kosong. Mohon isi List BAP terlebih dahulu!')
+        if not self.bap_ids:
+            raise ValidationError('List BAP tidak boleh kosong. Mohon isi List BAP terlebih dahulu!')
 
         for record in self:
             if any(not line.document for line in record.document_ids):
