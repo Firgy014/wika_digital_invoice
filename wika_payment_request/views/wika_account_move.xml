@@ -23,7 +23,18 @@
                 </xpath>
             </field>
         </record>
-    
+
+      <record id="view_tree_inherit_partial_payment" model="ir.ui.view">
+            <field name="name">wika.account.move.status.payment.view.tree</field>
+            <field name="model">account.move</field>
+            <field name="inherit_id" ref="wika_account_move.view_wika_account_move_tree"/>
+            <field name="arch" type="xml">
+                <xpath expr="//field[@name='approval_stage']" position="after">
+                        <field name="status_payment" />
+                </xpath>
+            </field>
+        </record>
+
     </data>
     
 
