@@ -159,7 +159,7 @@ class WikaInheritedAccountMove(models.Model):
     total_tax = fields.Monetary(string='Total Tax', compute='compute_total_tax')
 
     amount_total_payment = fields.Float(string='Total Invoice', compute='_compute_amount_total_payment', store= True)
-    total_line = fields.Float(string='Total Line', compute='_compute_total_line')
+    total_line = fields.Float(string='Total Line', compute='_compute_total_line', store=True)
     is_approval_checked = fields.Boolean(string="Approval Checked", compute='_compute_is_approval_checked')
 
     @api.depends('history_approval_ids.is_show_wizard', 'history_approval_ids.user_id')
@@ -909,3 +909,8 @@ class AccountMovePriceCutList(models.Model):
         move_id = self.env['account.move'].browse([self.move_id.id])
         if move_id:            
             self.account_id = move_id.line_ids[0].account_id.id
+
+class WikaAccountTax(models.Model):
+    _inherit = 'account.tax'
+
+    move_id = fields.Many2one('account.move', string='Invoice')
