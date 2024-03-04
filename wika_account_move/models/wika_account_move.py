@@ -59,7 +59,6 @@ class WikaInheritedAccountMove(models.Model):
     ], string='Payment Method')
     payment_request_date= fields.Date(string='Payment Request Date')
     nomor_payment_request= fields.Char(string='Nomor Payment Request')
-    create_uid = fields.Integer(string='Created by', readonly=True)
 
     @api.depends('total_line', 'pph_ids.amount')
     def _compute_total_pph(self):
@@ -412,7 +411,7 @@ class WikaInheritedAccountMove(models.Model):
             first_user = False
             if level:
                 approval_id = self.env['wika.approval.setting'].sudo().search(
-                    [('model_id', '=', model_id.id), ('level', '=', level)], limit=1)
+                    [ ('model_id', '=', model_id.id),('transaction_type', '!=', 'pr'),('level', '=', level)], limit=1)
                 approval_line_id = self.env['wika.approval.setting.line'].search([
                     ('sequence', '=', 1),
                     ('approval_id', '=', approval_id.id)
@@ -620,7 +619,7 @@ class WikaInheritedAccountMove(models.Model):
         if cek == True:
             if approval_id.total_approve == self.step_approve:
                 self.state = 'approved'
-                self.approval_stage = approval_line_id.level_role
+                self.approval_stage = 'Pusat'
 
                 folder_id = self.env['documents.folder'].sudo().search([('name', '=', 'Invoicing')], limit=1)
                 # print("TESTTTTTTTTTTTTTTTTTTTTT", folder_id)

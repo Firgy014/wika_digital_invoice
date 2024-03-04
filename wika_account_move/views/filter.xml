@@ -33,6 +33,9 @@
                          <filter string="Vendor" name="partner_id" domain="[]" context="{'group_by': 'partner_id'}"/>
 
                           <separator/>
+                       <filter string="Status Invoice" name="status_invoice_rel" domain="[]" context="{'group_by': 'status_invoice_rel'}"/>
+                       <filter string="Position" name="approval_stage" domain="[]" context="{'group_by': 'approval_stage'}"/>
+
                         <filter string="Document Date" name="invoicedate" context="{'group_by': 'invoice_date'}"/>
                         <filter string="Due Date" name="duedate" context="{'group_by': 'invoice_date_due'}"/>
 
