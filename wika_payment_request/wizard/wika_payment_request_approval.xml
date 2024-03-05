@@ -1,0 +1,29 @@
+<odoo>
+    <data>
+        <!--wizard payment all  -->
+		<record id="payment_approval_form_view" model="ir.ui.view">
+            <field name="name">payment.request.line.wizard.form</field>
+            <field name="model">payment.request.line.wizard</field>
+            <field name="arch" type="xml">
+                <form string="Requested AllI nvoice Selected">
+                    <p class="oe_black">
+                        Request Payment Invoice Selected?
+                    </p>
+                    <footer>
+                        <button string="Confirm" name="ok" type="object" default_focus="1" class="btn-primary"/>
+                        <button string="Cancel"  class="btn-default" special="cancel"/>
+                    </footer>
+                </form>
+            </field>
+        </record>
+
+        <record id="action_approval_pr_wizard" model="ir.actions.act_window">
+            <field name="name">Approval Process</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="res_model">payment.request.line.wizard</field>
+            <field name="view_mode">form</field>
+             <field name="target">new</field>
+            <field name="binding_model_id" ref="wika_payment_request.model_wika_payment_request_line"/>
+        </record>
+    </data>
+</odoo>

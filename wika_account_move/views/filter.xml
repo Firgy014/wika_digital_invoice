@@ -9,7 +9,7 @@
             <field name="model">account.move</field>
             <field name="arch" type="xml">
                 <search string="Search Invoice">
-                    <field name="name" string="Invoice" filter_domain="[                                 '|', '|' , '|', '|',                                 ('name', 'ilike', self), ('invoice_origin', 'ilike', self),                                 ('ref', 'ilike', self), ('payment_reference', 'ilike', self),                                 ('partner_id', 'child_of', self)]"/>
+                    <field name="name" string="Invoice"/>
                     <field name="partner_id" />
                     <field name="po_id" />
                     <field name="bap_id" />

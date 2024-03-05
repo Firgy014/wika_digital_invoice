@@ -31,6 +31,7 @@
         'views/wika_account_move.xml',
         'wizard/wika_partial_reject_reason.xml',
         'wizard/wika_reject_reason.xml',
+        'wizard/wika_payment_request_approval.xml',
         'views/wika_payment_request.xml',
         'views/wika_partial_payment_request.xml',
 

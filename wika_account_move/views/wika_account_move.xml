@@ -227,7 +227,7 @@
                         <field name="po_id"/>
                         <field name="invoice_date" string="Document Date"/>
                         <field name="invoice_date_due"/>
-                        <field name="total_line" sum="Total" string="Untaxed Amount"/>
+                        <field name="amount_invoice" sum="Total" string="Untaxed Amount"/>
                         <field name="state" invisible="1"/>
                         <field name="status_invoice_rel"/>
                         <field name="approval_stage"  widget="badge"  optional="show"/>

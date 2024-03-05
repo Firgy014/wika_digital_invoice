@@ -261,7 +261,6 @@ class WikaPartialPaymentRequest(models.Model):
         documents_model = self.env['documents.document'].sudo()
         model_model = self.env['ir.model'].sudo()
         model_id = model_model.search([('model', '=', 'wika.partial.payment.request')], limit=1)
-
         approval_id = self.env['wika.approval.setting'].sudo().search(
             [('level', '=', level),
              ('transaction_type', '=', 'pr'),('model_id', '=', model_id.id),], limit=1)
