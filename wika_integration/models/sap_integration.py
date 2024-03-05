@@ -32,7 +32,7 @@ class SAPIntegration(models.Model):
     type = fields.Selection([
         ('upload', 'Upload'),
         ('generate', 'Generate')
-    ], default='Upload', string='Type')
+    ], default='generate', string='Type')
     form = fields.Selection([
         ('ncl', 'NCL'),
         ('vendor_bills', 'Vendor Bills'),
@@ -63,7 +63,7 @@ class SAPIntegration(models.Model):
                     'ITEM_TEXT', 'HKONT', 'RETENTION_DUE_DATE', 'TAX_BASE_AMOUNT', 'WI_TAX_TYPE', 'WI_TAX_CODE',
                     'WI_TAX_BASE', 'PO_NUMBER', 'PO_ITEM', 'REF_DOC', 'REF_DOC_YEAR', 'REF_DOC_IT', 'ITEM_AMOUNT',
                     'QUANTITY', 'SHEET_NO']
-
+            
             query = helpers._get_computed_query()
 
         buffer = StringIO()
@@ -82,7 +82,7 @@ class SAPIntegration(models.Model):
 
         form_id = self.env.ref('wika_integration.template_sap_integration_form_view')
         return {
-            'name': 'Download File',
+            'name': 'Generate & Download File',
             'res_model': 'wika.sap.integration',
             'view_id': False,
             'res_id': self.id,
