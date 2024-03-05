@@ -17,6 +17,15 @@
             action="wika_payment_request.action_window"
             parent="wika_payment_menu_root"
             sequence="20"/>
+
+         <menuitem
+            id="wika_payement_request_linemenu"
+            name="Payment Request Item"
+            action="wika_payment_request_line_action_window"
+            parent="wika_payment_menu_root"
+            sequence="30"/>
+
+
     </data>
     
 

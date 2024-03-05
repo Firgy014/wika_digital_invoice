@@ -10,11 +10,19 @@ class InheritAccountMove(models.Model):
     total_partial_pr=fields.Float(string='Total Partial Payment Request',compute='_compute_amount_pr')
     amount_sisa_pr=fields.Float(string='Sisa Partial Payment Request',compute='_compute_amount_pr')
     is_partial_pr=fields.Boolean(string='Partial Payment Request',default=False,compute='_compute_is_partial_pr')
+    status_payment = fields.Selection([
+        ('Not Request', 'Not Request'),
+        ('Request Proyek', 'Request Proyek'),
+        ('Request Divisi', 'Request Divisi'),
+        ('Request Pusat', 'Request Pusat'),
+        ('Ready To Pay', 'Ready To Pay'),
+        ('Paid', 'Paid')
+    ], string='Payment State',default='Not Request')
 
-    @api.depends('partial_request_ids','total_line')
+    @api.depends('partial_request_ids','total_line','status_payment')
     def _compute_amount_pr(self):
         for x in self:
-            if x.partial_request_ids:
+            if x.partial_request_ids and x.status_payment != 'Not Request':
                 x.total_partial_pr = sum(line.partial_amount for line in x.partial_request_ids if line.state == 'approved')
                 x.amount_sisa_pr = x.total_line-x.total_partial_pr
             else:
@@ -24,7 +32,7 @@ class InheritAccountMove(models.Model):
     @api.depends('total_partial_pr')
     def _compute_is_partial_pr(self):
         for x in self:
-            if x.total_partial_pr>0:
+            if x.partial_request_ids:
                 x.is_partial_pr =True
             else:
                 x.is_partial_pr=False

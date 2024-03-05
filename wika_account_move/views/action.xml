@@ -9,7 +9,7 @@
             <field name="domain">[('move_type', '=', 'in_invoice')]</field>
             <field name="context">{'default_move_type': 'in_invoice'}</field>
            <field name="search_view_id" ref="wika_account_move.view_wika_account_move_filter"/>
-            <field name="view_mode">tree,form,graph</field>
+            <field name="view_mode">tree,form,graph,pivot</field>
            <field name="view_ids" eval="[(5, 0, 0),
                 (0, 0, {'view_mode': 'tree', 'view_id': ref('wika_account_move.view_wika_account_move_tree')}),
                 (0, 0, {'view_mode': 'form', 'view_id': ref('wika_account_move.view_wika_account_move')}),
