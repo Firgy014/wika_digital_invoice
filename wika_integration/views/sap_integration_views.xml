@@ -11,7 +11,7 @@
                     <field name="file_opt" invisible="1"/>
                     <field name="type" />
                     <field name="form" />
-                    <field name="pelunasan" />
+                    <field name="pelunasan" invisible="1"/>
                     <field name="file_template" filename="datas_fname" />
                 </group>
                 <group>
