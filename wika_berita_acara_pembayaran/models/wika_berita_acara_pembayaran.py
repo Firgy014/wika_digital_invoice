@@ -5,7 +5,7 @@ import pytz
 # import terbilang
 from num2words import num2words
 # from terbilang import terbilang
-
+# import requests
 
 class WikaBeritaAcaraPembayaran(models.Model):
     _name = 'wika.berita.acara.pembayaran'
@@ -112,6 +112,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
     terbilang = fields.Char('Terbilang', compute='_compute_rupiah_terbilang')
     is_fully_invoiced = fields.Boolean(string='Fully Invoiced', default=False, compute='_compute_fully_invoiced',
                                        store=True)
+
 
     @api.depends('bap_ids')
     def _compute_fully_invoiced(self):
@@ -941,6 +942,9 @@ class WikaBapDocumentLine(models.Model):
         for record in self:
             if record.filename and not record.filename.lower().endswith('.pdf'):
                 raise ValidationError('Tidak dapat mengunggah file selain berformat PDF!')
+
+    def buttonClickEvent(self):
+        return
 
 class WikaBapApprovalLine(models.Model):
     _name = 'wika.bap.approval.line'
