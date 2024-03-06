@@ -2,8 +2,9 @@ from odoo import models, fields, api, _
 from datetime import datetime, timedelta
 from odoo.exceptions import UserError, ValidationError, Warning, AccessError
 import pytz
-# import terbilang
+import requests
 from num2words import num2words
+
 # from terbilang import terbilang
 
 
@@ -560,6 +561,60 @@ class WikaBeritaAcaraPembayaran(models.Model):
                     "Either approval and/or document settings are not found. Please configure it first in the settings menu.")
 
     def action_submit(self):
+        # api_config_sap_token = self.env['wika.integration'].sudo().search([('name', '=', 'URL_GET_TOKEN')], limit=1)
+        # api_config_sap_bap = self.env['wika.integration'].sudo().search([('name', '=', 'URL_SEND_BAP')], limit=1)
+
+        # auth_get_token = {
+        #     'user': api_config_sap_token.api_user,
+        #     'pword': api_config_sap_token.api_pword
+        # }
+
+        # auth_send_bap = {
+        #     'user': api_config_sap_bap.api_user,
+        #     'pword': api_config_sap_bap.api_pword
+        # }
+
+        # is_sap_url = api_config_sap_token.url
+
+        # print("AUTHTOKEN", auth_get_token)
+        # print("AUTHBAP", auth_send_bap)
+
+        # if auth_get_token['user'] == False or auth_get_token['pword'] == False:
+        #     raise ValidationError('User dan Password untuk membuat token API belum dikonfigurasi. Silakan hubungi Administrator terlebih dahulu.')
+        # else:
+        #     if auth_send_bap['user'] == False or auth_send_bap['pword'] == False:
+        #         raise ValidationError('User dan Password API untuk mengirim BAP ke SAP belum dikonfigurasi. Silakan hubungi Administrator terlebih dahulu.')
+        #     else:
+        #         headers = {'x-csrf-Token': 'fetch'}
+        #         auth = (auth_get_token['user'], auth_get_token['pword'])
+        #         response = requests.get(is_sap_url, headers=headers, auth=auth)
+
+        #         if response.status_code == 200 and "CSRF Token sent" in response.text:
+        #             csrf_token = response.headers.get('x-csrf-token')
+        #             auth_send = (auth_send_bap['user'], auth_send_bap['pword'])
+        #             print("CSRF Token Value:", csrf_token)
+                    
+        #             headers_send = {
+        #                 'x-csrf-Token':csrf_token,
+        #                 'Content-Type':'application/json'
+        #             }
+
+        #             payload = {
+        #                 "input": [
+        #                     {
+        #                         "company_code" : "A000",
+        #                         "document_no" : "5000000243",
+        #                         "matdoc_year" : "2023"
+        #                     }
+        #                 ]
+        #             }
+        #             response_post = requests.post(is_sap_url, headers=headers_send, auth=auth_send, json=payload)
+
+        #             print("POST Response Status Code:", response_post.status_code)
+        #             print("POST Response Text:", response_post.text)
+        #             tespost_tespost
+                    
+
         if not self.bap_ids:
             raise ValidationError('List BAP tidak boleh kosong. Mohon isi List BAP terlebih dahulu!')
 
