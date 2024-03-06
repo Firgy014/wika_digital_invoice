@@ -49,13 +49,13 @@ LEFT JOIN
 LEFT JOIN
     purchase_order po ON po.id = inv.po_id
 LEFT JOIN
-    purchase_order_line pol ON pol.id = line.purchase_line_id
+    wika_berita_acara_pembayaran_line bap_line ON bap_line.id = line.bap_line_id
+LEFT JOIN
+    purchase_order_line pol ON pol.id = bap_line.purchase_line_id
 LEFT JOIN
     product_product prod ON prod.id = line.product_id
 LEFT JOIN
-    wika_berita_acara_pembayaran_line bap_line ON bap_line.id = line.bap_line_id
-LEFT JOIN
     stock_picking sp ON sp.id = bap_line.picking_id
 WHERE 
-    inv.state = 'approved'
+    inv.state = 'approved' AND line.display_type = 'product'
 """
