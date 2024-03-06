@@ -4,6 +4,8 @@ from odoo.exceptions import UserError, ValidationError, Warning, AccessError
 import pytz
 import requests
 from num2words import num2words
+import base64
+import json
 
 # from terbilang import terbilang
 
@@ -568,16 +570,12 @@ class WikaBeritaAcaraPembayaran(models.Model):
         #     'user': api_config_sap_token.api_user,
         #     'pword': api_config_sap_token.api_pword
         # }
-
         # auth_send_bap = {
         #     'user': api_config_sap_bap.api_user,
         #     'pword': api_config_sap_bap.api_pword
         # }
 
         # is_sap_url = api_config_sap_token.url
-
-        # print("AUTHTOKEN", auth_get_token)
-        # print("AUTHBAP", auth_send_bap)
 
         # if auth_get_token['user'] == False or auth_get_token['pword'] == False:
         #     raise ValidationError('User dan Password untuk membuat token API belum dikonfigurasi. Silakan hubungi Administrator terlebih dahulu.')
@@ -592,14 +590,8 @@ class WikaBeritaAcaraPembayaran(models.Model):
         #         if response.status_code == 200 and "CSRF Token sent" in response.text:
         #             csrf_token = response.headers.get('x-csrf-token')
         #             auth_send = (auth_send_bap['user'], auth_send_bap['pword'])
-        #             print("CSRF Token Value:", csrf_token)
                     
-        #             headers_send = {
-        #                 'x-csrf-Token':csrf_token,
-        #                 'Content-Type':'application/json'
-        #             }
-
-        #             payload = {
+        #             payload = json.dumps({
         #                 "input": [
         #                     {
         #                         "company_code" : "A000",
@@ -607,8 +599,19 @@ class WikaBeritaAcaraPembayaran(models.Model):
         #                         "matdoc_year" : "2023"
         #                     }
         #                 ]
+        #             })
+                    
+        #             headers_send = {
+        #                 'x-csrf-token': csrf_token,
+        #                 'Content-Type': 'application/json',
+        #                 'Authorization': 'Basic V0lLQV9JTlQ6SW5pdGlhbDEyMw=='
         #             }
-        #             response_post = requests.post(is_sap_url, headers=headers_send, auth=auth_send, json=payload)
+
+        #             print("HEADERSENDDD", headers_send)
+        #             # tesssssdoeloeee
+
+        #             # response_post = requests.post(is_sap_url, headers=headers_send, json=payload)
+        #             response_post = requests.request("POST", is_sap_url, headers=headers_send, data=payload, auth=auth_send)
 
         #             print("POST Response Status Code:", response_post.status_code)
         #             print("POST Response Text:", response_post.text)

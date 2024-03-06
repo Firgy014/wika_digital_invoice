@@ -11,14 +11,8 @@ SELECT
     acc.code AS HKONT,
     inv.retention_due AS RETENTION_DUE_DATE,
     inv.total_line AS TAX_BASE_AMOUNT,
-    (CASE 
-        WHEN (tax_group.name->>'en_US') ~ '\d+\.?\d*%' THEN (tax_group.name->>'en_US')
-        ELSE tax_group.name->>'en_US'
-    END) AS WI_TAX_TYPE,
-    (CASE 
-        WHEN (tax.name->>'en_US') ~ '\d+\.?\d*%' THEN (tax.name->>'en_US')
-        ELSE tax.name->>'en_US'
-    END) AS WI_TAX_CODE,
+    tax_group.pph_group_code AS WI_TAX_TYPE,
+    tax.pph_code AS WI_TAX_CODE,
     inv.total_line AS WI_TAX_BASE,
     po.name AS PO_NUMBER,
     pol.sequence AS PO_ITEM,

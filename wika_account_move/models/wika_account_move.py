@@ -913,4 +913,21 @@ class AccountMovePriceCutList(models.Model):
 class WikaAccountTax(models.Model):
     _inherit = 'account.tax'
 
-    move_id = fields.Many2one('account.move', string='Invoice')
+    pph_code = fields.Char(string='PPH Code', compute='_compute_pph_code', store=True)
+    
+    @api.depends('name')
+    def _compute_pph_code(self):
+        for record in self:
+            if record.name:
+                record.pph_code = record.name[0:2]
+
+class WikaAccountTaxGroup(models.Model):
+    _inherit = 'account.tax.group'
+
+    pph_group_code = fields.Char(string='PPH Group Code', compute='_compute_pph_group_code', store=True)
+    
+    @api.depends('name')
+    def _compute_pph_group_code(self):
+        for record in self:
+            if record.name:
+                record.pph_group_code = record.name[0:2]
