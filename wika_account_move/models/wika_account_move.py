@@ -158,7 +158,7 @@ class WikaInheritedAccountMove(models.Model):
     total_tax = fields.Monetary(string='Total Tax', compute='compute_total_tax')
 
     amount_total_payment = fields.Float(string='Total Invoice', compute='_compute_amount_total_payment', store= True)
-    total_line = fields.Float(string='Total Line', compute='_compute_total_line', store=True)
+    total_line = fields.Float(string='Total Line', compute='_compute_total_line')
     is_approval_checked = fields.Boolean(string="Approval Checked", compute='_compute_is_approval_checked')
 
     @api.depends('history_approval_ids.is_show_wizard', 'history_approval_ids.user_id')

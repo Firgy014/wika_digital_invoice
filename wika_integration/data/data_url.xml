@@ -10,4 +10,16 @@
         <field name="app">SAP</field>
         <field name="url">https://api.wika.co.id/</field>
     </record>
+
+    <record id="url_get_token" model="wika.integration">
+        <field name="name">URL_GET_TOKEN</field>
+        <field name="app">SAP</field>
+        <field name="url">http://wtapperp-dev.wika.co.id:8010/ywikafi017?sap-client=110</field>
+    </record>
+
+    <record id="url_send_bap" model="wika.integration">
+        <field name="name">URL_SEND_BAP</field>
+        <field name="app">SAP</field>
+        <field name="url">http://wtapperp-dev.wika.co.id:8010/ywikafi017?sap-client=110</field>
+    </record>
 </odoo>
