@@ -30,7 +30,12 @@ class WikaOutstandingBap(models.Model):
     potongan_retensi = fields.Float(string='Total Retensi')
     potongan_uang_muka_qty_dp = fields.Float(string='QTY DP')
     potongan_retensi_qty = fields.Float(string='QTY Retensi')
-
+    # bap_type = fields.Selection(string='Jenis BAP')
+    bap_type = fields.Selection([
+        ('progress', 'Progress'),
+        ('uang muka', 'Uang Muka'),
+        ('retensi', 'Retensi'),
+        ], string='Jenis BAP', default='progress')
     # potongan_retensi = fields.Float(string='Total Retensi')
     # # non outstanding
     # project_id = fields.Many2one('project.project', string='Project')
@@ -43,30 +48,28 @@ class WikaOutstandingBap(models.Model):
     # qty_process = fields.Integer(string='Quantity Proses')
     # no_bap = fields.Char(string='Nomor BAP')
 
-
-
     def _get_combined_query(self):
         return"""
-select 
-		 bal.id as ID,
-			bap.branch_id AS branch_id,
-			bap.po_id AS purchase_id,
-			bal.product_id AS product_po_id,
-			 bap.bap_date AS date_bap,
-			 bap.id AS bap_id,
-			 bal.qty AS qty_bap,
-			(bal.unit_price * bal.qty) AS sub_total_bap,
-			 bap.dp_total AS potongan_uang_muka_dp,
-            bap.retensi_total AS potongan_retensi,
-            bap.dp_qty_total AS potongan_uang_muka_qty_dp,
-            bap.retensi_qty_total AS potongan_retensi_qty
-	 FROM 
-            wika_berita_acara_pembayaran_line bal
-        LEFT JOIN 
-            wika_berita_acara_pembayaran bap ON bal.bap_id = bap.id
-						
-						where bal.bap_id is not null
-        """
+        select 
+            bal.id as ID, 
+            bap.branch_id AS branch_id, 
+            bap.po_id AS purchase_id, 
+            bal.product_id AS product_po_id, 
+            bap.bap_date AS date_bap, 
+            bap.id AS bap_id, 
+            bal.qty AS qty_bap, 
+            (bal.unit_price * bal.qty) AS sub_total_bap, 
+            bap.dp_total AS potongan_uang_muka_dp, 
+            bap.retensi_total AS potongan_retensi, 
+            bap.dp_qty_total AS potongan_uang_muka_qty_dp, 
+            bap.retensi_qty_total AS potongan_retensi_qty, 
+            bap.bap_type AS bap_type 
+        FROM 
+            wika_berita_acara_pembayaran_line bal 
+            LEFT JOIN wika_berita_acara_pembayaran bap ON bal.bap_id = bap.id 
+        where 
+            bal.bap_id is not null """
+
         # return """
         # SELECT
         #     bal.id AS id,
