@@ -944,14 +944,14 @@ class WikaBeritaAcaraPembayaran(models.Model):
         return super(WikaBeritaAcaraPembayaran, self).unlink()
 
     def action_print_bap(self):
-        #if self.bap_type == 'progress':
-        return self.env.ref('wika_berita_acara_pembayaran.report_wika_berita_acara_pembayaran_action').report_action(self)
-        # elif self.bap_type == 'uang muka':
-        #     return self.env.ref('wika_berita_acara_pembayaran.report_wika_berita_acara_pembayaran_um_action').report_action(self)
-        # elif self.bap_type == 'retensi':
-        #     return self.env.ref('wika_berita_acara_pembayaran.report_wika_berita_acara_pembayaran_retensi_action').report_action(self)
-        # else:
-        #     return super(WikaBeritaAcaraPembayaran, self).action_print_bap()
+        if self.bap_type == 'progress':
+            return self.env.ref('wika_berita_acara_pembayaran.report_wika_berita_acara_pembayaran_action').report_action(self)
+        elif self.bap_type == 'uang muka':
+            return self.env.ref('wika_berita_acara_pembayaran.report_wika_berita_acara_pembayaran_um_action').report_action(self)
+        elif self.bap_type == 'retensi':
+            return self.env.ref('wika_berita_acara_pembayaran.report_wika_berita_acara_pembayaran_retensi_action').report_action(self)
+        else:
+            return super(WikaBeritaAcaraPembayaran, self).action_print_bap()
 
     # @api.onchange('end_date')
     # def _check_contract_expiry_on_save(self):
