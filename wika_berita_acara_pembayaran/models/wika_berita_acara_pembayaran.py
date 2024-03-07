@@ -121,8 +121,10 @@ class WikaBeritaAcaraPembayaran(models.Model):
     retensi_sd_saatini = fields.Float('Retensi s/d saat ini' , compute='_compute_retensi_sd_saatini', store=True)
     total_pembayaran = fields.Float('Pembayaran', compute='compute_total_pembayaran')
     total_pembayaran_um = fields.Float('Pembayaran uang muka', compute='compute_total_pembayaran_um')
+    total_pembayaran_retensi = fields.Float('Pembayaran retensi', compute='compute_total_pembayaran_retensi')
     terbilang = fields.Char('Terbilang', compute='_compute_rupiah_terbilang')
     terbilang_um = fields.Char('Terbilang uang muka', compute='_compute_rupiah_terbilang_um')
+    terbilang_retensi = fields.Char('Terbilang retensi', compute='_compute_rupiah_terbilang_retensi')
     is_fully_invoiced = fields.Boolean(string='Fully Invoiced', default=False, compute='_compute_fully_invoiced',store=True)
 
     @api.depends('bap_ids')
@@ -240,6 +242,15 @@ class WikaBeritaAcaraPembayaran(models.Model):
             persentase = 0.11 
             total_pembayaran_um = dp_total + (dp_total * persentase) - total_pph
             record.total_pembayaran_um = total_pembayaran_um
+    
+    @api.depends('retensi_total', 'total_pph')
+    def compute_total_pembayaran_retensi(self):
+        for record in self:
+            retensi_total = record.retensi_total or 0.0
+            total_pph = record.total_pph or 0.0
+            persentase = 0.11 
+            total_pembayaran_retensi = retensi_total + (retensi_total * persentase) - total_pph
+            record.total_pembayaran_retensi = total_pembayaran_retensi
 
     # # funct terbilang
     @api.depends('total_pembayaran')
@@ -273,6 +284,22 @@ class WikaBeritaAcaraPembayaran(models.Model):
                 record.terbilang_um = rupiah_terbilang
             else:
                 record.terbilang_um = ""
+
+    @api.depends('total_pembayaran_retensi')
+    def _compute_rupiah_terbilang_retensi(self):
+        for record in self:
+            if record.total_pembayaran_retensi:
+                # Convert float to integer representation of Rupiah
+                rupiah_int = round(record.total_pembayaran_retensi)  # Pembulatan angka
+                # Convert the integer part to words
+                rupiah_terbilang = num2words(rupiah_int, lang='id') + " rupiah"
+                # If there are cents, add them as well
+                sen = abs(int((record.total_pembayaran_retensi - rupiah_int) * 100))  # Menghindari masalah pembulatan
+                if sen > 0:
+                    rupiah_terbilang += " dan " + num2words(sen, lang='id') + " sen"
+                record.terbilang_retensi = rupiah_terbilang
+            else:
+                record.terbilang_retensi = ""
 
     # @api.depends('bap_date')
     def _compute_last_value(self):
@@ -346,11 +373,13 @@ class WikaBeritaAcaraPembayaran(models.Model):
                 bap.dp_total = 0
 
     # compute retensi
-    @api.depends('total_amount', 'amount_pecentage_retensi')
+    @api.depends('total_amount', 'amount_pecentage_retensi', 'bap_type')
     def _compute_retensi_total_percentage(self):
         for bap in self:
-            if bap.amount_pecentage_tmp > 0:
+            if bap.amount_pecentage_retensi > 0:
                 bap.retensi_total = (bap.total_amount / 100 ) * bap.amount_pecentage_retensi
+            elif bap.bap_type == 'retensi' and bap.total_retensi_saatini > 0:
+                bap.retensi_total = bap.total_retensi_saatini
             else :
                 bap.retensi_total = 0
 
@@ -477,6 +506,9 @@ class WikaBeritaAcaraPembayaran(models.Model):
             if record.bap_type == 'uang muka' : 
                 total_amount_value = record.po_id.amount_untaxed
                 record.total_amount = total_amount_value
+            elif record.bap_type == 'retensi' : 
+                total_amount_value = record.po_id.amount_untaxed
+                record.total_amount = total_amount_value
             else:
                 total_amount_value = sum(record.bap_ids.mapped('sub_total'))
                 record.total_amount = total_amount_value
@@ -488,6 +520,10 @@ class WikaBeritaAcaraPembayaran(models.Model):
                 total_amount_tax = record.po_id.amount_tax
                 record.total_tax = total_amount_tax
                 # print("TESSSSSSBORRRRRRR", record.total_tax)
+            elif record.bap_type == 'retensi':
+                total_amount_tax = record.po_id.amount_tax
+                record.total_tax = total_amount_tax
+                # print("TESSSSSSBORRRRRRRETENSIII", record.total_tax)
             else:
                 total_amount = record.total_amount or 0.0
                 dp_total = record.dp_total or 0.0
