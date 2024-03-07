@@ -24,6 +24,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
     history_approval_ids = fields.One2many('wika.bap.approval.line', 'bap_id', string='List Approval')
     start_date = fields.Datetime('Start Date')
     end_date = fields.Datetime('End Date')
+    date = fields.Date('Date')
     state = fields.Selection([
         ('draft', 'Draft'), 
         ('uploaded', 'Uploaded'),
@@ -41,7 +42,9 @@ class WikaBeritaAcaraPembayaran(models.Model):
     bap_date = fields.Date(string='Tanggal BAP', required=True)
     bap_type = fields.Selection([
         ('progress', 'Progress'),
-        ('uang muka', 'Uang Muka'),], string='Jenis BAP', default='progress')
+        ('uang muka', 'Uang Muka'),
+        ('retensi', 'Retensi'),
+        ], string='Jenis BAP', default='progress')
     price_cut_ids = fields.One2many('wika.bap.pricecut.line', 'po_id')
     signatory_name = fields.Char(string='Nama Penanda Tangan Wika', related="po_id.signatory_name")
     position = fields.Char(string='Jabatan', related="po_id.position")
@@ -77,6 +80,14 @@ class WikaBeritaAcaraPembayaran(models.Model):
         ('Pusat', 'Pusat')
     ], string='Level',compute='_compute_level')
     documents_count = fields.Integer(string='Total Doc', compute='_compute_documents_count')
+    guarantee_type = fields.Char('Jenis Jaminan')
+    guarantee_value = fields.Float('Nilai Jaminan')
+    guarantee_numb = fields.Char('No Jaminan')
+    guarantee_period = fields.Date('Jangka Waktu Jaminan')
+    numb_ba_pho = fields.Char('No Berita Acara PHO')
+    pho_date = fields.Date('Tanggal PHO')
+    numb_ba_fho = fields.Char('No Berita Acara FHO')
+    fho_date = fields.Date('Tanggal FHO')
 
     # nilai saat ini
     dp_total = fields.Float(string='Total DP', compute='_compute_dp_total', store= True)
@@ -109,10 +120,10 @@ class WikaBeritaAcaraPembayaran(models.Model):
     total_retensi_saatini = fields.Float('Retensi saat ini', compute='_compute_total_retensi_saatini', store=True)
     retensi_sd_saatini = fields.Float('Retensi s/d saat ini' , compute='_compute_retensi_sd_saatini', store=True)
     total_pembayaran = fields.Float('Pembayaran', compute='compute_total_pembayaran')
+    total_pembayaran_um = fields.Float('Pembayaran uang muka', compute='compute_total_pembayaran_um')
     terbilang = fields.Char('Terbilang', compute='_compute_rupiah_terbilang')
-    is_fully_invoiced = fields.Boolean(string='Fully Invoiced', default=False, compute='_compute_fully_invoiced',
-                                       store=True)
-
+    terbilang_um = fields.Char('Terbilang uang muka', compute='_compute_rupiah_terbilang_um')
+    is_fully_invoiced = fields.Boolean(string='Fully Invoiced', default=False, compute='_compute_fully_invoiced',store=True)
 
     @api.depends('bap_ids')
     def _compute_fully_invoiced(self):
@@ -221,6 +232,15 @@ class WikaBeritaAcaraPembayaran(models.Model):
             total_pph = record.total_pph or 0.0
             record.total_pembayaran = total_amount - dp_total - retensi_total + total_tax - total_pph
 
+    @api.depends('dp_total', 'total_pph')
+    def compute_total_pembayaran_um(self):
+        for record in self:
+            dp_total = record.dp_total or 0.0
+            total_pph = record.total_pph or 0.0
+            persentase = 0.11
+            total_pembayaran_um = dp_total + (dp_total * persentase) - total_pph
+            record.total_pembayaran_um = total_pembayaran_um
+
     # # funct terbilang
     @api.depends('total_pembayaran')
     def _compute_rupiah_terbilang(self):
@@ -238,6 +258,22 @@ class WikaBeritaAcaraPembayaran(models.Model):
             else:
                 record.terbilang = ""
 
+    @api.depends('total_pembayaran_um')
+    def _compute_rupiah_terbilang_um(self):
+        for record in self:
+            if record.total_pembayaran_um:
+                # Convert float to integer representation of Rupiah
+                rupiah_int = round(record.total_pembayaran_um)  # Pembulatan angka
+                # Convert the integer part to words
+                rupiah_terbilang = num2words(rupiah_int, lang='id') + " rupiah"
+                # If there are cents, add them as well
+                sen = abs(int((record.total_pembayaran_um - rupiah_int) * 100))  # Menghindari masalah pembulatan
+                if sen > 0:
+                    rupiah_terbilang += " dan " + num2words(sen, lang='id') + " sen"
+                record.terbilang_um = rupiah_terbilang
+            else:
+                record.terbilang_um = ""
+
     # @api.depends('bap_date')
     def _compute_last_value(self):
         for record in self:
@@ -252,8 +288,8 @@ class WikaBeritaAcaraPembayaran(models.Model):
                         COALESCE(SUM(potongan_uang_muka_qty_dp), 0) AS potongan_uang_muka_qty_dp,
                         COALESCE(SUM(potongan_retensi_qty), 0) AS potongan_retensi_qty
                     FROM outstanding_bap
-                    WHERE purchase_id = %s AND date_bap >= '%s' AND bap_id < %s
-                """ % (record.po_id.id, tanggal, record.id)
+                    WHERE purchase_id = %s AND date_bap >= '%s' AND bap_id < %s AND bap_type = '%s'
+                """ % (record.po_id.id, tanggal, record.id, record.bap_type)
                 self.env.cr.execute(query)
                 result = self.env.cr.fetchone()
                 if result:
@@ -299,11 +335,13 @@ class WikaBeritaAcaraPembayaran(models.Model):
             bap.retensi_qty_total = sum(retensi_lines.mapped('qty'))
 
     # compute DP
-    @api.depends('total_amount', 'amount_pecentage_tmp')
+    @api.depends('total_amount', 'amount_pecentage_tmp', 'bap_type')
     def _compute_dp_total(self):
         for bap in self:
             if bap.amount_pecentage_tmp > 0:
                 bap.dp_total = (bap.total_amount / 100 ) * bap.amount_pecentage_tmp
+            elif bap.bap_type == 'uang muka' and bap.total_dp_saatini > 0:
+                bap.dp_total = bap.total_dp_saatini
             else :
                 bap.dp_total = 0
 
@@ -325,6 +363,15 @@ class WikaBeritaAcaraPembayaran(models.Model):
         sequence_parts = sequence.split('/')
         sequence_number = sequence_parts[-1]
         return 'BAP/{}/{:03d}'.format(year, int(sequence_number))
+
+    # @api.onchange('partner_id')
+    # def onchange_partner_id(self):
+    #     if self.partner_id:
+    #         domain = [('partner_id', '=', self.partner_id.id),('state','=','approved')]
+    #         return {'domain': {'po_id': domain}}
+    #     else:
+    #         return {'domain': {'po_id': [('state','=','approved')]}}
+
 
     @api.onchange('partner_id')
     def onchange_partner_id(self):
@@ -424,21 +471,30 @@ class WikaBeritaAcaraPembayaran(models.Model):
             self.bap_ids = bap_lines
             self.price_cut_ids = price_cut_lines
 
-    @api.depends('bap_ids.sub_total', 'bap_ids.tax_ids')
+    @api.depends('bap_ids.sub_total', 'bap_ids.tax_ids', 'bap_type')
     def compute_total_amount(self):
         for record in self:
-            total_amount_value = sum(record.bap_ids.mapped('sub_total'))
-            record.total_amount = total_amount_value
+            if record.bap_type == 'uang muka' :
+                total_amount_value = record.po_id.amount_untaxed
+                record.total_amount = total_amount_value
+            else:
+                total_amount_value = sum(record.bap_ids.mapped('sub_total'))
+                record.total_amount = total_amount_value
 
-    @api.depends('total_amount', 'dp_total', 'retensi_total', 'bap_ids.tax_ids')
+    @api.depends('total_amount', 'dp_total', 'retensi_total', 'bap_ids.tax_ids', 'bap_type')
     def compute_total_tax(self):
         for record in self:
-            total_amount = record.total_amount or 0.0
-            dp_total = record.dp_total or 0.0
-            retensi_total = record.retensi_total or 0.0
-            tax_percentage = sum(record.bap_ids.tax_ids.mapped('amount')) / 100.0
-            total_tax = (total_amount - dp_total - retensi_total) * tax_percentage
-            record.total_tax = total_tax
+            if record.bap_type == 'uang muka':
+                total_amount_tax = record.po_id.amount_tax
+                record.total_tax = total_amount_tax
+                # print("TESSSSSSBORRRRRRR", record.total_tax)
+            else:
+                total_amount = record.total_amount or 0.0
+                dp_total = record.dp_total or 0.0
+                retensi_total = record.retensi_total or 0.0
+                tax_percentage = sum(record.bap_ids.tax_ids.mapped('amount')) / 100.0
+                total_tax = (total_amount - dp_total - retensi_total) * tax_percentage
+                record.total_tax = total_tax
     
     @api.depends('bap_ids.price_unit_po', 'bap_ids.qty')
     def compute_current_value(self):
@@ -561,8 +617,8 @@ class WikaBeritaAcaraPembayaran(models.Model):
                     "Either approval and/or document settings are not found. Please configure it first in the settings menu.")
 
     def action_submit(self):
-        if not self.bap_ids:
-            raise ValidationError('List BAP tidak boleh kosong. Mohon isi List BAP terlebih dahulu!')
+        # if not self.bap_ids:
+        #     raise ValidationError('List BAP tidak boleh kosong. Mohon isi List BAP terlebih dahulu!')
 
         for record in self:
             if any(not line.document for line in record.document_ids):
@@ -830,7 +886,14 @@ class WikaBeritaAcaraPembayaran(models.Model):
         return super(WikaBeritaAcaraPembayaran, self).unlink()
 
     def action_print_bap(self):
+        #if self.bap_type == 'progress':
         return self.env.ref('wika_berita_acara_pembayaran.report_wika_berita_acara_pembayaran_action').report_action(self)
+        # elif self.bap_type == 'uang muka':
+        #     return self.env.ref('wika_berita_acara_pembayaran.report_wika_berita_acara_pembayaran_um_action').report_action(self)
+        # elif self.bap_type == 'retensi':
+        #     return self.env.ref('wika_berita_acara_pembayaran.report_wika_berita_acara_pembayaran_retensi_action').report_action(self)
+        # else:
+        #     return super(WikaBeritaAcaraPembayaran, self).action_print_bap()
 
     # @api.onchange('end_date')
     # def _check_contract_expiry_on_save(self):
@@ -930,7 +993,7 @@ class WikaBapDocumentLine(models.Model):
         ('verified', 'Verified'),
         ('rejected', 'Rejected')
     ], string='Status', default='waiting')
-
+    # text_upload_here = fields.Char('')
 
     @api.onchange('document')
     def onchange_document(self):
@@ -964,4 +1027,10 @@ class WikaPriceCutLine(models.Model):
     amount = fields.Float(string='Amount')
     qty = fields.Integer(string='Quantity')
     percentage_amount = fields.Float(string='Amount (%)')
+
+    @api.constrains('percentage_amount')
+    def _check_percentage_amount(self):
+        for record in self:
+            if record.percentage_amount > 5:
+                raise ValidationError("Persentasi tidak boleh melebihi dari 5%")
 
