@@ -23,7 +23,7 @@ class PickingInherit(models.Model):
     pick_type = fields.Selection([
         ('ses', 'SES'), 
         ('gr', 'GR')
-    ], string='Type')
+    ], string='Type', store=True)
     no_gr_ses = fields.Char(string='Nomor GR/SES')
     start_date = fields.Date(string='Start Date')
     end_date = fields.Date(string='End Date')
