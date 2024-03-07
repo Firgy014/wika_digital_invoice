@@ -6,9 +6,31 @@
         <field name="name">BAP</field>
         <field name="model">wika.berita.acara.pembayaran</field>
         <field name="report_type">qweb-pdf</field>
-        <field name="report_name">wika_berita_acara_pembayaran.report_wika_account_move_proyek</field>
+        <field name="report_name">wika_berita_acara_pembayaran.report_session</field>
         <field name="report_file">wika_berita_acara_pembayaran.report_wika_berita_acara_pembayaran</field>
         <field name="print_report_name">'Berita Acara Pembayaran - %s' % (object.name)</field>
+        <field name="binding_model_id" ref="model_wika_berita_acara_pembayaran"/>
+        <field name="binding_view_types">form</field>
+    </record>
+
+    <record id="report_wika_berita_acara_pembayaran_um_action" model="ir.actions.report">
+        <field name="name">BAP Uang Muka</field>
+        <field name="model">wika.berita.acara.pembayaran</field>
+        <field name="report_type">qweb-html</field>
+        <field name="report_name">wika_berita_acara_pembayaran.report_wika_berita_acara_pembayaran_uang_muka</field>
+        <field name="report_file">wika_berita_acara_pembayaran.report_wika_berita_acara_pembayaran_uang_muka</field>
+        <field name="print_report_name">'Berita Acara Pembayaran Uang Muka - %s' % (object.name)</field>
+        <field name="binding_model_id" ref="model_wika_berita_acara_pembayaran"/>
+        <field name="binding_view_types">form</field>
+    </record>
+
+    <record id="report_wika_berita_acara_pembayaran_retensi_action" model="ir.actions.report">
+        <field name="name">BAP Retensi</field>
+        <field name="model">wika.berita.acara.pembayaran</field>
+        <field name="report_type">qweb-html</field>
+        <field name="report_name">wika_berita_acara_pembayaran.report_wika_berita_acara_pembayaran_retensi</field>
+        <field name="report_file">wika_berita_acara_pembayaran.report_wika_berita_acara_pembayaran_retensi</field>
+        <field name="print_report_name">'Berita Acara Pembayaran Retensi - %s' % (object.name)</field>
         <field name="binding_model_id" ref="model_wika_berita_acara_pembayaran"/>
         <field name="binding_view_types">form</field>
     </record>
