@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
-    <record model ="ir.ui.view" id="template_sap_integrationiew">
+    <record id="template_sap_integration_form_view" model="ir.ui.view">
         <field name="name">wika.sap.integration.excel.wizard</field>
         <field name="model">wika.sap.integration</field>
         <field name="arch" type="xml">
@@ -11,7 +11,7 @@
                     <field name="file_opt" invisible="1"/>
                     <field name="type" />
                     <field name="form" />
-                    <field name="pelunasan" />
+                    <field name="pelunasan" invisible="1"/>
                     <field name="file_template" filename="datas_fname" />
                 </group>
                 <group>

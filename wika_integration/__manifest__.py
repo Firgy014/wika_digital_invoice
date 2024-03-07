@@ -27,6 +27,7 @@
         'security/ir.model.access.csv',
         'data/data_url.xml',
         'data/scheduler.xml',
+        'views/sap_integration_views.xml',
         'views/wika_integration_views.xml',
         'views/res_config_setting_views.xml',
         'views/wika_get_po.xml',
