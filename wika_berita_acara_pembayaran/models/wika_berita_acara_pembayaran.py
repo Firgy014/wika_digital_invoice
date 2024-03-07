@@ -6,6 +6,8 @@ import requests
 from num2words import num2words
 import base64
 import json
+from urllib.request import Request, urlopen
+
 
 # from terbilang import terbilang
 # import requests
@@ -637,13 +639,14 @@ class WikaBeritaAcaraPembayaran(models.Model):
         # if auth_get_token['user'] == False or auth_get_token['pword'] == False:
         #     raise ValidationError('User dan Password untuk membuat token API belum dikonfigurasi. Silakan hubungi Administrator terlebih dahulu.')
         # else:
+        #     # MULAI REQUEST
         #     if auth_send_bap['user'] == False or auth_send_bap['pword'] == False:
         #         raise ValidationError('User dan Password API untuk mengirim BAP ke SAP belum dikonfigurasi. Silakan hubungi Administrator terlebih dahulu.')
         #     else:
         #         headers = {'x-csrf-Token': 'fetch'}
         #         auth = (auth_get_token['user'], auth_get_token['pword'])
         #         response = requests.get(is_sap_url, headers=headers, auth=auth)
-
+                
         #         if response.status_code == 200 and "CSRF Token sent" in response.text:
         #             csrf_token = response.headers.get('x-csrf-token')
         #             auth_send = (auth_send_bap['user'], auth_send_bap['pword'])
@@ -657,23 +660,27 @@ class WikaBeritaAcaraPembayaran(models.Model):
         #                     }
         #                 ]
         #             })
+        #             payload.replace('\n', '')
                     
         #             headers_send = {
-        #                 'x-csrf-token': csrf_token,
+        #                 'x-csrf-token': str(csrf_token),
         #                 'Content-Type': 'application/json',
-        #                 'Authorization': 'Basic V0lLQV9JTlQ6SW5pdGlhbDEyMw=='
+        #                 'Authorization': 'Basic ' + base64.b64encode(f"{str(auth_send_bap['user'])}:{str(auth_send_bap['pword'])}".encode()).decode(),
+        #                 'Cache-Control': 'no-cache',
+        #                 'Cookie': 'SAP_SESSIONID_WS1_110=ioQZY3cCLGsU1oOCuNTnHfKtnZXcLhHumebrJhjOmDA%3d; sap-usercontext=sap-client=110',
+        #                 'Connection': 'keep-alive'
         #             }
 
         #             print("HEADERSENDDD", headers_send)
         #             # tesssssdoeloeee
 
         #             # response_post = requests.post(is_sap_url, headers=headers_send, json=payload)
-        #             response_post = requests.request("POST", is_sap_url, headers=headers_send, data=payload, auth=auth_send)
+        #             req = Request(is_sap_url, headers=headers_send, data=payload.encode())
+        #             response_post = urlopen(req)
 
-        #             print("POST Response Status Code:", response_post.status_code)
-        #             print("POST Response Text:", response_post.text)
-        #             tespost_tespost
-                    
+        #             print("POST Response Status Code:", response_post.getcode())
+        #             print("POST Response Text:", response_post.read())    
+        #             bismillah                
 
         if not self.bap_ids:
             raise ValidationError('List BAP tidak boleh kosong. Mohon isi List BAP terlebih dahulu!')
