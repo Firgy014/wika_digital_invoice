@@ -76,7 +76,7 @@ class SAPIntegration(models.Model):
             writer.writerow(res)
         out2 = (buffer.getvalue()).encode('utf-8')
         gentextfile = base64.b64encode(out2)
-        filename = ('YFII006_' + today + '.txt')
+        filename = ('YFII015_' + today + '.txt')
 
         self.write({'file_template': gentextfile,'datas_fname':filename})
 
