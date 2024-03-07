@@ -122,15 +122,15 @@
                         </div>
                         <group>
                             <group>
-                               <field name="partner_id" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
-                                <field name="po_id" domain="[('state', '=', 'approved')]"  attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
+                               <field name="partner_id" options="{'no_create': True, 'no_create_edit':True}"  attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
+                                <field name="po_id" options="{'no_create': True, 'no_create_edit':True}"  domain="[('state', '=', 'approved')]"  attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
                                 <field name="bap_type" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
-                                <field name="signatory_name" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
-                                <field name="position" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
-                                <field name="vendor_signatory_name" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
-                                <field name="vendor_position" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
-                                <field name="address" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
-                                <field name="job" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
+                                <field name="signatory_name"  readonly="1" force_save="1"/>
+                                <field name="position" readonly="1" force_save="1"/>
+                                <field name="vendor_signatory_name"  readonly="1" force_save="1"/>
+                                <field name="vendor_position"  readonly="1" force_save="1"/>
+                                <field name="address"  readonly="1" force_save="1"/>
+                                <field name="job"  readonly="1" force_save="1"/>
                                 <field name="step_approve" invisible="1"/>
                                  <field name="is_fully_invoiced" groups="base.group_no_one"/>
 
@@ -147,6 +147,29 @@
                                 <field name="end_date" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
                                 <field name="bap_date" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}" style="background-color: #dddded;"/>
                                 <field name="pph_ids" domain="[('tax_group_id', '!=', 'PPN')]" widget="many2many_tags" style="background-color: #dddded;"/>
+                                <field name="guarantee_type" attrs="{'invisible': [('bap_type', '!=', 'uang muka')],
+                                    'readonly': [('state', 'in', ['uploaded', 'approved'])]}" style="background-color: #dddded;"/>
+                                <field name="guarantee_value" attrs="{'invisible': [('bap_type', '!=', 'uang muka')],
+                                    'readonly': [('state', 'in', ['uploaded', 'approved'])]}" style="background-color: #dddded;"/>
+                                <field name="guarantee_numb" attrs="{'invisible': [('bap_type', '!=', 'uang muka')],
+                                    'readonly': [('state', 'in', ['uploaded', 'approved'])]}" style="background-color: #dddded;"/>
+                                <field name="guarantee_period" attrs="{'invisible': [('bap_type', '!=', 'uang muka')],
+                                    'readonly': [('state', 'in', ['uploaded', 'approved'])]}" style="background-color: #dddded;"/>
+                                <!-- <label for="guarantee_period" string="Jangka waktu jaminan" attrs="{'invisible': [('bap_type', '!=', 'uang muka')], 'readonly': [('state', 'in', ['uploaded', 'approved'])]}" style="background-color: #dddded;"/>
+                                <div name="dates" class="o_row">
+                                    <field name="guarantee_period" widget="daterange" options='{"related_end_date": "date"}'/>
+                                    <i class="fa fa-long-arrow-right mx-2 oe_edit_only" aria-label="Arrow icon" title="Arrow"/>
+                                    <i class="fa fa-long-arrow-right mx-2 oe_read_only" aria-label="Arrow icon" title="Arrow" attrs="{'invisible': [('guarantee_period', '=', False), ('date', '=', False)]}"/>
+                                    <field name="date" widget="daterange" options='{"related_start_date": "guarantee_period"}'/>
+                                </div> -->
+                                <field name="numb_ba_pho" attrs="{'invisible': [('bap_type', '!=', 'retensi')],
+                                    'readonly': [('state', 'in', ['uploaded', 'approved'])]}" style="background-color: #dddded;"/>
+                                <field name="pho_date" attrs="{'invisible': [('bap_type', '!=', 'retensi')],
+                                    'readonly': [('state', 'in', ['uploaded', 'approved'])]}" style="background-color: #dddded;"/>
+                                <field name="numb_ba_fho" attrs="{'invisible': [('bap_type', '!=', 'retensi')],
+                                    'readonly': [('state', 'in', ['uploaded', 'approved'])]}" style="background-color: #dddded;"/>
+                                <field name="fho_date" attrs="{'invisible': [('bap_type', '!=', 'retensi')],
+                                    'readonly': [('state', 'in', ['uploaded', 'approved'])]}" style="background-color: #dddded;"/>
 
                                 <field name="last_value" groups="base.group_no_one"/>
                                 <field name="last_quantity" groups="base.group_no_one"/>
@@ -171,6 +194,8 @@
                                 <field name="amount_pecentage_tmp" groups="base.group_no_one"/>
                                 <field name="amount_pecentage_retensi" groups="base.group_no_one"/>
                                 <field name="terbilang" groups="base.group_no_one"/>
+                                <field name="total_pembayaran_um" groups="base.group_no_one"/>
+                                <field name="terbilang_um" groups="base.group_no_one"/>
                             </group>
                         </group>
                         <notebook>
@@ -200,7 +225,7 @@
                                         mode="tree,kanban" nolabel="1" colspan="2">
                                         <tree editable="top">
                                             <field name="po_id" invisible="1"/>
-                                            <field name="product_id"/>
+                                            <field name="product_id" options="{'no_create': True, 'no_create_edit':True}"  domain="[('name', 'in', ('RETENSI','DP','DENDA'))]"/>
                                             <field name="amount"/>
                                         </tree>
                                     </field>
@@ -209,6 +234,10 @@
 
                                     </group>
                                     <group class="oe_subtotal_footer oe_right">
+                                        <field name="retensi_total" groups="base.group_no_one"/>
+                                        <field name="dp_total" groups="base.group_no_one"/>
+                                        <field name="dp_qty_total" groups="base.group_no_one"/>
+                                        <field name="retensi_qty_total" groups="base.group_no_one"/>
                                         <field name="total_amount"/>
                                         <field name="total_tax" string="Total PPN"/>
                                         <field name="total_pph"/>
@@ -226,17 +255,17 @@
                                 <field name="price_cut_ids">
                                     <tree editable="top">
                                         <field name="po_id" invisible="1"/>
-                                        <field name="product_id"/>
+                                        <field name="product_id" options="{'no_create': True, 'no_create_edit':True}"  domain="[('name', 'in', ('RETENSI','DP','DENDA'))]"/>
                                         <field name="qty"/>
                                         <field name="amount"/>
                                         <field name="percentage_amount" string="%"/>
                                     </tree>
                                 </field>
                                 <group class="oe_subtotal_footer oe_right">
-                                    <field name="retensi_total"/>
-                                    <field name="dp_total"/>
-                                    <field name="dp_qty_total"/>
-                                    <field name="retensi_qty_total"/>
+                                    <field name="retensi_total" groups="base.group_no_one"/>
+                                    <field name="dp_total" groups="base.group_no_one"/>
+                                    <field name="dp_qty_total" groups="base.group_no_one"/>
+                                    <field name="retensi_qty_total" groups="base.group_no_one"/>
                                 </group>
                             </page>
                             <page string="List Document">
@@ -244,6 +273,9 @@
                                     <field name="document_ids" mode="tree,kanban" nolabel="1" colspan="2">
                                         <tree string="List Document" delete="0" create="0">
                                             <field name="document_id"/>
+<!--
+                                            <button name="buttonClickEvent" string="Upload Disini" type="object" attrs="{'invisible': [('state', '=', 'uploaded')]}"  class="fa fa-hand-o-right"/>
+-->
                                             <field name="document" widget="binary_button" filename="filename"/>
                                             <field name="filename" invisible="1"/>
                                             <field name="state"/>

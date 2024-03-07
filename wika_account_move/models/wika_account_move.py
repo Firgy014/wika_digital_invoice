@@ -913,7 +913,7 @@ class WikaAccountTax(models.Model):
     _inherit = 'account.tax'
 
     pph_code = fields.Char(string='PPH Code', compute='_compute_pph_code', store=True)
-    
+
     @api.depends('name')
     def _compute_pph_code(self):
         for record in self:
@@ -924,7 +924,7 @@ class WikaAccountTaxGroup(models.Model):
     _inherit = 'account.tax.group'
 
     pph_group_code = fields.Char(string='PPH Group Code', compute='_compute_pph_group_code', store=True)
-    
+
     @api.depends('name')
     def _compute_pph_group_code(self):
         for record in self:

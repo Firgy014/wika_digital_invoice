@@ -1,0 +1,15 @@
+.container {
+    position: relative;
+}
+
+/* Memindahkan tombol ke kanan */
+.btn.fa.fa-hand-o-right.btn-link {
+    position: absolute;
+    left: 50%; /* Tombol akan berada di tengah horizontal kontainer */
+    transform: translateX(-50%); /* Membuat tombol berada di tengah horizontal secara tepat */
+}
+
+.btn.fa.fa-hand-o-right.btn-link {
+    font-size: 1.2em; /* Ubah sesuai dengan ukuran yang diinginkan */
+    font-weight: bold;
+}
