@@ -9,7 +9,6 @@ SELECT
     inv.no_faktur_pajak AS HEADER_TXT,
     line.name AS ITEM_TEXT,
     acc.code AS HKONT,
-    inv.retention_due AS RETENTION_DUE_DATE,
     inv.amount_untaxed AS TAX_BASE_AMOUNT,
     tax_group.pph_group_code AS WI_TAX_TYPE,
     tax.pph_code AS WI_TAX_CODE,
@@ -33,7 +32,11 @@ SELECT
     CASE
         WHEN po.po_type = 'JASA' THEN sp.name
         ELSE ''
-    END AS SHEET_NO
+    END AS SHEET_NO,
+    CASE
+        WHEN inv.retention_due IS NOT NULL THEN to_char(inv.retention_due, 'yyyymmdd')
+        ELSE to_char(inv.date, 'yyyymmdd')
+    END AS RETENTION_DUE_DATE
 FROM 
     account_move inv
 LEFT JOIN 
