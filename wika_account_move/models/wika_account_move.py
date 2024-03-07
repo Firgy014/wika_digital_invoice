@@ -908,3 +908,25 @@ class AccountMovePriceCutList(models.Model):
         move_id = self.env['account.move'].browse([self.move_id.id])
         if move_id:            
             self.account_id = move_id.line_ids[0].account_id.id
+
+class WikaAccountTax(models.Model):
+    _inherit = 'account.tax'
+
+    pph_code = fields.Char(string='PPH Code', compute='_compute_pph_code', store=True)
+
+    @api.depends('name')
+    def _compute_pph_code(self):
+        for record in self:
+            if record.name:
+                record.pph_code = record.name[0:2]
+
+class WikaAccountTaxGroup(models.Model):
+    _inherit = 'account.tax.group'
+
+    pph_group_code = fields.Char(string='PPH Group Code', compute='_compute_pph_group_code', store=True)
+
+    @api.depends('name')
+    def _compute_pph_group_code(self):
+        for record in self:
+            if record.name:
+                record.pph_group_code = record.name[0:2]

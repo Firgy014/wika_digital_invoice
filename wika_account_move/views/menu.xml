@@ -13,9 +13,9 @@
 
         <menuitem
             id="main_menu_account_move_config"
-            name="Configurations"
+            name="Configuration"
             parent="wika_berita_acara_pembayaran.wika_berita_acara_pembayaran_menu_root"
-            sequence="40"/>
+            sequence="100"/>
 
         <menuitem
             action="wika_special_gl_action"
