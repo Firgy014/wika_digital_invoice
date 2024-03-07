@@ -30,7 +30,7 @@
         'report/report_action.xml',
         'report/report_wika_berita_acara_pembayaran.xml',
         'report/report_wika_berita_acara_pembayaran_uang_muka.xml',
-
+        'report/report_wika_berita_acara_pembayaran_retensi.xml',
         'views/sequence_data.xml',
         'views/wika_menu.xml',
         'wizard/wika_reject_reason.xml',
