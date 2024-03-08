@@ -230,8 +230,17 @@ class WikaBeritaAcaraPembayaran(models.Model):
             total_amount = record.total_amount or 0.0
             dp_total = record.dp_total or 0.0
             retensi_total = record.retensi_total or 0.0
-            total_tax = record.total_tax or 0.0
             total_pph = record.total_pph or 0.0
+            
+            if record.total_tax: 
+                total_tax = record.total_tax
+            else:
+                total_tax = 0.0
+            
+            if record.bap_type not in ['uang muka', 'retensi']:
+                total_tax_lines = sum(record.bap_ids.tax_ids.filtered(lambda tax: tax.name != 'V3').mapped('amount'))
+                total_tax = (total_amount - dp_total - retensi_total) * (total_tax_lines / 100)
+            
             record.total_pembayaran = total_amount - dp_total - retensi_total + total_tax - total_pph
 
     @api.depends('dp_total', 'total_pph')
