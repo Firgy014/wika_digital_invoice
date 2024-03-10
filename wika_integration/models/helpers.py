@@ -1,19 +1,18 @@
 def _get_computed_query():
     return """
 SELECT                  
-    to_char(inv.invoice_date, 'yyyymmdd') AS DOC_DATE,
-    to_char(inv.date, 'yyyymmdd') AS PSTNG_DATE,
+    TO_CHAR(inv.invoice_date, 'yyyymmdd') AS DOC_DATE,
+    TO_CHAR(inv.date, 'yyyymmdd') AS PSTNG_DATE,
     inv.no_invoice_vendor AS REF_DOC_NO,
-    inv.amount_untaxed AS GROSS_AMOUNT,
+    ROUND(inv.amount_untaxed) AS GROSS_AMOUNT,
     inv.baseline_date AS BLINE_DATE,
     inv.no_faktur_pajak AS HEADER_TXT,
     line.name AS ITEM_TEXT,
     acc.code AS HKONT,
-    inv.retention_due AS RETENTION_DUE_DATE,
-    inv.amount_untaxed AS TAX_BASE_AMOUNT,
+    ROUND(inv.amount_untaxed) AS TAX_BASE_AMOUNT,
     tax_group.pph_group_code AS WI_TAX_TYPE,
     tax.pph_code AS WI_TAX_CODE,
-    inv.amount_untaxed AS WI_TAX_BASE,
+    ROUND(inv.amount_untaxed) AS WI_TAX_BASE,
     po.name AS PO_NUMBER,
     pol.sequence AS PO_ITEM,
     CASE
@@ -21,7 +20,7 @@ SELECT
         ELSE sp.name
     END AS REF_DOC,
     CASE 
-        WHEN po.po_type = 'JASA' THEN to_char(po.begin_date, 'yyyy')
+        WHEN po.po_type != 'JASA' THEN to_char(po.begin_date, 'yyyy')
         ELSE ''
     END AS REF_DOC_YEAR,
     CASE 
@@ -33,7 +32,11 @@ SELECT
     CASE
         WHEN po.po_type = 'JASA' THEN sp.name
         ELSE ''
-    END AS SHEET_NO
+    END AS SHEET_NO,
+    CASE
+        WHEN inv.retention_due IS NOT NULL THEN to_char(inv.retention_due, 'yyyymmdd')
+        ELSE to_char(inv.date, 'yyyymmdd')
+    END AS RETENTION_DUE_DATE
 FROM 
     account_move inv
 LEFT JOIN 

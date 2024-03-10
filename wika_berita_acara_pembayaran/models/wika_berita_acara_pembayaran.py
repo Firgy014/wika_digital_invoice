@@ -6,6 +6,8 @@ import requests
 from num2words import num2words
 import base64
 import json
+from urllib.request import Request, urlopen
+
 
 # from terbilang import terbilang
 # import requests
