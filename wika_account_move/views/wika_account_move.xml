@@ -47,14 +47,16 @@
                             <field name="department_id" domain="[('biro', '=', True), ('parent_id', '=', branch_id)]"
                                 attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])], 'invisible': [('check_biro', '=', False)]}"/>
                             <field name="project_id" attrs="{'readonly': [('state', 'in', ['upload', 'approved'])]}"/>
-                           <field name="step_approve" invisible="1"/>
+                           <field name="step_approve" invisible="0"/>
                            <field name="invoice_date" string="Document Date" style="background-color: #dddded;"/>
                            <field name="date" string="Posting Date" style="background-color: #dddded;"/>
                           <field name="invoice_payment_term_id" style="background-color: #dddded;"/>
-                          <field name="invoice_date_due"/>
+                          <field name="invoice_date_due" invisible="1"/>
                           <field name="move_type" invisible="1"/>
                           <field name="company_id" invisible="1"/>
                             <field name="payment_state" invisible="1"/>
+                            <field name="is_approval_checked"/>
+                            <field name="is_wizard_cancel" readonly="1"/>
 
                       </group>
                     </group>
@@ -199,14 +201,26 @@
 
                         </group>
                     </page>
-                    <page string="List Approval">
+                    <page string="List Approval" name="approval_page">
                         <field name="history_approval_ids" readonly="1" force_save="1">
                             <tree string="List Approval">
-                                <field name="user_id"/>
-                                <field name="groups_id"/>
-                                <field name="date"/>
-                                <field name="note"/>
-                            </tree>
+                                    <field name="user_id"/>
+                                    <field name="groups_id"/>
+                                    <field name="date"/>
+                                    <field name="note"/>
+                                    <field name="information" widget="html"/>
+                                    <field name="is_show_wizard"/>
+                                </tree>
+                                <form>
+                                    <group>
+                                        <field name="user_id"/>
+                                        <field name="groups_id"/>
+                                        <field name="date"/>
+                                        <field name="note"/>
+                                        <field name="information" widget="html"/>
+                                        <field name="is_show_wizard"/>
+                                    </group>
+                                </form>
                         </field>
                     </page>
                     </notebook>
