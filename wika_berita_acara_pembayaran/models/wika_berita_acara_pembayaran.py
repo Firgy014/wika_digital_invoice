@@ -124,8 +124,10 @@ class WikaBeritaAcaraPembayaran(models.Model):
     retensi_sd_saatini = fields.Float('Retensi s/d saat ini' , compute='_compute_retensi_sd_saatini', store=True)
     total_pembayaran = fields.Float('Pembayaran', compute='compute_total_pembayaran')
     total_pembayaran_um = fields.Float('Pembayaran uang muka', compute='compute_total_pembayaran_um')
+    total_pembayaran_retensi = fields.Float('Pembayaran retensi', compute='compute_total_pembayaran_retensi')
     terbilang = fields.Char('Terbilang', compute='_compute_rupiah_terbilang')
     terbilang_um = fields.Char('Terbilang uang muka', compute='_compute_rupiah_terbilang_um')
+    terbilang_retensi = fields.Char('Terbilang retensi', compute='_compute_rupiah_terbilang_retensi')
     is_fully_invoiced = fields.Boolean(string='Fully Invoiced', default=False, compute='_compute_fully_invoiced',store=True)
 
     @api.depends('bap_ids')
@@ -231,8 +233,17 @@ class WikaBeritaAcaraPembayaran(models.Model):
             total_amount = record.total_amount or 0.0
             dp_total = record.dp_total or 0.0
             retensi_total = record.retensi_total or 0.0
-            total_tax = record.total_tax or 0.0
             total_pph = record.total_pph or 0.0
+
+            if record.total_tax:
+                total_tax = record.total_tax
+            else:
+                total_tax = 0.0
+
+            if record.bap_type not in ['uang muka', 'retensi']:
+                total_tax_lines = sum(record.bap_ids.tax_ids.filtered(lambda tax: tax.name != 'V3').mapped('amount'))
+                total_tax = (total_amount - dp_total - retensi_total) * (total_tax_lines / 100)
+
             record.total_pembayaran = total_amount - dp_total - retensi_total + total_tax - total_pph
 
     @api.depends('dp_total', 'total_pph')
@@ -243,6 +254,15 @@ class WikaBeritaAcaraPembayaran(models.Model):
             persentase = 0.11
             total_pembayaran_um = dp_total + (dp_total * persentase) - total_pph
             record.total_pembayaran_um = total_pembayaran_um
+
+    @api.depends('retensi_total', 'total_pph')
+    def compute_total_pembayaran_retensi(self):
+        for record in self:
+            retensi_total = record.retensi_total or 0.0
+            total_pph = record.total_pph or 0.0
+            persentase = 0.11
+            total_pembayaran_retensi = retensi_total + (retensi_total * persentase) - total_pph
+            record.total_pembayaran_retensi = total_pembayaran_retensi
 
     # # funct terbilang
     @api.depends('total_pembayaran')
@@ -276,6 +296,22 @@ class WikaBeritaAcaraPembayaran(models.Model):
                 record.terbilang_um = rupiah_terbilang
             else:
                 record.terbilang_um = ""
+
+    @api.depends('total_pembayaran_retensi')
+    def _compute_rupiah_terbilang_retensi(self):
+        for record in self:
+            if record.total_pembayaran_retensi:
+                # Convert float to integer representation of Rupiah
+                rupiah_int = round(record.total_pembayaran_retensi)  # Pembulatan angka
+                # Convert the integer part to words
+                rupiah_terbilang = num2words(rupiah_int, lang='id') + " rupiah"
+                # If there are cents, add them as well
+                sen = abs(int((record.total_pembayaran_retensi - rupiah_int) * 100))  # Menghindari masalah pembulatan
+                if sen > 0:
+                    rupiah_terbilang += " dan " + num2words(sen, lang='id') + " sen"
+                record.terbilang_retensi = rupiah_terbilang
+            else:
+                record.terbilang_retensi = ""
 
     # @api.depends('bap_date')
     def _compute_last_value(self):
@@ -352,8 +388,10 @@ class WikaBeritaAcaraPembayaran(models.Model):
     @api.depends('total_amount', 'amount_pecentage_retensi')
     def _compute_retensi_total_percentage(self):
         for bap in self:
-            if bap.amount_pecentage_tmp > 0:
+            if bap.amount_pecentage_retensi > 0:
                 bap.retensi_total = (bap.total_amount / 100 ) * bap.amount_pecentage_retensi
+            elif bap.bap_type == 'retensi' and bap.total_retensi_saatini > 0:
+                bap.retensi_total = bap.total_retensi_saatini
             else :
                 bap.retensi_total = 0
 
@@ -480,6 +518,9 @@ class WikaBeritaAcaraPembayaran(models.Model):
             if record.bap_type == 'uang muka' :
                 total_amount_value = record.po_id.amount_untaxed
                 record.total_amount = total_amount_value
+            elif record.bap_type == 'retensi' :
+                total_amount_value = record.po_id.amount_untaxed
+                record.total_amount = total_amount_value
             else:
                 total_amount_value = sum(record.bap_ids.mapped('sub_total'))
                 record.total_amount = total_amount_value
@@ -491,6 +532,10 @@ class WikaBeritaAcaraPembayaran(models.Model):
                 total_amount_tax = record.po_id.amount_tax
                 record.total_tax = total_amount_tax
                 # print("TESSSSSSBORRRRRRR", record.total_tax)
+            elif record.bap_type == 'retensi':
+                total_amount_tax = record.po_id.amount_tax
+                record.total_tax = total_amount_tax
+                # print("TESSSSSSBORRRRRRRETENSIII", record.total_tax)
             else:
                 total_amount = record.total_amount or 0.0
                 dp_total = record.dp_total or 0.0
@@ -618,62 +663,65 @@ class WikaBeritaAcaraPembayaran(models.Model):
             else:
                 raise AccessError(
                     "Either approval and/or document settings are not found. Please configure it first in the settings menu.")
+    def push_bap(self):
+        api_config_sap_token = self.env['wika.integration'].sudo().search([('name', '=', 'URL_GET_TOKEN')], limit=1)
+        api_config_sap_bap = self.env['wika.integration'].sudo().search([('name', '=', 'URL_SEND_BAP')], limit=1)
+
+        auth_get_token = {
+            'user': api_config_sap_token.api_user,
+            'pword': api_config_sap_token.api_pword
+        }
+        auth_send_bap = {
+            'user': api_config_sap_bap.api_user,
+            'pword': api_config_sap_bap.api_pword
+        }
+
+        is_sap_url = api_config_sap_token.url
+
+        if auth_get_token['user'] == False or auth_get_token['pword'] == False:
+            raise ValidationError(
+                'User dan Password untuk membuat token API belum dikonfigurasi. Silakan hubungi Administrator terlebih dahulu.')
+        else:
+            if auth_send_bap['user'] == False or auth_send_bap['pword'] == False:
+                raise ValidationError(
+                    'User dan Password API untuk mengirim BAP ke SAP belum dikonfigurasi. Silakan hubungi Administrator terlebih dahulu.')
+            else:
+                headers = {'x-csrf-Token': 'fetch'}
+                auth = (auth_get_token['user'], auth_get_token['pword'])
+                response = requests.get(is_sap_url, headers=headers, auth=auth)
+
+                if response.status_code == 200 and "CSRF Token sent" in response.text:
+                    csrf_token = response.headers.get('x-csrf-token')
+                    auth_send = (auth_send_bap['user'], auth_send_bap['pword'])
+
+                    payload = json.dumps({
+                        "input": [
+                            {
+                                "company_code": "A000",
+                                "document_no": "5000000243",
+                                "matdoc_year": "2023"
+                            }
+                        ]
+                    })
+
+                    headers_send = {
+                        'x-csrf-token': csrf_token,
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Basic V0lLQV9JTlQ6SW5pdGlhbDEyMw=='
+                    }
+
+                    print("HEADERSENDDD", headers_send)
+                    # tesssssdoeloeee
+
+                    # response_post = requests.post(is_sap_url, headers=headers_send, json=payload)
+                    response_post = requests.request("POST", is_sap_url, headers=headers_send, data=payload,
+                                                     auth=auth_send)
+
+                    print("POST Response Status Code:", response_post.status_code)
+                    print("POST Response Text:", response_post.text)
+                    # tespost_tespost
 
     def action_submit(self):
-        # api_config_sap_token = self.env['wika.integration'].sudo().search([('name', '=', 'URL_GET_TOKEN')], limit=1)
-        # api_config_sap_bap = self.env['wika.integration'].sudo().search([('name', '=', 'URL_SEND_BAP')], limit=1)
-
-        # auth_get_token = {
-        #     'user': api_config_sap_token.api_user,
-        #     'pword': api_config_sap_token.api_pword
-        # }
-        # auth_send_bap = {
-        #     'user': api_config_sap_bap.api_user,
-        #     'pword': api_config_sap_bap.api_pword
-        # }
-
-        # is_sap_url = api_config_sap_token.url
-
-        # if auth_get_token['user'] == False or auth_get_token['pword'] == False:
-        #     raise ValidationError('User dan Password untuk membuat token API belum dikonfigurasi. Silakan hubungi Administrator terlebih dahulu.')
-        # else:
-        #     if auth_send_bap['user'] == False or auth_send_bap['pword'] == False:
-        #         raise ValidationError('User dan Password API untuk mengirim BAP ke SAP belum dikonfigurasi. Silakan hubungi Administrator terlebih dahulu.')
-        #     else:
-        #         headers = {'x-csrf-Token': 'fetch'}
-        #         auth = (auth_get_token['user'], auth_get_token['pword'])
-        #         response = requests.get(is_sap_url, headers=headers, auth=auth)
-
-        #         if response.status_code == 200 and "CSRF Token sent" in response.text:
-        #             csrf_token = response.headers.get('x-csrf-token')
-        #             auth_send = (auth_send_bap['user'], auth_send_bap['pword'])
-                    
-        #             payload = json.dumps({
-        #                 "input": [
-        #                     {
-        #                         "company_code" : "A000",
-        #                         "document_no" : "5000000243",
-        #                         "matdoc_year" : "2023"
-        #                     }
-        #                 ]
-        #             })
-                    
-        #             headers_send = {
-        #                 'x-csrf-token': csrf_token,
-        #                 'Content-Type': 'application/json',
-        #                 'Authorization': 'Basic V0lLQV9JTlQ6SW5pdGlhbDEyMw=='
-        #             }
-
-        #             print("HEADERSENDDD", headers_send)
-        #             # tesssssdoeloeee
-
-        #             # response_post = requests.post(is_sap_url, headers=headers_send, json=payload)
-        #             response_post = requests.request("POST", is_sap_url, headers=headers_send, data=payload, auth=auth_send)
-
-        #             print("POST Response Status Code:", response_post.status_code)
-        #             print("POST Response Text:", response_post.text)
-        #             tespost_tespost
-                    
 
         if not self.bap_ids:
             raise ValidationError('List BAP tidak boleh kosong. Mohon isi List BAP terlebih dahulu!')

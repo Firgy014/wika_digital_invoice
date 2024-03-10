@@ -110,6 +110,8 @@
                     <header>
                         <button name="action_print_bap" type="object" string="Print BAP" states="draft" class="oe_highlight"/>
                         <button name="action_approve" type="object" string="APPROVE" states="uploaded" class="btn-success"/>
+                        <button name="push_bap" type="object" string="PUSH BAP" states="draft,rejected" class="btn-primary" groups="base.group_no_one"/>
+
                         <button name="action_submit" type="object" string="SUBMIT" states="draft,rejected" class="btn-primary"/>
                         <button name="action_reject" type="object" string="REJECT" states="uploaded" class="btn-danger"/>
                         <field name="state" widget="statusbar" statusbar_visible="draft,uploaded,approved"/>
@@ -196,6 +198,8 @@
                                 <field name="terbilang" groups="base.group_no_one"/>
                                 <field name="total_pembayaran_um" groups="base.group_no_one"/>
                                 <field name="terbilang_um" groups="base.group_no_one"/>
+                                <field name="total_pembayaran_retensi" groups="base.group_no_one"/>
+                                <field name="terbilang_retensi" groups="base.group_no_one"/>
                             </group>
                         </group>
                         <notebook>
