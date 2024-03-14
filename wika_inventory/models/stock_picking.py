@@ -58,12 +58,9 @@ class PickingInherit(models.Model):
 
     @api.depends('move_ids.price_subtotal')
     def _compute_total_amount(self):
-        print("masuk.def")
         for record in self:
-            print("masuk.for")
             total_amount_value = sum(record.move_ids.mapped('price_subtotal'))
             if total_amount_value:
-                print("masuk.if")
                 record.total_amount = total_amount_value
 
     # @api.depends('bap_ids.price_subtotal')
@@ -130,7 +127,7 @@ class PickingInherit(models.Model):
 
             # Get Document Setting
             document_list = []
-            doc_setting_id = document_setting_model.search([('model_id', '=', model_id.id),('transaction_type', '=', self.pick_type)])
+            doc_setting_id = document_setting_model.search([('model_id', '=', model_id.id),('transaction_type', '=', res.pick_type)])
 
             if doc_setting_id:
                 for document_line in doc_setting_id:
