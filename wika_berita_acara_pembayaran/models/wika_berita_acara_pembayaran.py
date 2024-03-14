@@ -128,6 +128,14 @@ class WikaBeritaAcaraPembayaran(models.Model):
     terbilang_retensi = fields.Char('Terbilang retensi', compute='_compute_rupiah_terbilang_retensi')
     is_fully_invoiced = fields.Boolean(string='Fully Invoiced', compute='_compute_fully_invoiced', default=False,store=True)
 
+    @api.constrains('po_id', 'bap_type')
+    def _check_bap_type(self):
+        for record in self:
+            if record.po_id and record.bap_type != 'cut over':
+                account_move = self.env['account.move'].search([('po_id','=',record.po_id.id), ('cut_off','=',True)])
+                if account_move:
+                    raise ValidationError(_("Nomor PO tersebut sudah dicatat sebagai cut off di invoice terkait. Silahkan pilih jenis BAP 'Cut Over'."))
+
     @api.depends('bap_ids')
     def _compute_fully_invoiced(self):
         tots = 0.0
@@ -515,10 +523,10 @@ class WikaBeritaAcaraPembayaran(models.Model):
         if self.po_id:
             price_cut_lines = []
 
-            if self.bap_type == 'cut over':
-                self.bap_ids = [(5, 0, 0)]
-                bap_lines = []
+            self.bap_ids = [(2, bap_id.id, 0) for bap_id in self.bap_ids]
 
+            if self.bap_type == 'cut over':
+                bap_lines = []
                 account_moves = self.env['account.move'].search([
                     ('po_id', '=', self.po_id.id),
                     ('cut_off', '=', True)
@@ -531,7 +539,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
                             'product_uom': line.product_uom_id.id,
                             'qty': line.quantity,
                             'unit_price': line.price_unit,
-                            'tax_ids': line.tax_ids,
+                            'tax_ids': [(6, 0, line.tax_ids.ids)],
                             'sub_total': line.price_subtotal,
                             'currency_id': line.currency_id.id,
                         }))
@@ -556,17 +564,18 @@ class WikaBeritaAcaraPembayaran(models.Model):
                         'purchase_line_id': picking.purchase_line_id.id or False,
                         'unit_price_po': picking.purchase_line_id.price_unit,
                         'sisa_qty_bap_grses': picking.sisa_qty_bap,
-                        'product_uom': picking.product_uom,
+                        'product_uom': picking.product_uom.id,
                         'product_id': picking.product_id.id, 
                         'qty': picking.sisa_qty_bap,
                         'unit_price': picking.purchase_line_id.price_unit,
-                        'tax_ids': picking.purchase_line_id.taxes_id.ids,
+                        'tax_ids': [(6, 0, picking.purchase_line_id.taxes_id.ids)],
                         'currency_id': picking.purchase_line_id.currency_id.id
                     }))
 
                 self.bap_ids = bap_lines
 
             self.price_cut_ids = price_cut_lines
+
 
     @api.depends('bap_ids.sub_total', 'bap_ids.tax_ids', 'bap_type')
     def compute_total_amount(self):
