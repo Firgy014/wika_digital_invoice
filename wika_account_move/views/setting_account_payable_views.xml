@@ -8,28 +8,26 @@
             <tree>
                 <field name="valuation_class"/>
                 <field name="assignment"/>
-                <field name="account_pihak_ketiga_id"/>
-                <field name="account_berelasi_id"/>
+                <field name="bill_coa_type"/>
+                <field name="account_id"/>
             </tree>
         </field>
     </record>
 
     <record id="view_setting_account_payable_form" model="ir.ui.view">
-        <field name="name">wika.setting.account.payable.tree</field>
+        <field name="name">wika.setting.account.payable.form</field>
         <field name="model">wika.setting.account.payable</field>
         <field name="arch" type="xml">
-            <form>
-                <group string="Valuation Setting">
-                    <field name="valuation_class"/>
-                </group>
-                <group string="Account Assigment">
-                    <field name="assignment"/>
-                </group>
-                <group string="Chart of Accounts">
-                    <field name="account_pihak_ketiga_id"/>
-                    <field name="account_berelasi_id"/>
-                </group>
-            </form>
+            <sheet>
+                <form>
+                    <group string="Payable Accounts Configuration">
+                        <field name="valuation_class"/>
+                        <field name="assignment"/>
+                        <field name="bill_coa_type" string="COA Type"/>
+                        <field name="account_id"/>
+                    </group>
+                </form>
+            </sheet>
         </field>
     </record>
 

@@ -644,11 +644,20 @@ class WikaBeritaAcaraPembayaran(models.Model):
         #         raise ValidationError('User dan Password API untuk mengirim BAP ke SAP belum dikonfigurasi. Silakan hubungi Administrator terlebih dahulu.')
         #     else:
         #         headers = {'x-csrf-Token': 'fetch'}
+        #         headers['Authorization'] = 'Basic V0lLQV9JTlQ6SW5pdGlhbDEyMw=='
         #         auth = (auth_get_token['user'], auth_get_token['pword'])
         #         response = requests.get(is_sap_url, headers=headers, auth=auth)
                 
         #         if response.status_code == 200 and "CSRF Token sent" in response.text:
-        #             csrf_token = response.headers.get('x-csrf-token')
+        #             print("response.status_code", response.status_code)
+        #             print("response.text", response.text)
+                    
+        #             # csrf_token = response.headers.get('x-csrf-token')
+        #             csrf_token = response.headers['x-csrf-token']
+        #             print("GET HEADERS",response.headers)
+        #             print("GET HEADERS",response.headers['x-csrf-token'])
+        #             print("GET HEADERS",type(response.headers['x-csrf-token']))
+                    
         #             auth_send = (auth_send_bap['user'], auth_send_bap['pword'])
                     
         #             payload = json.dumps({
@@ -656,31 +665,43 @@ class WikaBeritaAcaraPembayaran(models.Model):
         #                     {
         #                         "company_code" : "A000",
         #                         "document_no" : "5000000243",
-        #                         "matdoc_year" : "2023"
+        #                         "matdoc_year" : "2023",
+        #                         "status" : "X"
         #                     }
         #                 ]
         #             })
-        #             payload.replace('\n', '')
+        #             payload = payload.replace('\n', '')
+                    
+        #             print("TOKEEENNN", csrf_token)
                     
         #             headers_send = {
-        #                 'x-csrf-token': str(csrf_token),
+        #                 'x-csrf-token': csrf_token,
         #                 'Content-Type': 'application/json',
-        #                 'Authorization': 'Basic ' + base64.b64encode(f"{str(auth_send_bap['user'])}:{str(auth_send_bap['pword'])}".encode()).decode(),
-        #                 'Cache-Control': 'no-cache',
-        #                 'Cookie': 'SAP_SESSIONID_WS1_110=ioQZY3cCLGsU1oOCuNTnHfKtnZXcLhHumebrJhjOmDA%3d; sap-usercontext=sap-client=110',
-        #                 'Connection': 'keep-alive'
+        #                 'Authorization': 'Basic V0lLQV9JTlQ6SW5pdGlhbDEyMw=='
+        #                 # 'Authorization': 'Basic ' + base64.b64encode(f"{str(auth_send_bap['user'])}:{str(auth_send_bap['pword'])}".encode()).decode(),
+        #                 # 'Cache-Control': 'no-cache',
+        #                 # 'Cookie': 'SAP_SESSIONID_WS1_110=ioQZY3cCLGsU1oOCuNTnHfKtnZXcLhHumebrJhjOmDA%3d; sap-usercontext=sap-client=110',
+        #                 # 'Connection': 'keep-alive'
         #             }
 
         #             print("HEADERSENDDD", headers_send)
-        #             # tesssssdoeloeee
+        #             print("PAYLOAADDD", payload)
+        #             print("PAYLOAADDD ENCO", payload.encode())
+        #             print("URL FIX", is_sap_url)
 
-        #             # response_post = requests.post(is_sap_url, headers=headers_send, json=payload)
-        #             req = Request(is_sap_url, headers=headers_send, data=payload.encode())
-        #             response_post = urlopen(req)
+        #             response_post = requests.post(is_sap_url, headers=headers_send, json=payload)
+        #             # req = Request(is_sap_url, headers=headers_send, data=payload.encode())
+        #             # req = Request(is_sap_url, headers=headers_send, data=payload.encode())
+        #             # response_post = urlopen(req)
 
-        #             print("POST Response Status Code:", response_post.getcode())
-        #             print("POST Response Text:", response_post.read())    
-        #             bismillah                
+        #             # print("POST Response Status Code:", response_post.getcode())
+        #             # print("POST Response Text:", response_post.read())    
+        #             print("POST RESSSS:", response_post)    
+        #             print("POST RESSSS DIR:", dir(response_post))    
+    
+        #             print("POST RESSSS:", response_post.status_code)    
+        #             print("POST RESSSS:", response_post.text)    
+        #             tes_bismillah                
 
         if not self.bap_ids:
             raise ValidationError('List BAP tidak boleh kosong. Mohon isi List BAP terlebih dahulu!')

@@ -16,5 +16,3 @@ class PartnerInherit(models.Model):
         ('ZV09', 'ZV09 Perseorangan'),
         ('ZV11', 'ZV11 Vendor Fasilitas Bank'),
     ], string='Bill Chart of Accounts Type')
-    # account_berelasi_id = fields.Many2one('account.account', string='Account Berelasi')
-    # account_pihak_ketiga_id = fields.Many2one('account.account', string='Account Pihak Ketiga')
