@@ -51,6 +51,7 @@ class PurchaseOrderInherit(models.Model):
         ('Pusat', 'Pusat')
     ], string='Level',compute='_compute_level')
     is_qty_available = fields.Boolean(string='Qty Tersedia', compute='_compute_is_qty_available')
+    payment_term_id = fields.Many2one('account.payment.term', string='Payment Term')
 
     @api.depends('order_line.sisa_qty_bap')
     def _compute_is_qty_available(self):

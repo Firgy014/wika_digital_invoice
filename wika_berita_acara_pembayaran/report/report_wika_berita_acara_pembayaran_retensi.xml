@@ -135,22 +135,22 @@
                                     <td rowspan="4" style="padding: 3px;">3.</td>
                                     <td style="padding: 1px;">No Berita Acara PHO</td>
                                     <td style="padding: 1px;">:</td>
-                                    <!-- <td style="padding: 1px;"><t t-esc="o.begin_date"/></td> -->
+                                    <td style="padding: 1px;"><t t-esc="o.numb_ba_pho"/></td>
                                 </tr>
                                 <tr style="text-align: left;">
                                     <td style="padding: 1px;">Tanggal PHO</td>
                                     <td style="padding: 1px;">:</td>
-                                    <!-- <td style="padding: 1px;">Rp.<t t-esc="'{:,.2f}'.format(o.amount_total)"/></td> -->
+                                    <td style="padding: 1px;"><t t-esc="o.pho_date"/></td>
                                 </tr>
                                 <tr style="text-align: left;">
                                     <td style="padding: 1px;">No Berita Acara FHO</td>
                                     <td style="padding: 1px;">:</td>
-                                    <!-- <td style="padding: 1px;">Rp.<t t-esc="'{:,.2f}'.format(o.amount_total)"/></td> -->
+                                    <td style="padding: 1px;"><t t-esc="o.numb_ba_fho"/></td>
                                 </tr>
                                 <tr style="text-align: left;">
                                     <td style="padding: 1px;">Tanggal FHO</td>
                                     <td style="padding: 1px;">:</td>
-                                    <!-- <td style="padding: 1px;">Rp.<t t-esc="'{:,.2f}'.format(o.amount_total)"/></td> -->
+                                    <td style="padding: 1px;"><t t-esc="o.fho_date"/></td>
                                 </tr>
                             </tbody>
                         </table>
@@ -183,27 +183,27 @@
                             </thead>
                             <tbody>
                                 <tr>
-                                    <th style="padding: 1px;" scope="row">1.</th>
+                                    <!-- <th style="padding: 1px;" scope="row">1.</th>
                                     <td style="padding: 1px;"><strong>NILAI RETENSI</strong></td>
                                     <td style="padding: 1px;"></td>
                                     <td style="padding: 1px;"></td>
                                     <td style="padding: 1px;"></td>
                                     <td style="padding: 1px;"></td>
                                     <td style="padding: 1px;"></td>
-                                    <td style="padding: 1px;"></td>
+                                    <td style="padding: 1px;"></td> -->
                                 </tr>
                                 <tr>
-                                    <th scope="row" style="padding: 1px;">1.1</th>
+                                    <!-- <th scope="row" style="padding: 1px;">1.1</th>
                                     <td style="padding: 1px;">Yang lalu</td>
                                     <td style="padding: 1px;">:</td>
                                     <td style="padding: 1px;"></td>
                                     <td style="padding: 1px;"></td>
                                     <td style="padding: 1px;"></td>
                                     <td style="text-align: right; padding: 1px;">=</td>
-                                    <td style="text-align: right; padding: 1px;">Rp. <t t-esc="'{:,.0f}'.format(o.last_retensi_total)"/></td>
+                                    <td style="text-align: right; padding: 1px;">Rp. <t t-esc="'{:,.0f}'.format(o.last_retensi_total)"/></td> -->
                                 </tr>
                                 <tr>
-                                    <th scope="row" style="padding: 1px;">1.2</th>
+                                    <!-- <th scope="row" style="padding: 1px;">1.2</th>
                                     <td style="padding: 1px;">Saat ini</td>
                                     <td style="padding: 1px;">:</td>
                                     <td style="padding: 1px;"><t t-esc="o.amount_pecentage_retensi"/>%</td>
@@ -220,7 +220,17 @@
                                     <td style="padding: 1px;"></td>
                                     <td style="padding: 1px;"></td>
                                     <td style="text-align: right; padding: 1px;">=</td>
-                                    <td style="text-align: right; padding: 1px;">Rp. <t t-esc="'{:,.0f}'.format(o.last_retensi_total + o.retensi_total)"/></td>
+                                    <td style="text-align: right; padding: 1px;">Rp. <t t-esc="'{:,.0f}'.format(o.last_retensi_total + o.retensi_total)"/></td> -->
+                                </tr>
+                                <tr>
+                                    <th style="padding: 1px;" scope="row">1.</th>
+                                    <td style="padding: 1px;"><strong>NILAI RETENSI</strong></td>
+                                    <td style="padding: 1px;">:</td>
+                                    <td style="padding: 1px;"><t t-esc="o.amount_pecentage_retensi"/>%</td>
+                                    <td style="padding: 1px;">x</td>
+                                    <td style="padding: 1px;">Rp. <t t-esc="'{:,.0f}'.format(o.total_retensi_saatini) if o.total_retensi_saatini else 0"/></td>
+                                    <td style="text-align: right; padding: 1px;">=</td>
+                                    <td style="text-align: right; padding: 1px;">Rp. <t t-esc="'{:,.0f}'.format(o.retensi_total)"/></td>
                                 </tr>
                                 <tr>
                                     <th style="padding: 1px;" scope="row">2.</th>
@@ -230,9 +240,9 @@
                                     <td style="padding: 1px;"></td>
                                     <td style="padding: 1px;"></td>
                                     <td style="text-align: right; padding: 1px;">=</td>
-                                    <td style="text-align: right; padding: 1px;">Rp. <t t-esc="'{:,.0f}'.format(o.total_amount - o.dp_total - o.retensi_total)"/></td>
+                                    <td style="text-align: right; padding: 1px;">Rp. <t t-esc="'{:,.0f}'.format(o.retensi_total)"/></td>
                                 </tr>
-                                <t t-set="jumlah_total_netto" t-value="(o.total_amount - o.dp_total - o.retensi_total)"/>
+                                <!-- <t t-set="jumlah_total_netto" t-value="(o.total_amount - o.dp_total - o.retensi_total)"/> -->
                                 <tr>
                                     <th style="padding: 1px;" scope="row">3.</th>
                                     <td style="padding: 1px;"><strong>PPN</strong></td>
@@ -241,8 +251,9 @@
                                     <td style="padding: 1px;"></td>
                                     <td style="padding: 1px;"></td>
                                     <td style="text-align: right; padding: 1px;">=</td>
-                                    <td style="text-align: right; padding: 1px;">Rp. <t t-esc="'{:,.0f}'.format(o.total_tax)"/></td>
+                                    <td style="text-align: right; padding: 1px;">Rp. <t t-esc="'{:,.0f}'.format(o.retensi_total * 0.11)"/></td>
                                 </tr>
+                                <t t-set="ppn" t-value="o.retensi_total * 0.11"/>
                                 <tr>
                                     <th style="padding: 1px;" scope="row">4.</th>
                                     <td style="padding: 1px;"><strong>POTONGAN LAIN - LAIN</strong></td>
@@ -273,7 +284,7 @@
                                     <!-- <td style="text-align: right; padding: 1px;">=</td> -->
                                     <!-- <td style="text-align: left; padding: 1px;">Rp.</td> -->
                                 </tr>
-                                <t t-set="total_pembayaran" t-value="jumlah_total_netto + o.total_tax - o.total_pph"/>
+                                <t t-set="total_pembayaran" t-value="o.retensi_total + ppn - o.total_pph"/>
                                 <tr>
                                     <th style="padding: 1px;" scope="row">5.</th>
                                     <td style="padding: 1px;"><strong>PEMBAYARAN</strong></td>
@@ -313,7 +324,7 @@
                     </div>
                     <div style="text-align: center;">
                         <p style="margin-top: -10px; font-size: 14px;">
-                            Terbilang: <span t-esc="o.terbilang"/>
+                            Terbilang: <span t-esc="o.terbilang_retensi"/>
                         </p>
                     </div>
                     <div>

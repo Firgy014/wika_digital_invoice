@@ -55,6 +55,7 @@
                         <field name="branch_id" domain="[('biro', '=', False)]" readonly="1" force_save="1"/>
                         <field name="department_id" domain="[('biro', '=', True), ('parent_id', '=', branch_id)]" readonly="1" force_save="1" attrs="{'invisible': [('check_biro', '=', False)]}"/>
                         <field name="project_id"  readonly="1" force_save="1"/>
+                        <field name="payment_term_id" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
                         <field name="begin_date" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
                         <field name="end_date" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}" style="background-color: #dddded;"/>
                     </group>
