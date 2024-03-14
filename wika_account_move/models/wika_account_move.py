@@ -262,10 +262,10 @@ class WikaInheritedAccountMove(models.Model):
         for move in self:
             move.amount_total_footer = move.total_line-move.dp_total-move.retensi_total -move.total_pph
 
-    @api.onchange('partner_id','valuation_class')
+    @api.onchange('partner_id', 'valuation_class')
     def onchange_account_payable(self):
         for record in self:
-            record.account_id=False
+            record.account_id = False
             account_setting_model = self.env['wika.setting.account.payable'].sudo()
 
             if record.partner_id.bill_coa_type == 'ZN01':
@@ -273,27 +273,33 @@ class WikaInheritedAccountMove(models.Model):
                     account_setting_id = account_setting_model.search([
                         ('valuation_class', '=', record.valuation_class),
                         ('assignment', '=', record.level.lower()),
+                        ('bill_coa_type', '=', 'ZN01')
                     ], limit=1)
-                    record.account_id= account_setting_id.account_berelasi_id.id
+                    record.account_id= account_setting_id.account_id.id
                 elif record.level != 'Proyek' and record.valuation_class:
                     account_setting_id = account_setting_model.search([
                         ('valuation_class', '=', record.valuation_class),
                         ('assignment', '=', 'nonproyek'),
+                        ('bill_coa_type', '=', 'ZN01')
                     ], limit=1)
-                    record.account_id= account_setting_id.account_berelasi_id.id
+                    record.account_id= account_setting_id.account_id.id
+
             elif record.partner_id.bill_coa_type == 'ZN02':
                 if record.level == 'Proyek' and record.valuation_class:
                     account_setting_id = account_setting_model.search([
                         ('valuation_class', '=', record.valuation_class),
                         ('assignment', '=', record.level.lower()),
+                        ('bill_coa_type', '=', 'ZN02')
                     ], limit=1)
-                    record.account_id= account_setting_id.account_pihak_ketiga_id.id
+                    record.account_id= account_setting_id.account_id.id
                 elif record.level != 'Proyek' and record.valuation_class:
                     account_setting_id = account_setting_model.search([
                         ('valuation_class', '=', record.valuation_class),
                         ('assignment', '=', 'nonproyek'),
+                        ('bill_coa_type', '=', 'ZN02')
                     ], limit=1)
-                    record.account_id= account_setting_id.account_pihak_ketiga_id.id
+                    record.account_id= account_setting_id.account_id.id
+
 
     @api.model_create_multi
     def create(self, vals_list):
