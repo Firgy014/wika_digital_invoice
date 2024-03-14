@@ -198,6 +198,8 @@
                                 <field name="terbilang_um" groups="base.group_no_one"/>
                                 <field name="total_pembayaran_retensi" groups="base.group_no_one"/>
                                 <field name="terbilang_retensi" groups="base.group_no_one"/>
+                                <field name="total_pembayaran_co" groups="base.group_no_one"/>
+                                <field name="terbilang_co" groups="base.group_no_one"/>
                             </group>
                         </group>
                         <notebook>

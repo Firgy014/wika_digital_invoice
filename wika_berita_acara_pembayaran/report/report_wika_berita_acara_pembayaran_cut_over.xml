@@ -307,7 +307,7 @@
                     </div>
                     <div style="text-align: center;">
                         <p style="font-size: 14px;">
-                            Terbilang: <span t-esc="o.terbilang_retensi"/>
+                            Terbilang: <span t-esc="o.terbilang_co"/>
                         </p>
                     </div>
                     <div>
