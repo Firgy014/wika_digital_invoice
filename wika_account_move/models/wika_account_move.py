@@ -180,6 +180,7 @@ class WikaInheritedAccountMove(models.Model):
 
     amount_total_payment = fields.Float(string='Total Invoice', compute='_compute_amount_total_payment', store= True)
     total_line = fields.Float(string='Total Line', compute='_compute_total_line')
+    cut_off = fields.Boolean(string='Cut Off',default=False,copy=False)
     # is_approval_checked = fields.Boolean(string="Approval Checked")
 
     @api.depends('total_line', 'invoice_line_ids', 'dp_total','retensi_total', 'invoice_line_ids.tax_ids')

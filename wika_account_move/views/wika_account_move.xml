@@ -47,7 +47,7 @@
                             <field name="department_id" domain="[('biro', '=', True), ('parent_id', '=', branch_id)]"
                                 attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])], 'invisible': [('check_biro', '=', False)]}"/>
                             <field name="project_id" attrs="{'readonly': [('state', 'in', ['upload', 'approved'])]}"/>
-                           <field name="step_approve" invisible="0"/>
+                           <field name="step_approve" invisible="1"/>
                            <field name="invoice_date" string="Document Date" style="background-color: #dddded;"/>
                            <field name="date" string="Posting Date" style="background-color: #dddded;"/>
                           <field name="invoice_payment_term_id" style="background-color: #dddded;"/>
@@ -55,8 +55,9 @@
                           <field name="move_type" invisible="1"/>
                           <field name="company_id" invisible="1"/>
                             <field name="payment_state" invisible="1"/>
-                            <field name="is_approval_checked"/>
-                            <field name="is_wizard_cancel" readonly="1"/>
+                            <field name="is_approval_checked" invisible="1"/>
+                            <field name="is_wizard_cancel" readonly="1" invisible="1"/>
+                            <field name="cut_off" readonly="1" force_save="1"/>
 
                       </group>
                     </group>

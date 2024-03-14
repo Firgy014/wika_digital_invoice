@@ -44,6 +44,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
         ('progress', 'Progress'),
         ('uang muka', 'Uang Muka'),
         ('retensi', 'Retensi'),
+        ('cut over', 'Cut Over'),
         ], string='Jenis BAP', default='progress')
     price_cut_ids = fields.One2many('wika.bap.pricecut.line', 'po_id')
     signatory_name = fields.Char(string='Nama Penanda Tangan Wika', related="po_id.signatory_name")
@@ -125,7 +126,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
     terbilang = fields.Char('Terbilang', compute='_compute_rupiah_terbilang')
     terbilang_um = fields.Char('Terbilang uang muka', compute='_compute_rupiah_terbilang_um')
     terbilang_retensi = fields.Char('Terbilang retensi', compute='_compute_rupiah_terbilang_retensi')
-    is_fully_invoiced = fields.Boolean(string='Fully Invoiced', default=False, compute='_compute_fully_invoiced',store=True)
+    is_fully_invoiced = fields.Boolean(string='Fully Invoiced', compute='_compute_fully_invoiced', default=False,store=True)
 
     @api.depends('bap_ids')
     def _compute_fully_invoiced(self):
@@ -472,41 +473,99 @@ class WikaBeritaAcaraPembayaran(models.Model):
             else:
                 x.check_biro = False
                 
-    @api.onchange('po_id')
-    def onchange_po_id(self):
+    # @api.onchange('po_id')
+    # def onchange_po_id(self):
 
+    #     if self.po_id:
+    #         self.bap_ids = [(5, 0, 0)]
+    #         bap_lines = []
+    #         price_cut_lines = []
+
+    #         stock_pickings = self.env['stock.picking'].search([('po_id', '=', self.po_id.id)])
+    #         # Mengisi price_cut_lines
+    #         for line in self.po_id.price_cut_ids:
+    #             price_cut_lines.append((0, 0, {
+    #                 'product_id': line.product_id.id,
+    #                 'percentage_amount': line.persentage_amount,
+    #                 'amount': line.amount,
+    #             }))
+
+    #         bap_lines = []
+    #         for picking in stock_pickings.move_ids_without_package.filtered(lambda x: x.sisa_qty_bap>0):
+    #             bap_lines.append((0, 0, {
+    #             'picking_id': picking.picking_id.id,
+    #             'stock_move_id': picking.id,
+    #             'purchase_line_id':picking.purchase_line_id.id or False,
+    #             'unit_price_po':picking.purchase_line_id.price_unit,
+    #             # 'account_move_line_id':aml_src.id or False,
+    #              'sisa_qty_bap_grses':picking.sisa_qty_bap,
+    #             'product_uom':picking.product_uom,
+    #             'product_id': picking.product_id.id,
+    #             'qty': picking.sisa_qty_bap,
+    #             'unit_price': picking.purchase_line_id.price_unit,
+    #             'tax_ids':picking.purchase_line_id.taxes_id.ids,
+    #             'currency_id':picking.purchase_line_id.currency_id.id
+    #         }))
+
+    #         self.bap_ids = bap_lines
+    #         self.price_cut_ids = price_cut_lines
+
+    @api.onchange('po_id', 'bap_type')
+    def onchange_po_id(self):
         if self.po_id:
-            self.bap_ids = [(5, 0, 0)]
-            bap_lines = []
             price_cut_lines = []
 
-            stock_pickings = self.env['stock.picking'].search([('po_id', '=', self.po_id.id)])
-            # Mengisi price_cut_lines
-            for line in self.po_id.price_cut_ids:
-                price_cut_lines.append((0, 0, {
-                    'product_id': line.product_id.id,
-                    'percentage_amount': line.persentage_amount,
-                    'amount': line.amount,
-                }))
+            if self.bap_type == 'cut over':
+                self.bap_ids = [(5, 0, 0)]
+                bap_lines = []
 
-            bap_lines = []
-            for picking in stock_pickings.move_ids_without_package.filtered(lambda x: x.sisa_qty_bap>0):
-                bap_lines.append((0, 0, {
-                'picking_id': picking.picking_id.id,
-                'stock_move_id': picking.id,
-                'purchase_line_id':picking.purchase_line_id.id or False,
-                'unit_price_po':picking.purchase_line_id.price_unit,
-                # 'account_move_line_id':aml_src.id or False,
-                 'sisa_qty_bap_grses':picking.sisa_qty_bap,
-                'product_uom':picking.product_uom,
-                'product_id': picking.product_id.id,
-                'qty': picking.sisa_qty_bap,
-                'unit_price': picking.purchase_line_id.price_unit,
-                'tax_ids':picking.purchase_line_id.taxes_id.ids,
-                'currency_id':picking.purchase_line_id.currency_id.id
-            }))
+                account_moves = self.env['account.move'].search([
+                    ('po_id', '=', self.po_id.id),
+                    ('cut_off', '=', True)
+                ])
 
-            self.bap_ids = bap_lines
+                for move in account_moves:
+                    for line in move.invoice_line_ids:
+                        bap_lines.append((0, 0, {
+                            'product_id': line.product_id.id,
+                            'product_uom': line.product_uom_id.id,
+                            'qty': line.quantity,
+                            'unit_price': line.price_unit,
+                            'tax_ids': line.tax_ids,
+                            'sub_total': line.price_subtotal,
+                            'currency_id': line.currency_id.id,
+                        }))
+
+                self.bap_ids = bap_lines
+                    
+            elif self.bap_type == 'progress':
+                stock_pickings = self.env['stock.picking'].search([('po_id', '=', self.po_id.id)])
+
+                for line in self.po_id.price_cut_ids:
+                    price_cut_lines.append((0, 0, {
+                        'product_id': line.product_id.id,
+                        'percentage_amount': line.persentage_amount,
+                        'amount': line.amount,
+                    }))
+
+                bap_lines = []
+                for picking in stock_pickings.move_ids_without_package.filtered(lambda x: x.sisa_qty_bap>0):
+                    bap_lines.append((0, 0, {
+                        'picking_id': picking.picking_id.id,
+                        'stock_move_id': picking.id,
+                        'purchase_line_id': picking.purchase_line_id.id or False,
+                        'unit_price_po': picking.purchase_line_id.price_unit,
+                        'sisa_qty_bap_grses': picking.sisa_qty_bap,
+                        'product_uom': picking.product_uom,
+                        'product_id': picking.product_id.id, 
+                        'qty': picking.sisa_qty_bap,
+                        'unit_price': picking.purchase_line_id.price_unit,
+                        'tax_ids': picking.purchase_line_id.taxes_id.ids,
+                        'currency_id': picking.purchase_line_id.currency_id.id
+                    }))
+
+                self.bap_ids = bap_lines
+
             self.price_cut_ids = price_cut_lines
 
     @api.depends('bap_ids.sub_total', 'bap_ids.tax_ids', 'bap_type')
@@ -937,6 +996,8 @@ class WikaBeritaAcaraPembayaran(models.Model):
             return self.env.ref('wika_berita_acara_pembayaran.report_wika_berita_acara_pembayaran_um_action').report_action(self)
         elif self.bap_type == 'retensi':
             return self.env.ref('wika_berita_acara_pembayaran.report_wika_berita_acara_pembayaran_retensi_action').report_action(self)
+        elif self.bap_type == 'cut over':
+            return self.env.ref('wika_berita_acara_pembayaran.report_wika_berita_acara_pembayaran_cut_over_action').report_action(self)
         else:
             return super(WikaBeritaAcaraPembayaran, self).action_print_bap()
 
@@ -984,18 +1045,17 @@ class WikaBeritaAcaraPembayaranLine(models.Model):
             total_invoiced_bap_qty = sum(move_line.quantity for move_line in move_line_ids)
             record.qty_invoiced = total_invoiced_bap_qty
 
+    # @api.constrains('qty')
+    # def _check_qty_limit(self):
+    #     for line in self:
+    #         if line.qty > line.sisa_qty_bap_grses:
+    #             raise ValidationError('Quantity tidak boleh melebihi sisa quantity pada GR/SES!')
+
     @api.constrains('qty')
     def _check_qty_limit(self):
         for line in self:
-            if line.qty > line.sisa_qty_bap_grses:
+            if line.bap_id.bap_type != 'cut over' and line.qty > line.sisa_qty_bap_grses:
                 raise ValidationError('Quantity tidak boleh melebihi sisa quantity pada GR/SES!')
-
-    @api.onchange('qty')
-    def _onchange_product_qty(self):
-        for line in self:
-            if line.qty > line.sisa_qty_bap_grses:
-                raise ValidationError('Quantity tidak boleh melebihi sisa quantity pada GR/SES!')
-
 
     @api.depends('tax_ids', 'sub_total')
     def compute_sub_total(self):
@@ -1017,7 +1077,7 @@ class WikaBeritaAcaraPembayaranLine(models.Model):
     @api.constrains('picking_id')
     def _check_picking_id(self):
         for record in self:
-            if not record.picking_id:
+            if not record.picking_id and record.bap_id.bap_type != 'cut over':
                 raise ValidationError('Field "NO GR/SES" harus diisi. Tidak boleh kosong!')
 
     @api.depends('unit_price_po', 'qty')

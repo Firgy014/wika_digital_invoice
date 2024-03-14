@@ -204,18 +204,16 @@
                             <page string="List BAP">
                                 <group>
                                     <field name="bap_ids" mode="tree,kanban" nolabel="1" colspan="2"
-                                        attrs="{'invisible': [('bap_type', '!=', 'progress')],'readonly': [('state', 'not in',['draft','rejected'])]}">
-                                        <tree string="List BAP" editable="top" create="0" >
+                                        attrs="{'invisible': [('bap_type', 'not in', ['progress', 'cut over'])]}">
+                                        <tree string="List BAP" editable="top" create="0">
                                             <field name="picking_id"/>
                                             <field name="stock_move_id" invisible="1"/>
                                             <field name="purchase_line_id" invisible="1"/>
                                             <field name="unit_price_po" invisible="1"/>
-                                             <field name="sisa_qty_bap_grses" invisible="1"/>
-                                             <field name="qty_invoiced" invisible="1"/>
-                                            <!-- <field name="account_move_line_id"/> -->
+                                            <field name="sisa_qty_bap_grses" invisible="1"/>
+                                            <field name="qty_invoiced" invisible="1"/>
                                             <field name="product_id" readonly="1" force_save="1"/>
                                             <field name="product_uom" readonly="1" force_save="1"/>
-
                                             <field name="qty"/>
                                             <field name="tax_ids" widget="many2many_tags" string=""/>
                                             <field name="currency_id" readonly="1" force_save="1"/>
@@ -223,7 +221,8 @@
                                             <field name="sub_total" readonly="1" force_save="1"/>
                                         </tree>
                                     </field>
-                                    <field name="price_cut_ids" attrs="{'invisible': [('bap_type', '=', 'progress')]}" 
+                                    <field name="price_cut_ids" 
+                                        attrs="{'invisible': ['|', ('bap_type', '=', 'progress'), ('bap_type', '=', 'cut over')]}" 
                                         mode="tree,kanban" nolabel="1" colspan="2">
                                         <tree editable="top">
                                             <field name="po_id" invisible="1"/>
