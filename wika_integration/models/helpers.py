@@ -1,6 +1,7 @@
 def _get_computed_query():
     return """
-SELECT                  
+SELECT
+    inv.id,
     TO_CHAR(inv.invoice_date, 'yyyymmdd') AS DOC_DATE,
     TO_CHAR(inv.date, 'yyyymmdd') AS PSTNG_DATE,
     inv.no_invoice_vendor AS REF_DOC_NO,
@@ -60,5 +61,5 @@ LEFT JOIN
 LEFT JOIN
     stock_picking sp ON sp.id = bap_line.picking_id
 WHERE 
-    inv.state = 'approved' AND line.display_type = 'product'
+    inv.state = 'approved' AND line.display_type = 'product' AND inv.is_mp_approved = True
 """
