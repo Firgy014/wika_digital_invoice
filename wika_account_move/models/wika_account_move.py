@@ -16,7 +16,7 @@ class WikaInheritedAccountMove(models.Model):
     no_doc_sap = fields.Char(string='No Doc SAP')
     no_invoice_vendor = fields.Char(string='Nomor Invoice Vendor',required=True)
     invoice_number = fields.Char(string='Invoice Number')
-    baseline_date = fields.Date(string='Baseline Date')
+    baseline_date = fields.Datetime(string='Baseline Date')
     retention_due = fields.Date(string='Retention Due')
     po_id = fields.Many2one('purchase.order', store=True, readonly=False,
         string='Nomor PO',domain=[('state','=','approved')])
@@ -563,6 +563,7 @@ class WikaInheritedAccountMove(models.Model):
         cek = False
         model_id = self.env['ir.model'].search([('model', '=', 'account.move')], limit=1)
         level = self.level
+        is_mp = False
         if level:
             keterangan = ''
             if level == 'Proyek':
@@ -628,6 +629,7 @@ class WikaInheritedAccountMove(models.Model):
                         if x.project_id == self.project_id or x.branch_id == self.branch_id or x.branch_id.parent_id.code=='Pusat':
                             if x.id == self._uid:
                                 cek = True
+                                is_mp = True
                     if level == 'Divisi Operasi' and x.branch_id == self.branch_id and x.id == self._uid:
                         cek = True
                     if level == 'Divisi Fungsi' and x.department_id == self.department_id and x.id == self._uid:
@@ -637,7 +639,8 @@ class WikaInheritedAccountMove(models.Model):
             if approval_id.total_approve == self.step_approve:
                 self.state = 'approved'
                 self.approval_stage = approval_line_id.level_role
-
+                if is_mp:
+                    self.baseline_date = datetime.now()
                 folder_id = self.env['documents.folder'].sudo().search([('name', '=', 'Invoicing')], limit=1)
                 # print("TESTTTTTTTTTTTTTTTTTTTTT", folder_id)
                 if folder_id:
