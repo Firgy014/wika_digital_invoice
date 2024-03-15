@@ -35,4 +35,15 @@
         <field name="binding_view_types">form</field>
     </record>
 
+    <record id="report_wika_berita_acara_pembayaran_cut_over_action" model="ir.actions.report">
+        <field name="name">BAP Cut Over</field>
+        <field name="model">wika.berita.acara.pembayaran</field>
+        <field name="report_type">qweb-html</field>
+        <field name="report_name">wika_berita_acara_pembayaran.report_wika_berita_acara_pembayaran_cut_over</field>
+        <field name="report_file">wika_berita_acara_pembayaran.report_wika_berita_acara_pembayaran_cut_over</field>
+        <field name="print_report_name">'Berita Acara Pembayaran Cut Over - %s' % (object.name)</field>
+        <field name="binding_model_id" ref="model_wika_berita_acara_pembayaran"/>
+        <field name="binding_view_types">form</field>
+    </record>
+
 </odoo>   
