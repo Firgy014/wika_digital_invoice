@@ -7,7 +7,8 @@ from num2words import num2words
 import base64
 import json
 from urllib.request import Request, urlopen
-
+import logging, json
+_logger = logging.getLogger(__name__)
 
 # from terbilang import terbilang
 # import requests
@@ -49,6 +50,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
         ('progress', 'Progress'),
         ('uang muka', 'Uang Muka'),
         ('retensi', 'Retensi'),
+        ('cut over', 'Cut Over'),
         ], string='Jenis BAP', default='progress')
     price_cut_ids = fields.One2many('wika.bap.pricecut.line', 'po_id')
     signatory_name = fields.Char(string='Nama Penanda Tangan Wika', related="po_id.signatory_name")
@@ -85,6 +87,8 @@ class WikaBeritaAcaraPembayaran(models.Model):
         ('Pusat', 'Pusat')
     ], string='Level',compute='_compute_level')
     documents_count = fields.Integer(string='Total Doc', compute='_compute_documents_count')
+    invoice_item_count = fields.Integer(string='Total Invoice Item', compute='_compute_invoice_item')
+
     guarantee_type = fields.Char('Jenis Jaminan')
     guarantee_value = fields.Float('Nilai Jaminan')
     guarantee_numb = fields.Char('No Jaminan')
@@ -127,10 +131,38 @@ class WikaBeritaAcaraPembayaran(models.Model):
     total_pembayaran = fields.Float('Pembayaran', compute='compute_total_pembayaran')
     total_pembayaran_um = fields.Float('Pembayaran uang muka', compute='compute_total_pembayaran_um')
     total_pembayaran_retensi = fields.Float('Pembayaran retensi', compute='compute_total_pembayaran_retensi')
+    total_pembayaran_co = fields.Float('Pembayaran cut over', compute='compute_total_pembayaran_cut_over')
     terbilang = fields.Char('Terbilang', compute='_compute_rupiah_terbilang')
     terbilang_um = fields.Char('Terbilang uang muka', compute='_compute_rupiah_terbilang_um')
     terbilang_retensi = fields.Char('Terbilang retensi', compute='_compute_rupiah_terbilang_retensi')
-    is_fully_invoiced = fields.Boolean(string='Fully Invoiced', default=False, compute='_compute_fully_invoiced',store=True)
+    terbilang_co = fields.Char('Terbilang cut over', compute='_compute_rupiah_terbilang_cut_over')
+    is_fully_invoiced = fields.Boolean(string='Fully Invoiced', compute='_compute_fully_invoiced', default=False,store=True)
+
+    @api.onchange('po_id', 'bap_type')
+    def _change_button(self):
+        for record in self:
+            if record.po_id and record.bap_type == 'cut over' :
+                account_move = self.env['account.move.line'].search([('purchase_id','=',record.po_id.id), ('cut_off','=',True)])
+                if any(not x.stock_move_id for x in account_move):
+                    warning = {
+                        'title': 'Warning!',
+                        'message': 'Silahkan Mapping Invoice Cut Over terlebih dahulu',
+                    }
+                    return {'warning': warning}
+
+    @api.constrains('po_id', 'bap_type')
+    def _check_bap_type(self):
+        for record in self:
+            if record.po_id and record.bap_type != 'cut over':
+                account_move = self.env['account.move'].search([('po_id','=',record.po_id.id), ('cut_off','=',True)])
+                if account_move:
+                    bap = self.env['wika.berita.acara.pembayaran'].search(
+                        [('po_id', '=', record.po_id.id), ('bap_type', '=', 'cut over')])
+                    if bap:
+                        pass
+                    else:
+                        raise ValidationError(_("Nomor PO tersebut sudah dicatat sebagai cut off di invoice terkait. Silahkan pilih jenis BAP 'Cut Over'."))
+
 
     @api.depends('bap_ids')
     def _compute_fully_invoiced(self):
@@ -266,6 +298,17 @@ class WikaBeritaAcaraPembayaran(models.Model):
             total_pembayaran_retensi = retensi_total + (retensi_total * persentase) - total_pph
             record.total_pembayaran_retensi = total_pembayaran_retensi
 
+    @api.depends('retensi_total', 'total_pph', 'dp_total', 'total_tax', 'total_amount')
+    def compute_total_pembayaran_cut_over(self):
+        for record in self:
+            retensi_total = record.retensi_total or 0.0
+            dp_total = record.dp_total or 0.0
+            total_tax = record.total_tax or 0.0
+            total_pph = record.total_pph or 0.0
+            total_amount = record.total_amount or 0.0
+            total_pembayaran_co = total_amount - dp_total - retensi_total + total_tax - total_pph
+            record.total_pembayaran_co = total_pembayaran_co
+
     # # funct terbilang
     @api.depends('total_pembayaran')
     def _compute_rupiah_terbilang(self):
@@ -314,6 +357,22 @@ class WikaBeritaAcaraPembayaran(models.Model):
                 record.terbilang_retensi = rupiah_terbilang
             else:
                 record.terbilang_retensi = ""
+
+    @api.depends('total_pembayaran_co')
+    def _compute_rupiah_terbilang_cut_over(self):
+        for record in self:
+            if record.total_pembayaran_co:
+                # Convert float to integer representation of Rupiah
+                rupiah_int = round(record.total_pembayaran_co)  # Pembulatan angka
+                # Convert the integer part to words
+                rupiah_terbilang = num2words(rupiah_int, lang='id') + " rupiah"
+                # If there are cents, add them as well
+                sen = abs(int((record.total_pembayaran_co - rupiah_int) * 100))  # Menghindari masalah pembulatan
+                if sen > 0:
+                    rupiah_terbilang += " dan " + num2words(sen, lang='id') + " sen"
+                record.terbilang_co = rupiah_terbilang
+            else:
+                record.terbilang_co = ""
 
     # @api.depends('bap_date')
     def _compute_last_value(self):
@@ -477,42 +536,65 @@ class WikaBeritaAcaraPembayaran(models.Model):
             else:
                 x.check_biro = False
                 
-    @api.onchange('po_id')
+    @api.onchange('po_id','bap_type')
     def onchange_po_id(self):
 
         if self.po_id:
-            self.bap_ids = [(5, 0, 0)]
             bap_lines = []
             price_cut_lines = []
+            self.bap_ids = [(2, bap_id.id, 0) for bap_id in self.bap_ids]
+            if self.bap_type == 'cut over':
+                bap_lines = []
+                account_moves = self.env['account.move'].search([
+                    ('po_id', '=', self.po_id.id),
+                    ('cut_off', '=', True)
+                ])
 
-            stock_pickings = self.env['stock.picking'].search([('po_id', '=', self.po_id.id)])
-            # Mengisi price_cut_lines
-            for line in self.po_id.price_cut_ids:
-                price_cut_lines.append((0, 0, {
-                    'product_id': line.product_id.id,
-                    'percentage_amount': line.persentage_amount,
-                    'amount': line.amount,
+                for move in account_moves:
+                    for line in move.invoice_line_ids:
+                        bap_lines.append((0, 0, {
+                            'picking_id': line.picking_id.id,
+                            'stock_move_id': line.stock_move_id.id,
+                            'purchase_line_id': line.purchase_line_id.id or False,
+                            'product_id': line.product_id.id,
+                            'product_uom': line.product_uom_id.id,
+                            'qty': line.quantity,
+                            'unit_price': line.price_unit,
+                            'tax_ids': [(6, 0, line.tax_ids.ids)],
+                            'sub_total': line.price_subtotal,
+                            'currency_id': line.currency_id.id,
+                        }))
+
+                self.bap_ids = bap_lines
+            elif self.bap_type == 'progress':
+                stock_pickings = self.env['stock.picking'].search([('po_id', '=', self.po_id.id)])
+                # Mengisi price_cut_lines
+                for line in self.po_id.price_cut_ids:
+                    price_cut_lines.append((0, 0, {
+                        'product_id': line.product_id.id,
+                        'percentage_amount': line.persentage_amount,
+                        'amount': line.amount,
+                    }))
+
+                bap_lines = []
+                for picking in stock_pickings.move_ids_without_package.filtered(lambda x: x.sisa_qty_bap>0):
+                    bap_lines.append((0, 0, {
+                    'picking_id': picking.picking_id.id,
+                    'stock_move_id': picking.id,
+                    'purchase_line_id':picking.purchase_line_id.id or False,
+                    'unit_price_po':picking.purchase_line_id.price_unit,
+                    # 'account_move_line_id':aml_src.id or False,
+                     'sisa_qty_bap_grses':picking.sisa_qty_bap,
+                    'product_uom':picking.product_uom,
+                    'product_id': picking.product_id.id,
+                    'qty': picking.sisa_qty_bap,
+                    'unit_price': picking.purchase_line_id.price_unit,
+                    'tax_ids':picking.purchase_line_id.taxes_id.ids,
+                    'currency_id':picking.purchase_line_id.currency_id.id
                 }))
 
-            bap_lines = []
-            for picking in stock_pickings.move_ids_without_package.filtered(lambda x: x.sisa_qty_bap>0):
-                bap_lines.append((0, 0, {
-                'picking_id': picking.picking_id.id,
-                'stock_move_id': picking.id,
-                'purchase_line_id':picking.purchase_line_id.id or False,
-                'unit_price_po':picking.purchase_line_id.price_unit,
-                # 'account_move_line_id':aml_src.id or False,
-                 'sisa_qty_bap_grses':picking.sisa_qty_bap,
-                'product_uom':picking.product_uom,
-                'product_id': picking.product_id.id,
-                'qty': picking.sisa_qty_bap,
-                'unit_price': picking.purchase_line_id.price_unit,
-                'tax_ids':picking.purchase_line_id.taxes_id.ids,
-                'currency_id':picking.purchase_line_id.currency_id.id
-            }))
-
-            self.bap_ids = bap_lines
-            self.price_cut_ids = price_cut_lines
+                self.bap_ids = bap_lines
+                self.price_cut_ids = price_cut_lines
 
     @api.depends('bap_ids.sub_total', 'bap_ids.tax_ids', 'bap_type')
     def compute_total_amount(self):
@@ -630,7 +712,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
                 groups_id = approval_line_id.groups_id
                 if groups_id:
                     for x in groups_id.users:
-                        if level == 'Proyek' and x.project_id == res.project_id:
+                        if level == 'Proyek' and res.project_id in x.project_ids:
                             first_user = x.id
                         if level == 'Divisi Operasi' and x.branch_id == res.branch_id:
                             first_user = x.id
@@ -668,59 +750,94 @@ class WikaBeritaAcaraPembayaran(models.Model):
     def push_bap(self):
         api_config_sap_token = self.env['wika.integration'].sudo().search([('name', '=', 'URL_GET_TOKEN')], limit=1)
         api_config_sap_bap = self.env['wika.integration'].sudo().search([('name', '=', 'URL_SEND_BAP')], limit=1)
-
-        auth_get_token = {
-            'user': api_config_sap_token.api_user,
-            'pword': api_config_sap_token.api_pword
+        headers_get = {
+            'Authorization': 'Basic V0lLQV9JTlQ6SW5pdGlhbDEyMw==',
+            'Content-Type': 'application/json',
+            'x-csrf-Token': 'fetch',
         }
-        auth_send_bap = {
-            'user': api_config_sap_bap.api_user,
-            'pword': api_config_sap_bap.api_pword
-        }
+        payload_get={}
+        print ("lllllllllllllllllllllllllll")
+        try:
+            # 1. Get W-KEY TOKEN
+            response = requests.request("GET", api_config_sap_token.url, data=payload_get, headers=headers_get)
+            w_key = (response.headers['x-csrf-token'])
+            csrf = str(w_key)
+            headers_post= {
+                'x-csrf-Token': csrf,
+                'Authorization': 'Basic V0lLQV9JTlQ6SW5pdGlhbDEyMw==',
+                'Content-Type': 'application/json',
+            }
+            print (headers_post)
+            payload_post =json.dumps({
+                 "input":  [
+                        {
+                        "company_code" : "A000",
+                        "document_no" : "5000000243",
+                        "matdoc_year" : "2023",
+                        "status":"X"
+                        }
+                    ]
+                })
+            #payload_post = payload_post.replace('\n', '')
+            _logger.info(payload_post)
+            response_2 = requests.request("POST", api_config_sap_bap.url, data=payload_post, headers=headers_post)
+            print (response_2)
+            txt = json.loads(response_2.text)
+        except:
+            raise UserError(_("Connection Failed. Please Check Your Internet Connection."))
 
-        is_sap_url = api_config_sap_token.url
-
-        if auth_get_token['user'] == False or auth_get_token['pword'] == False:
-            raise ValidationError(
-                'User dan Password untuk membuat token API belum dikonfigurasi. Silakan hubungi Administrator terlebih dahulu.')
-        else:
-            if auth_send_bap['user'] == False or auth_send_bap['pword'] == False:
-                raise ValidationError(
-                    'User dan Password API untuk mengirim BAP ke SAP belum dikonfigurasi. Silakan hubungi Administrator terlebih dahulu.')
-            else:
-                headers = {'x-csrf-Token': 'fetch'}
-                auth = (auth_get_token['user'], auth_get_token['pword'])
-                response = requests.get(is_sap_url, headers=headers, auth=auth)
-
-                if response.status_code == 200 and "CSRF Token sent" in response.text:
-                    csrf_token = response.headers.get('x-csrf-token')
-                    auth_send = (auth_send_bap['user'], auth_send_bap['pword'])
-
-                    payload = json.dumps({
-                        "input": [
-                            {
-                                "company_code": "A000",
-                                "document_no": "5000000243",
-                                "matdoc_year": "2023"
-                            }
-                        ]
-                    })
-
-                    headers_send = {
-                        'x-csrf-token': csrf_token,
-                        'Content-Type': 'application/json',
-                        'Authorization': 'Basic V0lLQV9JTlQ6SW5pdGlhbDEyMw=='
-                    }
-
-                    print("HEADERSENDDD", headers_send)
-                    # tesssssdoeloeee
-
-                    # response_post = requests.post(is_sap_url, headers=headers_send, json=payload)
-                    response_post = requests.request("POST", is_sap_url, headers=headers_send, data=payload,
-                                                     auth=auth_send)
-
-                    print("POST Response Status Code:", response_post.status_code)
-                    print("POST Response Text:", response_post.text)
+        # auth_get_token = {
+        #     'user': api_config_sap_token.api_user,
+        #     'pword': api_config_sap_token.api_pword
+        # }
+        # auth_send_bap = {
+        #     'user': api_config_sap_bap.api_user,
+        #     'pword': api_config_sap_bap.api_pword
+        # }
+        #
+        # is_sap_url = api_config_sap_token.url
+        #
+        # if auth_get_token['user'] == False or auth_get_token['pword'] == False:
+        #     raise ValidationError(
+        #         'User dan Password untuk membuat token API belum dikonfigurasi. Silakan hubungi Administrator terlebih dahulu.')
+        # else:
+        #     if auth_send_bap['user'] == False or auth_send_bap['pword'] == False:
+        #         raise ValidationError(
+        #             'User dan Password API untuk mengirim BAP ke SAP belum dikonfigurasi. Silakan hubungi Administrator terlebih dahulu.')
+        #     else:
+        #         headers = {'x-csrf-Token': 'fetch'}
+        #         auth = (auth_get_token['user'], auth_get_token['pword'])
+        #         response = requests.get(is_sap_url, headers=headers, auth=auth)
+        #
+        #         if response.status_code == 200 and "CSRF Token sent" in response.text:
+        #             csrf_token = response.headers.get('x-csrf-token')
+        #             auth_send = (auth_send_bap['user'], auth_send_bap['pword'])
+        #
+        #             payload = json.dumps({
+        #                 "input": [
+        #                     {
+        #                         "company_code": "A000",
+        #                         "document_no": "5000000243",
+        #                         "matdoc_year": "2023"
+        #                     }
+        #                 ]
+        #             })
+        #
+        #             headers_send = {
+        #                 'x-csrf-token': csrf_token,
+        #                 'Content-Type': 'application/json',
+        #                 'Authorization': 'Basic V0lLQV9JTlQ6SW5pdGlhbDEyMw=='
+        #             }
+        #
+        #             print("HEADERSENDDD", headers_send)
+        #             # tesssssdoeloeee
+        #
+        #             # response_post = requests.post(is_sap_url, headers=headers_send, json=payload)
+        #             response_post = requests.request("POST", is_sap_url, headers=headers_send, data=payload,
+        #                                              auth=auth_send)
+        #
+        #             print("POST Response Status Code:", response_post.status_code)
+        #             print("POST Response Text:", response_post.text)
                     # tespost_tespost
 
     def action_submit(self):
@@ -753,24 +870,18 @@ class WikaBeritaAcaraPembayaran(models.Model):
             print(approval_line_id)
             groups_id = approval_line_id.groups_id
             if groups_id:
-                print(groups_id.name)
                 for x in groups_id.users:
-                    if level == 'Proyek' and x.project_id == self.project_id and x.id == self._uid:
-                        print ("ok")
+                    if level == 'Proyek' and  x.project_id == self.project_id and x.id == self._uid:
                         cek = True
                     if level == 'Divisi Operasi' and x.branch_id == self.branch_id and x.id == self._uid:
                         cek = True
                     if level == 'Divisi Fungsi' and x.department_id == self.department_id and x.id == self._uid:
                         cek = True
-                    print (cek)
 
         if cek == True:
             if self.activity_ids:
                 for x in self.activity_ids.filtered(lambda x: x.status != 'approved'):
-                    print("masuk")
-                    print(x.user_id)
                     if x.user_id.id == self._uid:
-                        print(x.status)
                         x.status = 'approved'
                         x.action_done()
                 self.state = 'uploaded'
@@ -787,13 +898,10 @@ class WikaBeritaAcaraPembayaran(models.Model):
                     ('sequence', '=', self.step_approve),
                     ('approval_id', '=', approval_id.id)
                 ], limit=1)
-                print("groups", groups_line)
                 groups_id_next = groups_line.groups_id
                 if groups_id_next:
-                    print(groups_id_next.name)
-                    print(self.step_approve)
                     for x in groups_id_next.users:
-                        if level == 'Proyek' and x.project_id == self.project_id:
+                        if level == 'Proyek' and  self.project_id in x.project_ids:
                             first_user = x.id
                         if level == 'Divisi Operasi' and x.branch_id == self.branch_id:
                             first_user = x.id
@@ -842,7 +950,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
             if groups_id:
                 print(groups_id.name)
                 for x in groups_id.users:
-                    if level == 'Proyek' and x.project_id == self.project_id and x.id == self._uid:
+                    if level == 'Proyek' and  self.project_id in x.project_ids and x.id == self._uid:
                         cek = True
                     if level == 'Divisi Operasi' and x.branch_id == self.branch_id and x.id == self._uid:
                         cek = True
@@ -860,13 +968,11 @@ class WikaBeritaAcaraPembayaran(models.Model):
                     'bap_id': self.id
                 })
                 folder_id = self.env['documents.folder'].sudo().search([('name', '=', 'BAP')], limit=1)
-                # print("TESTTTTTTTTTTTTTTTTTTTTT", folder_id)
                 if folder_id:
                     facet_id = self.env['documents.facet'].sudo().search([
                         ('name', '=', 'Documents'),
                         ('folder_id', '=', folder_id.id)
                     ], limit=1)
-                    # print("TESTTTTTTTTTERRRRRRR", facet_id)
                     for doc in self.document_ids.filtered(lambda x: x.state in ('uploaded','rejected')):
                         doc.state = 'verified'
                         attachment_id = self.env['ir.attachment'].sudo().create({
@@ -874,7 +980,6 @@ class WikaBeritaAcaraPembayaran(models.Model):
                             'datas': doc.document,
                             'res_model': 'documents.document',
                         })
-                        # print("SSSIIIIUUUUUUUUUUUUUUUUUU", attachment_id)
                         if attachment_id:
                             tag = self.env['documents.tag'].sudo().search([
                                 ('facet_id', '=', facet_id.id),
@@ -890,10 +995,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
                             })
                 if self.activity_ids:
                     for x in self.activity_ids.filtered(lambda x: x.status  != 'approved'):
-                        print("masuk")
-                        print(x.user_id)
                         if x.user_id.id == self._uid:
-                            print(x.status)
                             x.status = 'approved'
                             x.action_done()
             else:
@@ -909,14 +1011,13 @@ class WikaBeritaAcaraPembayaran(models.Model):
                 if groups_id_next:
                     print(groups_id_next.name)
                     for x in groups_id_next.users:
-                        if level == 'Proyek' and x.project_id == self.project_id:
+                        if level == 'Proyek' and  self.project_id in x.project_idsd:
                             first_user = x.id
                         if level == 'Divisi Operasi' and x.branch_id == self.branch_id:
                             first_user = x.id
                         if level == 'Divisi Fungsi' and x.department_id == self.department_id:
                             first_user = x.id
 
-                    print(first_user)
                     if first_user:
                         self.step_approve += 1
                         self.env['mail.activity'].sudo().create({
@@ -940,8 +1041,6 @@ class WikaBeritaAcaraPembayaran(models.Model):
                         })
                         if self.activity_ids:
                             for x in self.activity_ids.filtered(lambda x: x.status != 'approved'):
-                                print("masuk")
-                                print(x.user_id)
                                 if x.user_id.id == self._uid:
                                     print(x.status)
                                     x.status = 'approved'
@@ -956,9 +1055,30 @@ class WikaBeritaAcaraPembayaran(models.Model):
         for record in self:
             record.documents_count = self.env['documents.document'].search_count(
                 [('purchase_id', '=', record.po_id.id)])
+    @api.depends('po_id')
+    def _compute_invoice_item(self):
+        for record in self:
+            record.invoice_item_count = self.env['account.move.line'].search_count(
+                [('purchase_id', '=', record.po_id.id),('cut_off','=',True)])
+
+    def get_invoice_item(self):
+        self.ensure_one()
+        view_tree_id = self.env.ref("wika_account_move.view_wika_account_move_line_tree", raise_if_not_found=False)
+
+        return {
+            'name': _('Invoice Cut Over'),
+            'type': 'ir.actions.act_window',
+            'view_mode': 'tree,form',
+            'res_model': 'account.move.line',
+            'view_ids': [(view_tree_id, 'tree')],
+            'res_id': self.id,
+            'domain': [('purchase_id', '=', self.po_id.id),('cut_off','=',True)],
+            'context': {'default_purchase_id': self.po_id.id},
+        }
 
     def get_documents(self):
         self.ensure_one()
+        view_kanban_id = self.env.ref("documents.document_view_kanban", raise_if_not_found=False)
         view_kanban_id = self.env.ref("documents.document_view_kanban", raise_if_not_found=False)
 
         view_tree_id = self.env.ref("documents.documents_view_list", raise_if_not_found=False)
@@ -1000,6 +1120,8 @@ class WikaBeritaAcaraPembayaran(models.Model):
             return self.env.ref('wika_berita_acara_pembayaran.report_wika_berita_acara_pembayaran_um_action').report_action(self)
         elif self.bap_type == 'retensi':
             return self.env.ref('wika_berita_acara_pembayaran.report_wika_berita_acara_pembayaran_retensi_action').report_action(self)
+        elif self.bap_type == 'cut over':
+            return self.env.ref('wika_berita_acara_pembayaran.report_wika_berita_acara_pembayaran_cut_over_action').report_action(self)
         else:
             return super(WikaBeritaAcaraPembayaran, self).action_print_bap()
 
@@ -1029,7 +1151,7 @@ class WikaBeritaAcaraPembayaranLine(models.Model):
     purchase_line_id= fields.Many2one('purchase.order.line', string='Purchase Line')
     unit_price_po = fields.Monetary(string='Price Unit PO')
     product_id = fields.Many2one('product.product', string='Product')
-    qty = fields.Float(string='Quantity')
+    qty = fields.Float(string='Quantity' ,digits='Product Unit of Measure')
     product_uom = fields.Many2one('uom.uom', string='Unit of Measure')
     tax_ids = fields.Many2many('account.tax', string='Tax')
     currency_id = fields.Many2one('res.currency', string='Currency')
@@ -1047,18 +1169,17 @@ class WikaBeritaAcaraPembayaranLine(models.Model):
             total_invoiced_bap_qty = sum(move_line.quantity for move_line in move_line_ids)
             record.qty_invoiced = total_invoiced_bap_qty
 
+    # @api.constrains('qty')
+    # def _check_qty_limit(self):
+    #     for line in self:
+    #         if line.qty > line.sisa_qty_bap_grses:
+    #             raise ValidationError('Quantity tidak boleh melebihi sisa quantity pada GR/SES!')
+
     @api.constrains('qty')
     def _check_qty_limit(self):
         for line in self:
-            if line.qty > line.sisa_qty_bap_grses:
+            if line.bap_id.bap_type != 'cut over' and line.qty > line.sisa_qty_bap_grses:
                 raise ValidationError('Quantity tidak boleh melebihi sisa quantity pada GR/SES!')
-
-    @api.onchange('qty')
-    def _onchange_product_qty(self):
-        for line in self:
-            if line.qty > line.sisa_qty_bap_grses:
-                raise ValidationError('Quantity tidak boleh melebihi sisa quantity pada GR/SES!')
-
 
     @api.depends('tax_ids', 'sub_total')
     def compute_sub_total(self):
@@ -1080,7 +1201,7 @@ class WikaBeritaAcaraPembayaranLine(models.Model):
     @api.constrains('picking_id')
     def _check_picking_id(self):
         for record in self:
-            if not record.picking_id:
+            if not record.picking_id and record.bap_id.bap_type != 'cut over':
                 raise ValidationError('Field "NO GR/SES" harus diisi. Tidak boleh kosong!')
 
     @api.depends('unit_price_po', 'qty')

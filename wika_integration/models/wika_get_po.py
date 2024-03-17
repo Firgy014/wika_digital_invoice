@@ -2,11 +2,8 @@
 import requests
 import json
 from datetime import datetime, timedelta
-
-from dateutil.relativedelta import relativedelta
-
 from odoo import models, fields, api,_
-from odoo.exceptions import UserError, ValidationError, Warning
+from odoo.exceptions import UserError, ValidationError, Warning,AccessError
 import logging, json
 _logger = logging.getLogger(__name__)
 
@@ -45,6 +42,7 @@ class wika_get_po(models.Model):
             "po_doc" : "%s",
             "po_jenis" : "",
             "po_dcdat" : "",
+            "po_crdat": "",
             "po_plant" : "%s",
             "co_code" : "%s",
             "po_del" : "",
@@ -75,6 +73,9 @@ class wika_get_po(models.Model):
                         if not po:
                             dp= float(data['dp_amt'])
                             retensi=float(data['ret_pc'])
+                            if 'pay_terms' in txt_data and txt_data['pay_terms'] != '':
+                                payment_term = self.env['account.payment.term'].sudo().search([
+                                    ('name', '=', txt_data['pay_terms'])], limit=1)
                             if dp > 0:
                                 prod = self.env['product.product'].sudo().search([
                                     ('name', '=', 'DP')], limit=1)
@@ -102,6 +103,7 @@ class wika_get_po(models.Model):
 
                                 prod = self.env['product.product'].sudo().search([
                                     ('default_code', '=', hasil['prd_no'])], limit=1)
+
                                 qty = float(data['po_qty'])
                                 if txt_data['po_jenis'] == 'JASA':
                                     price = float(data['po_price']) / qty
@@ -171,6 +173,8 @@ class wika_get_po(models.Model):
                         else:
                             po_create = self.env['purchase.order'].sudo().create({
                                 'name': data['po_doc'],
+                            'payment_term_id':payment_term.id if payment_term else False,
+
                                 'partner_id': vendor.id if vendor else False,
                                 'project_id': profit_center,
                                 'branch_id': branch_id,
@@ -200,6 +204,11 @@ class wika_get_po(models.Model):
                     if not po:
                         dp = float(txt_data['dp_amt'])
                         retensi = float(txt_data['ret_pc'])
+                        if txt_data['pay_terms']!='':
+                            payment_term = self.env['account.payment.term'].sudo().search([
+                                ('name', '=', txt_data['pay_terms'])], limit=1)
+
+
                         if dp > 0:
                             prod = self.env['product.product'].sudo().search([
                                 ('name', '=', 'DP')], limit=1)
@@ -295,6 +304,7 @@ class wika_get_po(models.Model):
                     if vals:
                         po_create = self.env['purchase.order'].sudo().create({
                             'name': txt_data['po_doc'],
+                            'payment_term_id':payment_term.id if payment_term else False,
                             'partner_id': vendor.id if vendor else False,
                             'project_id': profit_center,
                             'branch_id': branch_id,
@@ -312,6 +322,60 @@ class wika_get_po(models.Model):
         else:
             raise UserError(_("Data PO Tidak Tersedia!"))
 
+    def assign_todo_first(self):
+        model_model = self.env['ir.model'].sudo()
+        document_setting_model = self.env['wika.document.setting'].sudo()
+        model_id = model_model.search([('model', '=', 'purchase.order')], limit=1)
+        po = self.env['purchase.order'].search([('name', '=', self.name)], limit=1)
+
+        for res in po:
+            level=res.level
+            first_user = False
+            if level:
+                approval_id = self.env['wika.approval.setting'].sudo().search(
+                    [('model_id', '=', model_id.id), ('level', '=', level),('transaction_type','=',res.transaction_type)], limit=1)
+                approval_line_id = self.env['wika.approval.setting.line'].search([
+                    ('sequence', '=', 1),
+                    ('approval_id', '=', approval_id.id)
+                ], limit=1)
+                groups_id = approval_line_id.groups_id
+                if groups_id:
+                    for x in groups_id.users:
+                        if level == 'Proyek' and x.project_id == res.project_id:
+                            first_user = x.id
+                        if level == 'Divisi Operasi' and x.branch_id == res.branch_id:
+                            first_user = x.id
+                        if level == 'Divisi Fungsi' and x.department_id == res.department_id:
+                            first_user = x.id
+                print(first_user)
+                #     # Createtodoactivity
+                if first_user:
+                    self.env['mail.activity'].sudo().create({
+                        'activity_type_id': 4,
+                        'res_model_id': model_id.id,
+                        'res_id': res.id,
+                        'user_id': first_user,
+                        'nomor_po': res.name,
+                        'date_deadline': fields.Date.today() + timedelta(days=5),
+                        'state': 'planned',
+                        'summary': f"Need Upload Document {model_id.name}!"
+                    })
+            # Get Document Setting
+            document_list = []
+            doc_setting_id = document_setting_model.search([('model_id', '=', model_id.id)])
+            self.status="Assign"
+
+            if doc_setting_id:
+                for document_line in doc_setting_id:
+                    document_list.append((0, 0, {
+                        'purchase_id': res.id,
+                        'document_id': document_line.id,
+                        'state': 'waiting'
+                    }))
+                res.document_ids = document_list
+            else:
+                raise AccessError(
+                    "Either approval and/or document settings are not found. Please configure it first in the settings menu.")
 
 class paymentall_ncl_class(models.TransientModel):
     """
@@ -331,3 +395,10 @@ class paymentall_ncl_class(models.TransientModel):
 
 
 
+    def asign_todo_all(self):
+        context = dict(self._context or {})
+        active_ids = context.get('active_ids', []) or []
+
+        for record in self.env['wika.get.po'].browse(active_ids):
+            record.assign_todo_first()
+        return {'type': 'ir.actions.act_window_close'}

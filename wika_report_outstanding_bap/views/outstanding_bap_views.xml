@@ -37,6 +37,7 @@
                     <field name="potongan_retensi"/>
                     <field name="potongan_uang_muka_qty_dp"/>
                     <field name="potongan_retensi_qty"/>
+                    <field name="bap_type"/>
                 </tree>
             </field>
         </record>

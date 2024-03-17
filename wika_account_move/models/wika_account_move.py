@@ -5,7 +5,7 @@ from datetime import datetime,timedelta
 class WikaInheritedAccountMove(models.Model):
     _inherit = 'account.move'
     
-    bap_id = fields.Many2one('wika.berita.acara.pembayaran', string='BAP', required=True,domain=[('state','=','approved')])
+    bap_id = fields.Many2one('wika.berita.acara.pembayaran', string='BAP',domain=[('state','=','approved')])
     branch_id = fields.Many2one('res.branch', string='Divisi', required=True)
     department_id = fields.Many2one('res.branch', string='Department')
     project_id = fields.Many2one('project.project', string='Project')
@@ -33,6 +33,7 @@ class WikaInheritedAccountMove(models.Model):
 
     pph_ids = fields.Many2many('account.tax', string='PPH')
     total_pph = fields.Monetary(string='Total PPH', readonly=False, compute='_compute_total_pph')
+    pph_amount = fields.Monetary(string='PPH Amount', readonly=False)
 
     price_cut_ids = fields.One2many('wika.account.move.pricecut.line', 'move_id', string='Other Price Cut')
     account_id = fields.Many2one(comodel_name='account.account')
@@ -59,14 +60,25 @@ class WikaInheritedAccountMove(models.Model):
     ], string='Payment Method')
     payment_request_date= fields.Date(string='Payment Request Date')
     nomor_payment_request= fields.Char(string='Nomor Payment Request')
+    is_approval_checked = fields.Boolean(string="Approval Checked", compute='_compute_is_approval_checked' ,default=False)
+    is_wizard_cancel = fields.Boolean(string="Is cancel", default=True)
 
-    @api.depends('total_line', 'pph_ids.amount')
+    @api.depends('history_approval_ids.is_show_wizard', 'history_approval_ids.user_id')
+    def _compute_is_approval_checked(self):
+        current_user = self.env.user
+        for move in self:
+            move.is_approval_checked = any(line.is_show_wizard for line in move.history_approval_ids if line.user_id == current_user)
+
+    @api.depends('total_line', 'pph_ids.amount','pph_amount')
     def _compute_total_pph(self):
         for record in self:
             total_pph = 0.0
-            for pph in record.pph_ids:
-                total_pph += (record.total_line* pph.amount) / 100
-            record.total_pph = total_pph
+            if record.pph_amount>0:
+                record.total_pph = record.pph_amount
+            else:
+                for pph in record.pph_ids:
+                    total_pph += (record.total_line* pph.amount) / 100
+                record.total_pph = total_pph
 
 
     @api.depends('history_approval_ids')
@@ -94,28 +106,28 @@ class WikaInheritedAccountMove(models.Model):
 
 
 
-    @api.onchange('invoice_date')
-    def _onchange_invoice_date(self):
-        if isinstance(self, bool):
-            return self
-        if len(self) != 1:
-            raise ValidationError("Hanya satu record yang diharapkan diperbarui!")
-
-        if self.invoice_date != False and self.invoice_date < self.bap_id.bap_date:
-            raise ValidationError("Document Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
-        else:
-            pass
+    # @api.onchange('invoice_date')
+    # def _onchange_invoice_date(self):
+    #     if isinstance(self, bool):
+    #         return self
+    #     if len(self) != 1:
+    #         raise ValidationError("Hanya satu record yang diharapkan diperbarui!")
+    #
+    #     if self.invoice_date != False and self.invoice_date < self.bap_id.bap_date:
+    #         raise ValidationError("Document Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
+    #     else:
+    #         pass
     
-    @api.onchange('date')
-    def _onchange_posting_date(self):
-        if not self.date or not self.bap_id or not self.bap_id.bap_date:
-            return
-        if isinstance(self, bool):
-            return self
-        if len(self) != 1:
-            raise ValidationError("Hanya satu record yang diharapkan diperbarui!")
-        if self.date < self.bap_id.bap_date:
-            raise ValidationError("Posting Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
+    # @api.onchange('date')
+    # def _onchange_posting_date(self):
+    #     if not self.date or not self.bap_id or not self.bap_id.bap_date:
+    #         return
+    #     if isinstance(self, bool):
+    #         return self
+    #     if len(self) != 1:
+    #         raise ValidationError("Hanya satu record yang diharapkan diperbarui!")
+    #     if self.date < self.bap_id.bap_date:
+    #         raise ValidationError("Posting Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
 
     state = fields.Selection(
         selection=[
@@ -159,13 +171,8 @@ class WikaInheritedAccountMove(models.Model):
 
     amount_total_payment = fields.Float(string='Total Invoice', compute='_compute_amount_total_payment', store= True)
     total_line = fields.Float(string='Total Line', compute='_compute_total_line')
-    is_approval_checked = fields.Boolean(string="Approval Checked", compute='_compute_is_approval_checked')
-
-    @api.depends('history_approval_ids.is_show_wizard', 'history_approval_ids.user_id')
-    def _compute_is_approval_checked(self):
-        current_user = self.env.user
-        for move in self:
-            move.is_approval_checked = any(line.is_show_wizard for line in move.history_approval_ids if line.user_id == current_user)
+    cut_off = fields.Boolean(string='Cut Off',default=False,copy=False)
+    # is_approval_checked = fields.Boolean(string="Approval Checked")
 
     @api.depends('total_line', 'invoice_line_ids', 'dp_total','retensi_total', 'invoice_line_ids.tax_ids')
     def compute_total_tax(self):
@@ -233,6 +240,7 @@ class WikaInheritedAccountMove(models.Model):
     @api.depends('project_id', 'branch_id', 'department_id')
     def _compute_level(self):
         for res in self:
+            level=False
             if res.project_id:
                 level = 'Proyek'
             elif res.branch_id and not res.department_id and not res.project_id:
@@ -262,62 +270,82 @@ class WikaInheritedAccountMove(models.Model):
         for move in self:
             move.amount_total_footer = move.total_line-move.dp_total-move.retensi_total -move.total_pph
 
-    @api.onchange('partner_id','valuation_class')
+    @api.onchange('partner_id', 'valuation_class')
     def onchange_account_payable(self):
         for record in self:
-            record.account_id=False
+            record.account_id = False
             account_setting_model = self.env['wika.setting.account.payable'].sudo()
+            if record.level == 'Proyek' and record.valuation_class:
+                account_setting_id = account_setting_model.search([
+                    ('valuation_class', '=', record.valuation_class),
+                    ('assignment', '=', record.level.lower()),
+                    ('bill_coa_type', '=', record.partner_id.bill_coa_type)
+                ], limit=1)
+                record.account_id = account_setting_id.account_id.id
+            elif record.level != 'Proyek' and record.valuation_class:
+                account_setting_id = account_setting_model.search([
+                    ('valuation_class', '=', record.valuation_class),
+                    ('assignment', '=', 'nonproyek'),
+                    ('bill_coa_type', '=',  record.partner_id.bill_coa_type)
+                ], limit=1)
+                record.account_id = account_setting_id.account_id.id
 
-            if record.partner_id.bill_coa_type == 'ZN01':
-                if record.level == 'Proyek' and record.valuation_class:
-                    account_setting_id = account_setting_model.search([
-                        ('valuation_class', '=', record.valuation_class),
-                        ('assignment', '=', record.level.lower()),
-                    ], limit=1)
-                    record.account_id= account_setting_id.account_berelasi_id.id
-                elif record.level != 'Proyek' and record.valuation_class:
-                    account_setting_id = account_setting_model.search([
-                        ('valuation_class', '=', record.valuation_class),
-                        ('assignment', '=', 'nonproyek'),
-                    ], limit=1)
-                    record.account_id= account_setting_id.account_berelasi_id.id
-            elif record.partner_id.bill_coa_type == 'ZN02':
-                if record.level == 'Proyek' and record.valuation_class:
-                    account_setting_id = account_setting_model.search([
-                        ('valuation_class', '=', record.valuation_class),
-                        ('assignment', '=', record.level.lower()),
-                    ], limit=1)
-                    record.account_id= account_setting_id.account_pihak_ketiga_id.id
-                elif record.level != 'Proyek' and record.valuation_class:
-                    account_setting_id = account_setting_model.search([
-                        ('valuation_class', '=', record.valuation_class),
-                        ('assignment', '=', 'nonproyek'),
-                    ], limit=1)
-                    record.account_id= account_setting_id.account_pihak_ketiga_id.id
+            # if record.partner_id.bill_coa_type == 'ZN01':
+            #     if record.level == 'Proyek' and record.valuation_class:
+            #         account_setting_id = account_setting_model.search([
+            #             ('valuation_class', '=', record.valuation_class),
+            #             ('assignment', '=', record.level.lower()),
+            #             ('bill_coa_type', '=', 'ZN01')
+            #         ], limit=1)
+            #         record.account_id= account_setting_id.account_id.id
+            #     elif record.level != 'Proyek' and record.valuation_class:
+            #         account_setting_id = account_setting_model.search([
+            #             ('valuation_class', '=', record.valuation_class),
+            #             ('assignment', '=', 'nonproyek'),
+            #             ('bill_coa_type', '=', 'ZN01')
+            #         ], limit=1)
+            #         record.account_id= account_setting_id.account_id.id
+            #
+            # elif record.partner_id.bill_coa_type == 'ZN02':
+            #     if record.level == 'Proyek' and record.valuation_class:
+            #         account_setting_id = account_setting_model.search([
+            #             ('valuation_class', '=', record.valuation_class),
+            #             ('assignment', '=', record.level.lower()),
+            #             ('bill_coa_type', '=', 'ZN02')
+            #         ], limit=1)
+            #         record.account_id= account_setting_id.account_id.id
+            #     elif record.level != 'Proyek' and record.valuation_class:
+            #         account_setting_id = account_setting_model.search([
+            #             ('valuation_class', '=', record.valuation_class),
+            #             ('assignment', '=', 'nonproyek'),
+            #             ('bill_coa_type', '=', 'ZN02')
+            #         ], limit=1)
+            #         record.account_id= account_setting_id.account_id.id
+            #
 
     @api.model_create_multi
     def create(self, vals_list):
         record = super(WikaInheritedAccountMove, self).create(vals_list)
         record._check_invoice_totals()
-        record.assign_todo_first()
+        #record.assign_todo_first()
 
-        if isinstance(record, bool):
-            return record
-        if len(record) != 1:
-            raise ValidationError("Hanya satu record yang diharapkan diperbarui!")
+        # if isinstance(record, bool):
+        #     return record
+        # if len(record) != 1:
+        #     raise ValidationError("Hanya satu record yang diharapkan diperbarui!")
 
         
         # document date
-        if record.invoice_date != False and record.invoice_date < record.bap_id.bap_date:
-            raise ValidationError("Document Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
-        else:
-            pass
+        # if record.invoice_date != False and record.invoice_date < record.bap_id.bap_date:
+        #     raise ValidationError("Document Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
+        # else:
+        #     pass
 
         # posting date
-        if record.date != False and record.date < record.bap_id.bap_date:
-            raise ValidationError("Posting Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
-        else:
-            pass
+        # if record.date != False and record.date < record.bap_id.bap_date:
+        #     raise ValidationError("Posting Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
+        # else:
+        #     pass
 
         return record
 
@@ -325,24 +353,24 @@ class WikaInheritedAccountMove(models.Model):
         record = super(WikaInheritedAccountMove, self).write(values)
         self._check_invoice_totals()
 
-        if isinstance(record, bool):
-            return record
-        if len(record) != 1:
-            raise ValidationError("Hanya satu record yang diharapkan diperbarui!")
-
+        # if isinstance(record, bool):
+        #     return record
+        # if len(record) != 1:
+        #     raise ValidationError("Hanya satu record yang diharapkan diperbarui!")
+        #
 
         
         # document date
-        if record.invoice_date != False and record.invoice_date < record.bap_id.bap_date:
-            raise ValidationError("Document Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
-        else:
-            pass
-
-        # posting date
-        if record.date != False and record.date < record.bap_id.bap_date:
-            raise ValidationError("Posting Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
-        else:
-            pass
+        # if record.invoice_date != False and record.invoice_date < record.bap_id.bap_date:
+        #     raise ValidationError("Document Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
+        # else:
+        #     pass
+        #
+        # # posting date
+        # if record.date != False and record.date < record.bap_id.bap_date:
+        #     raise ValidationError("Posting Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
+        # else:
+        #     pass
         return record
 
 
@@ -357,8 +385,8 @@ class WikaInheritedAccountMove(models.Model):
 
     def _check_invoice_totals(self):
         print (self.total_line)
-        if self.amount_invoice < round(self.total_line) or self.amount_invoice > round(self.total_line):
-            raise ValidationError('Amount Invoice Harus sama dengan Total !')
+        # if self.amount_invoice < round(self.total_line) or self.amount_invoice > round(self.total_line):
+        #     raise ValidationError('Amount Invoice Harus sama dengan Total !')
 
 
     @api.onchange('bap_id')
@@ -384,6 +412,8 @@ class WikaInheritedAccountMove(models.Model):
                     'product_id': bap_line.product_id.id,
                     'purchase_line_id': bap_line.purchase_line_id.id,
                     'bap_line_id': bap_line.id,
+                    'picking_id': bap_line.picking_id.id,
+                    'stock_move_id': bap_line.stock_move_id.id,
                     'quantity': bap_line.qty,
                     'price_unit': bap_line.unit_price,
                     'tax_ids': bap_line.purchase_line_id.taxes_id.ids,
@@ -416,11 +446,10 @@ class WikaInheritedAccountMove(models.Model):
                     ('sequence', '=', 1),
                     ('approval_id', '=', approval_id.id)
                 ], limit=1)
-                print(approval_line_id)
                 groups_id = approval_line_id.groups_id
                 if groups_id:
                     for x in groups_id.users:
-                        if level == 'Proyek' and x.project_id == res.project_id:
+                        if level == 'Proyek' and  res.project_id in x.project_ids:
                             first_user = x.id
                         if level == 'Divisi Operasi' and x.branch_id == res.branch_id:
                             first_user = x.id
@@ -476,25 +505,16 @@ class WikaInheritedAccountMove(models.Model):
                 ('sequence', '=', 1),
                 ('approval_id', '=', approval_id.id)
             ], limit=1)
-            print(approval_line_id)
             groups_id = approval_line_id.groups_id
             if groups_id:
-                for x in groups_id.users:
-                    if level == 'Proyek' and x.project_id == self.project_id and x.id == self._uid:
-                        cek = True
-                    if level == 'Divisi Operasi' and x.branch_id == self.branch_id and x.id == self._uid:
-                        cek = True
-                    if level == 'Divisi Fungsi' and x.department_id == self.department_id and x.id == self._uid:
-                        cek = True
+                if self.activity_user_id.id == self._uid:
+                    cek = True
 
         if cek == True:
             first_user = False
             if self.activity_ids:
                 for x in self.activity_ids.filtered(lambda x: x.status != 'approved'):
-                    print("masuk")
-                    print(x.user_id)
                     if x.user_id.id == self._uid:
-                        print(x.status)
                         x.status = 'approved'
                         x.action_done()
                 self.state = 'uploaded'
@@ -512,18 +532,15 @@ class WikaInheritedAccountMove(models.Model):
                     ('sequence', '=', self.step_approve),
                     ('approval_id', '=', approval_id.id)
                 ], limit=1)
-                print("groups", groups_line)
                 groups_id_next = groups_line.groups_id
                 if groups_id_next:
-                    print(groups_id_next.name)
                     for x in groups_id_next.users:
-                        if level == 'Proyek' and x.project_id == self.project_id:
+                        if level == 'Proyek' and self.project_id in x.project_ids:
                             first_user = x.id
                         if level == 'Divisi Operasi' and x.branch_id == self.branch_id:
                             first_user = x.id
                         if level == 'Divisi Fungsi' and x.department_id == self.department_id:
                             first_user = x.id
-                    print(first_user)
                     if first_user:
                         self.env['mail.activity'].sudo().create({
                             'activity_type_id': 4,
@@ -546,6 +563,7 @@ class WikaInheritedAccountMove(models.Model):
         cek = False
         model_id = self.env['ir.model'].search([('model', '=', 'account.move')], limit=1)
         level = self.level
+        is_mp = False
         if level:
             keterangan = ''
             if level == 'Proyek':
@@ -602,15 +620,14 @@ class WikaInheritedAccountMove(models.Model):
                 ('sequence', '=', self.step_approve),
                 ('approval_id', '=', approval_id.id)
             ], limit=1)
-            print(approval_line_id)
             groups_id = approval_line_id.groups_id
             if groups_id:
-                print(groups_id.name)
                 for x in groups_id.users:
                     if level == 'Proyek':
-                        if x.project_id == self.project_id or x.branch_id == self.branch_id or x.branch_id.parent_id.code=='Pusat':
+                        if self.project_id in x.project_ids or x.branch_id == self.branch_id or x.branch_id.parent_id.code=='Pusat':
                             if x.id == self._uid:
                                 cek = True
+                                is_mp = True
                     if level == 'Divisi Operasi' and x.branch_id == self.branch_id and x.id == self._uid:
                         cek = True
                     if level == 'Divisi Fungsi' and x.department_id == self.department_id and x.id == self._uid:
@@ -620,6 +637,8 @@ class WikaInheritedAccountMove(models.Model):
             if approval_id.total_approve == self.step_approve:
                 self.state = 'approved'
                 self.approval_stage = 'Pusat'
+                if is_mp:
+                    self.baseline_date = fields.Date.today()
 
                 folder_id = self.env['documents.folder'].sudo().search([('name', '=', 'Invoicing')], limit=1)
                 # print("TESTTTTTTTTTTTTTTTTTTTTT", folder_id)
@@ -653,8 +672,6 @@ class WikaInheritedAccountMove(models.Model):
                             })
                 if self.activity_ids:
                     for x in self.activity_ids.filtered(lambda x: x.status != 'approved'):
-                        print("masuk")
-                        print(x.user_id)
                         if x.user_id.id == self._uid:
                             print(x.status)
                             x.status = 'approved'
@@ -670,7 +687,6 @@ class WikaInheritedAccountMove(models.Model):
 
                 })
                 if approval_line_id.check_approval:
-                    print("Approval Line ID :", approval_line_id.check_approval)
                     action = {
                         'type': 'ir.actions.act_window',
                         'name': 'Approval Wizard',
@@ -693,21 +709,16 @@ class WikaInheritedAccountMove(models.Model):
                     ('sequence', '=', self.step_approve + 1),
                     ('approval_id', '=', approval_id.id)
                 ], limit=1)
-                print("groups", groups_line_next)
                 groups_id_next = groups_line_next.groups_id
                 if groups_id_next:
-                    print(groups_id_next.name)
                     for x in groups_id_next.users:
-                        print("ssssssssssssssssssss")
                         if level == 'Proyek' :
-                            if x.project_id == self.project_id or x.branch_id == self.branch_id or x.branch_id.parent_id.code == 'Pusat':
+                            if self.project_id in x.project_ids or x.branch_id == self.branch_id or x.branch_id.parent_id.code == 'Pusat':
                                 first_user = x.id
                         if level == 'Divisi Operasi' and x.branch_id == self.branch_id:
                             first_user = x.id
                         if level == 'Divisi Fungsi' and x.department_id == self.department_id:
                             first_user = x.id
-
-                    print(first_user)
                     if first_user:
                         self.step_approve += 1
                         self.approval_stage = groups_line_next.level_role
@@ -726,10 +737,7 @@ class WikaInheritedAccountMove(models.Model):
 
                         if self.activity_ids:
                             for x in self.activity_ids.filtered(lambda x: x.status != 'approved'):
-                                print("masuk")
-                                print(x.user_id)
                                 if x.user_id.id == self._uid:
-                                    print(x.status)
                                     x.status = 'approved'
                                     x.action_done()
                         self.env['wika.invoice.approval.line'].create({
@@ -782,15 +790,8 @@ class WikaInheritedAccountMove(models.Model):
             print(approval_line_id)
             groups_id = approval_line_id.groups_id
             if groups_id:
-                print(groups_id.name)
-                for x in groups_id.users:
-                    if x.project_id == self.project_id or x.branch_id == self.branch_id or x.branch_id.parent_id.code == 'Pusat':
-                        if x.id == self._uid:
-                            cek = True
-                    if level == 'Divisi Operasi' and x.branch_id == self.branch_id and x.id == self._uid:
-                        cek = True
-                    if level == 'Divisi Fungsi' and x.department_id == self.department_id and x.id == self._uid:
-                        cek = True
+                if self.activity_user_id.id == self._uid:
+                    cek = True
         if cek == True:
             action = {
                 'name': ('Reject Reason'),

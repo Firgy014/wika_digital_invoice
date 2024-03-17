@@ -333,14 +333,7 @@ class PickingInherit(models.Model):
                 if groups_id:
                     if self.activity_user_id.id == self._uid:
                         cek = True
-                    # print(groups_id.name)
-                    # for x in groups_id.users:
-                    #     if level == 'Proyek' and x.project_id == self.project_id and x.id== self._uid:
-                    #         cek = True
-                    #     if level == 'Divisi Operasi' and x.branch_id == self.branch_id and x.id== self._uid:
-                    #         cek = True
-                    #     if level == 'Divisi Fungsi' and x.department_id == self.department_id and x.id== self._uid:
-                    #         cek = True
+
             if cek == True:
                 if self.activity_ids:
                     for x in self.activity_ids.filtered(lambda x: x.status != 'approved'):
@@ -367,7 +360,7 @@ class PickingInherit(models.Model):
                     if groups_id_next:
                         print (groups_id_next.name)
                         for x in groups_id_next.users:
-                            if level == 'Proyek' and x.project_id == self.project_id:
+                            if level == 'Proyek' and self.project_id in x.project_ids:
                                 first_user = x.id
                             if level == 'Divisi Operasi' and x.branch_id == self.branch_id:
                                 first_user = x.id

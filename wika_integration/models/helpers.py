@@ -5,14 +5,14 @@ SELECT
     TO_CHAR(inv.date, 'yyyymmdd') AS PSTNG_DATE,
     inv.no_invoice_vendor AS REF_DOC_NO,
     ROUND(inv.amount_untaxed) AS GROSS_AMOUNT,
-    inv.baseline_date AS BLINE_DATE,
+    TO_CHAR(inv.baseline_date, 'yyyymmdd') AS BLINE_DATE,
     inv.no_faktur_pajak AS HEADER_TXT,
     line.name AS ITEM_TEXT,
     acc.code AS HKONT,
-    ROUND(inv.amount_untaxed) AS TAX_BASE_AMOUNT,
+    '' AS TAX_BASE_AMOUNT,
     tax_group.pph_group_code AS WI_TAX_TYPE,
     tax.pph_code AS WI_TAX_CODE,
-    ROUND(inv.amount_untaxed) AS WI_TAX_BASE,
+    '' AS WI_TAX_BASE,
     po.name AS PO_NUMBER,
     pol.sequence AS PO_ITEM,
     CASE
@@ -24,9 +24,9 @@ SELECT
         ELSE ''
     END AS REF_DOC_YEAR,
     CASE 
-        WHEN po.po_type = 'BARANG' THEN prod.default_code
-        ELSE ''
-    END AS REF_DOC_IT,                                                                                                                  
+        WHEN po.po_type = 'BARANG' THEN CAST(sm.sequence AS VARCHAR)
+        ELSE '' END AS REF_DOC_IT,
+                                                                                                   
     line.price_subtotal AS ITEM_AMOUNT,
     line.quantity as QUANTITY,
     CASE
@@ -59,6 +59,8 @@ LEFT JOIN
     product_product prod ON prod.id = line.product_id
 LEFT JOIN
     stock_picking sp ON sp.id = bap_line.picking_id
+left JOIN
+    stock_move sm ON sm.id=line.stock_move_id
 WHERE 
     inv.state = 'approved' AND line.display_type = 'product'
 """

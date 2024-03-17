@@ -8,7 +8,12 @@
             name="Proses Invoice"
             parent="wika_berita_acara_pembayaran.wika_berita_acara_pembayaran_menu_root"
             sequence="15"/>
-
+       <menuitem
+            action="action_wika_account_move_line"
+            id="sub_menu_wika_account_move_line"
+            name="Invoice Item"
+            parent="wika_berita_acara_pembayaran.wika_berita_acara_pembayaran_menu_root"
+            sequence="16"/>
             <!-- action="action_wika_account_payable_setting" -->
 
         <menuitem
