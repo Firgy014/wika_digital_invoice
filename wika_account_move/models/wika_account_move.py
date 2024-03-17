@@ -119,28 +119,28 @@ class WikaInheritedAccountMove(models.Model):
 
 
 
-    # @api.onchange('invoice_date')
-    # def _onchange_invoice_date(self):
-    #     if isinstance(self, bool):
-    #         return self
-    #     if len(self) != 1:
-    #         raise ValidationError("Hanya satu record yang diharapkan diperbarui!")
-    #
-    #     if self.invoice_date != False and self.invoice_date < self.bap_id.bap_date:
-    #         raise ValidationError("Document Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
-    #     else:
-    #         pass
-    
-    # @api.onchange('date')
-    # def _onchange_posting_date(self):
-    #     if not self.date or not self.bap_id or not self.bap_id.bap_date:
-    #         return
-    #     if isinstance(self, bool):
-    #         return self
-    #     if len(self) != 1:
-    #         raise ValidationError("Hanya satu record yang diharapkan diperbarui!")
-    #     if self.date < self.bap_id.bap_date:
-    #         raise ValidationError("Posting Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
+    @api.onchange('invoice_date')
+    def _onchange_invoice_date(self):
+        if isinstance(self, bool):
+            return self
+        if len(self) != 1:
+            raise ValidationError("Hanya satu record yang diharapkan diperbarui!")
+
+        if self.invoice_date != False and self.invoice_date < self.bap_id.bap_date:
+            raise ValidationError("Document Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
+        else:
+            pass
+
+    @api.onchange('date')
+    def _onchange_posting_date(self):
+        if not self.date or not self.bap_id or not self.bap_id.bap_date:
+            return
+        if isinstance(self, bool):
+            return self
+        if len(self) != 1:
+            raise ValidationError("Hanya satu record yang diharapkan diperbarui!")
+        if self.date < self.bap_id.bap_date:
+            raise ValidationError("Posting Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
 
     state = fields.Selection(
         selection=[
@@ -308,66 +308,63 @@ class WikaInheritedAccountMove(models.Model):
     def create(self, vals_list):
         record = super(WikaInheritedAccountMove, self).create(vals_list)
         record._check_invoice_totals()
-        #record.assign_todo_first()
+        record.assign_todo_first()
 
-        # if isinstance(record, bool):
-        #     return record
-        # if len(record) != 1:
-        #     raise ValidationError("Hanya satu record yang diharapkan diperbarui!")
+        if isinstance(record, bool):
+            return record
+        if len(record) != 1:
+            raise ValidationError("Hanya satu record yang diharapkan diperbarui!")
 
         
-        # document date
-        # if record.invoice_date != False and record.invoice_date < record.bap_id.bap_date:
-        #     raise ValidationError("Document Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
-        # else:
-        #     pass
+        #document date
+        if record.invoice_date != False and record.invoice_date < record.bap_id.bap_date:
+            raise ValidationError("Document Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
+        else:
+            pass
 
-        # posting date
-        # if record.date != False and record.date < record.bap_id.bap_date:
-        #     raise ValidationError("Posting Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
-        # else:
-        #     pass
+       # posting date
+        if record.date != False and record.date < record.bap_id.bap_date:
+            raise ValidationError("Posting Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
+        else:
+            pass
 
         return record
 
     def write(self, values):
         record = super(WikaInheritedAccountMove, self).write(values)
-        self._check_invoice_totals()
+        if isinstance(record, bool):
+            return record
+        if len(record) != 1:
+            raise ValidationError("Hanya satu record yang diharapkan diperbarui!")
 
-        # if isinstance(record, bool):
-        #     return record
-        # if len(record) != 1:
-        #     raise ValidationError("Hanya satu record yang diharapkan diperbarui!")
-        #
 
         
-        # document date
-        # if record.invoice_date != False and record.invoice_date < record.bap_id.bap_date:
-        #     raise ValidationError("Document Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
-        # else:
-        #     pass
-        #
-        # # posting date
-        # if record.date != False and record.date < record.bap_id.bap_date:
-        #     raise ValidationError("Posting Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
-        # else:
-        #     pass
+        #document date
+        if record.invoice_date != False and record.invoice_date < record.bap_id.bap_date:
+            raise ValidationError("Document Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
+        else:
+            pass
+
+        # posting date
+        if record.date != False and record.date < record.bap_id.bap_date:
+            raise ValidationError("Posting Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
+        else:
+            pass
         return record
 
 
-    # @api.onchange('amount_invoice')
-    # def _onchange_amount_invoice(self):
-    #     if self.amount_invoice and self.amount_invoice != self.amount_total_footer:
-    #         warning = {
-    #             'title': _('Warning!'),
-    #             'message': _('Nilai dari "Amount Invoice" tidak sama dengan "Tax Totals".')
-    #         }
-    #         return {'warning': warning}
+    @api.onchange('amount_invoice')
+    def _onchange_amount_invoice(self):
+        if self.amount_invoice and self.amount_invoice != self.amount_total_footer:
+            warning = {
+                'title': _('Warning!'),
+                'message': _('Nilai dari "Amount Invoice" tidak sama dengan "Tax Totals".')
+            }
+            return {'warning': warning}
 
     def _check_invoice_totals(self):
-        print (self.total_line)
-        # if self.amount_invoice < round(self.total_line) or self.amount_invoice > round(self.total_line):
-        #     raise ValidationError('Amount Invoice Harus sama dengan Total !')
+        if self.amount_invoice < round(self.total_line) or self.amount_invoice > round(self.total_line):
+            raise ValidationError('Amount Invoice Harus sama dengan Total !')
 
 
     @api.onchange('bap_id')
