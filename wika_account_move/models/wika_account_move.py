@@ -159,8 +159,6 @@ class WikaInheritedAccountMove(models.Model):
         tracking=True,
         default='draft',
     )
-
-
     amount_total_footer = fields.Float(string='Amount Total', compute='_compute_amount_total', store=True)
     level = fields.Selection([
         ('Proyek', 'Proyek'),
@@ -177,12 +175,12 @@ class WikaInheritedAccountMove(models.Model):
     ], compute='_compute_get_lowest_valuation_class', string='Valuation Class')
 
     documents_count = fields.Integer(string='Total Doc', compute='_compute_documents_count')
-    no_faktur_pajak=fields.Char(string='Tax Number')
+    no_faktur_pajak = fields.Char(string='Tax Number')
     dp_total = fields.Float(string='Total DP', compute='_compute_potongan_total', store= True)
     retensi_total = fields.Float(string='Total Retensi', compute='_compute_potongan_total', store= True)
     total_tax = fields.Monetary(string='Total Tax', compute='compute_total_tax')
 
-    amount_total_payment = fields.Float(string='Total Invoice', compute='_compute_amount_total_payment', store= True)
+    amount_total_payment = fields.Float(string='Total Invoice', compute='_compute_amount_total_payment', store=True)
     total_line = fields.Float(string='Total Line', compute='_compute_total_line')
     cut_off = fields.Boolean(string='Cut Off',default=False,copy=False)
     # is_approval_checked = fields.Boolean(string="Approval Checked")

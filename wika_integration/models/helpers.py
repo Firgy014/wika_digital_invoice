@@ -1,6 +1,7 @@
 def _get_computed_query():
     return """
-SELECT                  
+SELECT
+    inv.id,
     TO_CHAR(inv.invoice_date, 'yyyymmdd') AS DOC_DATE,
     TO_CHAR(inv.date, 'yyyymmdd') AS PSTNG_DATE,
     inv.no_invoice_vendor AS REF_DOC_NO,
