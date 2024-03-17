@@ -82,7 +82,7 @@ class WikaPartialPaymentRequest(models.Model):
                 groups_id = approval_line_id.groups_id
                 if groups_id:
                     for x in groups_id.users:
-                        if level == 'Proyek' and x.project_id == res.project_id:
+                        if level == 'Proyek' and res.project_id in x.project_ids:
                             first_user = x.id
                         if level == 'Divisi Operasi' and x.branch_id == res.branch_id:
                             first_user = x.id
@@ -199,13 +199,8 @@ class WikaPartialPaymentRequest(models.Model):
             ], limit=1)
             groups_id = approval_line_id.groups_id
             if groups_id:
-                for x in groups_id.users:
-                    if level == 'Proyek' and x.project_id == self.project_id and x.id == self._uid:
-                        cek = True
-                    if level == 'Divisi Operasi' and x.branch_id == self.branch_id and x.id == self._uid:
-                        cek = True
-                    if level == 'Divisi Fungsi' and x.department_id == self.department_id and x.id == self._uid:
-                        cek = True
+                if self.activity_user_id.id == self._uid:
+                    cek = True
 
         if cek == True:
             if self.activity_ids:
@@ -231,7 +226,7 @@ class WikaPartialPaymentRequest(models.Model):
                 groups_id_next = groups_line.groups_id
                 if groups_id_next:
                     for x in groups_id_next.users:
-                        if level == 'Proyek' and x.project_id == self.project_id:
+                        if level == 'Proyek' and self.project_id in x.project_ids:
                             first_user = x.id
                         if level == 'Divisi Operasi' and x.branch_id == self.branch_id:
                             first_user = x.id
@@ -274,13 +269,7 @@ class WikaPartialPaymentRequest(models.Model):
         groups_id = approval_line_id.groups_id
         if groups_id:
             for x in groups_id.users:
-                if level == 'Proyek':
-                    if x.project_id == self.project_id or x.branch_id == self.branch_id or x.branch_id.parent_id.code == 'Pusat':
-                        if x.id == self._uid:
-                            cek = True
-                if level == 'Divisi Operasi' and x.branch_id == self.branch_id and x.id == self._uid:
-                    cek = True
-                if level == 'Divisi Fungsi' and x.department_id == self.department_id and x.id == self._uid:
+                if self.activity_user_id.id == self._uid:
                     cek = True
 
         if cek == True:
@@ -325,7 +314,6 @@ class WikaPartialPaymentRequest(models.Model):
                 if self.activity_ids:
                     for x in self.activity_ids.filtered(lambda x: x.status != 'approved'):
                         if x.user_id.id == self._uid:
-                            print(x.status)
                             x.status = 'approved'
                             x.action_done()
             else:
@@ -340,7 +328,7 @@ class WikaPartialPaymentRequest(models.Model):
                 if groups_id_next:
                     for x in groups_id_next.users:
                         if level == 'Proyek' :
-                            if x.project_id == self.project_id or x.branch_id == self.branch_id or x.branch_id.parent_id.code == 'Pusat':
+                            if self.project_id in x.project_ids or x.branch_id == self.branch_id or x.branch_id.parent_id.code == 'Pusat':
                                 first_user = x.id
                         if level == 'Divisi Operasi' and x.branch_id == self.branch_id:
                             first_user = x.id
@@ -399,14 +387,9 @@ class WikaPartialPaymentRequest(models.Model):
             groups_id = approval_line_id.groups_id
             if groups_id:
                 for x in groups_id.users:
-                    if level == 'Proyek':
-                        if x.project_id == self.project_id or x.branch_id == self.branch_id or x.branch_id.parent_id.code == 'Pusat':
-                            if x.id == self._uid:
-                                cek = True
-                    if level == 'Divisi Operasi' and x.branch_id == self.branch_id and x.id == self._uid:
+                    if self.activity_user_id.id == self._uid:
                         cek = True
-                    if level == 'Divisi Fungsi' and x.department_id == self.department_id and x.id == self._uid:
-                        cek = True
+
         if cek == True:
             action = {
                 'name': ('Reject Reason'),

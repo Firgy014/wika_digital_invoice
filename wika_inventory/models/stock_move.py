@@ -64,3 +64,10 @@ class StockMoveInherit(models.Model):
     def _compute_price_subtotal(self):
         for record in self:
             record.price_subtotal = record.quantity_done * record.price_unit
+
+    def name_get(self):
+        res = []
+        for move in self:
+            tit = "[%s] %s" % (move.sequence, move.product_id.code)
+            res.append((move.id, tit))
+        return res

@@ -38,6 +38,8 @@
                            <field name="valuation_class" groups="base.group_no_one" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
                            <field name="amount_invoice" style="background-color: #dddded;" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
                            <field name="no_faktur_pajak" style="background-color: #dddded;" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
+                           <field name="currency_id" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
+
                       </group>
                       <group id="header_right_group">
                             <field name="branch_id" domain="[('biro', '=', False)]"
@@ -53,10 +55,11 @@
                           <field name="invoice_date_due" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
                           <field name="move_type" invisible="1"/>
                           <field name="company_id" invisible="1"/>
-                          <field name="payment_state" invisible="1"/>
-                          <field name="is_approval_checked"  invisible="1"/>
-                          <field name="payment_request_date" groups="base.group_no_one"/>
-                          <field name="is_mp_approved" groups="base.group_no_one"/>
+                            <field name="payment_state" invisible="1"/>
+                            <field name="is_approval_checked" invisible="1"/>
+                             <field name="is_mp_approved" groups="base.group_no_one"/>
+                            <field name="is_wizard_cancel" readonly="1" invisible="1"/>
+                            <field name="cut_off" readonly="1" force_save="1"/>
 
                       </group>
                     </group>
@@ -91,10 +94,13 @@
                                         <field name="price_subtotal"
                                                string="Subtotal"
                                                groups="account.group_show_line_subtotals_tax_excluded"/>
+                                        <field name="amount_sap" readonly="1" force_save="1"/>
                                         <field name="price_total"
                                                string="Total"
                                                groups="account.group_show_line_subtotals_tax_included"/>
                                         <field name="bap_line_id" invisible="1"/>
+                                        <field name="picking_id" invisible="1"/>
+                                        <field name="stock_move_id" invisible="1"/>
 
                                         <!-- Others fields -->
                                         <field name="partner_id" invisible="1"/>
@@ -143,6 +149,8 @@
                                 <field name="partner_bank_id" string="Bank Account"/>
                                 <field name="account_id" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
                                 <field name="retention_due" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
+                                <field name="cut_off" readonly="1" force_save="1"/>
+                                <field name="pph_amount" groups="base.group_no_one"/>
 
                             </group>
                           </page>
@@ -204,6 +212,7 @@
                                         <field name="date"/>
                                         <field name="note"/>
                                         <field name="information" widget="html"/>
+                                        <field name="is_show_wizard"/>
                                     </group>
                                 </form>
                         </field>
@@ -257,7 +266,7 @@
                          <field name="nomor_payment_request"  widget="badge"  optional="show"/>
                          <field name="payment_method"/>
                          <field name="payment_request_date"/>
-                        <field name="currency_id" invisible="1"/>
+                        <field name="currency_id" />
                     </tree>
             </field>
         </record>

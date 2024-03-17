@@ -35,6 +35,8 @@
         'views/setting_account_payable_views.xml',
         'views/product_views.xml',
         'views/wika_account_move.xml',
+        'views/wika_account_move_line.xml',
+
         'views/account_tax_views.xml',
         'data/documents_folder_data.xml',
         'report/report_action.xml',
@@ -47,7 +49,6 @@
         'views/action.xml',
         'views/action.xml',
 
-        # 'views/wika_account_move_line',
         'wizard/wika_reject_reason.xml',
         'wizard/wika_approval_account_move.xml',
 

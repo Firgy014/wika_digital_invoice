@@ -31,6 +31,8 @@
         'views/wika_integration_views.xml',
         'views/res_config_setting_views.xml',
         'views/wika_get_po.xml',
+        'views/wika_get_gr.xml',
+        'views/purchase_order.xml',
         'views/templates.xml',
     ],
     # only loaded in demonstration mode

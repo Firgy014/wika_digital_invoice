@@ -82,7 +82,7 @@ class SAPIntegration(models.Model):
 
         for res in vals:
             writer.writerow(res)
-            
+
         out2 = (buffer.getvalue()).encode('utf-8')
         gentextfile = base64.b64encode(out2)
         filename = ('YFII015_' + today + '.txt')
