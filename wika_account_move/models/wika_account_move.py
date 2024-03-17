@@ -62,6 +62,19 @@ class WikaInheritedAccountMove(models.Model):
     nomor_payment_request= fields.Char(string='Nomor Payment Request')
     is_approval_checked = fields.Boolean(string="Approval Checked", compute='_compute_is_approval_checked' ,default=False)
     is_wizard_cancel = fields.Boolean(string="Is cancel", default=True)
+    is_mp_approved = fields.Boolean(string='Approved by MP', default=False, compute='_compute_mp_approved', store=True)
+
+    @api.depends('history_approval_ids.user_id')
+    def _compute_mp_approved(self):
+        approval_setting_model = self.env['wika.approval.setting'].sudo()
+        invoice_model_id = self.env['ir.model'].sudo().search([('model', '=', 'account.move')], limit=1)
+
+        invoice_approval_setting_id = approval_setting_model.search([('model_id', '=', invoice_model_id.id)])
+        if invoice_approval_setting_id:
+            for set in invoice_approval_setting_id.setting_line_ids:
+                if set.groups_id.name == 'MP':
+                    if set.check_approval == True:
+                        self.is_mp_approved = True
 
     @api.depends('history_approval_ids.is_show_wizard', 'history_approval_ids.user_id')
     def _compute_is_approval_checked(self):
@@ -290,38 +303,6 @@ class WikaInheritedAccountMove(models.Model):
                 ], limit=1)
                 record.account_id = account_setting_id.account_id.id
 
-            # if record.partner_id.bill_coa_type == 'ZN01':
-            #     if record.level == 'Proyek' and record.valuation_class:
-            #         account_setting_id = account_setting_model.search([
-            #             ('valuation_class', '=', record.valuation_class),
-            #             ('assignment', '=', record.level.lower()),
-            #             ('bill_coa_type', '=', 'ZN01')
-            #         ], limit=1)
-            #         record.account_id= account_setting_id.account_id.id
-            #     elif record.level != 'Proyek' and record.valuation_class:
-            #         account_setting_id = account_setting_model.search([
-            #             ('valuation_class', '=', record.valuation_class),
-            #             ('assignment', '=', 'nonproyek'),
-            #             ('bill_coa_type', '=', 'ZN01')
-            #         ], limit=1)
-            #         record.account_id= account_setting_id.account_id.id
-            #
-            # elif record.partner_id.bill_coa_type == 'ZN02':
-            #     if record.level == 'Proyek' and record.valuation_class:
-            #         account_setting_id = account_setting_model.search([
-            #             ('valuation_class', '=', record.valuation_class),
-            #             ('assignment', '=', record.level.lower()),
-            #             ('bill_coa_type', '=', 'ZN02')
-            #         ], limit=1)
-            #         record.account_id= account_setting_id.account_id.id
-            #     elif record.level != 'Proyek' and record.valuation_class:
-            #         account_setting_id = account_setting_model.search([
-            #             ('valuation_class', '=', record.valuation_class),
-            #             ('assignment', '=', 'nonproyek'),
-            #             ('bill_coa_type', '=', 'ZN02')
-            #         ], limit=1)
-            #         record.account_id= account_setting_id.account_id.id
-            #
 
     @api.model_create_multi
     def create(self, vals_list):

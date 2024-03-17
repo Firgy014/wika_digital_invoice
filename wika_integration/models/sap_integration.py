@@ -66,14 +66,23 @@ class SAPIntegration(models.Model):
             
             query = helpers._get_computed_query()
 
+        self._cr.execute(query)
+        vals = self.env.cr.fetchall()
+
+        unique_move_ids = set(val[0] for val in vals)
+        for move_id in unique_move_ids:
+            move = self.env['account.move'].browse(move_id)
+            move.write({'is_generated': True})
+
         buffer = StringIO()
         writer = csv.writer(buffer, delimiter='|')
-        self._cr.execute(query)
-        vals = self._cr.fetchall()
+
         writer.writerow(dev_keys)
         writer.writerow(keys)
+
         for res in vals:
             writer.writerow(res)
+
         out2 = (buffer.getvalue()).encode('utf-8')
         gentextfile = base64.b64encode(out2)
         filename = ('YFII015_' + today + '.txt')

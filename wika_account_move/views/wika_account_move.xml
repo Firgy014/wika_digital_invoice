@@ -57,6 +57,7 @@
                           <field name="company_id" invisible="1"/>
                             <field name="payment_state" invisible="1"/>
                             <field name="is_approval_checked" invisible="1"/>
+                             <field name="is_mp_approved" groups="base.group_no_one"/>
                             <field name="is_wizard_cancel" readonly="1" invisible="1"/>
                             <field name="cut_off" readonly="1" force_save="1"/>
 
@@ -265,7 +266,7 @@
                          <field name="nomor_payment_request"  widget="badge"  optional="show"/>
                          <field name="payment_method"/>
                          <field name="payment_request_date"/>
-                        <field name="currency_id" invisible="1"/>
+                        <field name="currency_id" />
                     </tree>
             </field>
         </record>

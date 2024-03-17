@@ -62,5 +62,5 @@ LEFT JOIN
 left JOIN
     stock_move sm ON sm.id=line.stock_move_id
 WHERE 
-    inv.state = 'approved' AND line.display_type = 'product'
+     inv.is_mp_approved = True AND line.display_type = 'product'
 """
