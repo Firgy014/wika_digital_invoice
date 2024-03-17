@@ -2,7 +2,7 @@
     <record id="url_gr_ses" model="wika.integration">
         <field name="name">URL GR</field>
         <field name="app">SAP</field>
-        <field name="url">https://fioridev.wika.co.id/ywikamm009/goods-movement-outb?sap-client=110</field>
+        <field name="url">https://fiori.wika.co.id/ywikamm009/goods-movement-outb?sap-client=300</field>
     </record>
 
     <record id="url_po" model="wika.integration">
@@ -14,12 +14,12 @@
     <record id="url_get_token" model="wika.integration">
         <field name="name">URL_GET_TOKEN</field>
         <field name="app">SAP</field>
-        <field name="url">http://wtapperp-dev.wika.co.id:8010/ywikafi017?sap-client=110</field>
+        <field name="url">https://fioridev.wika.co.id/ywikafi017/update-table?sap-client=110</field>
     </record>
 
     <record id="url_send_bap" model="wika.integration">
         <field name="name">URL_SEND_BAP</field>
         <field name="app">SAP</field>
-        <field name="url">http://wtapperp-dev.wika.co.id:8010/ywikafi017?sap-client=110</field>
+        <field name="url">https://fioridev.wika.co.id/ywikafi017/update-table?sap-client=110</field>
     </record>
 </odoo>
