@@ -3,16 +3,18 @@
     <template id="report_wika_berita_acara_pembayaran_cut_over">
         <t t-foreach="docs" t-as="o">
         <t t-call="web.html_container">
-            <t t-set="data_report_margin_top" t-value="8"/>
-            <t t-set="data_report_header_spacing" t-value="9"/>
+            <t t-set="data_report_margin_top" t-value="20"/>
+            <t t-set="data_report_header_spacing" t-value="10"/>
             <t t-set="data_report_dpi" t-value="110"/>
 
             <t t-call="web.internal_layout">
                 <div class="page">
-                    <div style="text-align: center; margin-top: -5px; font-size: 14px;">
+                    <div style="text-align: center; font-size: 14px;">
                         <h4>BERITA ACARA PEMBAYARAN CUT OVER (BAP CUT OVER)</h4>
+                        <br/>
                         <strong>Nomor :</strong> <span t-field="o.name"/> 
                     </div>
+                    <br/>
                     <div>
                         <table style="width:80%; margin:auto;" class="table table-borderless">
                             <tr>
@@ -60,16 +62,17 @@
                             </tr>
                         </table>
                     </div>
+                    <br/>
                     <div class="d-flex justify-content-center" style="width: 100%;">
                         <table class="table table-borderless" style="width:100%;">
                             <tbody>
                                 <tr style="text-align: left;">
-                                    <td style="padding: 1px;">Nama</td>
+                                    <td style="padding: 1px; padding-bottom: 10px;">Nama</td>
                                     <td style="padding: 1px;">:</td>
                                     <td style="padding: 1px;"><t t-esc="o.signatory_name"/></td>
                                 </tr>
                                 <tr style="text-align: left;">
-                                    <td style="padding: 1px;">Jabatan</td>
+                                    <td style="padding: 1px; padding-bottom: 10px;">Jabatan</td>
                                     <td style="padding: 1px;">:</td>
                                     <td style="padding: 1px;">
                                         <p>
@@ -78,42 +81,42 @@
                                     </td>
                                 </tr>
                                 <tr style="text-align: left;">
-                                    <td style="padding: 1px;">Sehubungan dengan</td>
+                                    <td style="padding: 1px; padding-bottom: 10px;">Sehubungan dengan</td>
                                     <td style="padding: 1px;">:</td>
                                     <td style="padding: 1px;"></td>
                                 </tr>
                                 <tr style="text-align: left;">
-                                    <td style="padding: 1px;">Pekerjaan</td>
+                                    <td style="padding: 1px; padding-bottom: 10px;">Pekerjaan</td>
                                     <td style="padding: 1px;">:</td>
                                     <td style="padding: 1px;"><t t-esc="o.job"/></td>
                                 </tr>
                                 <tr style="text-align: left;">
-                                    <td style="padding: 1px;">Proyek</td>
+                                    <td style="padding: 1px; padding-bottom: 10px;">Proyek</td>
                                     <td style="padding: 1px;">:</td>
                                     <td style="padding: 1px;"><t t-esc="o.project_id.name"/></td>
                                 </tr>
                                 <tr style="text-align: left;">
-                                    <td style="padding: 1px;">Nomor PO</td>
+                                    <td style="padding: 1px; padding-bottom: 10px;">Nomor PO</td>
                                     <td style="padding: 1px;">:</td>
                                     <td style="padding: 1px;"><t t-esc="o.po_id.name"/></td>
                                 </tr>
                                 <tr style="text-align: left;">
-                                    <td style="padding: 1px;">Nomor Kontrak</td>
+                                    <td style="padding: 1px; padding-bottom: 10px;">Nomor Kontrak</td>
                                     <td style="padding: 1px;">:</td>
                                     <td style="padding: 1px;"><t t-esc="o.sap_doc_number"/></td>
                                 </tr>
                                 <tr style="text-align: left;">
-                                    <td style="padding: 1px;">Tanggal Kontrak</td>
+                                    <td style="padding: 1px; padding-bottom: 10px;">Tanggal Kontrak</td>
                                     <td style="padding: 1px;">:</td>
                                     <td style="padding: 1px;"><t t-esc="o.begin_date"/></td>
                                 </tr>
                                 <tr style="text-align: left;">
-                                    <td style="padding: 1px;">Nilai Kontrak (exlude PPN)</td>
+                                    <td style="padding: 1px; padding-bottom: 10px;">Nilai Kontrak (exlude PPN)</td>
                                     <td style="padding: 1px;">:</td>
                                     <td style="padding: 1px;">Rp.<t t-esc="'{:,.2f}'.format(o.amount_total)"/></td>
                                 </tr>
                                 <tr style="text-align: left;">
-                                    <td style="padding: 1px;">Business Partner</td>
+                                    <td style="padding: 1px; padding-bottom: 10px;">Business Partner</td>
                                     <td style="padding: 1px;">:</td>
                                     <td style="padding: 1px;"><t t-esc="o.partner_id.name"/></td>
                                 </tr>
@@ -311,11 +314,11 @@
                         </p>
                     </div>
                     <div>
-                        <p style="text-align: left; margin-top: -14px; font-size: 14px;">
+                        <p style="text-align: left; font-size: 14px;">
                             Demikian Berita Acara ini dibuat dengan sebenarnya untuk dapat dipergunakan sebagaimana mestinya.
                         </p>
                     </div>
-                    <div style="display: flex; justify-content: space-between; font-size: 14px; margin-top: -10px;">
+                    <div style="display: flex; justify-content: space-between; font-size: 14px; margin-top: 30px;">
                         <div style="width: fit-content;">
                             <!-- <table class="table table-borderless" style="font-size: 14px; margin-top: 10px;">
                                 <tr>
