@@ -37,7 +37,15 @@ SELECT
     CASE
         WHEN inv.retention_due IS NOT NULL THEN to_char(inv.retention_due, 'yyyymmdd')
         ELSE to_char(inv.date, 'yyyymmdd')
-    END AS RETENTION_DUE_DATE
+    END AS RETENTION_DUE_DATE,
+CASE 
+    WHEN inv.dp_total > 0 THEN 'X'
+    ELSE '' 
+END AS IND_DP,
+CASE 
+    WHEN inv.dp_total > 0 THEN CAST(inv.dp_total AS VARCHAR)
+    ELSE '' 
+END AS DP_AMOUNT
 FROM 
     account_move inv
 LEFT JOIN 
@@ -63,5 +71,5 @@ LEFT JOIN
 left JOIN
     stock_move sm ON sm.id=line.stock_move_id
 WHERE 
-     inv.is_mp_approved = True AND line.display_type = 'product'
+     inv.is_mp_approved = True AND line.display_type = 'product' and inv.cut_off!=True
 """

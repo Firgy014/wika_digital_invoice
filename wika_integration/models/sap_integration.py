@@ -62,7 +62,7 @@ class SAPIntegration(models.Model):
             keys = ['DOC_DATE', 'PSTNG_DATE', 'REF_DOC_NO', 'GROSS_AMOUNT', 'BLINE_DATE', 'HEADER_TXT',
                     'ITEM_TEXT', 'HKONT', 'TAX_BASE_AMOUNT', 'WI_TAX_TYPE', 'WI_TAX_CODE', 'WI_TAX_BASE',
                     'PO_NUMBER', 'PO_ITEM', 'REF_DOC', 'REF_DOC_YEAR', 'REF_DOC_IT', 'ITEM_AMOUNT',
-                    'QUANTITY', 'SHEET_NO', 'RETENTION_DUE_DATE']
+                    'QUANTITY', 'SHEET_NO', 'RETENTION_DUE_DATE','IND_DP','DP_AMOUNT']
             
             query = helpers._get_computed_query()
 
