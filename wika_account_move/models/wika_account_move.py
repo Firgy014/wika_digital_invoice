@@ -184,6 +184,8 @@ class WikaInheritedAccountMove(models.Model):
     total_line = fields.Float(string='Total Line', compute='_compute_total_line')
     is_approval_checked = fields.Boolean(string="Approval Checked", compute='_compute_is_approval_checked')
     is_mp_approved = fields.Boolean(string='Approved by MP', default=False, store=True)
+    cut_off = fields.Boolean(string='Cut Off',default=False,copy=False)
+    # is_approval_checked = fields.Boolean(string="Approval Checked")
     
     # @api.depends('history_approval_ids')
     # def _compute_mp_approved(self):
