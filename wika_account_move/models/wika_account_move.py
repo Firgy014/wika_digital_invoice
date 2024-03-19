@@ -634,11 +634,13 @@ class WikaInheritedAccountMove(models.Model):
                         cek = True
 
         if cek == True:
+            
+            if is_mp == True:
+                self.is_mp_approved = True
+
             if approval_id.total_approve == self.step_approve:
                 self.state = 'approved'
                 self.approval_stage = approval_line_id.level_role
-                if is_mp:
-                    self.is_mp_approved = True
 
                 folder_id = self.env['documents.folder'].sudo().search([('name', '=', 'Invoicing')], limit=1)
                 # print("TESTTTTTTTTTTTTTTTTTTTTT", folder_id)
