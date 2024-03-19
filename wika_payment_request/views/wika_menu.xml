@@ -6,7 +6,7 @@
       <menuitem id="wika_payment_menu_root" sequence="4" name="Payment Proposal" />
         <menuitem
             id="partial_pr_menu"
-            name="Partial Payment Request"
+            name="Split Payment"
             action="action_wika_partial_payment_request"
             parent="wika_payment_menu_root"
             sequence="10"/>

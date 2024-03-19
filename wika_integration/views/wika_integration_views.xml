@@ -23,6 +23,9 @@
             <field name="arch" type="xml">
                 <form>
                     <sheet>
+                        <header>
+                            <button name="push_bap" type="object" string="Push BAP"/>
+                        </header>
                         <group>
                             <field name="name"/>
                             <field name="app" required="1"/>

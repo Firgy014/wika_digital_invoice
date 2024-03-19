@@ -110,7 +110,7 @@
                     <header>
                         <button name="action_print_bap" type="object" string="Print BAP" states="draft" class="oe_highlight"/>
                         <button name="action_approve" type="object" string="APPROVE" states="uploaded" class="btn-success"/>
-                        <button name="push_bap" type="object" string="PUSH BAP" states="draft,rejected" class="btn-primary" groups="base.group_no_one"/>
+                        <button name="push_bap" type="object" string="PUSH BAP" states="draft,rejected,approved" class="btn-primary" groups="base.group_no_one"/>
 
                         <button name="action_submit" type="object" string="SUBMIT" states="draft,rejected" class="btn-primary"/>
                         <button name="action_reject" type="object" string="REJECT" states="uploaded" class="btn-danger"/>
@@ -120,6 +120,9 @@
                         <div name="button_box" position="inside">
                             <button class="oe_stat_button" type="object" name="get_documents" icon="fa-file-text-o">
                                 <field string="Documents" name="documents_count" widget="statinfo"/>
+                            </button>
+                            <button attrs="{'invisible': [('bap_type', '!=', 'cut over')]}" class="oe_stat_button" type="object" name="get_invoice_item" icon="fa-file-text-o">
+                                <field string="Invoice Item Cut Over" name="invoice_item_count" widget="statinfo"/>
                             </button>
                         </div>
                         <group>
@@ -200,24 +203,24 @@
                                 <field name="terbilang_um" groups="base.group_no_one"/>
                                 <field name="total_pembayaran_retensi" groups="base.group_no_one"/>
                                 <field name="terbilang_retensi" groups="base.group_no_one"/>
+                                <field name="total_pembayaran_co" groups="base.group_no_one"/>
+                                <field name="terbilang_co" groups="base.group_no_one"/>
                             </group>
                         </group>
                         <notebook>
                             <page string="List BAP">
                                 <group>
                                     <field name="bap_ids" mode="tree,kanban" nolabel="1" colspan="2"
-                                        attrs="{'invisible': [('bap_type', '!=', 'progress')],'readonly': [('state', 'not in',['draft','rejected'])]}">
-                                        <tree string="List BAP" editable="top" create="0" >
+                                        attrs="{'invisible': [('bap_type', 'not in', ['progress', 'cut over'])]}">
+                                        <tree string="List BAP" editable="top" create="0">
                                             <field name="picking_id"/>
                                             <field name="stock_move_id" invisible="1"/>
                                             <field name="purchase_line_id" invisible="1"/>
                                             <field name="unit_price_po" invisible="1"/>
-                                             <field name="sisa_qty_bap_grses" invisible="1"/>
-                                             <field name="qty_invoiced" invisible="1"/>
-                                            <!-- <field name="account_move_line_id"/> -->
+                                            <field name="sisa_qty_bap_grses" invisible="1"/>
+                                            <field name="qty_invoiced" invisible="1"/>
                                             <field name="product_id" readonly="1" force_save="1"/>
                                             <field name="product_uom" readonly="1" force_save="1"/>
-
                                             <field name="qty"/>
                                             <field name="tax_ids" widget="many2many_tags" string=""/>
                                             <field name="currency_id" readonly="1" force_save="1"/>
@@ -225,11 +228,12 @@
                                             <field name="sub_total" readonly="1" force_save="1"/>
                                         </tree>
                                     </field>
-                                    <field name="price_cut_ids" attrs="{'invisible': [('bap_type', '=', 'progress')]}" 
+                                    <field name="price_cut_ids"
+                                        attrs="{'invisible': ['|', ('bap_type', '=', 'progress'), ('bap_type', '=', 'cut over')]}"
                                         mode="tree,kanban" nolabel="1" colspan="2">
                                         <tree editable="top">
                                             <field name="po_id" invisible="1"/>
-                                            <field name="product_id" options="{'no_create': True, 'no_create_edit':True}"  domain="[('name', 'in', ('RETENSI','DP','DENDA'))]"/>
+                                            <field name="product_id"/>
                                             <field name="amount"/>
                                         </tree>
                                     </field>
