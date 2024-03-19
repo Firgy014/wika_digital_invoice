@@ -1091,7 +1091,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
                 if groups_id_next:
                     print(groups_id_next.name)
                     for x in groups_id_next.users:
-                        if level == 'Proyek' and  self.project_id in x.project_idsd:
+                        if level == 'Proyek' and  self.project_id in x.project_ids:
                             first_user = x.id
                         if level == 'Divisi Operasi' and x.branch_id == self.branch_id:
                             first_user = x.id

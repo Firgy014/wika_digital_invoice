@@ -215,8 +215,23 @@ class WikaInheritedAccountMove(models.Model):
 
     def _compute_documents_count(self):
         for record in self:
-            record.documents_count = self.env['documents.document'].search_count(
-                ['|',('purchase_id', '=', record.po_id.id),('bap_id', '=', record.bap_id.id)])
+            domain = [
+                ('folder_id', 'in', ['PO', 'GR/SES', 'BAP', 'Invoicing']),
+                '|', ('bap_id', '=', record.bap_id.id), ('purchase_id', '=', record.po_id.id),
+            ]
+            
+            # invoice_number = record.invoice_number
+
+            # if invoice_number:
+            #     domain.append(('invoice_id.name', '=', invoice_number))
+            
+            po_number = self.po_id.name if self.po_id else None
+
+            if po_number:
+                domain.append(('purchase_id.name', '=', po_number))
+
+            record.documents_count = self.env['documents.document'].search_count(domain)
+
 
     @api.depends('invoice_line_ids')
     def _compute_get_lowest_valuation_class(self):
@@ -237,6 +252,13 @@ class WikaInheritedAccountMove(models.Model):
             '|', ('bap_id', '=', self.bap_id.id), ('purchase_id', '=', self.po_id.id)
         ]
 
+        po_number = self.po_id.name if self.po_id else None
+
+        if po_number:
+            domain.append(('purchase_id.name', '=', po_number))
+            
+        # if self.invoice_number:
+        #     domain.append(('invoice_number', '=', self.invoice_number))
         return {
             'name': _('Documents'),
             'type': 'ir.actions.act_window',
