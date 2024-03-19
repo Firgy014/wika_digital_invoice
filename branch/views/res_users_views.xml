@@ -8,12 +8,14 @@
             <field name="arch" type="xml">
                 <group name="preferences" position="before">
                     <group string='Allowed Branches'>
-                        <field name="branch_id"/>
-                        <field name="department_id"/>
-                        <field name="project_id"/>
-                        <field name="project_ids" widget="many2many_tags "/>
+                        <field name="level"/>
+                        <field name="branch_id"  attrs="{'invisible': [('level','=','Proyek')]}"/>
+                        <field name="department_id" attrs="{'invisible': [('level','!=','Divisi Fungsi')]}"/>
+                        <field name="project_id" invisible="1"/>
+                        <field name="project_ids"  attrs="{'invisible': [('level','!=','Proyek')]}" widget="many2many_tags"/>
+                         <field name="branch_ids"  widget="many2many_tags"  attrs="{'invisible': [('level','=','Proyek')]}"/>
                     </group>
-                    <field name="branch_ids" nolabel="1" widget="many2many_tags "/>
+
 
                 </group>
             </field>

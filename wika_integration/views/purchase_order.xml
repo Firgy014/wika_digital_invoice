@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo><data>
+    <record id="purchase_order_update_po" model="ir.ui.view">
+        <field name="name">purchase.order.update.po</field>
+        <field name="model">purchase.order</field>
+        <field name="inherit_id" ref="wika_purchase.purchase_order_form_wika"/>
+        <field name="arch" type="xml">
+            <xpath expr="//button[@name='assign_todo_first']" position="after">
+               <button name="update_po" type="object" states="po,uploaded,approved" string="Update PO" groups="base.group_no_one"/>
+               <button name="update_gr" type="object" states="po,uploaded,approved" string="Update GR" groups="base.group_no_one"/>
+
+            </xpath>
+        </field>
+    </record>
+</data></odoo>

@@ -184,7 +184,7 @@ class WikaPaymentRequest(models.Model):
                 groups_id = approval_line_id.groups_id
                 if groups_id:
                     for x in groups_id.users:
-                        if level == 'Proyek' and x.project_id == res.project_id:
+                        if level == 'Proyek' and self.project_id in x.project_ids:
                             first_user = x.id
                         if level == 'Divisi Operasi' and x.branch_id == res.branch_id:
                             first_user = x.id

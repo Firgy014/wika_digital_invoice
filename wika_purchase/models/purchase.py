@@ -381,13 +381,12 @@ class PurchaseOrderInherit(models.Model):
                 groups_id = approval_line_id.groups_id
                 if groups_id:
                     for x in groups_id.users:
-                        if level == 'Proyek' and x.project_id == res.project_id:
+                        if level == 'Proyek' and  res.project_id in x.project_ids:
                             first_user = x.id
                         if level == 'Divisi Operasi' and x.branch_id == res.branch_id:
                             first_user = x.id
                         if level == 'Divisi Fungsi' and x.department_id == res.department_id:
                             first_user = x.id
-                print(first_user)
                 #     # Createtodoactivity
                 if first_user:
                     self.env['mail.activity'].sudo().create({
@@ -443,13 +442,8 @@ class PurchaseOrderInherit(models.Model):
             ], limit=1)
             groups_id = approval_line_id.groups_id
             if groups_id:
-                for x in groups_id.users:
-                    if level == 'Proyek' and x.project_id == self.project_id and x.id == self._uid:
-                        cek = True
-                    if level == 'Divisi Operasi' and x.branch_id == self.branch_id and x.id == self._uid:
-                        cek = True
-                    if level == 'Divisi Fungsi' and x.department_id == self.department_id and x.id == self._uid:
-                        cek = True
+                if self.activity_user_id.id == self._uid:
+                    cek = True
 
         if cek == True:
             if approval_id.total_approve == self.step_approve:
@@ -501,19 +495,16 @@ class PurchaseOrderInherit(models.Model):
                     ('sequence', '=', self.step_approve+1),
                     ('approval_id', '=', approval_id.id)
                 ], limit=1)
-                print("groups", groups_line_next)
                 groups_id_next = groups_line_next.groups_id
                 if groups_id_next:
-                    print(groups_id_next.name)
                     for x in groups_id_next.users:
-                        if level == 'Proyek' and x.project_id == self.project_id:
+                        if level == 'Proyek' and  self.project_id in x.project_ids:
                             first_user = x.id
                         if level == 'Divisi Operasi' and x.branch_id == self.branch_id:
                             first_user = x.id
                         if level == 'Divisi Fungsi' and x.department_id == self.department_id:
                             first_user = x.id
 
-                    print(first_user)
                     if first_user:
                         self.step_approve += 1
                         self.env['mail.activity'].sudo().create({
@@ -537,10 +528,7 @@ class PurchaseOrderInherit(models.Model):
                         })
                         if self.activity_ids:
                             for x in self.activity_ids.filtered(lambda x: x.status != 'approved'):
-                                print("masuk")
-                                print(x.user_id)
                                 if x.user_id.id == self._uid:
-                                    print(x.status)
                                     x.status = 'approved'
                                     x.action_done()
                     else:
@@ -568,14 +556,8 @@ class PurchaseOrderInherit(models.Model):
 
             groups_id = approval_line_id.groups_id
             if groups_id:
-                print(groups_id.name)
-                for x in groups_id.users:
-                    if level == 'Proyek' and x.project_id == self.project_id and x.id == self._uid:
-                        cek = True
-                    if level == 'Divisi Operasi' and x.branch_id == self.branch_id and x.id == self._uid:
-                        cek = True
-                    if level == 'Divisi Fungsi' and x.department_id == self.department_id and x.id == self._uid:
-                        cek = True
+                if self.activity_user_id.id == self._uid:
+                    cek = True
 
         if cek == True:
             action = {
@@ -605,7 +587,6 @@ class PurchaseOrderInherit(models.Model):
                     model_id = self.env['ir.model'].search([('model', '=', 'purchase.order')], limit=1)
                     approval_id = self.env['wika.approval.setting'].sudo().search(
                         [('model_id', '=', model_id.id), ('level', '=', level),('transaction_type','=',self.transaction_type)], limit=1)
-                    print('approval_idapproval_idapproval_id')
                     if not approval_id:
                         raise ValidationError(
                             'Approval Setting untuk menu Purchase Orders tidak ditemukan. Silakan hubungi Administrator!')
@@ -613,24 +594,14 @@ class PurchaseOrderInherit(models.Model):
                         ('sequence', '=', 1),
                         ('approval_id', '=', approval_id.id)
                     ], limit=1)
-                    print(approval_line_id)
                     groups_id = approval_line_id.groups_id
                     if groups_id:
-                        print(groups_id.name)
-                        for x in groups_id.users:
-                            if level == 'Proyek' and x.project_id == self.project_id and x.id== self._uid:
-                                cek = True
-                            if level == 'Divisi Operasi' and x.branch_id == self.branch_id and x.id== self._uid:
-                                cek = True
-                            if level == 'Divisi Fungsi' and x.department_id == self.department_id and x.id== self._uid:
-                                cek = True
+                        if self.activity_user_id.id == self._uid:
+                            cek = True
             if cek == True:
                 if self.activity_ids:
                     for x in self.activity_ids.filtered(lambda x: x.status != 'approved'):
-                        print("masuk")
-                        print(x.user_id)
                         if x.user_id.id == self._uid:
-                            print(x.status)
                             x.status = 'approved'
                             x.action_done()
                     self.state = 'uploaded'
@@ -648,12 +619,10 @@ class PurchaseOrderInherit(models.Model):
                         ('sequence', '=', self.step_approve),
                         ('approval_id', '=', approval_id.id)
                     ], limit=1)
-                    print("groups", groups_line)
                     groups_id_next = groups_line.groups_id
                     if groups_id_next:
-                        print (groups_id_next.name)
                         for x in groups_id_next.users:
-                            if level == 'Proyek' and x.project_id == self.project_id:
+                            if level == 'Proyek' and self.project_id in x.project_ids:
                                 first_user = x.id
                             if level == 'Divisi Operasi' and x.branch_id == self.branch_id:
                                 first_user = x.id
