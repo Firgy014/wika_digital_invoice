@@ -158,19 +158,23 @@ class WikaInheritedAccountMove(models.Model):
     amount_total_payment = fields.Float(string='Total Invoice', compute='_compute_amount_total_payment', store=True)
     total_line = fields.Float(string='Total Line', compute='_compute_total_line')
     is_approval_checked = fields.Boolean(string="Approval Checked", compute='_compute_is_approval_checked')
-    is_mp_approved = fields.Boolean(string='Approved by MP', default=False, compute='_compute_mp_approved', store=True)
+    is_mp_approved = fields.Boolean(string='Approved by MP', default=False, store=True)
     
-    @api.depends('history_approval_ids.user_id')
-    def _compute_mp_approved(self):
-        approval_setting_model = self.env['wika.approval.setting'].sudo()
-        invoice_model_id = self.env['ir.model'].sudo().search([('model', '=', 'account.move')], limit=1) 
+    # @api.depends('history_approval_ids')
+    # def _compute_mp_approved(self):
+    #     errorin
+    #     print("HISTAPPROVIDS", self.history_approval_ids)
+    #     print("HISTAPPROVIDS USER", self.history_approval_ids.user_id)
+    #     tesduls
+    #     approval_setting_model = self.env['wika.approval.setting'].sudo()
+    #     invoice_model_id = self.env['ir.model'].sudo().search([('model', '=', 'account.move')], limit=1) 
 
-        invoice_approval_setting_id = approval_setting_model.search([('model_id', '=', invoice_model_id.id)])
-        if invoice_approval_setting_id:
-            for set in invoice_approval_setting_id.setting_line_ids:
-                if set.groups_id.name == 'MP':
-                    if set.check_approval == True:
-                        self.is_mp_approved = True
+    #     invoice_approval_setting_id = approval_setting_model.search([('model_id', '=', invoice_model_id.id)])
+    #     if invoice_approval_setting_id:
+    #         for set in invoice_approval_setting_id.setting_line_ids:
+    #             if set.groups_id.name == 'MP':
+    #                 if set.check_approval == True:
+    #                     self.is_mp_approved = True
 
     @api.depends('history_approval_ids.is_show_wizard', 'history_approval_ids.user_id')
     def _compute_is_approval_checked(self):
@@ -563,6 +567,7 @@ class WikaInheritedAccountMove(models.Model):
         cek = False
         model_id = self.env['ir.model'].search([('model', '=', 'account.move')], limit=1)
         level = self.level
+        is_mp = False
         if level:
             keterangan = ''
             if level == 'Proyek':
@@ -628,6 +633,7 @@ class WikaInheritedAccountMove(models.Model):
                         if x.project_id == self.project_id or x.branch_id == self.branch_id or x.branch_id.parent_id.code=='Pusat':
                             if x.id == self._uid:
                                 cek = True
+                                is_mp = True
                     if level == 'Divisi Operasi' and x.branch_id == self.branch_id and x.id == self._uid:
                         cek = True
                     if level == 'Divisi Fungsi' and x.department_id == self.department_id and x.id == self._uid:
@@ -636,7 +642,9 @@ class WikaInheritedAccountMove(models.Model):
         if cek == True:
             if approval_id.total_approve == self.step_approve:
                 self.state = 'approved'
-                self.approval_stage = 'Pusat'
+                self.approval_stage = approval_line_id.level_role
+                if is_mp:
+                    self.is_mp_approved = True
 
                 folder_id = self.env['documents.folder'].sudo().search([('name', '=', 'Invoicing')], limit=1)
                 # print("TESTTTTTTTTTTTTTTTTTTTTT", folder_id)
@@ -712,6 +720,7 @@ class WikaInheritedAccountMove(models.Model):
                 ], limit=1)
                 print("groups", groups_line_next)
                 groups_id_next = groups_line_next.groups_id
+                print(groups_id_next)
                 if groups_id_next:
                     print(groups_id_next.name)
                     for x in groups_id_next.users:

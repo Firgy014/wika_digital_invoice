@@ -4,3 +4,4 @@ access_wika_integration_line,access_wika_integration_line,model_wika_integration
 access_wika_get_po,access_wika_get_po,model_wika_get_po,,1,1,1,1
 access_wika_get_po_all,access_wika_get_po_all,model_wika_get_po_all,,1,1,1,1
 access_wika_sap_integration,SAP Integration,model_wika_sap_integration,,1,1,1,1
+access_sap_integration_configure,SAP Integration Configuration,model_sap_integration_configure,,1,1,1,1
