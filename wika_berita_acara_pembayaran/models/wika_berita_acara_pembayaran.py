@@ -380,16 +380,28 @@ class WikaBeritaAcaraPembayaran(models.Model):
             if record.bap_date:
                 tahun = record.bap_date.year
                 tanggal = '%s-01-01' % tahun
-                query = """
-                    SELECT COALESCE(SUM(sub_total_bap), 0) AS sub_total_bap,
-                        COALESCE(SUM(qty_bap), 0) AS qty_bap,
-                        COALESCE(SUM(potongan_uang_muka_dp), 0) AS potongan_uang_muka_dp,
-                        COALESCE(SUM(potongan_retensi), 0) AS potongan_retensi,
-                        COALESCE(SUM(potongan_uang_muka_qty_dp), 0) AS potongan_uang_muka_qty_dp,
-                        COALESCE(SUM(potongan_retensi_qty), 0) AS potongan_retensi_qty
-                    FROM outstanding_bap
-                    WHERE purchase_id = %s AND date_bap >= '%s' AND bap_id < %s AND bap_type = '%s'
-                """ % (record.po_id.id, tanggal, record.id, record.bap_type)
+                if record.bap_type=='progress':
+                    query = """
+                        SELECT COALESCE(SUM(sub_total_bap), 0) AS sub_total_bap,
+                            COALESCE(SUM(qty_bap), 0) AS qty_bap,
+                            COALESCE(SUM(potongan_uang_muka_dp), 0) AS potongan_uang_muka_dp,
+                            COALESCE(SUM(potongan_retensi), 0) AS potongan_retensi,
+                            COALESCE(SUM(potongan_uang_muka_qty_dp), 0) AS potongan_uang_muka_qty_dp,
+                            COALESCE(SUM(potongan_retensi_qty), 0) AS potongan_retensi_qty
+                        FROM outstanding_bap
+                        WHERE purchase_id = %s AND date_bap >= '%s' AND bap_id < %s AND bap_type in ('%s','cut over')
+                    """ % (record.po_id.id, tanggal, record.id, record.bap_type)
+                else:
+                    query = """
+                        SELECT COALESCE(SUM(sub_total_bap), 0) AS sub_total_bap,
+                            COALESCE(SUM(qty_bap), 0) AS qty_bap,
+                            COALESCE(SUM(potongan_uang_muka_dp), 0) AS potongan_uang_muka_dp,
+                            COALESCE(SUM(potongan_retensi), 0) AS potongan_retensi,
+                            COALESCE(SUM(potongan_uang_muka_qty_dp), 0) AS potongan_uang_muka_qty_dp,
+                            COALESCE(SUM(potongan_retensi_qty), 0) AS potongan_retensi_qty
+                        FROM outstanding_bap
+                        WHERE purchase_id = %s AND date_bap >= '%s' AND bap_id < %s AND bap_type = '%s' 
+                    """ % (record.po_id.id, tanggal, record.id, record.bap_type)
                 self.env.cr.execute(query)
                 result = self.env.cr.fetchone()
                 if result:
@@ -1006,8 +1018,9 @@ class WikaBeritaAcaraPembayaran(models.Model):
 
     def action_approve(self):
         for record in self:
-            if any(x.picking_id.state!='approved' for x in record.bap_ids):
-                raise ValidationError('Document GR/SES belum Lengkap silahkan lengkapi terlebih dahulu')
+            if record.bap_type!='cut_over':
+                if any(x.picking_id.state!='approved' for x in record.bap_ids):
+                    raise ValidationError('Document GR/SES belum Lengkap silahkan lengkapi terlebih dahulu')
 
         documents_model = self.env['documents.document'].sudo()
         cek = False
@@ -1091,7 +1104,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
                 if groups_id_next:
                     print(groups_id_next.name)
                     for x in groups_id_next.users:
-                        if level == 'Proyek' and  self.project_id in x.project_idsd:
+                        if level == 'Proyek' and  self.project_id in x.project_ids:
                             first_user = x.id
                         if level == 'Divisi Operasi' and x.branch_id == self.branch_id:
                             first_user = x.id
