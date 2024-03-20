@@ -27,6 +27,8 @@
         'security/ir.model.access.csv',
         'data/data_url.xml',
         'data/scheduler.xml',
+        'data/scheduler_generate_data.xml',
+        'data/sap_configuration_data.xml',
         'views/sap_integration_views.xml',
         'views/configure_sap_integration_views.xml',
         'views/wika_integration_views.xml',

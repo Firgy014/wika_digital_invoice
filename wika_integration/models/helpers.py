@@ -1,3 +1,12 @@
+import logging
+_logger = logging.getLogger(__name__)
+
+try:
+    import paramiko
+except ImportError:
+    raise ImportError(
+        'This module needs paramiko to automatically write backups to the FTP through SFTP. Please install paramiko on your system. (sudo pip3 install paramiko)')
+
 def _get_computed_query():
     return """
 SELECT
