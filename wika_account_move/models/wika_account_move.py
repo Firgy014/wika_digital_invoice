@@ -320,25 +320,25 @@ class WikaInheritedAccountMove(models.Model):
     def create(self, vals_list):
         record = super(WikaInheritedAccountMove, self).create(vals_list)
         record._check_invoice_totals()
-        #record.assign_todo_first()
+        record.assign_todo_first()
 
-        # if isinstance(record, bool):
-        #     return record
-        # if len(record) != 1:
-        #     raise ValidationError("Hanya satu record yang diharapkan diperbarui!")
+        if isinstance(record, bool):
+            return record
+        if len(record) != 1:
+            raise ValidationError("Hanya satu record yang diharapkan diperbarui!")
 
         
-        # document date
-        # if record.invoice_date != False and record.invoice_date < record.bap_id.bap_date:
-        #     raise ValidationError("Document Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
-        # else:
-        #     pass
+        #document date
+        if record.invoice_date != False and record.invoice_date < record.bap_id.bap_date:
+            raise ValidationError("Document Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
+        else:
+            pass
 
-        # posting date
-        # if record.date != False and record.date < record.bap_id.bap_date:
-        #     raise ValidationError("Posting Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
-        # else:
-        #     pass
+        #posting date
+        if record.date != False and record.date < record.bap_id.bap_date:
+            raise ValidationError("Posting Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
+        else:
+            pass
 
         return record
 
