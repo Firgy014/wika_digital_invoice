@@ -5,7 +5,7 @@
         <menuitem
             action="action_wika_account_move"
             id="sub_menu_wika_account_move"
-            name="Proses Invoice"
+            name="Invoice"
             parent="wika_berita_acara_pembayaran.wika_berita_acara_pembayaran_menu_root"
             sequence="15"/>
        <menuitem
