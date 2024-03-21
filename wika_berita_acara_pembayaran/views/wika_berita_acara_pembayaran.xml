@@ -89,13 +89,15 @@
             <field name="model">wika.berita.acara.pembayaran</field>
             <field name="arch" type="xml">
                 <tree string="Berita Acara Pembayaran List">
+                    <field name="name"/>
+                    <field name="bap_type"/>
                     <field name="branch_id"/>
                     <field name="department_id"/>
                     <field name="project_id"/>
-                    <field name="name"/>
                     <field name="partner_id"/>
                     <field name="po_id"/>
                     <field name="state"/>
+                     <field name="total_pembayaran"/>
                     <field name="is_fully_invoiced" groups="base.group_no_one"/>
                 </tree>
             </field>
