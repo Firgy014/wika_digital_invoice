@@ -217,18 +217,16 @@ class WikaInheritedAccountMove(models.Model):
         for record in self:
             domain = [
                 ('folder_id', 'in', ['PO', 'GR/SES', 'BAP', 'Invoicing']),
-                '|', ('bap_id', '=', record.bap_id.id), ('purchase_id', '=', record.po_id.id),
+                '|', ('bap_id', '=', self.bap_id.id), ('bap_id', '=', False), ('purchase_id', '=', self.po_id.id)
             ]
-            
-            # invoice_number = record.invoice_number
-
-            # if invoice_number:
-            #     domain.append(('invoice_id.name', '=', invoice_number))
             
             po_number = self.po_id.name if self.po_id else None
 
             if po_number:
                 domain.append(('purchase_id.name', '=', po_number))
+            
+            # if record.bap_id:
+            #     domain.append(('bap_id', '=', record.bap_id.id))
 
             record.documents_count = self.env['documents.document'].search_count(domain)
 
@@ -249,7 +247,7 @@ class WikaInheritedAccountMove(models.Model):
 
         domain = [
             ('folder_id', 'in', ['PO', 'GR/SES', 'BAP', 'Invoicing']),
-            '|', ('bap_id', '=', self.bap_id.id), ('purchase_id', '=', self.po_id.id)
+            '|', ('bap_id', '=', self.bap_id.id), ('bap_id', '=', False), ('purchase_id', '=', self.po_id.id)
         ]
 
         po_number = self.po_id.name if self.po_id else None
@@ -257,8 +255,6 @@ class WikaInheritedAccountMove(models.Model):
         if po_number:
             domain.append(('purchase_id.name', '=', po_number))
             
-        # if self.invoice_number:
-        #     domain.append(('invoice_number', '=', self.invoice_number))
         return {
             'name': _('Documents'),
             'type': 'ir.actions.act_window',
