@@ -142,13 +142,14 @@ class WikaBeritaAcaraPembayaran(models.Model):
     def _change_button(self):
         for record in self:
             if record.po_id and record.bap_type == 'cut over' :
-                account_move = self.env['account.move.line'].search([('purchase_id','=',record.po_id.id), ('cut_off','=',True)])
+                account_move = self.env['account.move.line'].search([('purchase_id','=',record.po_id.id), ('cut_off','=',True),('display_type','=','product')])
                 if any(not x.stock_move_id for x in account_move):
                     warning = {
                         'title': 'Warning!',
                         'message': 'Silahkan Mapping Invoice Cut Over terlebih dahulu',
                     }
                     return {'warning': warning}
+
 
     @api.constrains('po_id', 'bap_type')
     def _check_bap_type(self):
@@ -162,6 +163,14 @@ class WikaBeritaAcaraPembayaran(models.Model):
                         pass
                     else:
                         raise ValidationError(_("Nomor PO tersebut sudah dicatat sebagai cut off di invoice terkait. Silahkan pilih jenis BAP 'Cut Over'."))
+            # if record.po_id and record.bap_type == 'cut over':
+            #     account_moves = self.env['account.move.line'].search([
+            #         ('purchase_id', '=', self.po_id.id),
+            #         ('cut_off', '=', True),
+            #         ('display_type', '=', 'product')
+            #     ])
+            #     if any(not x.stock_move_id for x in account_moves):
+            #         raise ValidationError(_("Anda belum melakukan mapping GR terhadap Invoice Cut Over!"))
 
 
     @api.depends('bap_ids')
@@ -384,10 +393,10 @@ class WikaBeritaAcaraPembayaran(models.Model):
                     query = """
                         SELECT COALESCE(SUM(sub_total_bap), 0) AS sub_total_bap,
                             COALESCE(SUM(qty_bap), 0) AS qty_bap,
-                            COALESCE(SUM(potongan_uang_muka_dp), 0) AS potongan_uang_muka_dp,
-                            COALESCE(SUM(potongan_retensi), 0) AS potongan_retensi,
-                            COALESCE(SUM(potongan_uang_muka_qty_dp), 0) AS potongan_uang_muka_qty_dp,
-                            COALESCE(SUM(potongan_retensi_qty), 0) AS potongan_retensi_qty
+                            COALESCE(AVG(potongan_uang_muka_dp), 0) AS potongan_uang_muka_dp,
+                            COALESCE(AVG(potongan_retensi), 0) AS potongan_retensi,
+                            COALESCE(AVG(potongan_uang_muka_qty_dp), 0) AS potongan_uang_muka_qty_dp,
+                            COALESCE(AVG(potongan_retensi_qty), 0) AS potongan_retensi_qty
                         FROM outstanding_bap
                         WHERE purchase_id = %s AND date_bap >= '%s' AND bap_id < %s AND bap_type in ('%s','cut over')
                     """ % (record.po_id.id, tanggal, record.id, record.bap_type)
@@ -533,6 +542,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
         res = super(WikaBeritaAcaraPembayaran, self).create(vals)
         res.name= self.env['ir.sequence'].next_by_code('wika.berita.acara.pembayaran')
         res.assign_todo_first()
+        res._compute_cut_over()
         return res
 
 
@@ -547,7 +557,28 @@ class WikaBeritaAcaraPembayaran(models.Model):
                     x.check_biro = False
             else:
                 x.check_biro = False
-                
+
+    def _compute_cut_over(self):
+        for record in self:
+            if record.po_id and record.bap_type == 'cut over':
+                #self.bap_ids = [(2, bap_id.id, 0) for bap_id in self.bap_ids]
+                account_moves = self.env['account.move.line'].search([
+                    ('purchase_id', '=', record.po_id.id),
+                    ('cut_off', '=', True),
+                    ('display_type','=','product')
+                ])
+                for x in record.bap_ids:
+                    for data in account_moves:
+                        if x.invoice_line_id.id==data.id:
+                            print ("masuk ga")
+                            if not x.picking_id:
+                                x.write({'stock_move_id': data.stock_move_id.id,
+                                         'picking_id': data.stock_move_id.picking_id.id})
+                            else:
+                                x.write({'stock_move_id': data.stock_move_id.id})
+
+
+
     @api.onchange('po_id','bap_type')
     def onchange_po_id(self):
 
@@ -566,6 +597,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
                     for line in move.invoice_line_ids:
                         bap_lines.append((0, 0, {
                             'picking_id': line.picking_id.id,
+                            'invoice_line_id': line.id,
                             'stock_move_id': line.stock_move_id.id,
                             'purchase_line_id': line.purchase_line_id.id or False,
                             'product_id': line.product_id.id,
@@ -940,8 +972,12 @@ class WikaBeritaAcaraPembayaran(models.Model):
         for record in self:
             if any(not line.document for line in record.document_ids):
                 raise ValidationError('Document belum di unggah, mohon unggah file terlebih dahulu!')
+            if record.bap_type =='cut over' and any(not line.stock_move_id for line in record.bap_ids):
+                raise ValidationError('Data Invoice cut over belum di mapping!')
 
-        for record in self:
+            if any(line.state == 'rejected' for line in record.document_ids):
+                raise ValidationError('Document belum di ubah setelah reject, silahkan cek terlebih dahulu!')
+
             if any(line.state =='rejected' for line in record.document_ids):
                 raise ValidationError('Document belum di ubah setelah reject, silahkan cek terlebih dahulu!')
 
@@ -1155,7 +1191,6 @@ class WikaBeritaAcaraPembayaran(models.Model):
                 [('purchase_id', '=', record.po_id.id),('cut_off','=',True)])
 
     def get_invoice_item(self):
-        self.ensure_one()
         view_tree_id = self.env.ref("wika_account_move.view_wika_account_move_line_tree", raise_if_not_found=False)
 
         return {
@@ -1165,7 +1200,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
             'res_model': 'account.move.line',
             'view_ids': [(view_tree_id, 'tree')],
             'res_id': self.id,
-            'domain': [('purchase_id', '=', self.po_id.id),('cut_off','=',True)],
+            'domain': [('purchase_id', '=', self.po_id.id),('cut_off','=',True),('display_type','=','product')],
             'context': {'default_purchase_id': self.po_id.id},
         }
 
@@ -1215,6 +1250,9 @@ class WikaBeritaAcaraPembayaran(models.Model):
         elif self.bap_type == 'retensi':
             return self.env.ref('wika_berita_acara_pembayaran.report_wika_berita_acara_pembayaran_retensi_action').report_action(self)
         elif self.bap_type == 'cut over':
+            self._compute_cut_over()
+            if self.bap_type =='cut over' and any(not line.stock_move_id for line in self.bap_ids):
+                raise ValidationError('Data Invoice cut over belum di mapping!')
             return self.env.ref('wika_berita_acara_pembayaran.report_wika_berita_acara_pembayaran_cut_over_action').report_action(self)
         else:
             return super(WikaBeritaAcaraPembayaran, self).action_print_bap()
@@ -1224,16 +1262,9 @@ class WikaBeritaAcaraPembayaran(models.Model):
     #     if self.end_date and self.end_date < fields.Date.today():
     #         raise UserError(_("Tanggal akhir kontrak PO sudah kadaluarsa. Silakan perbarui kontrak segera!"))
     #
-    # @api.model
-    # def create(self, values):
-    #     record = super(WikaBeritaAcaraPembayaran, self).create(values)
-    #     record._check_contract_expiry_on_save()
-    #     return record
+
     #
-    # def write(self, values):
-    #     super(WikaBeritaAcaraPembayaran, self).write(values)
-    #     self._check_contract_expiry_on_save()
-    #     return True
+
 
 class WikaBeritaAcaraPembayaranLine(models.Model):
     _name = 'wika.berita.acara.pembayaran.line'
@@ -1241,7 +1272,7 @@ class WikaBeritaAcaraPembayaranLine(models.Model):
     bap_id = fields.Many2one('wika.berita.acara.pembayaran', string='')
     picking_id = fields.Many2one('stock.picking', string='NO GR/SES')
     stock_move_id = fields.Many2one('stock.move', string='Stock Move')
-
+    invoice_line_id = fields.Many2one('account.move.line', string='Invoice Item')
     purchase_line_id= fields.Many2one('purchase.order.line', string='Purchase Line')
     unit_price_po = fields.Monetary(string='Price Unit PO')
     product_id = fields.Many2one('product.product', string='Product')
