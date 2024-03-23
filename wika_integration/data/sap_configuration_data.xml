@@ -12,7 +12,7 @@
             <field name="sftp_host">10.40.0.109</field>
             <field name="sftp_port">22</field>
             <field name="sftp_user">wika-fms</field>
-            <field name="sftp_password">Masukaja@2023!</field>
+            <field name="sftp_password"></field>
 
             <field name="active" eval="True"/>
         </record>

@@ -7,7 +7,7 @@ class WikaAccountMoveLine(models.Model):
     department_id = fields.Many2one('res.branch', string='Department',related='move_id.department_id')
     project_id = fields.Many2one('project.project', string='Project',related='move_id.project_id')
     bap_line_id = fields.Many2one('wika.berita.acara.pembayaran.line', string='BAP Line Id', widget='many2one')
-    purchase_id = fields.Many2one('purchase.order', string='NO GR/SES',related='purchase_line_id.order_id')
+    purchase_id = fields.Many2one('purchase.order', string='NO PO',related='purchase_line_id.order_id')
     picking_id = fields.Many2one('stock.picking', string='NO GR/SES')
     stock_move_id = fields.Many2one('stock.move', string='Item GR/SES')
     amount_sap = fields.Float(string='Amount SAP')

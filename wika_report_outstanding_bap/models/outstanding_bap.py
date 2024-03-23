@@ -35,6 +35,7 @@ class WikaOutstandingBap(models.Model):
         ('progress', 'Progress'),
         ('uang muka', 'Uang Muka'),
         ('retensi', 'Retensi'),
+        ('cut over', 'Cut Over'),
         ], string='Jenis BAP', default='progress')
     # potongan_retensi = fields.Float(string='Total Retensi')
     # # non outstanding

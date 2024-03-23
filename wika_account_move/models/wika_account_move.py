@@ -312,7 +312,7 @@ class WikaInheritedAccountMove(models.Model):
     def create(self, vals_list):
         record = super(WikaInheritedAccountMove, self).create(vals_list)
         record._check_invoice_totals()
-        #record.assign_todo_first()
+        record.assign_todo_first()
 
         # if isinstance(record, bool):
         #     return record
@@ -320,13 +320,13 @@ class WikaInheritedAccountMove(models.Model):
         #     raise ValidationError("Hanya satu record yang diharapkan diperbarui!")
 
         
-        # document date
+        #document date
         # if record.invoice_date != False and record.invoice_date < record.bap_id.bap_date:
         #     raise ValidationError("Document Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
         # else:
         #     pass
 
-        # posting date
+        #posting date
         # if record.date != False and record.date < record.bap_id.bap_date:
         #     raise ValidationError("Posting Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
         # else:
@@ -391,7 +391,6 @@ class WikaInheritedAccountMove(models.Model):
             self.total_pph = self.bap_id.total_pph
 
             for bap_line in self.bap_id.bap_ids:
-                print (bap_line.qty)
                 invoice_lines.append((0, 0, {
                     'display_type':'product',
                     'product_id': bap_line.product_id.id,
@@ -421,54 +420,54 @@ class WikaInheritedAccountMove(models.Model):
         model_model = self.env['ir.model'].sudo()
         model_id = model_model.search([('model', '=', 'account.move')], limit=1)
         for res in self:
+            if res.cut_off!=True:
+                level=res.level
+                first_user = False
+                if level:
+                    approval_id = self.env['wika.approval.setting'].sudo().search(
+                        [ ('model_id', '=', model_id.id),('transaction_type', '!=', 'pr'),('level', '=', level)], limit=1)
+                    approval_line_id = self.env['wika.approval.setting.line'].search([
+                        ('sequence', '=', 1),
+                        ('approval_id', '=', approval_id.id)
+                    ], limit=1)
+                    groups_id = approval_line_id.groups_id
+                    if groups_id:
+                        for x in groups_id.users:
+                            if level == 'Proyek' and  res.project_id in x.project_ids:
+                                first_user = x.id
+                            if level == 'Divisi Operasi' and x.branch_id == res.branch_id:
+                                first_user = x.id
+                            if level == 'Divisi Fungsi' and x.department_id == res.department_id:
+                                first_user = x.id
+                    if first_user:
+                        self.env['mail.activity'].sudo().create({
+                            'activity_type_id': 4,
+                            'res_model_id': model_id.id,
+                            'res_id': res.id,
+                            'user_id': first_user,
+                            'nomor_po': res.po_id.name,
+                            'date_deadline': fields.Date.today() + timedelta(days=2),
+                            'state': 'planned',
+                            'summary': f"Need Upload Document  {model_id.name}"
+                        })
+                        res.approval_stage=level
+                model_model = self.env['ir.model'].sudo()
+                document_setting_model = self.env['wika.document.setting'].sudo()
+                model_id = model_model.search([('model', '=', 'account.move')], limit=1)
+                doc_setting_id = document_setting_model.search([('model_id', '=', model_id.id)])
 
-            level=res.level
-            first_user = False
-            if level:
-                approval_id = self.env['wika.approval.setting'].sudo().search(
-                    [ ('model_id', '=', model_id.id),('transaction_type', '!=', 'pr'),('level', '=', level)], limit=1)
-                approval_line_id = self.env['wika.approval.setting.line'].search([
-                    ('sequence', '=', 1),
-                    ('approval_id', '=', approval_id.id)
-                ], limit=1)
-                groups_id = approval_line_id.groups_id
-                if groups_id:
-                    for x in groups_id.users:
-                        if level == 'Proyek' and  res.project_id in x.project_ids:
-                            first_user = x.id
-                        if level == 'Divisi Operasi' and x.branch_id == res.branch_id:
-                            first_user = x.id
-                        if level == 'Divisi Fungsi' and x.department_id == res.department_id:
-                            first_user = x.id
-                if first_user:
-                    self.env['mail.activity'].sudo().create({
-                        'activity_type_id': 4,
-                        'res_model_id': model_id.id,
-                        'res_id': res.id,
-                        'user_id': first_user,
-                        'nomor_po': res.po_id.name,
-                        'date_deadline': fields.Date.today() + timedelta(days=2),
-                        'state': 'planned',
-                        'summary': f"Need Upload Document  {model_id.name}"
-                    })
-                    res.approval_stage=level
-            model_model = self.env['ir.model'].sudo()
-            document_setting_model = self.env['wika.document.setting'].sudo()
-            model_id = model_model.search([('model', '=', 'account.move')], limit=1)
-            doc_setting_id = document_setting_model.search([('model_id', '=', model_id.id)])
-
-            document_list = []
-            doc_setting_id = document_setting_model.search([('model_id', '=', model_id.id)])
-            if doc_setting_id:
-                for document_line in doc_setting_id:
-                    document_list.append((0, 0, {
-                        'invoice_id': self.id,
-                        'document_id': document_line.id,
-                        'state': 'waiting'
-                    }))
-                self.document_ids = document_list
-            else:
-                raise AccessError("Data dokumen tidak ada!")
+                document_list = []
+                doc_setting_id = document_setting_model.search([('model_id', '=', model_id.id)])
+                if doc_setting_id:
+                    for document_line in doc_setting_id:
+                        document_list.append((0, 0, {
+                            'invoice_id': self.id,
+                            'document_id': document_line.id,
+                            'state': 'waiting'
+                        }))
+                    self.document_ids = document_list
+                else:
+                    raise AccessError("Data dokumen tidak ada!")
 
     def action_submit(self):
         for record in self:

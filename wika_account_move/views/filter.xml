@@ -44,6 +44,32 @@
             </field>
         </record>
 
+       <record id="view_wika_account_move_line_filter" model="ir.ui.view">
+            <field name="name">model.name.view.filter</field>
+            <field name="model">account.move.line</field>
+            <field name="arch" type="xml">
+                <search string="Search Invoice">
+                    <field name="move_id" string="Invoice"/>
+                    <field name="partner_id" />
+                    <field name="purchase_id" />
+                    <field name="picking_id" />
+                    <field name="project_id" />
+                    <field name="branch_id" />
+                   <separator/>
+                    <group expand="0" string="Group By">
+                        <filter string="Divisi" name="branch_id" domain="[]" context="{'group_by': 'branch_id'}"/>
+                        <filter string="Department" name="department_id" domain="[]" context="{'group_by': 'department_id'}"/>
+                        <filter string="Project" name="project_id" domain="[]" context="{'group_by': 'project_id'}"/>
+
+                        <separator/>
+                         <filter string="GR/SES" name="picking_id" domain="[]" context="{'group_by': 'picking_id'}"/>
+                         <filter string="Vendor" name="partner_id" domain="[]" context="{'group_by': 'partner_id'}"/>
+
+                    </group>
+               </search>
+            </field>
+        </record>
+
     </data>
     
 
