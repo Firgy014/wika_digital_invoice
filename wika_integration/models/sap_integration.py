@@ -69,10 +69,10 @@ class SAPIntegration(models.Model):
         self._cr.execute(query)
         vals = self.env.cr.fetchall()
 
-        unique_move_ids = set(val[0] for val in vals)
-        for move_id in unique_move_ids:
-            move = self.env['account.move'].browse(move_id)
-            move.write({'is_generated': True})
+        # unique_move_ids = set(val[0] for val in vals)
+        # for move_id in unique_move_ids:
+        #     move = self.env['account.move'].browse(move_id)
+        #     move.write({'is_generated': True})
 
         buffer = StringIO()
         writer = csv.writer(buffer, delimiter='|')

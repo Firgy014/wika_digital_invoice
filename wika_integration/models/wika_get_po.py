@@ -105,6 +105,7 @@ class wika_get_po(models.Model):
                                     ('default_code', '=', hasil['prd_no'])], limit=1)
 
                                 qty = float(data['po_qty'])
+                                print("qty awalfffffffffffffff-------------------------------",qty)
                                 if txt_data['po_jenis'] == 'JASA':
                                     price = float(data['po_price']) / qty
                                 else:
