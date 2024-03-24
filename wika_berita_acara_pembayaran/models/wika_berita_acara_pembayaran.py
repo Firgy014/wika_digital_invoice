@@ -4,7 +4,7 @@ from odoo.exceptions import UserError, ValidationError, Warning, AccessError
 import pytz
 import requests
 from num2words import num2words
-import base64
+import math
 import json
 from urllib.request import Request, urlopen
 import logging, json
@@ -78,8 +78,9 @@ class WikaBeritaAcaraPembayaran(models.Model):
     total_qty_gr = fields.Integer(string='Total Quantity', compute='_compute_total_qty_gr')
     total_unit_price_po = fields.Float(string='Total Unit Price PO', compute='_compute_total_unit_price_po')
     total_current_value = fields.Float(string='Nilai saat ini', compute='_compute_total_current_value') #buat sum nilai saat ini
-    pph_ids = fields.Many2many('account.tax', string='PPH')
-    total_pph = fields.Monetary(string='Total PPH', compute='compute_total_pph')
+    pph_ids = fields.Many2many('account.tax', string='PPh')
+    amount_pph =fields.Float(string="Amount PPh",copy=False)
+    total_pph = fields.Monetary(string='Total PPh', compute='compute_total_pph')
     level = fields.Selection([
         ('Proyek', 'Proyek'),
         ('Divisi Operasi', 'Divisi Operasi'),
@@ -658,11 +659,11 @@ class WikaBeritaAcaraPembayaran(models.Model):
         for record in self:
             if record.bap_type == 'uang muka':
                 total_amount_tax = record.po_id.amount_tax
-                record.total_tax = total_amount_tax
+                record.total_tax = math.floor(total_amount_tax)
                 # print("TESSSSSSBORRRRRRR", record.total_tax)
             elif record.bap_type == 'retensi':
                 total_amount_tax = record.po_id.amount_tax
-                record.total_tax = total_amount_tax
+                record.total_tax = math.floor(total_amount_tax)
                 # print("TESSSSSSBORRRRRRRETENSIII", record.total_tax)
             else:
                 total_amount = record.total_amount or 0.0
@@ -670,13 +671,9 @@ class WikaBeritaAcaraPembayaran(models.Model):
                 retensi_total = record.retensi_total or 0.0
                 tax_percentage = sum(record.bap_ids.tax_ids.mapped('amount')) / 100.0
                 total_tax = (total_amount - dp_total - retensi_total) * tax_percentage
-                record.total_tax = total_tax
+                record.total_tax = math.floor(total_tax)
     
-    @api.depends('bap_ids.price_unit_po', 'bap_ids.qty')
-    def compute_current_value(self):
-        for record in self:
-            total_current_value = sum(record.bap_ids.mapped('tax_amount'))
-            record.total_tax = total_tax_value
+
 
     @api.depends('grand_total', 'total_tax')
     def compute_grand_total(self):
@@ -685,13 +682,13 @@ class WikaBeritaAcaraPembayaran(models.Model):
 
     # compute total pph
     # compute total pph revisi
-    @api.depends('total_amount', 'pph_ids.amount')
+    @api.depends('total_amount', 'pph_ids.amount','amount_pph')
     def compute_total_pph(self):
         for record in self:
             total_pph = 0.0
             for pph in record.pph_ids:
                 total_pph += (record.total_amount * pph.amount) / 100
-            record.total_pph = total_pph
+            record.total_pph = math.floor(total_pph+record.amount_pph)
 
 
     def action_reject(self):

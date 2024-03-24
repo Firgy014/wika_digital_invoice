@@ -254,6 +254,7 @@
                                         <field name="retensi_qty_total" groups="base.group_no_one"/>
                                         <field name="total_amount"/>
                                         <field name="total_tax" string="Total PPN"/>
+                                        <field name="amount_pph"  />
                                         <field name="total_pph"/>
                                         <field name="total_pembayaran"/>
 
