@@ -1,11 +1,12 @@
 from odoo import fields, models, api, _
 from odoo.exceptions import UserError, ValidationError, Warning, AccessError
 from datetime import datetime,timedelta
-
+import math
+from odoo.tools.float_utils import float_compare
 class WikaInheritedAccountMove(models.Model):
     _inherit = 'account.move'
     
-    bap_id = fields.Many2one('wika.berita.acara.pembayaran', string='BAP',domain=[('state','=','approved')])
+    bap_id = fields.Many2one('wika.berita.acara.pembayaran', string='BAP')
     branch_id = fields.Many2one('res.branch', string='Divisi', required=True)
     department_id = fields.Many2one('res.branch', string='Department')
     project_id = fields.Many2one('project.project', string='Project')
@@ -87,11 +88,11 @@ class WikaInheritedAccountMove(models.Model):
         for record in self:
             total_pph = 0.0
             if record.pph_amount>0:
-                record.total_pph = record.pph_amount
+                record.total_pph = math.floor(record.pph_amount)
             else:
                 for pph in record.pph_ids:
                     total_pph += (record.total_line* pph.amount) / 100
-                record.total_pph = total_pph
+                record.total_pph = math.floor(total_pph)
 
 
     @api.depends('history_approval_ids')
@@ -277,7 +278,7 @@ class WikaInheritedAccountMove(models.Model):
     @api.onchange('partner_id')
     def onchange_partner_id(self):
         if self.partner_id:
-            domain = [('partner_id', '=', self.partner_id.id)]
+            domain = [('bap_type', '!=', 'cut over'),('partner_id', '=', self.partner_id.id),('state', '=', 'approved')]
             return {'domain': {'bap_id': domain}}
         else:
             return {'domain': {'bap_id': []}}
@@ -288,7 +289,8 @@ class WikaInheritedAccountMove(models.Model):
             total = 0
             for z in x.invoice_line_ids:
                 total += z.price_unit *z.quantity
-            x.total_line = total
+            total_line = total
+            x.total_line=round(total_line)
 
     @api.depends('total_line', 'total_pph','dp_total','retensi_total')
     def _compute_amount_total(self):
@@ -319,7 +321,6 @@ class WikaInheritedAccountMove(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         record = super(WikaInheritedAccountMove, self).create(vals_list)
-        record._check_invoice_totals()
         record.assign_todo_first()
 
         # if isinstance(record, bool):
@@ -344,7 +345,6 @@ class WikaInheritedAccountMove(models.Model):
 
     def write(self, values):
         record = super(WikaInheritedAccountMove, self).write(values)
-        self._check_invoice_totals()
 
         # if isinstance(record, bool):
         #     return record
@@ -367,19 +367,14 @@ class WikaInheritedAccountMove(models.Model):
         return record
 
 
-    # @api.onchange('amount_invoice')
-    # def _onchange_amount_invoice(self):
-    #     if self.amount_invoice and self.amount_invoice != self.amount_total_footer:
-    #         warning = {
-    #             'title': _('Warning!'),
-    #             'message': _('Nilai dari "Amount Invoice" tidak sama dengan "Tax Totals".')
-    #         }
-    #         return {'warning': warning}
+    @api.constrains('amount_invoice', 'cut_off')
+    def check_amount_equal(self):
+        for record in self:
+            precision_digits = 2  # Sesuaikan presisi dengan kebutuhan Anda
+            precision_rounding = 0.01
+        if not float_compare(record.amount_invoice, round(record.total_line),precision_digits=precision_digits) == 0 and record.cut_off !=True:
+            raise UserError("Amount Invoice Harus sama dengan Total !")
 
-    def _check_invoice_totals(self):
-        print (self.total_line)
-        # if self.amount_invoice < round(self.total_line) or self.amount_invoice > round(self.total_line):
-        #     raise ValidationError('Amount Invoice Harus sama dengan Total !')
 
 
     @api.onchange('bap_id')
@@ -408,6 +403,7 @@ class WikaInheritedAccountMove(models.Model):
                     'stock_move_id': bap_line.stock_move_id.id,
                     'quantity': bap_line.qty,
                     'price_unit': bap_line.unit_price,
+                    'currency_id': self.currency_id.id,
                     'tax_ids': bap_line.purchase_line_id.taxes_id.ids,
                     'product_uom_id': bap_line.product_uom.id,
                 }))
@@ -893,20 +889,20 @@ class AccountMovePriceCutList(models.Model):
     move_line_id = fields.Many2one('account.move.line', string='Invoice Line')
     special_gl_id = fields.Many2one('wika.special.gl', string='Special GL')
     product_id = fields.Many2one('product.product', string='Product')
-    account_id = fields.Many2one('account.account', string='Account', compute='_compute_account_pricecut')
+    account_id = fields.Many2one('account.account', string='Account')
     percentage_amount = fields.Float(string='Percentage Amount')
     amount = fields.Float(string='Amount')
     
-    def _compute_account_pricecut(self):
-        move_id = self.env['account.move'].browse([self.move_id.id])
-        if move_id:            
-            self.account_id = move_id.line_ids[0].account_id.id
+    # def _compute_account_pricecut(self):
+    #     move_id = self.env['account.move'].browse([self.move_id.id])
+    #     if move_id:
+    #         self.account_id = move_id.line_ids[0].account_id.id
 
 class WikaAccountTax(models.Model):
     _inherit = 'account.tax'
 
     pph_code = fields.Char(string='PPH Code', compute='_compute_pph_code', store=True)
-
+    is_progresif=fields.Boolean(default=False)
     @api.depends('name')
     def _compute_pph_code(self):
         for record in self:
