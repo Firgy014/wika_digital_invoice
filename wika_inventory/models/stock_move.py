@@ -11,8 +11,8 @@ class StockMoveInherit(models.Model):
         ('rejected', 'Rejected')
 
     ], string='Status', default='waits')
-    qty_bap = fields.Float('Total BAP', compute='_compute_qty_bap')
-    sisa_qty_bap = fields.Float('Sisa Qty BAP', compute='_compute_sisa_qty_bap')
+    qty_bap = fields.Float('Total BAP', compute='_compute_qty_bap',digits='Product Unit of Measure')
+    sisa_qty_bap = fields.Float('Sisa Qty BAP', compute='_compute_sisa_qty_bap',digits='Product Unit of Measure')
 
 
     def _compute_qty_bap(self):
