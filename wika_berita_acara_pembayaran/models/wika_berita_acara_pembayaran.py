@@ -1281,7 +1281,7 @@ class WikaBeritaAcaraPembayaranLine(models.Model):
     sub_total = fields.Monetary(string='Subtotal', compute='compute_sub_total')
     tax_amount = fields.Monetary(string='Tax Amount', compute='compute_tax_amount')
     current_value = fields.Monetary(string='Current Value', compute='_compute_current_value')
-    sisa_qty_bap_grses = fields.Float(string='Sisa BAP')
+    sisa_qty_bap_grses = fields.Float(string='Sisa BAP',digits='Product Unit of Measure')
     qty_invoiced = fields.Float(string='Total Invoiced', compute='_compute_invoiced_bap_qty')
 
     @api.depends('bap_id')
