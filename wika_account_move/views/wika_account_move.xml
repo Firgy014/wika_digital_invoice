@@ -99,8 +99,8 @@
                                                string="Total"
                                                groups="account.group_show_line_subtotals_tax_included"/>
                                         <field name="bap_line_id" invisible="1"/>
-                                        <field name="picking_id" invisible="1"/>
-                                        <field name="stock_move_id" invisible="1"/>
+                                        <field name="picking_id" readonly="1" force_save="1"/>
+                                        <field name="stock_move_id" readonly="1" force_save="1"/>
 
                                         <!-- Others fields -->
                                         <field name="partner_id" invisible="1"/>
