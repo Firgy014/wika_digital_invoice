@@ -1,9 +1,11 @@
 from odoo import fields, models, _
+from odoo.exceptions import ValidationError
 import logging
 from datetime import datetime
 import logging
 import random
 import string
+import json
 from . import helpers
 import os
 import io
@@ -24,6 +26,7 @@ try:
 except ImportError:
     raise ImportError(
         'This module needs paramiko to automatically write backups to the FTP through SFTP. Please install paramiko on your system. (sudo pip3 install paramiko)')
+
 
 _logger = logging.getLogger(__name__)
 
@@ -90,7 +93,6 @@ class sap_integration_configure(models.Model):
             raise Warning(messageTitle + '\n\n' + messageContent + "%s" % str(error))
         else:
             raise Warning(messageTitle + '\n\n' + messageContent)
-        
 
     def _generate_data(self):
         _logger.warning("<<================== GENERATE AND BACKUP TXT DATA OF WDIGI TO DIRECTORY ==================>>")
@@ -154,3 +156,39 @@ class sap_integration_configure(models.Model):
                 sftp.close()
             if 'transport' in locals():
                 transport.close()
+
+    def _update_invoice(self):
+        invoice_model = self.env['account.move'].sudo()
+        conf_model = self.env['sap.integration.configure'].sudo()
+
+        conf_id = conf_model.search([('sftp_folder_archive', '!=', False)], limit=1)
+        if conf_id:
+            outbound_dir = conf_id.sftp_folder_archive
+            file_name_prefix = 'YFII015'
+            for file_name in os.listdir(outbound_dir):
+                if file_name.startswith(file_name_prefix):
+                    file_path = os.path.join(outbound_dir, file_name)
+
+        updated_invoices = []
+        try:
+            with open(file_path, 'r') as file:
+                next(file)  # Skip the header line
+                next(file)  # Skip the column titles
+                for line in file:
+                    invoice_data = line.strip().split('|')
+                    no_inv = invoice_data[0]
+                    invoice_id = invoice_model.search([('name', '=', no_inv)], limit=1)
+                    if invoice_id:
+                        invoice_id.write({
+                            'invoice_number': invoice_data[1],
+                            'year': invoice_data[2],
+                            'payment_reference': invoice_data[3],
+                            'dp_doc': invoice_data[4]
+                        })
+                        updated_invoices.append(no_inv)
+                    else:
+                        raise ValidationError(_("Invoice yang ingin di-update tidak ditemukan!"))
+                    
+        except FileNotFoundError:
+            raise ValidationError(_("File TXT dari SAP atas invoice yang dituju tidak ditemukan!"))
+        
