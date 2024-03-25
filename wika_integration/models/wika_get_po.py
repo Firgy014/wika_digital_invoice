@@ -17,7 +17,7 @@ class wika_get_po(models.Model):
     po_plant = fields.Char(string="PO Plant")
     co_code = fields.Char(string="Co Code")
     status=fields.Char(string='Status')
-
+    tgl_create_sap = fields.Char(string='Date')
     def get_po(self):
         url_config = self.env['wika.integration'].search([('name', '=', 'URL PO')], limit=1)
         url= url_config.url+'services/auth'
@@ -38,23 +38,32 @@ class wika_get_po(models.Model):
             csrf = {'w-access-token': str(w_key)}
             headers.update(csrf)
             #print (headers)
+            if self.tgl_create_sap:
+                tgl_create_sap=self.tgl_create_sap
+            else:
+                tgl_create_sap=""
+            if self.name:
+                no_po=self.name
+            else:
+                no_po=""
             payload_2 = json.dumps({"profit_center" : "%s",
             "po_doc" : "%s",
             "po_jenis" : "",
             "po_dcdat" : "",
-            "po_crdat": "",
-            "po_plant" : "%s",
-            "co_code" : "%s",
+            "po_crdate": "",
+            "po_plant" : "A000",
+            "co_code" : "A000",
             "po_del" : "",
             "poitem_del" : "",
             "incmp_cat" : ""
-        }) % (self.profit_center, self.name, self.po_plant, self.co_code)
+        }) % (self.profit_center, no_po, tgl_create_sap)
             payload_2 = payload_2.replace('\n', '')
             _logger.info(payload_2)
             response_2 = requests.request("POST", url_get_po, data=payload_2, headers=headers)
             txt = json.loads(response_2.text)
         except:
-            raise UserError(_("Connection Failed. Please Check Your Internet Connection."))
+            pass
+            #raise UserError(_("Connection Failed. Please Check Your Internet Connection."))
         if txt['data']:
             txt_data = txt['data']
             if isinstance(txt_data, list):
@@ -189,6 +198,7 @@ class wika_get_po(models.Model):
                                 'tgl_create_sap': data['po_crdat']
 
                             })
+                            po_create.get_gr()
             else:
                 vals = []
                 potongan = []
@@ -319,6 +329,7 @@ class wika_get_po(models.Model):
                             'tgl_create_sap': txt_data['po_crdat']
 
                         })
+                        po_create.get_gr()
             self.status='OK'
         else:
             raise UserError(_("Data PO Tidak Tersedia!"))
