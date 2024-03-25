@@ -92,6 +92,7 @@ class PickingInherit(models.Model):
         model_id = model_model.search([('model', '=', 'stock.picking')], limit=1)
         for res in self:
             level=res.level
+            res.write({'state':'waits'})
             first_user = False
             if level:
                 approval_id = self.env['wika.approval.setting'].sudo().search(

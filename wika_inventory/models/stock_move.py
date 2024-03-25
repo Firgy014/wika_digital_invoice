@@ -13,6 +13,7 @@ class StockMoveInherit(models.Model):
     ], string='Status', default='waits')
     qty_bap = fields.Float('Total BAP', compute='_compute_qty_bap',digits='Product Unit of Measure')
     sisa_qty_bap = fields.Float('Sisa Qty BAP', compute='_compute_sisa_qty_bap',digits='Product Unit of Measure')
+    active = fields.Boolean(default=True)
 
 
     def _compute_qty_bap(self):
@@ -71,3 +72,9 @@ class StockMoveInherit(models.Model):
             tit = "[%s] %s" % (move.sequence, move.product_id.code)
             res.append((move.id, tit))
         return res
+
+class StockMoveLineInherit(models.Model):
+    _inherit = 'stock.move.line'
+
+    active = fields.Boolean(default=True)
+
