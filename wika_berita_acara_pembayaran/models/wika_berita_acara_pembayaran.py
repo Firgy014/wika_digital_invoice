@@ -137,6 +137,15 @@ class WikaBeritaAcaraPembayaran(models.Model):
     terbilang_retensi = fields.Char('Terbilang retensi', compute='_compute_rupiah_terbilang_retensi')
     terbilang_co = fields.Char('Terbilang cut over', compute='_compute_rupiah_terbilang_cut_over')
     is_fully_invoiced = fields.Boolean(string='Fully Invoiced', compute='_compute_fully_invoiced', default=False,store=True)
+    is_cut_over = fields.Boolean('is cut over')
+
+    def write(self, vals):
+        if 'bap_type' in vals:
+            if vals['bap_type'] == 'cut over':
+                vals['is_cut_over'] = True
+            else:
+                vals['is_cut_over'] = False
+        return super(WikaBeritaAcaraPembayaran, self).write(vals)
 
     @api.onchange('po_id', 'bap_type')
     def _change_button(self):
@@ -150,7 +159,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
                     }
                     return {'warning': warning}
 
-    @api.constrains('po_id', 'bap_type')
+    @api.onchange('po_id', 'bap_type')
     def _check_bap_type(self):
         for record in self:
             if record.po_id and record.bap_type != 'cut over':
@@ -638,7 +647,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
     def compute_grand_total(self):
         for record in self:
             record.grand_total = record.total_amount + record.total_tax
-
+    
     # compute total pph
     # compute total pph revisi
     @api.depends('total_amount', 'pph_ids.amount')

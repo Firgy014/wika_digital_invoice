@@ -137,8 +137,8 @@
                                 <field name="address"  readonly="1" force_save="1"/>
                                 <field name="job"  readonly="1" force_save="1"/>
                                 <field name="step_approve" invisible="1"/>
-                                 <field name="is_fully_invoiced" groups="base.group_no_one"/>
-
+                                <field name="is_fully_invoiced" groups="base.group_no_one"/>
+                                <field name="is_cut_over" readonly="1" groups="base.group_no_one"/>
                             </group>
                             <group>
                                 <field name="check_biro" invisible="1"/>
@@ -205,6 +205,7 @@
                                 <field name="terbilang_retensi" groups="base.group_no_one"/>
                                 <field name="total_pembayaran_co" groups="base.group_no_one"/>
                                 <field name="terbilang_co" groups="base.group_no_one"/>
+                                
                             </group>
                         </group>
                         <notebook>
