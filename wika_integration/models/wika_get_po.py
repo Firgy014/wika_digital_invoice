@@ -17,7 +17,8 @@ class wika_get_po(models.Model):
     po_plant = fields.Char(string="PO Plant")
     co_code = fields.Char(string="Co Code")
     status=fields.Char(string='Status')
-    tgl_create_sap = fields.Char(string='Date')
+    tgl_create_sap=fields.Date(string='Tanggal Create SAP')
+
     def get_po(self):
         url_config = self.env['wika.integration'].search([('name', '=', 'URL PO')], limit=1)
         url= url_config.url+'services/auth'
@@ -38,32 +39,23 @@ class wika_get_po(models.Model):
             csrf = {'w-access-token': str(w_key)}
             headers.update(csrf)
             #print (headers)
-            if self.tgl_create_sap:
-                tgl_create_sap=self.tgl_create_sap
-            else:
-                tgl_create_sap=""
-            if self.name:
-                no_po=self.name
-            else:
-                no_po=""
             payload_2 = json.dumps({"profit_center" : "%s",
             "po_doc" : "%s",
             "po_jenis" : "",
             "po_dcdat" : "",
             "po_crdate": "",
-            "po_plant" : "A000",
-            "co_code" : "A000",
+            "po_plant" : "%s",
+            "co_code" : "%s",
             "po_del" : "",
             "poitem_del" : "",
             "incmp_cat" : ""
-        }) % (self.profit_center, no_po, tgl_create_sap)
+        }) % (self.profit_center, self.name, self.po_plant, self.co_code)
             payload_2 = payload_2.replace('\n', '')
             _logger.info(payload_2)
             response_2 = requests.request("POST", url_get_po, data=payload_2, headers=headers)
             txt = json.loads(response_2.text)
         except:
-            pass
-            #raise UserError(_("Connection Failed. Please Check Your Internet Connection."))
+            raise UserError(_("Connection Failed. Please Check Your Internet Connection."))
         if txt['data']:
             txt_data = txt['data']
             if isinstance(txt_data, list):
@@ -183,8 +175,7 @@ class wika_get_po(models.Model):
                         else:
                             po_create = self.env['purchase.order'].sudo().create({
                                 'name': data['po_doc'],
-                            'payment_term_id':payment_term.id if payment_term else False,
-
+                                'payment_term_id':payment_term.id if payment_term else False,
                                 'partner_id': vendor.id if vendor else False,
                                 'project_id': profit_center,
                                 'branch_id': branch_id,
@@ -249,6 +240,7 @@ class wika_get_po(models.Model):
                             prod = self.env['product.product'].sudo().search([
                                 ('default_code', '=', data['prd_no'])], limit=1)
                             qty = float(data['po_qty'])
+                            print ("qty awal-------------------------------",qty)
                             if txt_data['po_jenis'] == 'JASA':
                                 price = float(data['po_price'])/qty
                             else:
@@ -304,6 +296,7 @@ class wika_get_po(models.Model):
                                      'taxes_id': [(6, 0, [x.id for x in tax])]
 
                                  }))
+                            print ("ppppppppp",vals)
                     else:
                         for data in txt_data['isi']:
                             seq = float(data['po_no'])
