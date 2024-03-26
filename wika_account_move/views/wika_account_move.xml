@@ -139,18 +139,17 @@
                           <page id="other_tab" string="Other Info" name="other_info">
 
                             <group id="other_tab_group">
-                                 <field name="payment_reference" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
-                                <field name="payment_block" groups="base.group_no_one"/>
+                                 <field name="payment_reference"  groups="base.group_no_one"/>
                                 <field name="payment_method" groups="base.group_no_one"/>
                                 <field name="approval_stage" readonly="1" force_save="1"/>
                                 <field name="baseline_date" groups="base.group_no_one"/>
 
-                                <field name="invoice_number" readonly="1" attrs="{'invisible': [('state', '!=', 'approved')]}"/>
+                                <field name="invoice_number" groups="base.group_no_one"/>
                                 <field name="partner_bank_id" string="Bank Account"/>
                                 <field name="account_id" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
                                 <field name="retention_due" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
                                 <field name="cut_off" readonly="1" force_save="1"/>
-                                <field name="pph_amount" groups="base.group_no_one"/>
+                                <field name="pph_amount" />
 
                             </group>
                           </page>

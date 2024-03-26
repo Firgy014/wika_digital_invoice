@@ -6,7 +6,11 @@ from odoo.tools.float_utils import float_compare
 class WikaInheritedAccountMove(models.Model):
     _inherit = 'account.move'
     
-    bap_id = fields.Many2one('wika.berita.acara.pembayaran', string='BAP')
+    bap_id = fields.Many2one(
+        'wika.berita.acara.pembayaran',
+        string='BAP',
+        domain="[('state', '=', 'approved'), ('is_cut_over', '!=', True)]"
+    )
     branch_id = fields.Many2one('res.branch', string='Divisi', required=True)
     department_id = fields.Many2one('res.branch', string='Department')
     project_id = fields.Many2one('project.project', string='Project')
@@ -279,10 +283,10 @@ class WikaInheritedAccountMove(models.Model):
     @api.onchange('partner_id')
     def onchange_partner_id(self):
         if self.partner_id:
-            domain = [('bap_type', '!=', 'cut over'),('partner_id', '=', self.partner_id.id),('state', '=', 'approved')]
-            return {'domain': {'bap_id': domain}}
+            return {'domain': {'bap_id': [('partner_id', '=', self.partner_id.id), ('state', '=', 'approved'), ('is_cut_over', '!=', True)]}}
         else:
-            return {'domain': {'bap_id': []}}
+            return {'domain': {'bap_id': [('state', '=', 'approved'), ('is_cut_over', '!=', True)]}}
+
 
     @api.depends('invoice_line_ids.price_unit','invoice_line_ids.quantity')
     def _compute_total_line(self):

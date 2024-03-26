@@ -143,6 +143,7 @@
                                 <field name="job"  readonly="1" force_save="1"/>
                                 <field name="step_approve" invisible="1"/>
                                  <field name="is_fully_invoiced" groups="base.group_no_one"/>
+                                <field name="is_cut_over"  groups="base.group_no_one"/>
 
                             </group>
                             <group>
@@ -231,7 +232,8 @@
                                             <field name="tax_ids" widget="many2many_tags" string=""/>
                                             <field name="currency_id" readonly="1" force_save="1"/>
                                             <field name="unit_price" readonly="1" force_save="1"/>
-                                            <field name="sub_total" readonly="1" force_save="1"/>
+                                             <field name="adjustment" />
+                                            <field name="sub_total"  readonly="0"/>
                                         </tree>
                                     </field>
                                     <field name="price_cut_ids"

@@ -138,11 +138,14 @@ class WikaBeritaAcaraPembayaran(models.Model):
     terbilang_retensi = fields.Char('Terbilang retensi', compute='_compute_rupiah_terbilang_retensi')
     terbilang_co = fields.Char('Terbilang cut over', compute='_compute_rupiah_terbilang_cut_over')
     is_fully_invoiced = fields.Boolean(string='Fully Invoiced', compute='_compute_fully_invoiced', default=False,store=True)
+    is_cut_over = fields.Boolean('is cut over')
+
 
     @api.onchange('po_id', 'bap_type')
     def _change_button(self):
         for record in self:
             if record.po_id and record.bap_type == 'cut over' :
+                record.is_cut_over=True
                 account_move = self.env['account.move.line'].search([('purchase_id','=',record.po_id.id), ('cut_off','=',True),('display_type','=','product')])
                 if any(not x.stock_move_id for x in account_move):
                     warning = {
@@ -150,6 +153,8 @@ class WikaBeritaAcaraPembayaran(models.Model):
                         'message': 'Silahkan Mapping Invoice Cut Over terlebih dahulu',
                     }
                     return {'warning': warning}
+            else:
+                record.is_cut_over = False
 
 
     @api.constrains('po_id', 'bap_type')
@@ -179,7 +184,6 @@ class WikaBeritaAcaraPembayaran(models.Model):
         tots = 0.0
         for bap_line in self.bap_ids:
             tots += bap_line.qty
-
         if tots == 0.0:
             self.is_fully_invoiced = True
         else:
@@ -588,6 +592,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
             price_cut_lines = []
             self.bap_ids = [(2, bap_id.id, 0) for bap_id in self.bap_ids]
             if self.bap_type == 'cut over':
+                self.is_cut_over = True
                 bap_lines = []
                 account_moves = self.env['account.move'].search([
                     ('po_id', '=', self.po_id.id),
@@ -614,6 +619,8 @@ class WikaBeritaAcaraPembayaran(models.Model):
             elif self.bap_type == 'progress':
                 stock_pickings = self.env['stock.picking'].search([('po_id', '=', self.po_id.id)])
                 # Mengisi price_cut_lines
+                self.is_cut_over = False
+
                 for line in self.po_id.price_cut_ids:
                     price_cut_lines.append((0, 0, {
                         'product_id': line.product_id.id,
@@ -1232,9 +1239,9 @@ class WikaBeritaAcaraPembayaran(models.Model):
 
     def unlink(self):
         for record in self:
-            if record.state in ('uploaded', 'approved'):
+            if record.state =='approved':
                 raise ValidationError('Tidak dapat menghapus ketika status Berita Acara Pembayaran (BAP) dalam keadaan Upload atau Approve')
-            if record.state=='draft':
+            if record.state!='draft':
                 record.activity_ids.unlink()
                 record.bap_ids.unlink()
                 record.price_cut_ids.unlink()
@@ -1279,6 +1286,7 @@ class WikaBeritaAcaraPembayaranLine(models.Model):
     tax_ids = fields.Many2many('account.tax', string='Tax')
     currency_id = fields.Many2one('res.currency', string='Currency')
     unit_price = fields.Monetary(string='Unit Price')
+    adjustment = fields.Boolean(string='Adjustment',default=False)
     sub_total = fields.Monetary(string='Subtotal', compute='compute_sub_total')
     tax_amount = fields.Monetary(string='Tax Amount', compute='compute_tax_amount')
     current_value = fields.Monetary(string='Current Value', compute='_compute_current_value')
@@ -1291,6 +1299,11 @@ class WikaBeritaAcaraPembayaranLine(models.Model):
             move_line_ids = self.env['account.move.line'].sudo().search([('bap_line_id', '=', record.id)])
             total_invoiced_bap_qty = sum(move_line.quantity for move_line in move_line_ids)
             record.qty_invoiced = total_invoiced_bap_qty
+
+    @api.onchange('sub_total', 'adjustment')
+    def onchange_subtotal_unitprice(self):
+        if self.adjustment==True and self.sub_total:
+            self.qty = self.sub_total / self.unit_price
 
     # @api.constrains('qty')
     # def _check_qty_limit(self):
