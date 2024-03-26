@@ -682,12 +682,13 @@ class WikaBeritaAcaraPembayaran(models.Model):
 
     # compute total pph
     # compute total pph revisi
-    @api.depends('total_amount', 'pph_ids.amount','amount_pph')
+    @api.depends('total_amount', 'pph_ids.amount','amount_pph','retensi_total')
     def compute_total_pph(self):
         for record in self:
             total_pph = 0.0
+            total_net=record.total_amount-record.retensi_total
             for pph in record.pph_ids:
-                total_pph += (record.total_amount * pph.amount) / 100
+                total_pph += (total_net * pph.amount) / 100
             record.total_pph = math.floor(total_pph+record.amount_pph)
 
 
