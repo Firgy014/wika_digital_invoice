@@ -1286,7 +1286,7 @@ class WikaBeritaAcaraPembayaranLine(models.Model):
     def compute_sub_total(self):
         for record in self:
             record.sub_total = record.qty * record.unit_price
-
+    
     @api.constrains('picking_id')
     def _check_picking_id(self):
         for record in self:
@@ -1298,6 +1298,13 @@ class WikaBeritaAcaraPembayaranLine(models.Model):
         for record in self:
             record.current_value = record.qty * record.unit_price_po
 
+    @api.onchange('sub_total', 'unit_price')
+    def onchange_subtotal_unitprice(self):
+        if self.unit_price != 0:
+            self.qty = self.sub_total / self.unit_price
+        else:
+            self.qty = 0
+            
 class WikaBapDocumentLine(models.Model):
     _name = 'wika.bap.document.line'
 
