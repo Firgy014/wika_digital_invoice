@@ -354,7 +354,6 @@ class WikaInheritedAccountMove(models.Model):
             raise ValidationError("Hanya satu record yang diharapkan diperbarui!")
 
 
-        
         #document date
         if record.invoice_date != False and record.invoice_date < record.bap_id.bap_date:
             raise ValidationError("Document Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
@@ -385,46 +384,44 @@ class WikaInheritedAccountMove(models.Model):
 
     @api.onchange('bap_id')
     def _onchange_bap_id(self):
-        self.po_id = False
         if self.bap_id:
-            invoice_lines = []
-            price_cut_lines = []
-
-            self.po_id = self.bap_id.po_id.id
-            self.partner_id = self.bap_id.po_id.partner_id.id
-            self.branch_id = self.bap_id.branch_id.id
-            self.department_id = self.bap_id.department_id.id if self.bap_id.department_id else False
-            self.project_id = self.bap_id.project_id.id if self.bap_id.project_id else False
-
-            self.pph_ids = self.bap_id.pph_ids.ids
-            self.total_pph = self.bap_id.total_pph
-
-            for bap_line in self.bap_id.bap_ids:
-                print (bap_line.qty)
-                invoice_lines.append((0, 0, {
-                    'display_type':'product',
-                    'product_id': bap_line.product_id.id,
-                    'purchase_line_id': bap_line.purchase_line_id.id,
-                    'bap_line_id': bap_line.id,
-                    'picking_id': bap_line.picking_id.id,
-                    'stock_move_id': bap_line.stock_move_id.id,
-                    'quantity': bap_line.qty,
-                    'price_unit': bap_line.unit_price,
-                    'tax_ids': bap_line.purchase_line_id.taxes_id.ids,
-                    'product_uom_id': bap_line.product_uom.id,
-                }))
-
-            for cut_line in self.bap_id.price_cut_ids:
-                price_cut_lines.append((0, 0, {
-                    'move_id': self.id,
-                    'product_id': cut_line.product_id.id,
-                    # 'account_id': cut_line.account_id.id,
-                    'percentage_amount': cut_line.percentage_amount,
-                    'amount': cut_line.amount,
-                }))
-
-            self.invoice_line_ids = invoice_lines
-            self.price_cut_ids = price_cut_lines
+            if self.bap_id.state != 'approved':
+                raise UserError("Anda hanya dapat memilih BAP yang telah disetujui.")
+            elif self.bap_id.bap_type == 'cut over':
+                self.bap_id = False
+                raise UserError("Anda tidak dapat memilih BAP dengan tipe 'cut over'.")
+            else:               
+                self.po_id = self.bap_id.po_id.id
+                self.partner_id = self.bap_id.po_id.partner_id.id
+                self.branch_id = self.bap_id.branch_id.id
+                self.department_id = self.bap_id.department_id.id if self.bap_id.department_id else False
+                self.project_id = self.bap_id.project_id.id if self.bap_id.project_id else False
+                self.pph_ids = self.bap_id.pph_ids.ids
+                self.total_pph = self.bap_id.total_pph
+                invoice_lines = []
+                price_cut_lines = []
+                for bap_line in self.bap_id.bap_ids:
+                    invoice_lines.append((0, 0, {
+                        'display_type':'product',
+                        'product_id': bap_line.product_id.id,
+                        'purchase_line_id': bap_line.purchase_line_id.id,
+                        'bap_line_id': bap_line.id,
+                        'picking_id': bap_line.picking_id.id,
+                        'stock_move_id': bap_line.stock_move_id.id,
+                        'quantity': bap_line.qty,
+                        'price_unit': bap_line.unit_price,
+                        'tax_ids': bap_line.purchase_line_id.taxes_id.ids,
+                        'product_uom_id': bap_line.product_uom.id,
+                    }))
+                for cut_line in self.bap_id.price_cut_ids:
+                    price_cut_lines.append((0, 0, {
+                        'move_id': self.id,
+                        'product_id': cut_line.product_id.id,
+                        'percentage_amount': cut_line.percentage_amount,
+                        'amount': cut_line.amount,
+                    }))
+                self.invoice_line_ids = invoice_lines
+                self.price_cut_ids = price_cut_lines
 
     def assign_todo_first(self):
         model_model = self.env['ir.model'].sudo()
