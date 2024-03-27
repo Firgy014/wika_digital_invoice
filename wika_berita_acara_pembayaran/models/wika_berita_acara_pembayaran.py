@@ -642,7 +642,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
                     'product_id': picking.product_id.id,
                     'qty': picking.sisa_qty_bap,
                     'unit_price': picking.purchase_line_id.price_unit,
-                    'amount_adjustment': picking.purchase_line_id.price_subtotal,
+                    'amount_adjustment': picking.sisa_qty_bap*  picking.purchase_line_id.price_unit,
                     'tax_ids':picking.purchase_line_id.taxes_id.ids,
                     'currency_id':picking.purchase_line_id.currency_id.id
                 }))

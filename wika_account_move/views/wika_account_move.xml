@@ -101,7 +101,8 @@
                                         <field name="bap_line_id" invisible="1"/>
                                         <field name="picking_id" readonly="1" force_save="1"/>
                                         <field name="stock_move_id" readonly="1" force_save="1"/>
-
+                                        <field name="adjustment" readonly="1" force_save="1"/>
+                                        <field name="amount_adjustment" sum="Total" attrs="{'invisible': [('adjustment', '!=', True)]}" readonly="1" force_save="1"/>
                                         <!-- Others fields -->
                                         <field name="partner_id" invisible="1"/>
                                         <field name="currency_id" invisible="1"/>

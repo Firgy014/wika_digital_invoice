@@ -27,6 +27,8 @@ class WikaAccountMoveLine(models.Model):
         compute="_compute_price_unit", store=True, readonly=False, precompute=True,
         digits='Product Price',
     )
+    adjustment = fields.Boolean(string='Adjustment', default=False)
+    amount_adjustment = fields.Monetary(string='Amount Adjustment')
     @api.depends('display_type','bap_line_id')
     def _compute_quantity(self):
         for line in self:

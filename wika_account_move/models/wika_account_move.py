@@ -197,6 +197,7 @@ class WikaInheritedAccountMove(models.Model):
     amount_total_payment = fields.Float(string='Total Invoice', compute='_compute_amount_total_payment', store=True)
     total_line = fields.Float(string='Total Line', compute='_compute_total_line')
     cut_off = fields.Boolean(string='Cut Off',default=False,copy=False)
+
     # is_approval_checked = fields.Boolean(string="Approval Checked")
 
     # is_approval_checked = fields.Boolean(string="Approval Checked")
@@ -315,12 +316,15 @@ class WikaInheritedAccountMove(models.Model):
             return {'domain': {'bap_id': [('state', '=', 'approved'), ('is_cut_over', '!=', True)]}}
 
 
-    @api.depends('invoice_line_ids.price_unit','invoice_line_ids.quantity')
+    @api.depends('invoice_line_ids.price_unit','invoice_line_ids.quantity','invoice_line_ids.adjustment','invoice_line_ids.amount_adjustment')
     def _compute_total_line(self):
         for x in self:
             total = 0
             for z in x.invoice_line_ids:
-                total += z.price_unit *z.quantity
+                if z.adjustment==True:
+                    total +=z.amount_adjustment
+                else:
+                    total += z.price_unit *z.quantity
             total_line = total
             x.total_line=round(total_line)
 
@@ -438,6 +442,8 @@ class WikaInheritedAccountMove(models.Model):
                     'currency_id': self.currency_id.id,
                     'tax_ids': bap_line.purchase_line_id.taxes_id.ids,
                     'product_uom_id': bap_line.product_uom.id,
+                    'adjustment':bap_line.adjustment,
+                    'amount_adjustment':bap_line.amount_adjustment,
                 }))
 
             for cut_line in self.bap_id.price_cut_ids:
