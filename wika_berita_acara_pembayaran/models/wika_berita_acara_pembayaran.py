@@ -612,6 +612,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
                             'unit_price': line.price_unit,
                             'tax_ids': [(6, 0, line.tax_ids.ids)],
                             'sub_total': line.price_subtotal,
+                            'amount_adjustment': line.price_subtotal,
                             'currency_id': line.currency_id.id,
                         }))
 
@@ -641,6 +642,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
                     'product_id': picking.product_id.id,
                     'qty': picking.sisa_qty_bap,
                     'unit_price': picking.purchase_line_id.price_unit,
+                    'amount_adjustment': picking.purchase_line_id.price_subtotal,
                     'tax_ids':picking.purchase_line_id.taxes_id.ids,
                     'currency_id':picking.purchase_line_id.currency_id.id
                 }))
@@ -648,7 +650,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
                 self.bap_ids = bap_lines
                 self.price_cut_ids = price_cut_lines
 
-    @api.depends('bap_ids.sub_total', 'bap_ids.tax_ids', 'bap_type')
+    @api.depends('bap_ids.amount_adjustment', 'bap_ids.sub_total','bap_ids.tax_ids', 'bap_type')
     def compute_total_amount(self):
         for record in self:
             if record.bap_type == 'uang muka' :
@@ -658,7 +660,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
                 total_amount_value = record.po_id.amount_untaxed
                 record.total_amount = total_amount_value
             else:
-                total_amount_value = sum(record.bap_ids.mapped('sub_total'))
+                total_amount_value = sum(record.bap_ids.mapped('amount_adjustment'))
                 record.total_amount = total_amount_value
 
     @api.depends('total_amount', 'dp_total', 'retensi_total', 'bap_ids.tax_ids', 'bap_type')
@@ -1287,6 +1289,7 @@ class WikaBeritaAcaraPembayaranLine(models.Model):
     currency_id = fields.Many2one('res.currency', string='Currency')
     unit_price = fields.Monetary(string='Unit Price')
     adjustment = fields.Boolean(string='Adjustment',default=False)
+    amount_adjustment = fields.Monetary(string='Amount Adjustment')
     sub_total = fields.Monetary(string='Subtotal', compute='compute_sub_total')
     tax_amount = fields.Monetary(string='Tax Amount', compute='compute_tax_amount')
     current_value = fields.Monetary(string='Current Value', compute='_compute_current_value')
@@ -1300,10 +1303,6 @@ class WikaBeritaAcaraPembayaranLine(models.Model):
             total_invoiced_bap_qty = sum(move_line.quantity for move_line in move_line_ids)
             record.qty_invoiced = total_invoiced_bap_qty
 
-    @api.onchange('sub_total', 'adjustment')
-    def onchange_subtotal_unitprice(self):
-        if self.adjustment==True and self.sub_total:
-            self.qty = self.sub_total / self.unit_price
 
     # @api.constrains('qty')
     # def _check_qty_limit(self):
@@ -1334,16 +1333,25 @@ class WikaBeritaAcaraPembayaranLine(models.Model):
         for record in self:
             record.sub_total = record.qty * record.unit_price
 
+    @api.onchange('qty','adjustment')
+    def change_qty(self):
+        for record in self:
+            if record.adjustment != True:
+                record.amount_adjustment = record.qty * record.unit_price
+
     @api.constrains('picking_id')
     def _check_picking_id(self):
         for record in self:
             if not record.picking_id and record.bap_id.bap_type != 'cut over':
                 raise ValidationError('Field "NO GR/SES" harus diisi. Tidak boleh kosong!')
 
-    @api.depends('unit_price_po', 'qty')
+    @api.depends('unit_price_po', 'qty','adjustment')
     def _compute_current_value(self):
         for record in self:
-            record.current_value = record.qty * record.unit_price_po
+            if record.adjustment != True:
+                record.current_value = record.qty * record.unit_price_po
+            else:
+                record.current_value = record.amount_adjustment
 
 class WikaBapDocumentLine(models.Model):
     _name = 'wika.bap.document.line'
