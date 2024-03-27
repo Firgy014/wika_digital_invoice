@@ -21,6 +21,7 @@ class Purchase_Order(models.Model):
             "skey": "OAZvRmB7HKDdDkKF29DXZwgSmlv9KqQWZNDWV51SACAbhnOvuA1AvZf5FnIBrLxC"
         })
         payload = payload.replace('\n', '')
+
         try:
             # 1. Get W-KEY TOKEN
             response = requests.request("POST", url, data=payload, headers=headers)
@@ -35,7 +36,7 @@ class Purchase_Order(models.Model):
                                     "po_doc": "%s",
                                     "po_jenis": "",
                                     "po_dcdat": "",
-                                    "po_crdat": "%s",
+                                    "po_crdate": "%s",
                                     "po_plant": "A000",
                                     "co_code": "A000",
                                     "po_del": "",
@@ -46,217 +47,322 @@ class Purchase_Order(models.Model):
             _logger.info(payload_2)
             response_2 = requests.request("POST", url_get_po, data=payload_2, headers=headers)
             txt = json.loads(response_2.text)
-            print (txt)
+
             if 'data' in txt:
                 if txt['data']:
+                    vals = []
+                    print (txt['data'])
                     txt_data = txt['data']
                     for data in txt_data['isi']:
                         seq = float(data['po_no'])
+                        qty = float(data['po_qty'])
                         po_line = self.env['purchase.order.line'].sudo().search([
                             ('order_id', '=', self.id),
                             ('sequence', '=', int(seq))], limit=1)
-                        if po_line:
-                            qty = float(data['po_qty'])
-                            if data['poitem_del'] == 'L':
-                                po_line.write({'active': False})
+                        # if po_line.id:
+                        #     print("cccccccccccccccccccccccccc")
+                        #     if data['poitem_del'] == 'L':
+                        #         po_line.write({'active': False})
+                        #         continue
+                        #     else:
+                        #         if qty != po_line.quantity:
+                        #             print("update",qty)
+                        #             po_line.write({'quantity': qty})
+                        #     continue
+                        if not po_line.id:
+                            print ("111111111111111111111")
+                            if txt_data['po_jenis'] == 'JASA':
+                                price = float(data['po_price']) / qty
                             else:
-                                if qty != po_line.quantity:
-                                    po_line.write({'quantity': qty})
-                            self.write({'notes': 'OK'})
-                    else:
-                        pass
+                                price = float(data['po_price'])
+                            prod = self.env['product.product'].sudo().search([
+                                ('default_code', '=', data['prd_no'])], limit=1)
+                            if not prod:
+                                return "Material/Service  : %s tidak ditemukan" % (data['prd_no'])
+                            tax = self.env['account.tax'].sudo().search([
+                                ('name', '=', data['tax_code'])], limit=1)
+                            if not tax:
+                                return "Kode Pajak  : %s tidak ditemukan" % data['MWSKZ']
+
+                            uom = self.env['uom.uom'].sudo().search([
+                                ('name', '=', data['po_uom'])], limit=1)
+                            if not uom:
+                                uom = self.env['uom.uom'].sudo().create({
+                                    'name': data['po_uom'], 'category_id': 1})
+                            line = self.env['purchase.order.line'].sudo().create({
+                                    'order_id':self.id,
+                                    'sequence': int(seq),
+                                    'product_id': prod.id if prod else False,
+                                    'product_qty': qty,
+                                    'product_uom': uom.id,
+                                    'price_unit': price,
+                                    'taxes_id': [(6, 0, [x.id for x in tax])]})
+
+                        #continue
+                    #     else:
+                    #         print("emang gak masuk sini 4444444444?")
+                    #
+                    #         vals.append((0, 0, {
+                    #             'order_id': self.id,
+                    #             'sequence': int(seq),
+                    #             'product_id': prod.id if prod else False,
+                    #             'product_qty': qty,
+                    #             'product_uom': uom.id,
+                    #             'price_unit': price,
+                    #             'taxes_id': [(6, 0, [x.id for x in tax])]
+                    #
+                    #                  }))
+                    #         print(vals)
+                    # if vals:
+                    #     print ("kkkk")
+                    #     line=self.env['purchase.order.line'].sudo().create({
+                    #         'order_id':self.id,
+                    #         'sequence': int(seq),
+                    #         'product_id': prod.id if prod else False,
+                    #         'product_qty': qty,
+                    #         'product_uom': uom.id,
+                    #         'price_unit': price,
+                    #         'taxes_id': [(6, 0, [x.id for x in tax])]})
+                    #
+                    #     # else:
+                    #     #     po_line.create({'order_id'quantity': qty})
+                    # else:
+                    #     pass
             else:
                 pass
         except:
             pass
-            self.write({'notes': "tidak ada data update "})
+
 
             #raise UserError(_("Connection Failed. Please Check Your Internet Connection."))
+
 
     def update_gr(self):
         config = self.env['wika.integration'].search([('name', '=', 'URL GR')], limit=1)
         url_config = config.url
+        print ("llllllllllllllll")
         headers = {
             'Authorization': 'Basic V0lLQV9JTlQ6SW5pdGlhbDEyMw==',
             'Content-Type': 'application/json'
         }
-        payload = json.dumps({
-            "IV_EBELN": "%s",
-            "IV_REVERSE": "",
-            "IW_CPUDT_RANGE": {
-                "CPUDT_LOW": "%s",
-                "CPUTM_LOW": "00:00:00",
-                "CPUDT_HIGH": "2025-12-31",
-                "CPUTM_HIGH": "23:59:59"
-            }
-        }) % (self.name, self.begin_date)
-        payload = payload.replace('\n', '')
-        print(payload)
-        try:
-            response = requests.request("GET", url_config, data=payload, headers=headers)
-            txt = json.loads(response.text)
-        except:
-            raise UserError(_("Connection Failed. Please Check Your Internet Connection."))
-        self.env['wika.integration.line'].sudo().create({
-            'integration_id': config.id,
-            'request_date': fields.Date.today()})
-        if self.po_type != 'JASA':
-            if txt['DATA']:
-                txt_data = sorted(txt['DATA'], key=lambda x: x["MAT_DOC"])
-                mat_doc_dict = {}
-                for hasil in txt_data:
-                    mat_doc = hasil["MAT_DOC"]
-                    if mat_doc in mat_doc_dict:
-                        # Append the item to the existing list
-                        mat_doc_dict[mat_doc].append(hasil)
-                    else:
-                        # Create a new list with the current item
-                        mat_doc_dict[mat_doc] = [hasil]
-                for mat_doc, items in mat_doc_dict.items():
-                    vals = []
-                    for item in items:
-                        picking = self.env['stock.picking'].sudo().search([
-                            ('name', '=', mat_doc)], limit=1)
-                        if picking:
-                            qty = float(item['QUANTITY']) * 100
-                            move= self.env['stock.move'].sudo().search([
-                            ('sequence', '=', item['MATDOC_ITM'])], limit=1)
-                            if move and item['REVERSE']=='X':
-                                move.write({'active':False})
-                            if move and qty != move.product_uom_qty:
-                                move.write({'product_uom_qty': qty,'quantity_done':qty})
-                                picking.write({'note':'updated'})
-                        else:
-                            prod = self.env['product.product'].sudo().search([
-                                        ('default_code', '=', item['MATERIAL'])], limit=1)
-                            qty = float(item['QUANTITY']) * 100
-                            uom = self.env['uom.uom'].sudo().search([
-                                        ('name', '=', item['ENTRY_UOM'])], limit=1)
-                            if not uom:
-                                uom = self.env['uom.uom'].sudo().create({
-                                    'name': hasil['ENTRY_UOM'], 'category_id': 1})
-                            po_line= self.env['purchase.order.line'].sudo().search([
-                                     ('order_id', '=' ,self.id),('sequence','=',item['PO_ITEM'])] ,limit=1)
-                            vals.append((0, 0, {
-                                'sequence':item['MATDOC_ITM'],
-                                'product_id': prod.id if prod else False,
-                                'quantity_done': float(item['QUANTITY']),
-                                'product_uom_qty': float(item['QUANTITY']),
-                                'product_uom': uom.id,
-                                #'active':active,
-                                'state':'waits',
-                                'location_id': 4,
-                                'location_dest_id': 8,
-                                'purchase_line_id':po_line.id,
-                                'name': hasil['PO_NUMBER']
-                            }))
-                            docdate = hasil['DOC_DATE']
-                        if vals:
-                            picking_create = self.env['stock.picking'].sudo().create({
-                                'name': mat_doc,
-                                'po_id': self.id,
-                                'purchase_id':self.id,
-                                'project_id': self.project_id.id,
-                                'branch_id': self.branch_id.id,
-                                'department_id': self.department_id.id if self.department_id.id else False,
-                                'scheduled_date': docdate,
-                                'start_date': docdate,
-                                'partner_id': self.partner_id.id,
-                                'location_id': 4,
-                                'location_dest_id': 8,
-                                'picking_type_id': 1,
-                                'move_ids': vals,
-                                'pick_type': 'gr',
-                                #'move_ids_without_package':vals,
-                                'company_id': 1,
-                                'state': 'waits'
-                            })
+        for record in self:
+            payload = json.dumps({
+                "IV_EBELN": "%s",
+                "IV_REVERSE": "",
+                "IW_CPUDT_RANGE": {
+                    "CPUDT_LOW": "%s",
+                    "CPUTM_LOW": "00:00:00",
+                    "CPUDT_HIGH": "2025-12-31",
+                    "CPUTM_HIGH": "23:59:59"
+                }
+            }) % (record.name, record.begin_date)
+            payload = payload.replace('\n', '')
+            current_datetime_str = fields.Datetime.now()
+            noted_message = f"updated {current_datetime_str}"
+            print (payload)
+            try:
+                response = requests.request("GET", url_config, data=payload, headers=headers)
+                txt = json.loads(response.text)
+                self.env['wika.integration.line'].sudo().create({
+                    'integration_id': config.id,
+                    'request_date': fields.Date.today()})
+                print ("ini masuk kah")
+                if record.po_type != 'JASA':
+                    print ("barang")
+                    if txt['DATA']:
+                        txt_data = sorted(txt['DATA'], key=lambda x: x["MAT_DOC"])
+                        mat_doc_dict = {}
+                        for hasil in txt_data:
+                            mat_doc = hasil["MAT_DOC"]
+                            if mat_doc in mat_doc_dict:
+                                # Append the item to the existing list
+                                mat_doc_dict[mat_doc].append(hasil)
+                            else:
+                                # Create a new list with the current item
+                                mat_doc_dict[mat_doc] = [hasil]
+                        for mat_doc, items in mat_doc_dict.items():
+                            vals = []
+                            for item in items:
+                                print (item['MAT_DOC'])
+                                picking = self.env['stock.picking'].sudo().search([
+                                    ('name', '=', item['MAT_DOC']), ('po_id', '=', record.id)], limit=1)
+                                print (picking)
+                                if picking.id:
+                                    if item['REVERSE'] == 'X':
+                                        print("reverse", item['REVERSE'], item['MAT_DOC'])
+                                        picking.write({'active': False})
+                                        move = self.env['stock.move'].sudo().search([
+                                            ('sequence', '=', item['MATDOC_ITM']), ('picking_id', '=', picking.id)], limit=1)
+                                        move.write({'active': False})
+                                        move_line = self.env['stock.move.line'].sudo().search([
+                                            ('picking_id', '=', picking.id), ('move_id', '=', move.id)], limit=1)
+                                        move_line.write({'active': False})
+                                    else:
+                                        move = self.env['stock.move'].sudo().search([
+                                            ('sequence', '=', item['MATDOC_ITM']), ('picking_id', '=', picking.id)], limit=1)
+                                        if move.id:
+                                            qty = float(item['QUANTITY']) * 100
+                                            state=picking.state
+                                            if qty != move.product_uom_qty:
+                                                print("update qty", qty, move.product_uom_qty)
+                                                move.write({'product_uom_qty': qty, 'quantity_done': qty,'state':state})
+                                                picking.write({'note': 'updated','state':state})
+                                if not picking.id:
+                                    print("create picking")
+                                    if item['REVERSE'] == '':
+
+                                        prod = self.env['product.product'].sudo().search([
+                                                    ('default_code', '=', item['MATERIAL'])], limit=1)
+                                        qty = float(item['QUANTITY']) * 100
+                                        uom = self.env['uom.uom'].sudo().search([
+                                                    ('name', '=', item['ENTRY_UOM'])], limit=1)
+                                        if not uom:
+                                            uom = self.env['uom.uom'].sudo().create({
+                                                'name': hasil['ENTRY_UOM'], 'category_id': 1})
+                                        po_line= self.env['purchase.order.line'].sudo().search([
+                                                 ('order_id', '=' ,self.id),('sequence','=',item['PO_ITEM'])] ,limit=1)
+                                        vals.append((0, 0, {
+                                            'sequence':item['MATDOC_ITM'],
+                                            'product_id': prod.id if prod else False,
+                                            'quantity_done': float(item['QUANTITY']),
+                                            'product_uom_qty': float(item['QUANTITY']),
+                                            'product_uom': uom.id,
+                                            #'active':active,
+                                            'state':'waits',
+                                            'location_id': 4,
+                                            'location_dest_id': 8,
+                                            'purchase_line_id':po_line.id,
+                                            'name': hasil['PO_NUMBER']
+                                        }))
+                                        docdate = hasil['DOC_DATE']
+                                    if vals:
+                                        picking_create = self.env['stock.picking'].sudo().create({
+                                            'name': mat_doc,
+                                            'po_id': record.id,
+                                            'purchase_id':record.id,
+                                            'project_id': record.project_id.id,
+                                            'branch_id': record.branch_id.id,
+                                            'department_id': record.department_id.id if record.department_id.id else False,
+                                            'scheduled_date': docdate,
+                                            'start_date': docdate,
+                                            'partner_id': record.partner_id.id,
+                                            'location_id': 4,
+                                            'location_dest_id': 8,
+                                            'picking_type_id': 1,
+                                            'move_ids': vals,
+                                            'pick_type': 'gr',
+                                            #'move_ids_without_package':vals,
+                                            'company_id': 1,
+                                            'state': 'waits'
+                                        })
+                                        picking_create.write({'state': 'waits'})
 
 
 
-                else:
-                    pass
-                              #raise UserError(_("Data GR Tidak Tersedia di PO TERSEBUT!"))
-            else:
-                raise UserError(_("Data GR Tidak Tersedia!"))
-        else:
-            if txt['DATA']:
-                txt_data = sorted(txt['DATA'], key=lambda x: x["MAT_DOC"])
-                mat_doc_dict = {}
-                ses_number_dict = {}
-                for hasil in txt_data:
-                    mat_doc = hasil["MAT_DOC"]
-                    ses_number = hasil["SES_NUMBER"]
-                    if ses_number in ses_number_dict:
-                        # Append the item to the existing list
-                        ses_number_dict[ses_number].append(hasil)
-                    else:
-                        # Create a new list with the current item
-                        ses_number_dict[ses_number] = [hasil]
-                for ses_number, items in ses_number_dict.items():
-                    vals = []
-                    for item in items:
-                        picking = self.env['stock.picking'].sudo().search([
-                            ('name', '=', ses_number)], limit=1)
-                        if picking:
-                            qty = float(item['QUANTITY']) * 100
-                            move = self.env['stock.move'].sudo().search([
-                                ('sequence', '=', item['MATDOC_ITM'])], limit=1)
-                            if move and item['REVERSE'] == 'X':
-                                move.write({'active': False})
-                            if move and qty != move.product_uom_qty:
-                                move.write({'product_uom_qty': qty, 'quantity_done': qty})
-                                picking.write({'note': 'updated'})
-                        else:
-                            prod = self.env['product.product'].sudo().search([
-                                ('default_code', '=', item['MATERIAL'])], limit=1)
-                            qty = float(item['QUANTITY']) * 100
-                            uom = self.env['uom.uom'].sudo().search([
-                                ('name', '=', item['ENTRY_UOM'])], limit=1)
-                            if not uom:
-                                uom = self.env['uom.uom'].sudo().create({
-                                    'name': hasil['ENTRY_UOM'], 'category_id': 1})
-                            po_line = self.env['purchase.order.line'].sudo().search([
-                                ('order_id', '=', self.id), ('sequence', '=', item['PO_ITEM'])], limit=1)
-                            vals.append((0, 0, {
-                                'sequence': item['MATDOC_ITM'],
-                                'product_id': prod.id if prod else False,
-                                'quantity_done': float(item['QUANTITY']),
-                                'product_uom_qty': float(item['QUANTITY']),
-                                'product_uom': uom.id,
-                                #'active': active,
-                                'state':'waits',
-                                'location_id': 4,
-                                'location_dest_id': 8,
-                                'purchase_line_id': po_line.id,
-                                'name': hasil['PO_NUMBER']
-                            }))
-                            docdate = hasil['DOC_DATE']
-                            matdoc = item['MAT_DOC']
-                        if vals:
-                            picking_create = self.env['stock.picking'].sudo().create({
-                                'name': ses_number,
-                                'po_id': self.id,
-                                'purchase_id': self.id,
-                                'project_id': self.project_id.id,
-                                'branch_id': self.branch_id.id,
-                                'department_id': self.department_id.id if self.department_id.id else False,
-                                'scheduled_date': docdate,
-                                'start_date': docdate,
-                                'partner_id': self.partner_id.id,
-                                'location_id': 4,
-                                'location_dest_id': 8,
-                                'picking_type_id': 1,
-                                'move_ids': vals,
-                                'pick_type': 'ses',
-                                'origin':matdoc,
-                                #'move_ids_without_package':vals,
-                                'company_id': 1,
-                                'state': 'waits'
-                            })
+                                      #raise UserError(_("Data GR Tidak Tersedia di PO TERSEBUT!"))
                     else:
                         pass
-                        #raise UserError(_("Data GR Tidak Tersedia di PO TERSEBUT!"))
+                    record.write({'notes': noted_message})
+                else:
+                    if txt['DATA']:
+                        txt_data = sorted(txt['DATA'], key=lambda x: x["MAT_DOC"])
+                        mat_doc_dict = {}
+                        ses_number_dict = {}
+                        for hasil in txt_data:
+                            mat_doc = hasil["MAT_DOC"]
+                            ses_number = hasil["SES_NUMBER"]
+                            if ses_number in ses_number_dict:
+                                # Append the item to the existing list
+                                ses_number_dict[ses_number].append(hasil)
+                            else:
+                                # Create a new list with the current item
+                                ses_number_dict[ses_number] = [hasil]
+                        for ses_number, items in ses_number_dict.items():
+                            vals = []
+                            for item in items:
+                                print (item)
+                                qty = float(item['QUANTITY']) * 100
+                                picking = self.env['stock.picking'].sudo().search([
+                                    ('origin', '=', item['MAT_DOC']), ('name', '=', item['SES_NUMBER']),('po_id', '=', record.id)], limit=1)
+                                if picking.id:
+                                    if item['REVERSE'] == 'X':
+                                        print("reverse", item['REVERSE'], item['MAT_DOC'])
+                                        picking.write({'active': False})
+                                        move = self.env['stock.move'].sudo().search([
+                                            ('sequence', '=', item['MATDOC_ITM']), ('picking_id', '=', picking.id)],
+                                            limit=1)
+                                        move.write({'active': False})
+                                        move_line = self.env['stock.move.line'].sudo().search([
+                                            ('picking_id', '=', picking.id), ('move_id', '=', move.id)], limit=1)
+                                        move_line.write({'active': False})
+                                    else:
+                                        move = self.env['stock.move'].sudo().search([
+                                            ('sequence', '=', item['MATDOC_ITM']), ('picking_id', '=', picking.id)],
+                                            limit=1)
+                                        if move.id:
+                                            state = picking.state
+                                            if qty != move.product_uom_qty:
+                                                print("update qty", qty, move.product_uom_qty)
+                                                move.write({'product_uom_qty': qty, 'quantity_done': qty, 'state': state})
+                                                picking.write({'note': 'updated', 'state': state})
 
-            else:
-                raise UserError(_("Data GR Tidak Tersedia!"))
+                                if not picking.id:
+                                    print("create picking")
+                                    if item['REVERSE'] == '':
+                                        print("create new",item['REVERSE'], item['MAT_DOC'])
+                                        prod = self.env['product.product'].sudo().search([
+                                            ('default_code', '=', item['MATERIAL'])], limit=1)
+                                        uom = self.env['uom.uom'].sudo().search([
+                                            ('name', '=', item['ENTRY_UOM'])], limit=1)
+                                        if not uom:
+                                            uom = self.env['uom.uom'].sudo().create({
+                                                'name': hasil['ENTRY_UOM'], 'category_id': 1})
+                                        po_line = self.env['purchase.order.line'].sudo().search([
+                                            ('order_id', '=', self.id), ('sequence', '=', item['PO_ITEM'])], limit=1)
+                                        vals.append((0, 0, {
+                                            'sequence': item['MATDOC_ITM'],
+                                            'product_id': prod.id if prod else False,
+                                            'quantity_done': float(item['QUANTITY']),
+                                            'product_uom_qty': float(item['QUANTITY']),
+                                            'product_uom': uom.id,
+                                            #'active': active,
+                                            'state':'waits',
+                                            'location_id': 4,
+                                            'location_dest_id': 8,
+                                            'purchase_line_id': po_line.id,
+                                            'name': hasil['PO_NUMBER']
+                                        }))
+                                        docdate = hasil['DOC_DATE']
+                                        matdoc = item['MAT_DOC']
+
+                                    if vals:
+                                        picking_create = self.env['stock.picking'].sudo().create({
+                                            'name': ses_number,
+                                            'po_id': record.id,
+                                            'purchase_id': record.id,
+                                            'project_id': record.project_id.id,
+                                            'branch_id': record.branch_id.id,
+                                            'department_id': record.department_id.id if record.department_id.id else False,
+                                            'scheduled_date': docdate,
+                                            'start_date': docdate,
+                                            'partner_id': record.partner_id.id,
+                                            'location_id': 4,
+                                            'location_dest_id': 8,
+                                            'picking_type_id': 1,
+                                            'move_ids': vals,
+                                            'pick_type': 'ses',
+                                            'origin':matdoc,
+                                            #'move_ids_without_package':vals,
+                                            'company_id': 1,
+                                            'state': 'waits'
+                                        })
+                                        picking_create.write({'state': 'waits'})
+                                    else:
+                                        pass
+                            #raise UserError(_("Data GR Tidak Tersedia di PO TERSEBUT!"))
+
+                    else:
+                        pass
+                    record.write({'notes': noted_message})
+            except:
+                record.write({'notes': noted_message})

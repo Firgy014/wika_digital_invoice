@@ -17,6 +17,7 @@ class wika_get_po(models.Model):
     po_plant = fields.Char(string="PO Plant")
     co_code = fields.Char(string="Co Code")
     status=fields.Char(string='Status')
+    tgl_create_sap=fields.Date(string='Tanggal Create SAP')
 
     def get_po(self):
         url_config = self.env['wika.integration'].search([('name', '=', 'URL PO')], limit=1)
@@ -42,7 +43,7 @@ class wika_get_po(models.Model):
             "po_doc" : "%s",
             "po_jenis" : "",
             "po_dcdat" : "",
-            "po_crdat": "",
+            "po_crdate": "",
             "po_plant" : "%s",
             "co_code" : "%s",
             "po_del" : "",
@@ -174,8 +175,7 @@ class wika_get_po(models.Model):
                         else:
                             po_create = self.env['purchase.order'].sudo().create({
                                 'name': data['po_doc'],
-                            'payment_term_id':payment_term.id if payment_term else False,
-
+                                'payment_term_id':payment_term.id if payment_term else False,
                                 'partner_id': vendor.id if vendor else False,
                                 'project_id': profit_center,
                                 'branch_id': branch_id,
@@ -189,6 +189,7 @@ class wika_get_po(models.Model):
                                 'tgl_create_sap': data['po_crdat']
 
                             })
+                            po_create.get_gr()
             else:
                 vals = []
                 potongan = []
@@ -239,6 +240,7 @@ class wika_get_po(models.Model):
                             prod = self.env['product.product'].sudo().search([
                                 ('default_code', '=', data['prd_no'])], limit=1)
                             qty = float(data['po_qty'])
+                            print ("qty awal-------------------------------",qty)
                             if txt_data['po_jenis'] == 'JASA':
                                 price = float(data['po_price'])/qty
                             else:
@@ -294,6 +296,7 @@ class wika_get_po(models.Model):
                                      'taxes_id': [(6, 0, [x.id for x in tax])]
 
                                  }))
+                            print ("ppppppppp",vals)
                     else:
                         for data in txt_data['isi']:
                             seq = float(data['po_no'])
@@ -319,6 +322,7 @@ class wika_get_po(models.Model):
                             'tgl_create_sap': txt_data['po_crdat']
 
                         })
+                        po_create.get_gr()
             self.status='OK'
         else:
             raise UserError(_("Data PO Tidak Tersedia!"))

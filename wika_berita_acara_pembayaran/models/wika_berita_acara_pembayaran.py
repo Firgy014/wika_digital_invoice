@@ -4,7 +4,7 @@ from odoo.exceptions import UserError, ValidationError, Warning, AccessError
 import pytz
 import requests
 from num2words import num2words
-import base64
+import math
 import json
 from urllib.request import Request, urlopen
 import logging, json
@@ -78,8 +78,9 @@ class WikaBeritaAcaraPembayaran(models.Model):
     total_qty_gr = fields.Integer(string='Total Quantity', compute='_compute_total_qty_gr')
     total_unit_price_po = fields.Float(string='Total Unit Price PO', compute='_compute_total_unit_price_po')
     total_current_value = fields.Float(string='Nilai saat ini', compute='_compute_total_current_value') #buat sum nilai saat ini
-    pph_ids = fields.Many2many('account.tax', string='PPH')
-    total_pph = fields.Monetary(string='Total PPH', compute='compute_total_pph')
+    pph_ids = fields.Many2many('account.tax', string='PPh')
+    amount_pph =fields.Float(string="Amount PPh",copy=False)
+    total_pph = fields.Monetary(string='Total PPh', compute='compute_total_pph')
     level = fields.Selection([
         ('Proyek', 'Proyek'),
         ('Divisi Operasi', 'Divisi Operasi'),
@@ -137,11 +138,14 @@ class WikaBeritaAcaraPembayaran(models.Model):
     terbilang_retensi = fields.Char('Terbilang retensi', compute='_compute_rupiah_terbilang_retensi')
     terbilang_co = fields.Char('Terbilang cut over', compute='_compute_rupiah_terbilang_cut_over')
     is_fully_invoiced = fields.Boolean(string='Fully Invoiced', compute='_compute_fully_invoiced', default=False,store=True)
+    is_cut_over = fields.Boolean('is cut over')
+
 
     @api.onchange('po_id', 'bap_type')
     def _change_button(self):
         for record in self:
             if record.po_id and record.bap_type == 'cut over' :
+                record.is_cut_over=True
                 account_move = self.env['account.move.line'].search([('purchase_id','=',record.po_id.id), ('cut_off','=',True),('display_type','=','product')])
                 if any(not x.stock_move_id for x in account_move):
                     warning = {
@@ -149,6 +153,8 @@ class WikaBeritaAcaraPembayaran(models.Model):
                         'message': 'Silahkan Mapping Invoice Cut Over terlebih dahulu',
                     }
                     return {'warning': warning}
+            else:
+                record.is_cut_over = False
 
 
     @api.constrains('po_id', 'bap_type')
@@ -178,7 +184,6 @@ class WikaBeritaAcaraPembayaran(models.Model):
         tots = 0.0
         for bap_line in self.bap_ids:
             tots += bap_line.qty
-
         if tots == 0.0:
             self.is_fully_invoiced = True
         else:
@@ -587,6 +592,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
             price_cut_lines = []
             self.bap_ids = [(2, bap_id.id, 0) for bap_id in self.bap_ids]
             if self.bap_type == 'cut over':
+                self.is_cut_over = True
                 bap_lines = []
                 account_moves = self.env['account.move'].search([
                     ('po_id', '=', self.po_id.id),
@@ -606,6 +612,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
                             'unit_price': line.price_unit,
                             'tax_ids': [(6, 0, line.tax_ids.ids)],
                             'sub_total': line.price_subtotal,
+                            'amount_adjustment': line.price_subtotal,
                             'currency_id': line.currency_id.id,
                         }))
 
@@ -613,6 +620,8 @@ class WikaBeritaAcaraPembayaran(models.Model):
             elif self.bap_type == 'progress':
                 stock_pickings = self.env['stock.picking'].search([('po_id', '=', self.po_id.id)])
                 # Mengisi price_cut_lines
+                self.is_cut_over = False
+
                 for line in self.po_id.price_cut_ids:
                     price_cut_lines.append((0, 0, {
                         'product_id': line.product_id.id,
@@ -633,6 +642,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
                     'product_id': picking.product_id.id,
                     'qty': picking.sisa_qty_bap,
                     'unit_price': picking.purchase_line_id.price_unit,
+                    'amount_adjustment': picking.sisa_qty_bap*  picking.purchase_line_id.price_unit,
                     'tax_ids':picking.purchase_line_id.taxes_id.ids,
                     'currency_id':picking.purchase_line_id.currency_id.id
                 }))
@@ -640,7 +650,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
                 self.bap_ids = bap_lines
                 self.price_cut_ids = price_cut_lines
 
-    @api.depends('bap_ids.sub_total', 'bap_ids.tax_ids', 'bap_type')
+    @api.depends('bap_ids.amount_adjustment', 'bap_ids.sub_total','bap_ids.tax_ids', 'bap_type')
     def compute_total_amount(self):
         for record in self:
             if record.bap_type == 'uang muka' :
@@ -650,7 +660,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
                 total_amount_value = record.po_id.amount_untaxed
                 record.total_amount = total_amount_value
             else:
-                total_amount_value = sum(record.bap_ids.mapped('sub_total'))
+                total_amount_value = sum(record.bap_ids.mapped('amount_adjustment'))
                 record.total_amount = total_amount_value
 
     @api.depends('total_amount', 'dp_total', 'retensi_total', 'bap_ids.tax_ids', 'bap_type')
@@ -658,11 +668,11 @@ class WikaBeritaAcaraPembayaran(models.Model):
         for record in self:
             if record.bap_type == 'uang muka':
                 total_amount_tax = record.po_id.amount_tax
-                record.total_tax = total_amount_tax
+                record.total_tax = math.floor(total_amount_tax)
                 # print("TESSSSSSBORRRRRRR", record.total_tax)
             elif record.bap_type == 'retensi':
                 total_amount_tax = record.po_id.amount_tax
-                record.total_tax = total_amount_tax
+                record.total_tax = math.floor(total_amount_tax)
                 # print("TESSSSSSBORRRRRRRETENSIII", record.total_tax)
             else:
                 total_amount = record.total_amount or 0.0
@@ -670,13 +680,9 @@ class WikaBeritaAcaraPembayaran(models.Model):
                 retensi_total = record.retensi_total or 0.0
                 tax_percentage = sum(record.bap_ids.tax_ids.mapped('amount')) / 100.0
                 total_tax = (total_amount - dp_total - retensi_total) * tax_percentage
-                record.total_tax = total_tax
+                record.total_tax = math.floor(total_tax)
     
-    @api.depends('bap_ids.price_unit_po', 'bap_ids.qty')
-    def compute_current_value(self):
-        for record in self:
-            total_current_value = sum(record.bap_ids.mapped('tax_amount'))
-            record.total_tax = total_tax_value
+
 
     @api.depends('grand_total', 'total_tax')
     def compute_grand_total(self):
@@ -685,13 +691,14 @@ class WikaBeritaAcaraPembayaran(models.Model):
 
     # compute total pph
     # compute total pph revisi
-    @api.depends('total_amount', 'pph_ids.amount')
+    @api.depends('total_amount', 'pph_ids.amount','amount_pph','retensi_total')
     def compute_total_pph(self):
         for record in self:
             total_pph = 0.0
+            total_net=record.total_amount-record.retensi_total
             for pph in record.pph_ids:
-                total_pph += (record.total_amount * pph.amount) / 100
-            record.total_pph = total_pph
+                total_pph += (total_net * pph.amount) / 100
+            record.total_pph = math.floor(total_pph+record.amount_pph)
 
 
     def action_reject(self):
@@ -1234,9 +1241,9 @@ class WikaBeritaAcaraPembayaran(models.Model):
 
     def unlink(self):
         for record in self:
-            if record.state in ('uploaded', 'approved'):
+            if record.state =='approved':
                 raise ValidationError('Tidak dapat menghapus ketika status Berita Acara Pembayaran (BAP) dalam keadaan Upload atau Approve')
-            if record.state=='draft':
+            if record.state!='draft':
                 record.activity_ids.unlink()
                 record.bap_ids.unlink()
                 record.price_cut_ids.unlink()
@@ -1281,10 +1288,12 @@ class WikaBeritaAcaraPembayaranLine(models.Model):
     tax_ids = fields.Many2many('account.tax', string='Tax')
     currency_id = fields.Many2one('res.currency', string='Currency')
     unit_price = fields.Monetary(string='Unit Price')
+    adjustment = fields.Boolean(string='Adjustment',default=False)
+    amount_adjustment = fields.Monetary(string='Amount Adjustment')
     sub_total = fields.Monetary(string='Subtotal', compute='compute_sub_total')
     tax_amount = fields.Monetary(string='Tax Amount', compute='compute_tax_amount')
     current_value = fields.Monetary(string='Current Value', compute='_compute_current_value')
-    sisa_qty_bap_grses = fields.Float(string='Sisa BAP')
+    sisa_qty_bap_grses = fields.Float(string='Sisa BAP',digits='Product Unit of Measure')
     qty_invoiced = fields.Float(string='Total Invoiced', compute='_compute_invoiced_bap_qty')
 
     @api.depends('bap_id')
@@ -1293,6 +1302,7 @@ class WikaBeritaAcaraPembayaranLine(models.Model):
             move_line_ids = self.env['account.move.line'].sudo().search([('bap_line_id', '=', record.id)])
             total_invoiced_bap_qty = sum(move_line.quantity for move_line in move_line_ids)
             record.qty_invoiced = total_invoiced_bap_qty
+
 
     # @api.constrains('qty')
     # def _check_qty_limit(self):
@@ -1323,16 +1333,25 @@ class WikaBeritaAcaraPembayaranLine(models.Model):
         for record in self:
             record.sub_total = record.qty * record.unit_price
 
+    @api.onchange('qty','adjustment')
+    def change_qty(self):
+        for record in self:
+            if record.adjustment != True:
+                record.amount_adjustment = record.qty * record.unit_price
+
     @api.constrains('picking_id')
     def _check_picking_id(self):
         for record in self:
             if not record.picking_id and record.bap_id.bap_type != 'cut over':
                 raise ValidationError('Field "NO GR/SES" harus diisi. Tidak boleh kosong!')
 
-    @api.depends('unit_price_po', 'qty')
+    @api.depends('unit_price_po', 'qty','adjustment')
     def _compute_current_value(self):
         for record in self:
-            record.current_value = record.qty * record.unit_price_po
+            if record.adjustment != True:
+                record.current_value = record.qty * record.unit_price_po
+            else:
+                record.current_value = record.amount_adjustment
 
 class WikaBapDocumentLine(models.Model):
     _name = 'wika.bap.document.line'

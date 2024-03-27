@@ -32,7 +32,7 @@
                     <group>
                       <group id="header_left_group">
                            <field name="partner_id" options="{'no_create': True, 'no_create_edit':True}" widget="res_partner_many2one" string="Vendor" />
-                            <field name="bap_id" options="{'no_create': True, 'no_create_edit':True}" domain="[('is_fully_invoiced', '=', False), ('state', 'in', ['draft','uploaded','approved'])]" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
+                            <field name="bap_id" options="{'no_create': True, 'no_create_edit':True}" domain="[('is_fully_invoiced', '=', False), ('state', '=', 'approved'),('bap_type', '!=', 'cut over')]" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
                            <field name="po_id" options="{'no_create': True, 'no_create_edit':True}" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
                            <field name="no_invoice_vendor" style="background-color: #dddded;" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
                            <field name="valuation_class" groups="base.group_no_one" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
@@ -99,9 +99,10 @@
                                                string="Total"
                                                groups="account.group_show_line_subtotals_tax_included"/>
                                         <field name="bap_line_id" invisible="1"/>
-                                        <field name="picking_id" invisible="1"/>
-                                        <field name="stock_move_id" invisible="1"/>
-
+                                        <field name="picking_id" readonly="1" force_save="1"/>
+                                        <field name="stock_move_id" readonly="1" force_save="1"/>
+                                        <field name="adjustment" readonly="1" force_save="1"/>
+                                        <field name="amount_adjustment" sum="Total" attrs="{'invisible': [('adjustment', '!=', True)]}" readonly="1" force_save="1"/>
                                         <!-- Others fields -->
                                         <field name="partner_id" invisible="1"/>
                                         <field name="currency_id" invisible="1"/>
@@ -139,18 +140,17 @@
                           <page id="other_tab" string="Other Info" name="other_info">
 
                             <group id="other_tab_group">
-                                 <field name="payment_reference" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
-                                <field name="payment_block" groups="base.group_no_one"/>
+                                 <field name="payment_reference"  groups="base.group_no_one"/>
                                 <field name="payment_method" groups="base.group_no_one"/>
                                 <field name="approval_stage" readonly="1" force_save="1"/>
                                 <field name="baseline_date" groups="base.group_no_one"/>
 
-                                <field name="invoice_number" readonly="1" attrs="{'invisible': [('state', '!=', 'approved')]}"/>
+                                <field name="invoice_number" groups="base.group_no_one"/>
                                 <field name="partner_bank_id" string="Bank Account"/>
                                 <field name="account_id" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
                                 <field name="retention_due" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
                                 <field name="cut_off" readonly="1" force_save="1"/>
-                                <field name="pph_amount" groups="base.group_no_one"/>
+                                <field name="pph_amount" />
 
                             </group>
                           </page>
