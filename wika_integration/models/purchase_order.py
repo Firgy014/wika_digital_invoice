@@ -21,6 +21,7 @@ class Purchase_Order(models.Model):
             "skey": "OAZvRmB7HKDdDkKF29DXZwgSmlv9KqQWZNDWV51SACAbhnOvuA1AvZf5FnIBrLxC"
         })
         payload = payload.replace('\n', '')
+
         try:
             # 1. Get W-KEY TOKEN
             response = requests.request("POST", url, data=payload, headers=headers)
@@ -35,7 +36,7 @@ class Purchase_Order(models.Model):
                                     "po_doc": "%s",
                                     "po_jenis": "",
                                     "po_dcdat": "",
-                                    "po_crdat": "%s",
+                                    "po_crdate": "%s",
                                     "po_plant": "A000",
                                     "co_code": "A000",
                                     "po_del": "",
@@ -46,32 +47,92 @@ class Purchase_Order(models.Model):
             _logger.info(payload_2)
             response_2 = requests.request("POST", url_get_po, data=payload_2, headers=headers)
             txt = json.loads(response_2.text)
-            print (txt)
+
             if 'data' in txt:
                 if txt['data']:
+                    vals = []
+                    print (txt['data'])
                     txt_data = txt['data']
                     for data in txt_data['isi']:
                         seq = float(data['po_no'])
+                        qty = float(data['po_qty'])
                         po_line = self.env['purchase.order.line'].sudo().search([
                             ('order_id', '=', self.id),
                             ('sequence', '=', int(seq))], limit=1)
-                        if po_line:
-                            qty = float(data['po_qty'])
-                            if data['poitem_del'] == 'L':
-                                po_line.write({'active': False})
+                        # if po_line.id:
+                        #     print("cccccccccccccccccccccccccc")
+                        #     if data['poitem_del'] == 'L':
+                        #         po_line.write({'active': False})
+                        #         continue
+                        #     else:
+                        #         if qty != po_line.quantity:
+                        #             print("update",qty)
+                        #             po_line.write({'quantity': qty})
+                        #     continue
+                        if not po_line.id:
+                            print ("111111111111111111111")
+                            if txt_data['po_jenis'] == 'JASA':
+                                price = float(data['po_price']) / qty
                             else:
-                                if qty != po_line.quantity:
-                                    po_line.write({'quantity': qty})
-                            self.write({'notes': 'OK'})
-                        # else:
-                        #     po_line.create({'order_id'quantity': qty})
-                    else:
-                        pass
+                                price = float(data['po_price'])
+                            prod = self.env['product.product'].sudo().search([
+                                ('default_code', '=', data['prd_no'])], limit=1)
+                            if not prod:
+                                return "Material/Service  : %s tidak ditemukan" % (data['prd_no'])
+                            tax = self.env['account.tax'].sudo().search([
+                                ('name', '=', data['tax_code'])], limit=1)
+                            if not tax:
+                                return "Kode Pajak  : %s tidak ditemukan" % data['MWSKZ']
+
+                            uom = self.env['uom.uom'].sudo().search([
+                                ('name', '=', data['po_uom'])], limit=1)
+                            if not uom:
+                                uom = self.env['uom.uom'].sudo().create({
+                                    'name': data['po_uom'], 'category_id': 1})
+                            line = self.env['purchase.order.line'].sudo().create({
+                                    'order_id':self.id,
+                                    'sequence': int(seq),
+                                    'product_id': prod.id if prod else False,
+                                    'product_qty': qty,
+                                    'product_uom': uom.id,
+                                    'price_unit': price,
+                                    'taxes_id': [(6, 0, [x.id for x in tax])]})
+
+                        #continue
+                    #     else:
+                    #         print("emang gak masuk sini 4444444444?")
+                    #
+                    #         vals.append((0, 0, {
+                    #             'order_id': self.id,
+                    #             'sequence': int(seq),
+                    #             'product_id': prod.id if prod else False,
+                    #             'product_qty': qty,
+                    #             'product_uom': uom.id,
+                    #             'price_unit': price,
+                    #             'taxes_id': [(6, 0, [x.id for x in tax])]
+                    #
+                    #                  }))
+                    #         print(vals)
+                    # if vals:
+                    #     print ("kkkk")
+                    #     line=self.env['purchase.order.line'].sudo().create({
+                    #         'order_id':self.id,
+                    #         'sequence': int(seq),
+                    #         'product_id': prod.id if prod else False,
+                    #         'product_qty': qty,
+                    #         'product_uom': uom.id,
+                    #         'price_unit': price,
+                    #         'taxes_id': [(6, 0, [x.id for x in tax])]})
+                    #
+                    #     # else:
+                    #     #     po_line.create({'order_id'quantity': qty})
+                    # else:
+                    #     pass
             else:
                 pass
         except:
             pass
-            self.write({'notes': "tidak ada data update "})
+
 
             #raise UserError(_("Connection Failed. Please Check Your Internet Connection."))
 
