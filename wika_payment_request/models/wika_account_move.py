@@ -18,6 +18,10 @@ class InheritAccountMove(models.Model):
         ('Ready To Pay', 'Ready To Pay'),
         ('Paid', 'Paid')
     ], string='Payment State',default='Not Request')
+    msg_sap = fields.Selection([
+        ('ok', 'The Payment Request that use this Invoice as a reference is already posted to SAP'),
+        ('not_ok', 'This Invoice is not posted or affiliated to any Payment Request')
+    ], string='Message SAP')
 
     @api.depends('partial_request_ids','total_line','status_payment')
     def _compute_amount_pr(self):

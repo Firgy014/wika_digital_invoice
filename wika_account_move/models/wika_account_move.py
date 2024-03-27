@@ -5,6 +5,13 @@ from datetime import datetime,timedelta
 class WikaInheritedAccountMove(models.Model):
     _inherit = 'account.move'
     
+    name = fields.Char(
+        string='Number',
+        compute='_compute_name_wika', inverse='_inverse_name', readonly=False, store=True,
+        copy=False,
+        tracking=True,
+        index='trigram',
+    )
     bap_id = fields.Many2one('wika.berita.acara.pembayaran', string='BAP',domain=[('state','=','approved')])
     branch_id = fields.Many2one('res.branch', string='Divisi', required=True)
     department_id = fields.Many2one('res.branch', string='Department')
@@ -103,8 +110,6 @@ class WikaInheritedAccountMove(models.Model):
             else:
                 x.check_biro = False
 
-
-
     # @api.onchange('invoice_date')
     # def _onchange_invoice_date(self):
     #     if isinstance(self, bool):
@@ -172,7 +177,23 @@ class WikaInheritedAccountMove(models.Model):
     is_mp_approved = fields.Boolean(string='Approved by MP', default=False, store=True)
     cut_off = fields.Boolean(string='Cut Off',default=False,copy=False)
     # is_approval_checked = fields.Boolean(string="Approval Checked")
-
+    
+    def _compute_name_wika(self):
+        for record in self:
+            if record.date:
+                year = str(record.date.year)
+                month = str(record.date.month).zfill(2)
+                next_number = 1
+                while True:
+                    name = f"INV/{year}/{month}/{str(next_number).zfill(5)}"
+                    existing_record = self.env['account.move'].search([('name', '=', name)], limit=1)
+                    if not existing_record:
+                        record.name = name
+                        break
+                    next_number += 1
+                    if next_number > 99999:
+                        raise ValidationError("Naming sequence limit exceeded.")
+    
     @api.depends('history_approval_ids.is_show_wizard', 'history_approval_ids.user_id')
     def _compute_is_approval_checked(self):
         current_user = self.env.user

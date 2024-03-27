@@ -1,7 +1,10 @@
 from odoo import models, fields, api,_
 from datetime import datetime, timedelta
 from odoo.exceptions import UserError, ValidationError,Warning, AccessError
-
+import random
+import string
+import requests
+import json
 
 class WikaPaymentRequest(models.Model):
     _name = 'wika.payment.request'
@@ -86,6 +89,7 @@ class WikaPaymentRequest(models.Model):
         ('Pusat', 'Pusat'),
     ], string='Status Position')
     approval_line_id= fields.Many2one(comodel_name='wika.approval.setting.line')
+    is_posted_to_sap = fields.Boolean(string='Posted to SAP', default=False)
 
     @api.model
     def _getdefault_branch(self):
@@ -153,7 +157,6 @@ class WikaPaymentRequest(models.Model):
                 level = 'Divisi Fungsi'
             res.level = level
 
-
     @api.depends('department_id')
     def _cek_biro(self):
         for x in self:
@@ -165,7 +168,6 @@ class WikaPaymentRequest(models.Model):
                     x.check_biro = False
             else:
                 x.check_biro = False
-
 
     def assign_requested(self):
         model_model = self.env['ir.model'].sudo()
@@ -236,7 +238,6 @@ class WikaPaymentRequest(models.Model):
         self.step_approve += 1
         self.assign_requested()
 
-
     def action_approve(self):
         if self.activity_user_id.id ==self._uid:
             move_lines = []
@@ -286,13 +287,12 @@ class WikaPaymentRequest(models.Model):
                         'pr_id': self.id
                         })
                     self.write({'state': 'verified','activity_summary':'Request Divisi','approval_stage':'Divisi Operasi'})
+                    self._send_approved_pr_to_sap()
                 else:
                     raise ValidationError('User Next Approval tidak ditemukan!')
 
         else:
             raise ValidationError('User Akses Anda tidak berhak Approve!')
-
-
 
     def action_reject(self):
         action = self.env.ref('wika_payment_request.action_reject_pr_wizard').read()[0]
@@ -303,6 +303,63 @@ class WikaPaymentRequest(models.Model):
             if record.state in ('request', 'approve'):
                 raise ValidationError('Tidak dapat menghapus ketika status Payment Request dalam keadaan Request atau Approve')
         return super(WikaPaymentRequest, self).unlink()
+    
+    def _generate_random_string(self):
+        length = 32
+        letters_and_digits = string.ascii_uppercase + string.digits
+        random_string = ''.join((random.choice(letters_and_digits) for i in range(length)))
+
+        return random_string
+
+    def _send_approved_pr_to_sap(self):
+        package_id = self._generate_random_string()
+        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+
+        auth = ('WIKA_INT', 'Initial123')
+        url = "https://fioridev.wika.co.id/ywikafi016/update-refkey3?sap-client=110"
+        headers = {'x-csrf-token': 'fetch'}
+
+        # GET Req
+        response = requests.get(url, headers=headers, auth=auth)
+        fetched_token = response.headers.get('x-csrf-token')
+        fetched_cookies = response.cookies.get_dict()
+
+        invoice_list = []
+        data_ref = {}
+        
+        for invoice in self.invoice_ids:
+            data_ref = {
+                'BELNR': invoice.payment_reference,
+                'GJAHR': str(invoice.date)[:4],
+                'ZLSPR': invoice.payment_block,
+                'XREF3': invoice.project_id.sap_code
+            }
+            invoice_list.append(data_ref)
+
+        payload = json.dumps({
+            "DEVID": "YFII016",
+            "PACKAGEID": package_id,
+            "COCODE": "A000",
+            "PRCTR": "",
+            "TIMESTAMP": timestamp,
+            "DATA": invoice_list
+        })
+
+        # POST Req
+        post_headers = {
+            'x-csrf-token': fetched_token,
+            'Authorization': 'Basic V0lLQV9JTlQ6SW5pdGlhbDEyMw=='
+        }
+        response_post = requests.request("POST", url, headers=post_headers, data=payload, cookies=fetched_cookies)
+        if response_post.status_code == 200:
+            self.is_posted_to_sap = True
+            for invoice in self.invoice_ids:
+                invoice.msg_sap = 'ok'
+
+        elif response_post.status_code != 200:
+            for invoice in self.invoice_ids:
+                invoice.msg_sap = 'not_ok'        
+
 
 class WikaPrApprovalLine(models.Model):
     _name = 'wika.pr.approval.line'
