@@ -18,7 +18,7 @@ class StockMoveInherit(models.Model):
 
     def _compute_qty_bap(self):
         for x in self:
-            query = """select sum(qty) from wika_berita_acara_pembayaran_line where stock_move_id=%s
+            query = """select sum(qty) from wika_berita_acara_pembayaran_line where bap_id is not null and stock_move_id=%s
             """% (x.id)
             # print (query)
             self.env.cr.execute(query)

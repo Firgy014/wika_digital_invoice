@@ -201,7 +201,7 @@ class WikaInheritedAccountMove(models.Model):
     # is_approval_checked = fields.Boolean(string="Approval Checked")
 
     # is_approval_checked = fields.Boolean(string="Approval Checked")
-
+    @api.depends('date')
     def _compute_name_wika(self):
         for record in self:
             if record.date:
@@ -840,31 +840,7 @@ class WikaInheritedAccountMove(models.Model):
                 raise ValidationError('Tidak dapat menghapus ketika status Vendor Bils dalam keadaan Upload atau Approve')
         return super(WikaInheritedAccountMove, self).unlink()
 
-    @api.depends('posted_before', 'state', 'journal_id', 'date')
-    def _compute_name(self):
-        self = self.sorted(lambda m: (m.date, m.ref or '', m.id))
 
-        for move in self:
-            move_has_name = move.name and move.name != '/'
-            if move_has_name or move.state != 'draft':
-                if not move.posted_before and not move._sequence_matches_date():
-                    if move._get_last_sequence(lock=False):
-                        # The name does not match the date and the move is not the first in the period:
-                        # Reset to draft
-                        move.name = False
-                        continue
-                else:
-                    if move_has_name and move.posted_before or not move_has_name and move._get_last_sequence(lock=False):
-                        # The move either
-                        # - has a name and was posted before, or
-                        # - doesn't have a name, but is not the first in the period
-                        # so we don't recompute the name
-                        continue
-            if move.date and (not move_has_name or not move._sequence_matches_date()):
-                move._set_next_sequence()
-
-        self.filtered(lambda m: not m.name and not move.quick_edit_mode).name = '/'
-        self._inverse_name()
 
     def action_print_invoice(self):
         if self.level == 'Proyek':
