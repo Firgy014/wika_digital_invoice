@@ -60,6 +60,7 @@
                              <field name="is_mp_approved" groups="base.group_no_one"/>
                             <field name="is_wizard_cancel" readonly="1" invisible="1"/>
                             <field name="cut_off" readonly="1" force_save="1"/>
+                            <field name="is_full_payment" />
 
                       </group>
                     </group>

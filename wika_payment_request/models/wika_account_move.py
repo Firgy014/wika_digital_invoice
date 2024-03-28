@@ -7,8 +7,8 @@ class InheritAccountMove(models.Model):
     
     pr_id = fields.Many2one('wika.payment.request', string='Payment Request')
     partial_request_ids= fields.One2many('wika.partial.payment.request', 'invoice_id',string='Partial Payment Request')
-    total_partial_pr=fields.Float(string='Total Partial Payment Request',compute='_compute_amount_pr')
-    amount_sisa_pr=fields.Float(string='Sisa Partial Payment Request',compute='_compute_amount_pr')
+    total_partial_pr=fields.Float(string='Total Partial Payment Request', compute='_compute_amount_pr')
+    amount_sisa_pr=fields.Float(string='Sisa Partial Payment Request', compute='_compute_amount_pr')
     is_partial_pr=fields.Boolean(string='Partial Payment Request',default=False,compute='_compute_is_partial_pr')
     status_payment = fields.Selection([
         ('Not Request', 'Not Request'),
@@ -18,7 +18,12 @@ class InheritAccountMove(models.Model):
         ('Ready To Pay', 'Ready To Pay'),
         ('Paid', 'Paid')
     ], string='Payment State',default='Not Request')
-
+    sisa_partial = fields.Float(string='Sisa Partial', compute='_compute_sisa_partial', default=lambda self: self.total_line, store=True)
+    
+    def unlink(self):
+        erorTestttt
+        return super(InheritAccountMove).unlink()
+    
     @api.depends('partial_request_ids','total_line','status_payment')
     def _compute_amount_pr(self):
         for x in self:
@@ -28,6 +33,18 @@ class InheritAccountMove(models.Model):
             else:
                 x.total_partial_pr=x.total_line
                 x.amount_sisa_pr = x.total_line
+
+    @api.depends('partial_request_ids')
+    def _compute_total_partial_pr(self):
+        for move in self:
+            total_line = sum(move.partial_request_ids.mapped('amount'))
+            move.total_line = total_line
+
+    @api.depends('total_line', 'partial_request_ids.partial_amount')
+    def _compute_sisa_partial(self):
+        for move in self:
+            total_partial_amount = sum(move.partial_request_ids.mapped('partial_amount'))
+            move.sisa_partial = move.total_line - total_partial_amount
 
     @api.depends('total_partial_pr')
     def _compute_is_partial_pr(self):

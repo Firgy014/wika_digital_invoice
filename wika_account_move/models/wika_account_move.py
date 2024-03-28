@@ -67,7 +67,8 @@ class WikaInheritedAccountMove(models.Model):
     is_approval_checked = fields.Boolean(string="Approval Checked", compute='_compute_is_approval_checked' ,default=False)
     is_wizard_cancel = fields.Boolean(string="Is cancel", default=True)
     is_mp_approved = fields.Boolean(string='Approved by MP', default=False, compute='_compute_mp_approved', store=True)
-
+    is_full_payment = fields.Boolean('is_full_payment')
+    
     @api.depends('history_approval_ids.user_id')
     def _compute_mp_approved(self):
         approval_setting_model = self.env['wika.approval.setting'].sudo()

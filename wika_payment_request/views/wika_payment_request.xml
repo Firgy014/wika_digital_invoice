@@ -104,7 +104,14 @@
                             <page string="List Invoice">
                                 <group>   
                                     <field name="invoice_ids" mode="tree" nolabel="1"  colspan="2" 
-                                        domain="[('move_type', '=', 'in_invoice'), ('state', '=', 'approved'),('status_payment', '=', 'Not Request'),]"
+                                        domain="[('move_type', '=', 'in_invoice'), 
+                                                    ('state', '=', 'approved'), 
+                                                    '|', 
+                                                    ('sisa_partial', '>', 0), 
+                                                    '|', 
+                                                    ('partial_request_ids', '=', False), 
+                                                    ('partial_request_ids.is_already_pr', '!=', True),
+                                                    ('is_full_payment', '=', False)]"
                                         attrs="{'readonly': [('state', '=', 'verified')]}">
                                         <tree>
                                             <field name="name"/>
@@ -115,6 +122,7 @@
                                             <field name="invoice_date" string="Document Date"/>
                                             <field name="invoice_date_due"/>
                                             <field name="total_partial_pr" string="Amount Request"/>
+                                            <field name="sisa_partial"/>
                                             <field name="is_partial_pr"/>
                                             <field name="status_payment"/>
                                         </tree>
@@ -126,6 +134,8 @@
                                 <group>
                                     <field name="move_ids" mode="tree" nolabel="1"  colspan="2" >
                                         <tree>
+                                            <field name="invoice_id"/>
+                                            <field name="partial_id"/>
                                             <field name="branch_id"/>
                                             <field name="project_id"/>
                                             <field name="partner_id"/>

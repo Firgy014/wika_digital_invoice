@@ -44,6 +44,7 @@
                     <field name="date"/>
                     <field name="partial_amount" sum="Total Partial"/>
                     <field name="state"/>
+                    <field name="is_already_pr"/>
                 </tree>
             </field>
         </record>
@@ -78,7 +79,7 @@
                             <group>
                                 <field name="invoice_id" attrs="{'readonly': [('state', 'in', [ 'requested', 'approved'])]}"/>
                                 <field name="partner_id" attrs="{'readonly': [('state', 'in', [ 'requested', 'approved'])]}"/>
-                                <field name="total_invoice" attrs="{'readonly': [('state', 'in', [ 'requested', 'approved'])]}"/>
+                                <field name="total_invoice" force_save="1" attrs="{'readonly': [('state', 'in', [ 'draft', 'requested', 'approved'])]}"/>
                                 <field name="sisa_partial_amount" attrs="{'readonly': [('state', 'in', [ 'requested', 'approved'])],'invisible': [('state', '!=', 'approve')]}"/>
                                 <field name="partial_amount" attrs="{'readonly': [('state', 'in', [ 'requested', 'approved'])]}"/>
                                 <field name="step_approve" invisible="1" attrs="{'readonly': [('state', 'in', [ 'requested', 'approved'])]}"/>
@@ -93,6 +94,7 @@
                                     attrs="{'readonly': [('state', 'in', [ 'request', 'approve'])], 'invisible': [('check_biro', '=', False)]}"/>
                                 <field name="project_id" 
                                     attrs="{'readonly': [('state', 'in', [ 'request', 'approve'])]}"/>
+                                <field name="is_already_pr" invisible="0"/>
                             </group>
                         </group>
                         <notebook>
