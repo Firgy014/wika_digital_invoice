@@ -251,12 +251,6 @@ class WikaPaymentRequest(models.Model):
                 print (groups_id_next.name)
                 for x in groups_id_next.users:
                     if self.level == 'Proyek' and x.branch_id == self.branch_id:
-                        # print ("masuk level")
-                        # print (x.branch_id.code)
-                        # print (self.branch_id.code)
-                        # if x.branch_id == self.branch_id:
-                        #     print("ddddddddddddd")
-                        #     cek = True
                         first_user = x.id
                     if self.level == 'Divisi Operasi' and x.branch_id == self.branch_id:
                         first_user = x.id
@@ -287,7 +281,7 @@ class WikaPaymentRequest(models.Model):
                         'pr_id': self.id
                         })
                     self.write({'state': 'verified','activity_summary':'Request Divisi','approval_stage':'Divisi Operasi'})
-                    self._send_approved_pr_to_sap()
+                    self.send_proyek_approved_pr_to_sap()
                 else:
                     raise ValidationError('User Next Approval tidak ditemukan!')
 
@@ -311,7 +305,8 @@ class WikaPaymentRequest(models.Model):
 
         return random_string
 
-    def _send_approved_pr_to_sap(self):
+    def send_proyek_approved_pr_to_sap(self):
+        print("masukkk_____proyek")
         package_id = self._generate_random_string()
         timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
 
@@ -358,8 +353,7 @@ class WikaPaymentRequest(models.Model):
 
         elif response_post.status_code != 200:
             for invoice in self.invoice_ids:
-                invoice.msg_sap = 'not_ok'        
-
+                invoice.msg_sap = 'not_ok'                
 
 class WikaPrApprovalLine(models.Model):
     _name = 'wika.pr.approval.line'
@@ -463,3 +457,104 @@ class WikaPrLine(models.Model):
                 self.write({'next_user_id': False})
         else:
             raise ValidationError('User Akses Anda tidak berhak Approve!')
+        
+    def _generate_random_string(self):
+        length = 32
+        letters_and_digits = string.ascii_uppercase + string.digits
+        random_string = ''.join((random.choice(letters_and_digits) for i in range(length)))
+
+        return random_string
+
+    def send_divisi_approved_pr_to_sap(self):
+        print("masukkk_____divisi")
+        package_id = self._generate_random_string()
+        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+
+        auth = ('WIKA_INT', 'Initial123')
+        url = "https://fioridev.wika.co.id/ywikafi016/update-refkey3?sap-client=110"
+        headers = {'x-csrf-token': 'fetch'}
+
+        # GET Req
+        response = requests.get(url, headers=headers, auth=auth)
+        fetched_token = response.headers.get('x-csrf-token')
+        fetched_cookies = response.cookies.get_dict()
+
+        invoice_list = []
+        data_ref = {}
+        
+        data_ref = {
+            'BELNR': self.invoice_id.payment_reference,
+            'GJAHR': str(self.invoice_id.date)[:4],
+            'ZLSPR': self.invoice_id.payment_block,
+            'ZUONR': self.invoice_id.project_id.sap_code
+        }
+        invoice_list.append(data_ref)
+
+        payload = json.dumps({
+            "DEVID": "YWIKAFI016A",
+            "PACKAGEID": package_id,
+            "COCODE": "A000",
+            "PRCTR": "",
+            "TIMESTAMP": timestamp,
+            "DATA": invoice_list
+        })
+
+        # POST Req
+        post_headers = {
+            'x-csrf-token': fetched_token,
+            'Authorization': 'Basic V0lLQV9JTlQ6SW5pdGlhbDEyMw=='
+        }
+        response_post = requests.request("POST", url, headers=post_headers, data=payload, cookies=fetched_cookies)
+        if response_post.status_code == 200:
+            self.pr_id.is_posted_to_sap = True
+            return True
+
+        elif response_post.status_code != 200:
+            self.invoice_id.msg_sap = 'not_ok'
+            return False
+
+    def send_pusat_approved_pr_to_sap(self):
+        print("masuk_____pusat_____alhamdulillah_____siplah")
+        package_id = self._generate_random_string()
+        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+
+        auth = ('WIKA_INT', 'Initial123')
+        url = "https://fioridev.wika.co.id/ywikafi016b/update-paymntmethod?sap-client=110"
+        headers = {'x-csrf-token': 'fetch'}
+
+        # GET Req
+        response = requests.get(url, headers=headers, auth=auth)
+        fetched_token = response.headers.get('x-csrf-token')
+        fetched_cookies = response.cookies.get_dict()
+
+        invoice_list = []
+        data_ref = {}
+        
+        data_ref = {
+            'BELNR': self.invoice_id.payment_reference,
+            'GJAHR': str(self.invoice_id.date)[:4],
+            'ZLSPR': self.invoice_id.payment_block,
+            'ZLSCH': "F"
+        }
+        invoice_list.append(data_ref)
+
+        payload = json.dumps({
+            "DEVID": "YFII019",
+            "PACKAGEID": package_id,
+            "COCODE": "A000",
+            "PRCTR": "",
+            "TIMESTAMP": timestamp,
+            "DATA": invoice_list
+        })
+
+        # POST Req
+        post_headers = {
+            'x-csrf-token': fetched_token,
+            'Authorization': 'Basic V0lLQV9JTlQ6SW5pdGlhbDEyMw=='
+        }
+        response_post = requests.request("POST", url, headers=post_headers, data=payload, cookies=fetched_cookies)
+        if response_post.status_code == 200:
+            self.pr_id.is_posted_to_sap = True
+
+        elif response_post.status_code != 200:
+            self.invoice_id.msg_sap = 'not_ok'
