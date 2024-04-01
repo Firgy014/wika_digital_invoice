@@ -582,8 +582,6 @@ class WikaBeritaAcaraPembayaran(models.Model):
                             else:
                                 x.write({'stock_move_id': data.stock_move_id.id})
 
-
-
     @api.onchange('po_id','bap_type')
     def onchange_po_id(self):
 
@@ -745,7 +743,6 @@ class WikaBeritaAcaraPembayaran(models.Model):
         else:
             raise ValidationError('User Akses Anda tidak berhak Reject!')
 
-
     def assign_todo_first(self):
         model_model = self.env['ir.model'].sudo()
         document_setting_model = self.env['wika.document.setting'].sudo()
@@ -798,44 +795,76 @@ class WikaBeritaAcaraPembayaran(models.Model):
             else:
                 raise AccessError(
                     "Either approval and/or document settings are not found. Please configure it first in the settings menu.")
+            
     def push_bap(self):
-        api_config_sap_token = self.env['wika.integration'].sudo().search([('name', '=', 'URL_GET_TOKEN')], limit=1)
-        api_config_sap_bap = self.env['wika.integration'].sudo().search([('name', '=', 'URL_SEND_BAP')], limit=1)
-        headers_get = {
-            'Authorization': 'Basic V0lLQV9JTlQ6SW5pdGlhbDEyMw==',
-            'Content-Type': 'application/json',
-            'x-csrf-Token': 'fetch',
+        auth = ('WIKA_INT', 'Initial123')
+        url = "https://fioridev.wika.co.id/ywikafi017/update-table?sap-client=110"
+        headers = {'x-csrf-token': 'fetch'}
+
+        if self.po_id.po_type == 'BARANG':
+            doc_no = self.po_id.name
+        elif self.po_id.po_type == 'JASA':
+            doc_no = self.po_id.origin
+
+        # GET Req
+        response = requests.get(url, headers=headers, auth=auth)
+        fetched_token = response.headers.get('x-csrf-token')
+        fetched_cookies = response.cookies.get_dict()
+        print("headers", headers)
+        print("fetched_token", fetched_token)
+        print("fetched_cookies", fetched_cookies)
+        print("idddd", self.id)
+        print("pooidddd", self.po_id)
+        # tesduls
+
+        payload = json.dumps({
+            "INPUT": [
+                {
+                    "COMPANY_CODE": "A000",
+                    "DOCUMENT_NO": doc_no,
+                    "MATDOC_YEAR": str(fields.Date.to_date(self.bap_date).year),
+                    "STATUS": "X"
+                }
+            ]
+        })
+
+        # POST Req
+        post_headers = {
+            'x-csrf-token': fetched_token,
+            'Authorization': 'Basic V0lLQV9JTlQ6SW5pdGlhbDEyMw=='
         }
-        payload_get={}
-        print ("lllllllllllllllllllllllllll")
-        try:
-            # 1. Get W-KEY TOKEN
-            response = requests.request("GET", api_config_sap_token.url, data=payload_get, headers=headers_get)
-            w_key = (response.headers['x-csrf-token'])
-            csrf = str(w_key)
-            headers_post= {
-                'x-csrf-Token': csrf,
-                'Authorization': 'Basic V0lLQV9JTlQ6SW5pdGlhbDEyMw==',
-                'Content-Type': 'application/json',
-            }
-            print (headers_post)
-            payload_post =json.dumps({
-                 "input":  [
-                        {
-                        "company_code" : "A000",
-                        "document_no" : "5000000243",
-                        "matdoc_year" : "2023",
-                        "status":"X"
-                        }
-                    ]
-                })
-            #payload_post = payload_post.replace('\n', '')
-            _logger.info(payload_post)
-            response_2 = requests.request("POST", api_config_sap_bap.url, data=payload_post, headers=headers_post)
-            print (response_2)
-            txt = json.loads(response_2.text)
-        except:
-            raise UserError(_("Connection Failed. Please Check Your Internet Connection."))
+        response_post = requests.request("POST", url, headers=post_headers, data=payload, cookies=fetched_cookies)
+        if response_post.status_code == 200:
+            return "BAP Successfully retrieved"
+
+
+        # api_config_sap_token = self.env['wika.integration'].sudo().search([('name', '=', 'URL_GET_TOKEN')], limit=1)
+        # api_config_sap_bap = self.env['wika.integration'].sudo().search([('name', '=', 'URL_SEND_BAP')], limit=1)
+        # headers_get = {
+        #     'Authorization': 'Basic V0lLQV9JTlQ6SW5pdGlhbDEyMw==',
+        #     'Content-Type': 'application/json',
+        #     'x-csrf-Token': 'fetch',
+        # }
+        # payload_get={}
+        # print ("lllllllllllllllllllllllllll")
+        # try:
+        #     # 1. Get W-KEY TOKEN
+        #     response = requests.request("GET", api_config_sap_token.url, data=payload_get, headers=headers_get)
+        #     w_key = (response.headers['x-csrf-token'])
+        #     csrf = str(w_key)
+        #     headers_post= {
+        #         'x-csrf-Token': csrf,
+        #         'Authorization': 'Basic V0lLQV9JTlQ6SW5pdGlhbDEyMw==',
+        #         'Content-Type': 'application/json',
+        #     }
+        #     print (headers_post)
+        #     #payload_post = payload_post.replace('\n', '')
+        #     _logger.info(payload_post)
+        #     response_2 = requests.request("POST", api_config_sap_bap.url, data=payload_post, headers=headers_post)
+        #     print (response_2)
+        #     txt = json.loads(response_2.text)
+        # except:
+        #     raise UserError(_("Connection Failed. Please Check Your Internet Connection."))
 
         # auth_get_token = {
         #     'user': api_config_sap_token.api_user,

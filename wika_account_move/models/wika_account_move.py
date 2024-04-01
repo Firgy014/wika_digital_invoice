@@ -184,9 +184,6 @@ class WikaInheritedAccountMove(models.Model):
     is_mp_approved = fields.Boolean(string='Approved by MP', default=False, store=True)
     cut_off = fields.Boolean(string='Cut Off',default=False,copy=False)
 
-    # is_approval_checked = fields.Boolean(string="Approval Checked")
-
-    # is_approval_checked = fields.Boolean(string="Approval Checked")
     @api.depends('date')
     def _compute_name_wika(self):
         for record in self:
@@ -204,6 +201,12 @@ class WikaInheritedAccountMove(models.Model):
                     if next_number > 99999:
                         raise ValidationError("Naming sequence limit exceeded.")
 
+    # @api.depends('date')
+    # def _compute_name_wika(self):
+    #     for record in self:
+    #         if record.date:
+    #             sequence = self.env['ir.sequence'].next_by_code('account.move') or '/'
+    #             record.name = sequence
 
     @api.depends('total_line', 'invoice_line_ids', 'dp_total','retensi_total', 'invoice_line_ids.tax_ids')
     def compute_total_tax(self):
