@@ -797,210 +797,48 @@ class WikaBeritaAcaraPembayaran(models.Model):
                     "Either approval and/or document settings are not found. Please configure it first in the settings menu.")
             
     def push_bap(self):
+        url_token = self.env['wika.integration'].sudo().search([('name', '=', 'URL_GET_TOKEN')], limit=1)
+        url_push = self.env['wika.integration'].sudo().search([('name', '=', 'URL_SEND_BAP')], limit=1)
         auth = ('WIKA_INT', 'Initial123')
-        url = "https://fioridev.wika.co.id/ywikafi017/update-table?sap-client=110"
         headers = {'x-csrf-token': 'fetch'}
+        input_list = [] 
+        data = {}
 
-        if self.po_id.po_type == 'BARANG':
-            doc_no = self.po_id.name
-        elif self.po_id.po_type == 'JASA':
-            doc_no = self.po_id.origin
+        # arrange the payload
+        for bap in self.bap_ids:
+            if bap.picking_id.pick_type == 'gr':
+                doc_no = bap.picking_id.name
+            elif bap.picking_id.pick_type == 'ses':
+                doc_no = bap.picking_id.origin
 
-        # GET Req
-        response = requests.get(url, headers=headers, auth=auth)
+            matdoc_year = str(fields.Date.to_date(bap.picking_id.scheduled_date).year) if bap.picking_id.scheduled_date else ''
+            data = {
+                "COMPANY_CODE": "A000",
+                "DOCUMENT_NO": doc_no,
+                "MATDOC_YEAR": matdoc_year,
+                "STATUS": "X"
+            }
+            input_list.append(data)
+
+        # GET req
+        response = requests.get(url_token.url, headers=headers, auth=auth)
         fetched_token = response.headers.get('x-csrf-token')
         fetched_cookies = response.cookies.get_dict()
-        print("headers", headers)
-        print("fetched_token", fetched_token)
-        print("fetched_cookies", fetched_cookies)
-        print("idddd", self.id)
-        print("pooidddd", self.po_id)
-        # tesduls
 
         payload = json.dumps({
-            "INPUT": [
-                {
-                    "COMPANY_CODE": "A000",
-                    "DOCUMENT_NO": doc_no,
-                    "MATDOC_YEAR": str(fields.Date.to_date(self.bap_date).year),
-                    "STATUS": "X"
-                }
-            ]
+            "INPUT": input_list
         })
 
-        # POST Req
+        # POST req
         post_headers = {
             'x-csrf-token': fetched_token,
             'Authorization': 'Basic V0lLQV9JTlQ6SW5pdGlhbDEyMw=='
         }
-        response_post = requests.request("POST", url, headers=post_headers, data=payload, cookies=fetched_cookies)
+        response_post = requests.request("POST", url_push.url, headers=post_headers, data=payload, cookies=fetched_cookies)
         if response_post.status_code == 200:
             return "BAP Successfully retrieved"
 
-
-        # api_config_sap_token = self.env['wika.integration'].sudo().search([('name', '=', 'URL_GET_TOKEN')], limit=1)
-        # api_config_sap_bap = self.env['wika.integration'].sudo().search([('name', '=', 'URL_SEND_BAP')], limit=1)
-        # headers_get = {
-        #     'Authorization': 'Basic V0lLQV9JTlQ6SW5pdGlhbDEyMw==',
-        #     'Content-Type': 'application/json',
-        #     'x-csrf-Token': 'fetch',
-        # }
-        # payload_get={}
-        # print ("lllllllllllllllllllllllllll")
-        # try:
-        #     # 1. Get W-KEY TOKEN
-        #     response = requests.request("GET", api_config_sap_token.url, data=payload_get, headers=headers_get)
-        #     w_key = (response.headers['x-csrf-token'])
-        #     csrf = str(w_key)
-        #     headers_post= {
-        #         'x-csrf-Token': csrf,
-        #         'Authorization': 'Basic V0lLQV9JTlQ6SW5pdGlhbDEyMw==',
-        #         'Content-Type': 'application/json',
-        #     }
-        #     print (headers_post)
-        #     #payload_post = payload_post.replace('\n', '')
-        #     _logger.info(payload_post)
-        #     response_2 = requests.request("POST", api_config_sap_bap.url, data=payload_post, headers=headers_post)
-        #     print (response_2)
-        #     txt = json.loads(response_2.text)
-        # except:
-        #     raise UserError(_("Connection Failed. Please Check Your Internet Connection."))
-
-        # auth_get_token = {
-        #     'user': api_config_sap_token.api_user,
-        #     'pword': api_config_sap_token.api_pword
-        # }
-        # auth_send_bap = {
-        #     'user': api_config_sap_bap.api_user,
-        #     'pword': api_config_sap_bap.api_pword
-        # }
-        #
-        # is_sap_url = api_config_sap_token.url
-        #
-        # if auth_get_token['user'] == False or auth_get_token['pword'] == False:
-        #     raise ValidationError(
-        #         'User dan Password untuk membuat token API belum dikonfigurasi. Silakan hubungi Administrator terlebih dahulu.')
-        # else:
-        #     if auth_send_bap['user'] == False or auth_send_bap['pword'] == False:
-        #         raise ValidationError(
-        #             'User dan Password API untuk mengirim BAP ke SAP belum dikonfigurasi. Silakan hubungi Administrator terlebih dahulu.')
-        #     else:
-        #         headers = {'x-csrf-Token': 'fetch'}
-        #         auth = (auth_get_token['user'], auth_get_token['pword'])
-        #         response = requests.get(is_sap_url, headers=headers, auth=auth)
-        #
-        #         if response.status_code == 200 and "CSRF Token sent" in response.text:
-        #             csrf_token = response.headers.get('x-csrf-token')
-        #             auth_send = (auth_send_bap['user'], auth_send_bap['pword'])
-        #
-        #             payload = json.dumps({
-        #                 "input": [
-        #                     {
-        #                         "company_code": "A000",
-        #                         "document_no": "5000000243",
-        #                         "matdoc_year": "2023"
-        #                     }
-        #                 ]
-        #             })
-        #
-        #             headers_send = {
-        #                 'x-csrf-token': csrf_token,
-        #                 'Content-Type': 'application/json',
-        #                 'Authorization': 'Basic V0lLQV9JTlQ6SW5pdGlhbDEyMw=='
-        #             }
-        #
-        #             print("HEADERSENDDD", headers_send)
-        #             # tesssssdoeloeee
-        #
-        #             # response_post = requests.post(is_sap_url, headers=headers_send, json=payload)
-        #             response_post = requests.request("POST", is_sap_url, headers=headers_send, data=payload,
-        #                                              auth=auth_send)
-        #
-        #             print("POST Response Status Code:", response_post.status_code)
-        #             print("POST Response Text:", response_post.text)
-                    # tespost_tespost
-
-    def action_submit(self):
-        # api_config_sap_token = self.env['wika.integration'].sudo().search([('name', '=', 'URL_GET_TOKEN')], limit=1)
-        # api_config_sap_bap = self.env['wika.integration'].sudo().search([('name', '=', 'URL_SEND_BAP')], limit=1)
-
-        # auth_get_token = {
-        #     'user': api_config_sap_token.api_user,
-        #     'pword': api_config_sap_token.api_pword
-        # }
-        # auth_send_bap = {
-        #     'user': api_config_sap_bap.api_user,
-        #     'pword': api_config_sap_bap.api_pword
-        # }
-
-        # is_sap_url = api_config_sap_token.url
-
-        # if auth_get_token['user'] == False or auth_get_token['pword'] == False:
-        #     raise ValidationError('User dan Password untuk membuat token API belum dikonfigurasi. Silakan hubungi Administrator terlebih dahulu.')
-        # else:
-        #     # MULAI REQUEST
-        #     if auth_send_bap['user'] == False or auth_send_bap['pword'] == False:
-        #         raise ValidationError('User dan Password API untuk mengirim BAP ke SAP belum dikonfigurasi. Silakan hubungi Administrator terlebih dahulu.')
-        #     else:
-        #         headers = {'x-csrf-Token': 'fetch'}
-        #         headers['Authorization'] = 'Basic V0lLQV9JTlQ6SW5pdGlhbDEyMw=='
-        #         auth = (auth_get_token['user'], auth_get_token['pword'])
-        #         response = requests.get(is_sap_url, headers=headers, auth=auth)
-                
-        #         if response.status_code == 200 and "CSRF Token sent" in response.text:
-        #             print("response.status_code", response.status_code)
-        #             print("response.text", response.text)
-                    
-        #             # csrf_token = response.headers.get('x-csrf-token')
-        #             csrf_token = response.headers['x-csrf-token']
-        #             print("GET HEADERS",response.headers)
-        #             print("GET HEADERS",response.headers['x-csrf-token'])
-        #             print("GET HEADERS",type(response.headers['x-csrf-token']))
-                    
-        #             auth_send = (auth_send_bap['user'], auth_send_bap['pword'])
-                    
-        #             payload = json.dumps({
-        #                 "input": [
-        #                     {
-        #                         "company_code" : "A000",
-        #                         "document_no" : "5000000243",
-        #                         "matdoc_year" : "2023",
-        #                         "status" : "X"
-        #                     }
-        #                 ]
-        #             })
-        #             payload = payload.replace('\n', '')
-                    
-        #             print("TOKEEENNN", csrf_token)
-                    
-        #             headers_send = {
-        #                 'x-csrf-token': csrf_token,
-        #                 'Content-Type': 'application/json',
-        #                 'Authorization': 'Basic V0lLQV9JTlQ6SW5pdGlhbDEyMw=='
-        #                 # 'Authorization': 'Basic ' + base64.b64encode(f"{str(auth_send_bap['user'])}:{str(auth_send_bap['pword'])}".encode()).decode(),
-        #                 # 'Cache-Control': 'no-cache',
-        #                 # 'Cookie': 'SAP_SESSIONID_WS1_110=ioQZY3cCLGsU1oOCuNTnHfKtnZXcLhHumebrJhjOmDA%3d; sap-usercontext=sap-client=110',
-        #                 # 'Connection': 'keep-alive'
-        #             }
-
-        #             print("HEADERSENDDD", headers_send)
-        #             print("PAYLOAADDD", payload)
-        #             print("PAYLOAADDD ENCO", payload.encode())
-        #             print("URL FIX", is_sap_url)
-
-        #             response_post = requests.post(is_sap_url, headers=headers_send, json=payload)
-        #             # req = Request(is_sap_url, headers=headers_send, data=payload.encode())
-        #             # req = Request(is_sap_url, headers=headers_send, data=payload.encode())
-        #             # response_post = urlopen(req)
-
-        #             # print("POST Response Status Code:", response_post.getcode())
-        #             # print("POST Response Text:", response_post.read())    
-        #             print("POST RESSSS:", response_post)    
-        #             print("POST RESSSS DIR:", dir(response_post))    
-    
-        #             print("POST RESSSS:", response_post.status_code)    
-        #             print("POST RESSSS:", response_post.text)    
-        #             tes_bismillah                
+    def action_submit(self):             
 
         if not self.bap_ids:
             raise ValidationError('List BAP tidak boleh kosong. Mohon isi List BAP terlebih dahulu!')
