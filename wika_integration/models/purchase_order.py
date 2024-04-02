@@ -47,7 +47,7 @@ class Purchase_Order(models.Model):
             _logger.info(payload_2)
             response_2 = requests.request("POST", url_get_po, data=payload_2, headers=headers)
             txt = json.loads(response_2.text)
-
+            print (txt)
             if 'data' in txt:
                 if txt['data']:
                     vals = []
@@ -59,46 +59,52 @@ class Purchase_Order(models.Model):
                         po_line = self.env['purchase.order.line'].sudo().search([
                             ('order_id', '=', self.id),
                             ('sequence', '=', int(seq))], limit=1)
-                        # if po_line.id:
-                        #     print("cccccccccccccccccccccccccc")
-                        #     if data['poitem_del'] == 'L':
-                        #         po_line.write({'active': False})
-                        #         continue
-                        #     else:
-                        #         if qty != po_line.quantity:
-                        #             print("update",qty)
-                        #             po_line.write({'quantity': qty})
-                        #     continue
-                        if not po_line.id:
-                            print ("111111111111111111111")
-                            if txt_data['po_jenis'] == 'JASA':
-                                price = float(data['po_price']) / qty
-                            else:
-                                price = float(data['po_price'])
-                            prod = self.env['product.product'].sudo().search([
-                                ('default_code', '=', data['prd_no'])], limit=1)
-                            if not prod:
-                                return "Material/Service  : %s tidak ditemukan" % (data['prd_no'])
+                        print (po_line)
+                        if po_line.id:
                             tax = self.env['account.tax'].sudo().search([
                                 ('name', '=', data['tax_code'])], limit=1)
                             if not tax:
                                 return "Kode Pajak  : %s tidak ditemukan" % data['MWSKZ']
+                            if data['poitem_del'] == 'L':
+                                po_line.write({'active': False})
+                            #
+                            # else:
+                            #     po_line.write({'quantity': qty})
 
-                            uom = self.env['uom.uom'].sudo().search([
-                                ('name', '=', data['po_uom'])], limit=1)
-                            if not uom:
-                                uom = self.env['uom.uom'].sudo().create({
-                                    'name': data['po_uom'], 'category_id': 1})
-                            line = self.env['purchase.order.line'].sudo().create({
-                                    'order_id':self.id,
-                                    'sequence': int(seq),
-                                    'product_id': prod.id if prod else False,
-                                    'product_qty': qty,
-                                    'product_uom': uom.id,
-                                    'price_unit': price,
-                                    'taxes_id': [(6, 0, [x.id for x in tax])]})
+                        else:
+                            if data['poitem_del'] == 'L':
+                                continue
+                            else:
+                                print (data['poitem_del'])
+                                if txt_data['po_jenis'] == 'JASA':
+                                    price = float(data['po_price']) / qty
+                                else:
+                                    price = float(data['po_price'])
+                                prod = self.env['product.product'].sudo().search([
+                                    ('default_code', '=', data['prd_no'])], limit=1)
+                                if not prod:
+                                    return "Material/Service  : %s tidak ditemukan" % (data['prd_no'])
+                                tax = self.env['account.tax'].sudo().search([
+                                    ('name', '=', data['tax_code'])], limit=1)
+                                if not tax:
+                                    return "Kode Pajak  : %s tidak ditemukan" % data['MWSKZ']
 
-                        #continue
+                                uom = self.env['uom.uom'].sudo().search([
+                                    ('name', '=', data['po_uom'])], limit=1)
+                                if not uom:
+                                    uom = self.env['uom.uom'].sudo().create({
+                                        'name': data['po_uom'], 'category_id': 1})
+                                line = self.env['purchase.order.line'].sudo().create({
+                                        'order_id':self.id,
+                                        'sequence': int(seq),
+                                        'product_id': prod.id if prod else False,
+                                        'product_qty': qty,
+                                        'product_uom': uom.id,
+                                        'price_unit': price,
+                                        'taxes_id': [(6, 0, [x.id for x in tax])]})
+
+                                continue
+                        continue
                     #     else:
                     #         print("emang gak masuk sini 4444444444?")
                     #
@@ -201,11 +207,11 @@ class Purchase_Order(models.Model):
                                         move = self.env['stock.move'].sudo().search([
                                             ('sequence', '=', item['MATDOC_ITM']), ('picking_id', '=', picking.id)], limit=1)
                                         if move.id:
-                                            qty = float(item['QUANTITY']) * 100
+                                            qty = float(item['QUANTITY'])
                                             state=picking.state
                                             if qty != move.product_uom_qty:
                                                 print("update qty", qty, move.product_uom_qty)
-                                                move.write({'product_uom_qty': qty, 'quantity_done': qty,'state':state})
+                                                move.write({'product_uom_qty': float(item['QUANTITY']), 'quantity_done': float(item['QUANTITY']),'state':state})
                                                 picking.write({'note': 'updated','state':state})
                                 if not picking.id:
                                     print("create picking")
@@ -281,7 +287,7 @@ class Purchase_Order(models.Model):
                             vals = []
                             for item in items:
                                 print (item)
-                                qty = float(item['QUANTITY']) * 100
+                                qty = float(item['QUANTITY'])
                                 picking = self.env['stock.picking'].sudo().search([
                                     ('origin', '=', item['MAT_DOC']), ('name', '=', item['SES_NUMBER']),('po_id', '=', record.id)], limit=1)
                                 if picking.id:
@@ -303,7 +309,7 @@ class Purchase_Order(models.Model):
                                             state = picking.state
                                             if qty != move.product_uom_qty:
                                                 print("update qty", qty, move.product_uom_qty)
-                                                move.write({'product_uom_qty': qty, 'quantity_done': qty, 'state': state})
+                                                move.write({'product_uom_qty': float(item['QUANTITY']), 'quantity_done': float(item['QUANTITY']), 'state': state})
                                                 picking.write({'note': 'updated', 'state': state})
 
                                 if not picking.id:

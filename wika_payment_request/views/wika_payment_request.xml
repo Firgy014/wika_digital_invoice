@@ -218,6 +218,7 @@
                     <field name="amount" sum="Total Amount"/>
                     <field name="is_partial_pr"/>
                     <field name="next_user_id"/>
+
                 </tree>
             </field>
         </record>
@@ -229,6 +230,8 @@
             <field name="arch" type="xml">
                 <form string="Payment Request" create="0" delete="0" edit="0">
                     <header>
+                         <button type="object" groups="base.group_no_one" string="API DIV" name="send_divisi_approved_pr_to_sap"/>
+                         <button type="object" groups="base.group_no_one" string="API PUSAT" name="send_pusat_approved_pr_to_sap"/>
                     </header>
                     <sheet>
                        <!-- <div name="button_box" position="inside">
