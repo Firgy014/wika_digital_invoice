@@ -22,4 +22,19 @@
         <field name="app">SAP</field>
         <field name="url">https://fioridev.wika.co.id/ywikafi017/update-table?sap-client=110</field>
     </record>
+     <record id="url_pr_proyek" model="wika.integration">
+        <field name="name">URL Payment Request Proyek</field>
+        <field name="app">SAP</field>
+        <field name="url">https://fioridev.wika.co.id/ywikafi016/update-refkey3?sap-client=110</field>
+    </record>
+    <record id="url_pr_divisi" model="wika.integration">
+        <field name="name">URL Payment Request Divisi</field>
+        <field name="app">SAP</field>
+        <field name="url">https://fioridev.wika.co.id/ywikafi016a/update-assignment?sap-client=110</field>
+    </record>
+     <record id="url_pr_pusat" model="wika.integration">
+        <field name="name">URL Payment Request Pusat</field>
+        <field name="app">SAP</field>
+        <field name="url">https://fioridev.wika.co.id/ywikafi016b/update-paymntmethod?sap-client=110</field>
+    </record>
 </odoo>
