@@ -47,11 +47,11 @@
         'data/special_gl.xml',
         'views/filter.xml',
         'views/action.xml',
-        'views/action.xml',
 
         'wizard/wika_reject_reason.xml',
         'wizard/wika_approval_account_move.xml',
 
+        'views/sequence_data.xml',
         'views/menu.xml',
     ],
     # only loaded in demonstration mode
