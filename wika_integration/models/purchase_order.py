@@ -41,7 +41,7 @@ class Purchase_Order(models.Model):
                                     "co_code": "A000",
                                     "po_del": "",
                                     "poitem_del": "",
-                                    "incmp_cat": ""
+                                    "incmp_cat": "","po_lcdat":""
                                     }) % (profit_center, self.name,self.tgl_create_sap)
             payload_2 = payload_2.replace('\n', '')
             _logger.info(payload_2)
