@@ -9,7 +9,7 @@ class WikaInheritedAccountMove(models.Model):
 
     name = fields.Char(
         string='Number',
-        compute='_compute_name_wika', inverse='_inverse_name', readonly=False, store=True,
+        compute='_compute_name_wdigi', inverse='_inverse_name', readonly=False, store=True,
         copy=False,
         tracking=True,
         index='trigram',
@@ -185,28 +185,10 @@ class WikaInheritedAccountMove(models.Model):
     cut_off = fields.Boolean(string='Cut Off',default=False,copy=False)
 
     @api.depends('date')
-    def _compute_name_wika(self):
+    def _compute_name_wdigi(self):
         for record in self:
-            if record.date:
-                year = str(record.date.year)
-                month = str(record.date.month).zfill(2)
-                next_number = 1
-                while True:
-                    name = f"INV/{year}/{month}/{str(next_number).zfill(5)}"
-                    existing_record = self.env['account.move'].search([('name', '=', name)], limit=1)
-                    if not existing_record:
-                        record.name = name
-                        break
-                    next_number += 1
-                    if next_number > 99999:
-                        raise ValidationError("Naming sequence limit exceeded.")
-
-    # @api.depends('date')
-    # def _compute_name_wika(self):
-    #     for record in self:
-    #         if record.date:
-    #             sequence = self.env['ir.sequence'].next_by_code('account.move') or '/'
-    #             record.name = sequence
+            sequence = self.env['ir.sequence'].sudo().next_by_code('invoice_number_sequence') or '/'
+            record.name = sequence
 
     @api.depends('total_line', 'invoice_line_ids', 'dp_total','retensi_total', 'invoice_line_ids.tax_ids')
     def compute_total_tax(self):
