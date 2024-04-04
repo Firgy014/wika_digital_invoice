@@ -677,7 +677,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
 
     # compute total pph
     # compute total pph revisi
-    @api.depends('total_amount', 'bap_type','pph_ids.amount','amount_pph','retensi_total')
+    @api.depends('total_amount', 'bap_type','pph_ids.amount','amount_pph','retensi_total','dp_total')
     def compute_total_pph(self):
         for record in self:
             total_pph = 0.0
@@ -687,7 +687,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
                     total_pph += (total_net * pph.amount) / 100
                 record.total_pph = math.floor(total_pph + record.amount_pph)
             else:
-                total_net=record.total_amount-record.retensi_total
+                total_net=record.total_amount-record.retensi_total-record.dp_total
                 for pph in record.pph_ids:
                     total_pph += (total_net * pph.amount) / 100
                 record.total_pph = math.floor(total_pph+record.amount_pph)
@@ -1102,12 +1102,12 @@ class WikaBeritaAcaraPembayaran(models.Model):
 
     def unlink(self):
         for record in self:
-            if record.state =='approved':
-                raise ValidationError('Tidak dapat menghapus ketika status Berita Acara Pembayaran (BAP) dalam keadaan Upload atau Approve')
-            if record.state!='draft':
+            if record.state=='draft':
                 record.activity_ids.unlink()
                 record.bap_ids.unlink()
                 record.price_cut_ids.unlink()
+            else:
+                raise ValidationError('Tidak dapat menghapus ketika status Berita Acara Pembayaran (BAP) dalam keadaan Upload atau Approve')
         return super(WikaBeritaAcaraPembayaran, self).unlink()
 
     def action_print_bap(self):
