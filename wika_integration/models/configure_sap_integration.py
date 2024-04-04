@@ -20,7 +20,7 @@ except ImportError:
     _logger.debug('Cannot `import base64`.')
 
 from io import StringIO
-
+import shutil
 try:
     import paramiko
 except ImportError:
@@ -103,7 +103,7 @@ class sap_integration_configure(models.Model):
                 today = datetime.now().strftime("%Y%m%d%H%M%S")
                 res = ''.join(random.sample(string.ascii_uppercase + string.digits, k=N))
                 dev_keys = ['YFII015', res, 'A000', 'AD00118N05', today]
-                keys = ['DOC_DATE', 'PSTNG_DATE', 'REF_DOC_NO', 'GROSS_AMOUNT', 'BLINE_DATE', 'HEADER_TXT',
+                keys = ['NO','DOC_DATE', 'PSTNG_DATE', 'REF_DOC_NO', 'GROSS_AMOUNT', 'BLINE_DATE', 'HEADER_TXT',
                         'ITEM_TEXT', 'HKONT', 'TAX_BASE_AMOUNT', 'WI_TAX_TYPE', 'WI_TAX_CODE', 'WI_TAX_BASE',
                         'PO_NUMBER', 'PO_ITEM', 'REF_DOC', 'REF_DOC_YEAR', 'REF_DOC_IT', 'ITEM_AMOUNT',
                         'QUANTITY', 'SHEET_NO', 'RETENTION_DUE_DATE']
@@ -112,10 +112,10 @@ class sap_integration_configure(models.Model):
                 self._cr.execute(query)
                 vals = self.env.cr.fetchall()
 
-                unique_move_ids = set(val[0] for val in vals)
-                for move_id in unique_move_ids:
-                    move = self.env['account.move'].browse(move_id)
-                    move.write({'is_generated': True})
+                # unique_move_ids = set(val[0] for val in vals)
+                # for move_id in unique_move_ids:
+                #     move = self.env['account.move'].browse(move_id)
+                #     move.write({'is_generated': True})
 
                 buffer = StringIO()
                 writer = csv.writer(buffer, delimiter='|')
@@ -128,7 +128,7 @@ class sap_integration_configure(models.Model):
                 out2 = buffer.getvalue().encode('utf-8')
                 filename = ('YFII015_' + today + '.txt')
 
-                file_path = os.path.join(conf_id.folder, filename)
+                file_path = os.path.join(conf_id.sftp_path, filename)
                 print("====file_path", file_path)
                 with open(file_path, 'wb') as fp:
                     fp.write(out2)
@@ -163,8 +163,8 @@ class sap_integration_configure(models.Model):
 
         conf_id = conf_model.search([('sftp_folder_archive', '!=', False)], limit=1)
         if conf_id:
-            outbound_dir = conf_id.sftp_folder_archive
-            file_name_prefix = 'YFII015'
+            outbound_dir = conf_id.sftp_folder
+            file_name_prefix = 'YFII015A'
             for file_name in os.listdir(outbound_dir):
                 if file_name.startswith(file_name_prefix):
                     file_path = os.path.join(outbound_dir, file_name)
@@ -177,7 +177,7 @@ class sap_integration_configure(models.Model):
                 for line in file:
                     invoice_data = line.strip().split('|')
                     no_inv = invoice_data[0]
-                    invoice_id = invoice_model.search([('name', '=', no_inv)], limit=1)
+                    invoice_id = invoice_model.search([('name', '=', no_inv),('invoice_number', '=', False)], limit=1)
                     if invoice_id:
                         invoice_id.write({
                             'invoice_number': invoice_data[1],
@@ -187,8 +187,8 @@ class sap_integration_configure(models.Model):
                         })
                         updated_invoices.append(no_inv)
                     else:
-                        raise ValidationError(_("Invoice yang ingin di-update tidak ditemukan!"))
-                    
+                        pass
+                shutil.move(file_path, os.path.join(conf_id.sftp_folder_archive, file_name))
         except FileNotFoundError:
             raise ValidationError(_("File TXT dari SAP atas invoice yang dituju tidak ditemukan!"))
-        
+
