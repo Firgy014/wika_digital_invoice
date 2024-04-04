@@ -116,7 +116,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
     last_qty_retensi = fields.Float('Potongan retensi QTY lalu')
 
     # nilai prestasi s/d saat ini
-    qty_sd_saatini = fields.Float('qty s/d saat ini', compute='_compute_qty_sd_saatini')
+    qty_sd_saatini = fields.Float('qty s/d saat ini', compute='_compute_qty_sd_saatini',digits='Product Unit of Measure')
     price_sd_saatini = fields.Float('Price s/d saat ini', compute='_compute_price_po_sd_saatini')
     total_sd_saatini = fields.Float('Total s/d saat ini', compute='_compute_total_sd_saatini')
 
@@ -215,11 +215,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
             total_po = sum(record.bap_ids.mapped('unit_price_po'))
             record.price_sd_saatini = record.last_value + total_po
 
-    # total nilai s/d saat ini
-    @api.depends('qty_sd_saatini', 'price_sd_saatini')
-    def _compute_total_sd_saatini(self):
-        for record in self:
-            record.total_sd_saatini = record.qty_sd_saatini * record.price_sd_saatini
+
 
     # Potongan uang muka computed
     @api.depends('price_cut_ids', 'price_cut_ids.qty', 'price_cut_ids.product_id')
@@ -492,15 +488,6 @@ class WikaBeritaAcaraPembayaran(models.Model):
         sequence_number = sequence_parts[-1]
         return 'BAP/{}/{:03d}'.format(year, int(sequence_number))
 
-    # @api.onchange('partner_id')
-    # def onchange_partner_id(self):
-    #     if self.partner_id:
-    #         domain = [('partner_id', '=', self.partner_id.id),('state','=','approved')]
-    #         return {'domain': {'po_id': domain}}
-    #     else:
-    #         return {'domain': {'po_id': [('state','=','approved')]}}
-
-
     @api.onchange('partner_id')
     def onchange_partner_id(self):
         domain = [('state', '=', 'approved')]
@@ -575,12 +562,13 @@ class WikaBeritaAcaraPembayaran(models.Model):
                 for x in record.bap_ids:
                     for data in account_moves:
                         if x.invoice_line_id.id==data.id:
-                            print ("masuk ga")
                             if not x.picking_id:
                                 x.write({'stock_move_id': data.stock_move_id.id,
                                          'picking_id': data.stock_move_id.picking_id.id})
                             else:
                                 x.write({'stock_move_id': data.stock_move_id.id})
+
+
 
     @api.onchange('po_id','bap_type')
     def onchange_po_id(self):
@@ -689,14 +677,20 @@ class WikaBeritaAcaraPembayaran(models.Model):
 
     # compute total pph
     # compute total pph revisi
-    @api.depends('total_amount', 'pph_ids.amount','amount_pph','retensi_total')
+    @api.depends('total_amount', 'bap_type','pph_ids.amount','amount_pph','retensi_total')
     def compute_total_pph(self):
         for record in self:
             total_pph = 0.0
-            total_net=record.total_amount-record.retensi_total
-            for pph in record.pph_ids:
-                total_pph += (total_net * pph.amount) / 100
-            record.total_pph = math.floor(total_pph+record.amount_pph)
+            if record.bap_type == 'retensi':
+                total_net = record.retensi_total
+                for pph in record.pph_ids:
+                    total_pph += (total_net * pph.amount) / 100
+                record.total_pph = math.floor(total_pph + record.amount_pph)
+            else:
+                total_net=record.total_amount-record.retensi_total
+                for pph in record.pph_ids:
+                    total_pph += (total_net * pph.amount) / 100
+                record.total_pph = math.floor(total_pph+record.amount_pph)
 
 
     def action_reject(self):
@@ -715,13 +709,10 @@ class WikaBeritaAcaraPembayaran(models.Model):
                 ('sequence', '=', self.step_approve),
                 ('approval_id', '=', approval_id.id)
             ], limit=1)
-            print(approval_line_id)
             groups_id = approval_line_id.groups_id
             if groups_id:
-                print(groups_id.name)
                 for x in groups_id.users:
-                    print ("kkkkkkkkkkkkkkk")
-                    if level == 'Proyek' and x.project_id == self.project_id and x.id == self._uid:
+                    if level == 'Proyek' and self.project_id in x.project_ids and x.id == self._uid:
                         cek = True
                     if level == 'Divisi Operasi' and x.branch_id == self.branch_id and x.id == self._uid:
                         cek = True
@@ -742,6 +733,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
             return action
         else:
             raise ValidationError('User Akses Anda tidak berhak Reject!')
+
 
     def assign_todo_first(self):
         model_model = self.env['ir.model'].sudo()
@@ -795,213 +787,53 @@ class WikaBeritaAcaraPembayaran(models.Model):
             else:
                 raise AccessError(
                     "Either approval and/or document settings are not found. Please configure it first in the settings menu.")
-            
+
+
     def push_bap(self):
+        url_token = self.env['wika.integration'].sudo().search([('name', '=', 'URL_GET_TOKEN')], limit=1)
+        url_push = self.env['wika.integration'].sudo().search([('name', '=', 'URL_SEND_BAP')], limit=1)
         auth = ('WIKA_INT', 'Initial123')
-        url = "https://fioridev.wika.co.id/ywikafi017/update-table?sap-client=110"
         headers = {'x-csrf-token': 'fetch'}
+        input_list = []
+        data = {}
 
-        if self.po_id.po_type == 'BARANG':
-            doc_no = self.po_id.name
-        elif self.po_id.po_type == 'JASA':
-            doc_no = self.po_id.origin
+        # arrange the payload
+        for bap in self.bap_ids:
+            if bap.picking_id.pick_type == 'gr':
+                doc_no = bap.picking_id.name
+            elif bap.picking_id.pick_type == 'ses':
+                doc_no = bap.picking_id.origin
 
-        # GET Req
-        response = requests.get(url, headers=headers, auth=auth)
+            matdoc_year = str(
+                fields.Date.to_date(bap.picking_id.scheduled_date).year) if bap.picking_id.scheduled_date else ''
+            data = {
+                "COMPANY_CODE": "A000",
+                "DOCUMENT_NO": doc_no,
+                "MATDOC_YEAR": matdoc_year,
+                "STATUS": "X"
+            }
+            input_list.append(data)
+
+        # GET req
+        response = requests.get(url_token.url, headers=headers, auth=auth)
         fetched_token = response.headers.get('x-csrf-token')
         fetched_cookies = response.cookies.get_dict()
-        print("headers", headers)
-        print("fetched_token", fetched_token)
-        print("fetched_cookies", fetched_cookies)
-        print("idddd", self.id)
-        print("pooidddd", self.po_id)
-        # tesduls
 
         payload = json.dumps({
-            "INPUT": [
-                {
-                    "COMPANY_CODE": "A000",
-                    "DOCUMENT_NO": doc_no,
-                    "MATDOC_YEAR": str(fields.Date.to_date(self.bap_date).year),
-                    "STATUS": "X"
-                }
-            ]
+            "INPUT": input_list
         })
 
-        # POST Req
+        # POST req
         post_headers = {
             'x-csrf-token': fetched_token,
             'Authorization': 'Basic V0lLQV9JTlQ6SW5pdGlhbDEyMw=='
         }
-        response_post = requests.request("POST", url, headers=post_headers, data=payload, cookies=fetched_cookies)
-        if response_post.status_code == 200:
-            return "BAP Successfully retrieved"
+        response_post = requests.request("POST", url_push.url, headers=post_headers, data=payload,
+                                         cookies=fetched_cookies)
 
 
-        # api_config_sap_token = self.env['wika.integration'].sudo().search([('name', '=', 'URL_GET_TOKEN')], limit=1)
-        # api_config_sap_bap = self.env['wika.integration'].sudo().search([('name', '=', 'URL_SEND_BAP')], limit=1)
-        # headers_get = {
-        #     'Authorization': 'Basic V0lLQV9JTlQ6SW5pdGlhbDEyMw==',
-        #     'Content-Type': 'application/json',
-        #     'x-csrf-Token': 'fetch',
-        # }
-        # payload_get={}
-        # print ("lllllllllllllllllllllllllll")
-        # try:
-        #     # 1. Get W-KEY TOKEN
-        #     response = requests.request("GET", api_config_sap_token.url, data=payload_get, headers=headers_get)
-        #     w_key = (response.headers['x-csrf-token'])
-        #     csrf = str(w_key)
-        #     headers_post= {
-        #         'x-csrf-Token': csrf,
-        #         'Authorization': 'Basic V0lLQV9JTlQ6SW5pdGlhbDEyMw==',
-        #         'Content-Type': 'application/json',
-        #     }
-        #     print (headers_post)
-        #     #payload_post = payload_post.replace('\n', '')
-        #     _logger.info(payload_post)
-        #     response_2 = requests.request("POST", api_config_sap_bap.url, data=payload_post, headers=headers_post)
-        #     print (response_2)
-        #     txt = json.loads(response_2.text)
-        # except:
-        #     raise UserError(_("Connection Failed. Please Check Your Internet Connection."))
-
-        # auth_get_token = {
-        #     'user': api_config_sap_token.api_user,
-        #     'pword': api_config_sap_token.api_pword
-        # }
-        # auth_send_bap = {
-        #     'user': api_config_sap_bap.api_user,
-        #     'pword': api_config_sap_bap.api_pword
-        # }
-        #
-        # is_sap_url = api_config_sap_token.url
-        #
-        # if auth_get_token['user'] == False or auth_get_token['pword'] == False:
-        #     raise ValidationError(
-        #         'User dan Password untuk membuat token API belum dikonfigurasi. Silakan hubungi Administrator terlebih dahulu.')
-        # else:
-        #     if auth_send_bap['user'] == False or auth_send_bap['pword'] == False:
-        #         raise ValidationError(
-        #             'User dan Password API untuk mengirim BAP ke SAP belum dikonfigurasi. Silakan hubungi Administrator terlebih dahulu.')
-        #     else:
-        #         headers = {'x-csrf-Token': 'fetch'}
-        #         auth = (auth_get_token['user'], auth_get_token['pword'])
-        #         response = requests.get(is_sap_url, headers=headers, auth=auth)
-        #
-        #         if response.status_code == 200 and "CSRF Token sent" in response.text:
-        #             csrf_token = response.headers.get('x-csrf-token')
-        #             auth_send = (auth_send_bap['user'], auth_send_bap['pword'])
-        #
-        #             payload = json.dumps({
-        #                 "input": [
-        #                     {
-        #                         "company_code": "A000",
-        #                         "document_no": "5000000243",
-        #                         "matdoc_year": "2023"
-        #                     }
-        #                 ]
-        #             })
-        #
-        #             headers_send = {
-        #                 'x-csrf-token': csrf_token,
-        #                 'Content-Type': 'application/json',
-        #                 'Authorization': 'Basic V0lLQV9JTlQ6SW5pdGlhbDEyMw=='
-        #             }
-        #
-        #             print("HEADERSENDDD", headers_send)
-        #             # tesssssdoeloeee
-        #
-        #             # response_post = requests.post(is_sap_url, headers=headers_send, json=payload)
-        #             response_post = requests.request("POST", is_sap_url, headers=headers_send, data=payload,
-        #                                              auth=auth_send)
-        #
-        #             print("POST Response Status Code:", response_post.status_code)
-        #             print("POST Response Text:", response_post.text)
-                    # tespost_tespost
 
     def action_submit(self):
-        # api_config_sap_token = self.env['wika.integration'].sudo().search([('name', '=', 'URL_GET_TOKEN')], limit=1)
-        # api_config_sap_bap = self.env['wika.integration'].sudo().search([('name', '=', 'URL_SEND_BAP')], limit=1)
-
-        # auth_get_token = {
-        #     'user': api_config_sap_token.api_user,
-        #     'pword': api_config_sap_token.api_pword
-        # }
-        # auth_send_bap = {
-        #     'user': api_config_sap_bap.api_user,
-        #     'pword': api_config_sap_bap.api_pword
-        # }
-
-        # is_sap_url = api_config_sap_token.url
-
-        # if auth_get_token['user'] == False or auth_get_token['pword'] == False:
-        #     raise ValidationError('User dan Password untuk membuat token API belum dikonfigurasi. Silakan hubungi Administrator terlebih dahulu.')
-        # else:
-        #     # MULAI REQUEST
-        #     if auth_send_bap['user'] == False or auth_send_bap['pword'] == False:
-        #         raise ValidationError('User dan Password API untuk mengirim BAP ke SAP belum dikonfigurasi. Silakan hubungi Administrator terlebih dahulu.')
-        #     else:
-        #         headers = {'x-csrf-Token': 'fetch'}
-        #         headers['Authorization'] = 'Basic V0lLQV9JTlQ6SW5pdGlhbDEyMw=='
-        #         auth = (auth_get_token['user'], auth_get_token['pword'])
-        #         response = requests.get(is_sap_url, headers=headers, auth=auth)
-                
-        #         if response.status_code == 200 and "CSRF Token sent" in response.text:
-        #             print("response.status_code", response.status_code)
-        #             print("response.text", response.text)
-                    
-        #             # csrf_token = response.headers.get('x-csrf-token')
-        #             csrf_token = response.headers['x-csrf-token']
-        #             print("GET HEADERS",response.headers)
-        #             print("GET HEADERS",response.headers['x-csrf-token'])
-        #             print("GET HEADERS",type(response.headers['x-csrf-token']))
-                    
-        #             auth_send = (auth_send_bap['user'], auth_send_bap['pword'])
-                    
-        #             payload = json.dumps({
-        #                 "input": [
-        #                     {
-        #                         "company_code" : "A000",
-        #                         "document_no" : "5000000243",
-        #                         "matdoc_year" : "2023",
-        #                         "status" : "X"
-        #                     }
-        #                 ]
-        #             })
-        #             payload = payload.replace('\n', '')
-                    
-        #             print("TOKEEENNN", csrf_token)
-                    
-        #             headers_send = {
-        #                 'x-csrf-token': csrf_token,
-        #                 'Content-Type': 'application/json',
-        #                 'Authorization': 'Basic V0lLQV9JTlQ6SW5pdGlhbDEyMw=='
-        #                 # 'Authorization': 'Basic ' + base64.b64encode(f"{str(auth_send_bap['user'])}:{str(auth_send_bap['pword'])}".encode()).decode(),
-        #                 # 'Cache-Control': 'no-cache',
-        #                 # 'Cookie': 'SAP_SESSIONID_WS1_110=ioQZY3cCLGsU1oOCuNTnHfKtnZXcLhHumebrJhjOmDA%3d; sap-usercontext=sap-client=110',
-        #                 # 'Connection': 'keep-alive'
-        #             }
-
-        #             print("HEADERSENDDD", headers_send)
-        #             print("PAYLOAADDD", payload)
-        #             print("PAYLOAADDD ENCO", payload.encode())
-        #             print("URL FIX", is_sap_url)
-
-        #             response_post = requests.post(is_sap_url, headers=headers_send, json=payload)
-        #             # req = Request(is_sap_url, headers=headers_send, data=payload.encode())
-        #             # req = Request(is_sap_url, headers=headers_send, data=payload.encode())
-        #             # response_post = urlopen(req)
-
-        #             # print("POST Response Status Code:", response_post.getcode())
-        #             # print("POST Response Text:", response_post.read())    
-        #             print("POST RESSSS:", response_post)    
-        #             print("POST RESSSS DIR:", dir(response_post))    
-    
-        #             print("POST RESSSS:", response_post.status_code)    
-        #             print("POST RESSSS:", response_post.text)    
-        #             tes_bismillah                
-
         if not self.bap_ids:
             raise ValidationError('List BAP tidak boleh kosong. Mohon isi List BAP terlebih dahulu!')
 
@@ -1035,7 +867,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
             groups_id = approval_line_id.groups_id
             if groups_id:
                 for x in groups_id.users:
-                    if level == 'Proyek' and  x.project_id == self.project_id and x.id == self._uid:
+                    if level == 'Proyek' and self.project_id in x.project_ids and x.id == self._uid:
                         cek = True
                     if level == 'Divisi Operasi' and x.branch_id == self.branch_id and x.id == self._uid:
                         cek = True
@@ -1071,7 +903,6 @@ class WikaBeritaAcaraPembayaran(models.Model):
                             first_user = x.id
                         if level == 'Divisi Fungsi' and x.department_id == self.department_id:
                             first_user = x.id
-                    print(first_user)
                     if first_user:
                         self.env['mail.activity'].sudo().create({
                             'activity_type_id': 4,
@@ -1085,6 +916,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
                             'status': 'to_approve',
                             'summary': """Need Approval Document BAP"""
                         })
+                    self.push_bap()
         else:
             raise ValidationError('User Akses Anda tidak berhak Submit!')
 
@@ -1430,9 +1262,9 @@ class WikaPriceCutLine(models.Model):
     qty = fields.Integer(string='Quantity')
     percentage_amount = fields.Float(string='Amount (%)')
 
-    @api.constrains('percentage_amount')
-    def _check_percentage_amount(self):
-        for record in self:
-            if record.percentage_amount > 5:
-                raise ValidationError("Persentasi tidak boleh melebihi dari 5%")
+    # @api.constrains('percentage_amount')
+    # def _check_percentage_amount(self):
+    #     for record in self:
+    #         if record.percentage_amount > 5:
+    #             raise ValidationError("Persentasi tidak boleh melebihi dari 5%")
 
