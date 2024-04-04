@@ -59,7 +59,7 @@ class SAPIntegration(models.Model):
         if self.type == 'generate' and self.form == 'vendor_bills':
             res = ''.join(random.sample(string.ascii_uppercase + string.digits, k=N))
             dev_keys = ['YFII015', res,'A000','AD00118N05',today]
-            keys = ['DOC_DATE', 'PSTNG_DATE', 'REF_DOC_NO', 'GROSS_AMOUNT', 'BLINE_DATE', 'HEADER_TXT',
+            keys = ['NO','DOC_DATE', 'PSTNG_DATE', 'REF_DOC_NO', 'GROSS_AMOUNT', 'BLINE_DATE', 'HEADER_TXT',
                     'ITEM_TEXT', 'HKONT', 'TAX_BASE_AMOUNT', 'WI_TAX_TYPE', 'WI_TAX_CODE', 'WI_TAX_BASE',
                     'PO_NUMBER', 'PO_ITEM', 'REF_DOC', 'REF_DOC_YEAR', 'REF_DOC_IT', 'ITEM_AMOUNT',
                     'QUANTITY', 'SHEET_NO', 'RETENTION_DUE_DATE','IND_DP','DP_AMOUNT']
