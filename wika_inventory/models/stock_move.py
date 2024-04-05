@@ -11,13 +11,14 @@ class StockMoveInherit(models.Model):
         ('rejected', 'Rejected')
 
     ], string='Status', default='waits')
-    qty_bap = fields.Float('Total BAP', compute='_compute_qty_bap')
-    sisa_qty_bap = fields.Float('Sisa Qty BAP', compute='_compute_sisa_qty_bap')
+    qty_bap = fields.Float('Total BAP', compute='_compute_qty_bap',digits='Product Unit of Measure')
+    sisa_qty_bap = fields.Float('Sisa Qty BAP', compute='_compute_sisa_qty_bap',digits='Product Unit of Measure')
+    active = fields.Boolean(default=True)
 
 
     def _compute_qty_bap(self):
         for x in self:
-            query = """select sum(qty) from wika_berita_acara_pembayaran_line where stock_move_id=%s
+            query = """select sum(qty) from wika_berita_acara_pembayaran_line where bap_id is not null and stock_move_id=%s
             """% (x.id)
             # print (query)
             self.env.cr.execute(query)
@@ -64,3 +65,16 @@ class StockMoveInherit(models.Model):
     def _compute_price_subtotal(self):
         for record in self:
             record.price_subtotal = record.quantity_done * record.price_unit
+
+    def name_get(self):
+        res = []
+        for move in self:
+            tit = "[%s] %s" % (move.sequence, move.product_id.code)
+            res.append((move.id, tit))
+        return res
+
+class StockMoveLineInherit(models.Model):
+    _inherit = 'stock.move.line'
+
+    active = fields.Boolean(default=True)
+

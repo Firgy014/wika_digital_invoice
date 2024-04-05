@@ -20,14 +20,22 @@
     'version': '0.1',
 
     # any module necessary for this one to work correctly
-    'depends': ['base','inherit_for_api','base_setup'],
+    'depends': ['base','inherit_for_api','base_setup','wika_account_move'],
 
     # always loaded
     'data': [
         'security/ir.model.access.csv',
         'data/data_url.xml',
+        'data/scheduler.xml',
+        'data/scheduler_generate_data.xml',
+        'data/sap_configuration_data.xml',
+        'views/sap_integration_views.xml',
+        'views/configure_sap_integration_views.xml',
         'views/wika_integration_views.xml',
         'views/res_config_setting_views.xml',
+        'views/wika_get_po.xml',
+        'views/wika_get_gr.xml',
+        'views/purchase_order.xml',
         'views/templates.xml',
     ],
     # only loaded in demonstration mode

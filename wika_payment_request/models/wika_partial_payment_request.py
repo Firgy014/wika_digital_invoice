@@ -36,7 +36,13 @@ class WikaPartialPaymentRequest(models.Model):
     history_approval_ids = fields.One2many('wika.partial.approval.line', 'pr_id',
                                            string='Partial Payment Request  Approval')
     document_ids = fields.One2many('wika.partial.document.line', 'pr_id', string='Document Lines')
-
+    approval_stage = fields.Selection([
+        ('Proyek', 'Proyek'),
+        ('Divisi Operasi', 'Divisi Operasi'),
+        ('Divisi Fungsi', 'Divisi Fungsi'),
+        ('Pusat', 'Pusat'),
+    ], string='Status Invoice')
+    is_already_pr = fields.Boolean('is_already_pr')
     # documents_count = fields.Integer(string='Total Doc', compute='_compute_documents_count')
     # @api.depends('invoice_ids')
     # def _compute_documents_count(self):
@@ -60,6 +66,18 @@ class WikaPartialPaymentRequest(models.Model):
     #         'domain': [('invoice_id', 'in', self.invoice_ids.ids), ('folder_id', 'in', ('PO','GR/SES','BAP','Invoicing'))],
     #     }
 
+    # @api.onchange('partial_amount')
+    # def _update_amount_sisa_pr(self):
+    #     if self.invoice_id:
+    #         self.invoice_id._compute_amount_sisa_pr()
+
+    @api.constrains('partial_amount', 'total_invoice')
+    def _check_total_amount(self):
+        for invoice in self:
+            if invoice.partial_amount > invoice.total_invoice:
+                raise UserError("Partial amount request lebih besar dari total invoice. Harap periksa kembali.")
+
+
     def assign_todo_first(self):
         model_model = self.env['ir.model'].sudo()
         document_setting_model = self.env['wika.document.setting'].sudo()
@@ -77,7 +95,7 @@ class WikaPartialPaymentRequest(models.Model):
                 groups_id = approval_line_id.groups_id
                 if groups_id:
                     for x in groups_id.users:
-                        if level == 'Proyek' and x.project_id == res.project_id:
+                        if level == 'Proyek' and res.project_id in x.project_ids:
                             first_user = x.id
                         if level == 'Divisi Operasi' and x.branch_id == res.branch_id:
                             first_user = x.id
@@ -96,7 +114,7 @@ class WikaPartialPaymentRequest(models.Model):
                         'state': 'planned',
                         'summary': f"Need Upload Document {model_id.name}!"
                     })
-
+                    res.approval_stage = level
             document_list = []
             doc_setting_id = document_setting_model.search([('model_id', '=', model_id.id)])
 
@@ -164,7 +182,7 @@ class WikaPartialPaymentRequest(models.Model):
             self.project_id=self.invoice_id.project_id.id
             self.department_id=self.invoice_id.department_id.id
             self.partner_id=self.invoice_id.partner_id.id
-            self.total_invoice=self.invoice_id.amount_sisa_pr
+            self.total_invoice=self.invoice_id.sisa_partial
 
 
     def action_submit(self):
@@ -178,10 +196,13 @@ class WikaPartialPaymentRequest(models.Model):
 
         cek = False
         level = self.level
+        model_model = self.env['ir.model'].sudo()
+        model_id = model_model.search([('model', '=', 'wika.partial.payment.request')], limit=1)
+
         if level:
             approval_id = self.env['wika.approval.setting'].sudo().search(
                 [('level', '=', level),
-                 ('transaction_type', '=', 'pr')], limit=1)
+                 ('transaction_type', '=', 'pr'),('model_id', '=', model_id.id),], limit=1)
             if not approval_id:
                 raise ValidationError(
                     'Approval Setting untuk menu PR tidak ditemukan. Silakan hubungi Administrator!')
@@ -191,13 +212,8 @@ class WikaPartialPaymentRequest(models.Model):
             ], limit=1)
             groups_id = approval_line_id.groups_id
             if groups_id:
-                for x in groups_id.users:
-                    if level == 'Proyek' and x.project_id == self.project_id and x.id == self._uid:
-                        cek = True
-                    if level == 'Divisi Operasi' and x.branch_id == self.branch_id and x.id == self._uid:
-                        cek = True
-                    if level == 'Divisi Fungsi' and x.department_id == self.department_id and x.id == self._uid:
-                        cek = True
+                if self.activity_user_id.id == self._uid:
+                    cek = True
 
         if cek == True:
             if self.activity_ids:
@@ -206,6 +222,7 @@ class WikaPartialPaymentRequest(models.Model):
                         x.status = 'approved'
                         x.action_done()
                 self.state = 'requested'
+                self.approval_stage = approval_line_id.level_role
                 self.step_approve += 1
                 self.env['wika.partial.approval.line'].sudo().create({
                     'user_id': self._uid,
@@ -222,7 +239,7 @@ class WikaPartialPaymentRequest(models.Model):
                 groups_id_next = groups_line.groups_id
                 if groups_id_next:
                     for x in groups_id_next.users:
-                        if level == 'Proyek' and x.project_id == self.project_id:
+                        if level == 'Proyek' and self.project_id in x.project_ids:
                             first_user = x.id
                         if level == 'Divisi Operasi' and x.branch_id == self.branch_id:
                             first_user = x.id
@@ -250,10 +267,11 @@ class WikaPartialPaymentRequest(models.Model):
         cek = False
         level=self.level
         documents_model = self.env['documents.document'].sudo()
-
+        model_model = self.env['ir.model'].sudo()
+        model_id = model_model.search([('model', '=', 'wika.partial.payment.request')], limit=1)
         approval_id = self.env['wika.approval.setting'].sudo().search(
             [('level', '=', level),
-             ('transaction_type', '=', 'pr')], limit=1)
+             ('transaction_type', '=', 'pr'),('model_id', '=', model_id.id),], limit=1)
         if not approval_id:
             raise ValidationError(
                 'Approval Setting untuk menu PR tidak ditemukan. Silakan hubungi Administrator!')
@@ -264,16 +282,13 @@ class WikaPartialPaymentRequest(models.Model):
         groups_id = approval_line_id.groups_id
         if groups_id:
             for x in groups_id.users:
-                if level == 'Proyek' and x.project_id == self.project_id and x.id == self._uid:
-                    cek = True
-                if level == 'Divisi Operasi' and x.branch_id == self.branch_id and x.id == self._uid:
-                    cek = True
-                if level == 'Divisi Fungsi' and x.department_id == self.department_id and x.id == self._uid:
+                if self.activity_user_id.id == self._uid:
                     cek = True
 
         if cek == True:
             if approval_id.total_approve == self.step_approve:
                 self.state = 'approved'
+                self.approval_stage = approval_line_id.level_role
                 self.env['wika.partial.approval.line'].create({
                     'user_id': self._uid,
                     'groups_id': groups_id.id,
@@ -312,7 +327,6 @@ class WikaPartialPaymentRequest(models.Model):
                 if self.activity_ids:
                     for x in self.activity_ids.filtered(lambda x: x.status != 'approved'):
                         if x.user_id.id == self._uid:
-                            print(x.status)
                             x.status = 'approved'
                             x.action_done()
             else:
@@ -326,8 +340,9 @@ class WikaPartialPaymentRequest(models.Model):
                 groups_id_next = groups_line_next.groups_id
                 if groups_id_next:
                     for x in groups_id_next.users:
-                        if level == 'Proyek' and x.project_id == self.project_id:
-                            first_user = x.id
+                        if level == 'Proyek' :
+                            if self.project_id in x.project_ids or x.branch_id == self.branch_id or x.branch_id.parent_id.code == 'Pusat':
+                                first_user = x.id
                         if level == 'Divisi Operasi' and x.branch_id == self.branch_id:
                             first_user = x.id
                         if level == 'Divisi Fungsi' and x.department_id == self.department_id:
@@ -336,6 +351,7 @@ class WikaPartialPaymentRequest(models.Model):
                     print(first_user)
                     if first_user:
                         self.step_approve += 1
+                        self.approval_stage = approval_line_id.level_role
                         self.env['mail.activity'].sudo().create({
                             'activity_type_id': 4,
                             'res_model_id': self.env['ir.model'].sudo().search(
@@ -384,12 +400,9 @@ class WikaPartialPaymentRequest(models.Model):
             groups_id = approval_line_id.groups_id
             if groups_id:
                 for x in groups_id.users:
-                    if level == 'Proyek' and x.project_id == self.project_id and x.id == self._uid:
+                    if self.activity_user_id.id == self._uid:
                         cek = True
-                    if level == 'Divisi Operasi' and x.branch_id == self.branch_id and x.id == self._uid:
-                        cek = True
-                    if level == 'Divisi Fungsi' and x.department_id == self.department_id and x.id == self._uid:
-                        cek = True
+
         if cek == True:
             action = {
                 'name': ('Reject Reason'),

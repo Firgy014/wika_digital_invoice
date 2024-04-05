@@ -7,7 +7,7 @@
         <field name="model">purchase.order</field>
         <field name="priority" eval="1"/>
         <field name="arch" type="xml">
-            <form string="Purchase Orders" class="o_purchase_order"  create="0">
+            <form string="Purchase Orders" class="o_purchase_order"  create="0" delete="0">
             <header>
                 <button name="get_gr" type="object" states="po,uploaded,approved" string="Get GR" groups="base.group_no_one"/>
                 <button name="assign_todo_first" type="object" states="po,uploaded,approved" string="Assign Todo First" groups="base.group_no_one"/>
@@ -33,7 +33,7 @@
                 <group>
                     <group>
                         <field name="partner_id" widget="res_partner_many2one" context="{'res_partner_search_mode': 'supplier', 'show_vat': True}"
-                            placeholder="Name, TIN, Email, or Reference"  readonly="0"
+                            placeholder="Name, TIN, Email, or Reference"  readonly="1" force_save="1"
                         />
                        <field name="check_biro" invisible="1"/>
                        <field name="level" invisible="1"/>
@@ -52,9 +52,10 @@
 
                     </group>
                     <group>
-                        <field name="branch_id" domain="[('biro', '=', False)]" readonly="0"/>
-                        <field name="department_id" domain="[('biro', '=', True), ('parent_id', '=', branch_id)]" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])], 'invisible': [('check_biro', '=', False)]}"/>
-                        <field name="project_id"  readonly="0"/>
+                        <field name="branch_id" domain="[('biro', '=', False)]" readonly="1" force_save="1"/>
+                        <field name="department_id" domain="[('biro', '=', True), ('parent_id', '=', branch_id)]" readonly="1" force_save="1" attrs="{'invisible': [('check_biro', '=', False)]}"/>
+                        <field name="project_id"  readonly="1" force_save="1"/>
+                        <field name="payment_term_id" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
                         <field name="begin_date" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
                         <field name="end_date" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}" style="background-color: #dddded;"/>
                     </group>
@@ -305,7 +306,7 @@
         <field name="priority" eval="1"/>
         <field name="arch" type="xml">
             <!-- <tree string="Purchase Order" decoration-muted="state=='cancel'" sample="1" create="false"> -->
-            <tree string="Purchase Order" decoration-muted="state=='cancel'" sample="1" create="0">
+            <tree string="Purchase Order" decoration-muted="state=='cancel'" sample="1" create="0" delete="0">
                 <field name="priority" optional="show" widget="priority" nolabel="1"/>
                 <field name="branch_id"/>
 <!--

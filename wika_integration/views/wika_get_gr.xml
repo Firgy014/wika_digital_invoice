@@ -1,0 +1,81 @@
+<odoo>
+    <data>
+
+        <record model="ir.ui.view" id="wika_get_gr_list">
+            <field name="name">wika_get_gr_list</field>
+            <field name="model">wika.get.gr</field>
+            <field name="arch" type="xml">
+                <tree>
+                    <field name="name"/>
+                     <field name="tgl_mulai"/>
+                    <field name="tgl_akhir"/>
+                     <field name="status"/>
+                </tree>
+            </field>
+        </record>
+        <record model="ir.ui.view" id="wika_get_gr_form">
+            <field name="name">wika_get_gr form</field>
+            <field name="model">wika.get.gr</field>
+            <field name="arch" type="xml">
+                <form>
+                    <header>
+                        <button name="get_gr" type="object" string="Get GR" class="oe_highlight"/>
+                    </header>
+                    <sheet>
+                        <group>
+                            <field name="name"/>
+                             <field name="tgl_mulai"/>
+                            <field name="tgl_akhir"/>
+                             <field name="status"/>
+                        </group>
+
+                    </sheet>
+
+                </form>
+            </field>
+        </record>
+        <!-- actions opening views on models -->
+        <record model="ir.actions.act_window" id="wika_get_gr_action_window">
+            <field name="name">Wika Get GR</field>
+            <field name="res_model">wika.get.gr</field>
+            <field name="context">{}</field>
+            <field name="domain">[]</field>
+            <field name="limit">80</field>
+            <field name="view_mode">tree,form</field>
+        </record>
+
+
+        <menuitem name="Get GR Integration" id="wika_get_gr_menu"
+                  action="wika_get_gr_action_window"
+                  parent="wika_integration.wika_app_setting_menu"
+                  sequence="2"/>
+
+
+
+        <record id="get_gr_allform_view" model="ir.ui.view">
+            <field name="name">wika.get.gr.all.form</field>
+            <field name="model">wika.get.gr.all</field>
+            <field name="arch" type="xml">
+                <form string="Get GR">
+                    <p class="oe_black">
+Get GR yang dipilih                    </p>
+                    <footer>
+                        <button string="Get GRO" name="get_gr_all" type="object" default_focus="1" class="btn-primary"/>
+                        <button string="Cancel"  class="btn-default" special="cancel"/>
+                    </footer>
+                </form>
+            </field>
+        </record>
+
+
+         <record id="action_get_gr_all" model="ir.actions.act_window">
+            <field name="name">Get GR Selected</field>
+            <field name="res_model">wika.get.gr.all</field>
+            <field name="view_mode">tree,form</field>
+            <field name="view_id" ref="get_gr_allform_view"/>
+            <field name="target">new</field>
+            <field name="binding_model_id" ref="model_wika_get_gr" />
+            <field name="binding_view_types">list</field>
+        </record>
+    </data>
+</odoo>

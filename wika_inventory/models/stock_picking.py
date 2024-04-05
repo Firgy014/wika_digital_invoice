@@ -23,7 +23,7 @@ class PickingInherit(models.Model):
     pick_type = fields.Selection([
         ('ses', 'SES'), 
         ('gr', 'GR')
-    ], string='Type')
+    ], string='Type', store=True)
     no_gr_ses = fields.Char(string='Nomor GR/SES')
     start_date = fields.Date(string='Start Date')
     end_date = fields.Date(string='End Date')
@@ -58,12 +58,9 @@ class PickingInherit(models.Model):
 
     @api.depends('move_ids.price_subtotal')
     def _compute_total_amount(self):
-        print("masuk.def")
         for record in self:
-            print("masuk.for")
             total_amount_value = sum(record.move_ids.mapped('price_subtotal'))
             if total_amount_value:
-                print("masuk.if")
                 record.total_amount = total_amount_value
 
     # @api.depends('bap_ids.price_subtotal')
@@ -95,20 +92,19 @@ class PickingInherit(models.Model):
         model_id = model_model.search([('model', '=', 'stock.picking')], limit=1)
         for res in self:
             level=res.level
+            res.write({'state':'waits'})
             first_user = False
             if level:
                 approval_id = self.env['wika.approval.setting'].sudo().search(
                     [('model_id', '=', model_id.id), ('level', '=', level),('transaction_type','=',res.pick_type)], limit=1)
-                print('approval_idapproval_idapproval_id')
                 approval_line_id = self.env['wika.approval.setting.line'].search([
                     ('sequence', '=', 1),
                     ('approval_id', '=', approval_id.id)
                 ], limit=1)
-                print(approval_line_id)
                 groups_id = approval_line_id.groups_id
                 if groups_id:
                     for x in groups_id.users:
-                        if level == 'Proyek' and x.project_id == res.project_id:
+                        if level == 'Proyek' and res.project_id in x.project_ids:
                             first_user = x.id
                         if level == 'Divisi Operasi' and x.branch_id == res.branch_id:
                             first_user = x.id
@@ -130,7 +126,7 @@ class PickingInherit(models.Model):
 
             # Get Document Setting
             document_list = []
-            doc_setting_id = document_setting_model.search([('model_id', '=', model_id.id),('transaction_type', '=', self.pick_type)])
+            doc_setting_id = document_setting_model.search([('model_id', '=', model_id.id),('transaction_type', '=', res.pick_type)])
 
             if doc_setting_id:
                 for document_line in doc_setting_id:
@@ -183,15 +179,8 @@ class PickingInherit(models.Model):
                 ('approval_id', '=', approval_id.id)
             ], limit=1)
             groups_id = approval_line_id.groups_id
-            if groups_id:
-                print(groups_id.name)
-                for x in groups_id.users:
-                    if level == 'Proyek' and x.project_id == self.project_id and x.id == self._uid:
-                        cek = True
-                    if level == 'Divisi Operasi' and x.branch_id == self.branch_id and x.id == self._uid:
-                        cek = True
-                    if level == 'Divisi Fungsi' and x.department_id == self.department_id and x.id == self._uid:
-                        cek = True
+            if self.activity_user_id.id == self._uid:
+                cek=True
 
         if cek == True:
             if approval_id.total_approve == self.step_approve:
@@ -249,7 +238,7 @@ class PickingInherit(models.Model):
                 if groups_id_next:
                     print(groups_id_next.name)
                     for x in groups_id_next.users:
-                        if level == 'Proyek' and x.project_id == self.project_id:
+                        if level == 'Proyek' and self.project_id in x.project_ids:
                             first_user = x.id
                         if level == 'Divisi Operasi' and x.branch_id == self.branch_id:
                             first_user = x.id
@@ -306,13 +295,8 @@ class PickingInherit(models.Model):
             ], limit=1)
             groups_id = approval_line_id.groups_id
             if groups_id:
-                for x in groups_id.users:
-                    if level == 'Proyek' and x.project_id == self.project_id and x.id == self._uid:
-                        cek = True
-                    if level == 'Divisi Operasi' and x.branch_id == self.branch_id and x.id == self._uid:
-                        cek = True
-                    if level == 'Divisi Fungsi' and x.department_id == self.department_id and x.id == self._uid:
-                        cek = True
+                if self.activity_user_id.id == self._uid:
+                    cek = True
         if cek == True:
             action = {
                 'name': ('Reject Reason'),
@@ -348,14 +332,9 @@ class PickingInherit(models.Model):
                 ], limit=1)
                 groups_id = approval_line_id.groups_id
                 if groups_id:
-                    print(groups_id.name)
-                    for x in groups_id.users:
-                        if level == 'Proyek' and x.project_id == self.project_id and x.id== self._uid:
-                            cek = True
-                        if level == 'Divisi Operasi' and x.branch_id == self.branch_id and x.id== self._uid:
-                            cek = True
-                        if level == 'Divisi Fungsi' and x.department_id == self.department_id and x.id== self._uid:
-                            cek = True
+                    if self.activity_user_id.id == self._uid:
+                        cek = True
+
             if cek == True:
                 if self.activity_ids:
                     for x in self.activity_ids.filtered(lambda x: x.status != 'approved'):
@@ -382,7 +361,7 @@ class PickingInherit(models.Model):
                     if groups_id_next:
                         print (groups_id_next.name)
                         for x in groups_id_next.users:
-                            if level == 'Proyek' and x.project_id == self.project_id:
+                            if level == 'Proyek' and self.project_id in x.project_ids:
                                 first_user = x.id
                             if level == 'Divisi Operasi' and x.branch_id == self.branch_id:
                                 first_user = x.id

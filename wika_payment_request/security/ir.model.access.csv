@@ -1,9 +1,11 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_wika_payment_request, Wika Payment Request,model_wika_payment_request,,1,1,1,1
-access_wika_pr_document_line, Wika PR Document Line,model_wika_pr_document_line,,1,1,1,1
 access_wika_pr_approval_line, Wika PR Approval Line,model_wika_pr_approval_line,,1,1,1,1
 access_reject_wizard_pr, Reject Wizard,model_reject_wizard_pr,,1,1,1,1
 access_wika_partial_payment,Partial payment,model_wika_partial_payment_request,,1,1,1,1
 access_wika_partial_payment_document,Partial payment,model_wika_partial_document_line,,1,1,1,1
 access_wika_partial_payment_approval,Partial payment,model_wika_partial_approval_line,,1,1,1,1
 access_wika_partial_wizard,Partial Wizard,model_partial_reject_wizard_pr,,1,1,1,1
+access_wika_pr_line,access_wika_pr_line,model_wika_payment_request_line,,1,1,1,1
+access_wika_pr_line_approval,access_wika_pr_line_approval,model_payment_request_line_wizard,,1,1,1,1
+

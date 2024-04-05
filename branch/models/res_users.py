@@ -9,7 +9,12 @@ class res_users(models.Model):
     branch_ids = fields.Many2many('res.branch', 'user_id', 'branch_id', string='Multi Divisi')
     project_id = fields.Many2one('project.project', string='Project')
     project_ids = fields.Many2many('project.project',  string='Multi Project')
-
+    level = fields.Selection([
+        ('Proyek', 'Proyek'),
+        ('Divisi Operasi', 'Divisi Operasi'),
+        ('Divisi Fungsi', 'Divisi Fungsi'),
+        ('Pusat', 'Pusat')
+    ], string='Level')
 
     def write(self, values):
         if 'branch_id' in values or 'branch_ids' in values:

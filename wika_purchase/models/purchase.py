@@ -35,7 +35,7 @@ class PurchaseOrderInherit(models.Model):
     position = fields.Char(string='Jabatan')
     vendor_position = fields.Char(string='Jabatan Vendor')
     address = fields.Char(string='Alamat')
-    job = fields.Char(string='Pekerjaan')
+    job = fields.Char(string='Jenis Pekerjaan')
     price_cut_ids = fields.One2many('wika.po.pricecut.line', 'purchase_id', string='Other Price Cut')
     active = fields.Boolean(string='Active',default=True)
     tgl_create_sap= fields.Date(string='Tgl Create SAP')
@@ -50,7 +50,8 @@ class PurchaseOrderInherit(models.Model):
         ('Divisi Fungsi', 'Divisi Fungsi'),
         ('Pusat', 'Pusat')
     ], string='Level',compute='_compute_level')
-    is_qty_available = fields.Boolean(string='Qty Tersedia', compute='_compute_is_qty_available', store=True)
+    is_qty_available = fields.Boolean(string='Qty Tersedia', compute='_compute_is_qty_available')
+    payment_term_id = fields.Many2one('account.payment.term', string='Payment Term')
 
     @api.depends('order_line.sisa_qty_bap')
     def _compute_is_qty_available(self):
@@ -202,14 +203,13 @@ class PurchaseOrderInherit(models.Model):
 
     def get_gr(self):
         url_config = self.env['wika.integration'].search([('name', '=', 'URL GR')], limit=1).url
-        print("-------------------------------")
-        print(url_config)
         headers = {
             'Authorization': 'Basic V0lLQV9JTlQ6SW5pdGlhbDEyMw==',
             'Content-Type': 'application/json'
         }
         payload = json.dumps({
             "IV_EBELN": "%s",
+            "IV_REVERSE": "O",
             "IW_CPUDT_RANGE": {
                 "CPUDT_LOW": "%s",
                 "CPUTM_LOW": "00:00:00",
@@ -237,8 +237,6 @@ class PurchaseOrderInherit(models.Model):
                         # Create a new list with the current item
                         mat_doc_dict[mat_doc] = [hasil]
                 for mat_doc, items in mat_doc_dict.items():
-                    print(f"MAT_DOC: {mat_doc}")
-                    print("hehe")
                     vals = []
                     for item in items:
                         # if item['REVERSE']=='X':
@@ -268,11 +266,8 @@ class PurchaseOrderInherit(models.Model):
                             'purchase_line_id':po_line.id,
                             'name': hasil['PO_NUMBER']
                         }))
-                        print(item['DOC_DATE'])
                         docdate = hasil['DOC_DATE']
-                    print(vals)
                     if vals:
-                        print("ppppppppppppppppppppp")
                         picking_create = self.env['stock.picking'].sudo().create({
                             'name': mat_doc,
                             'po_id': self.id,
@@ -311,8 +306,6 @@ class PurchaseOrderInherit(models.Model):
                         # Create a new list with the current item
                         ses_number_dict[ses_number] = [hasil]
                 for ses_number, items in ses_number_dict.items():
-                    print(f"SES_DOC: {ses_number}")
-                    print("hehe")
                     vals = []
                     for item in items:
                         # if item['REVERSE'] == 'X':
@@ -342,12 +335,9 @@ class PurchaseOrderInherit(models.Model):
                             'purchase_line_id': po_line.id,
                             'name': hasil['PO_NUMBER']
                         }))
-                        print(item['DOC_DATE'])
                         docdate = hasil['DOC_DATE']
                         matdoc = item['MAT_DOC']
-                    print(vals)
                     if vals:
-                        print("ppppppppppppppppppppp")
                         picking_create = self.env['stock.picking'].sudo().create({
                             'name': ses_number,
                             'po_id': self.id,
@@ -391,13 +381,12 @@ class PurchaseOrderInherit(models.Model):
                 groups_id = approval_line_id.groups_id
                 if groups_id:
                     for x in groups_id.users:
-                        if level == 'Proyek' and x.project_id == res.project_id:
+                        if level == 'Proyek' and  res.project_id in x.project_ids:
                             first_user = x.id
                         if level == 'Divisi Operasi' and x.branch_id == res.branch_id:
                             first_user = x.id
                         if level == 'Divisi Fungsi' and x.department_id == res.department_id:
                             first_user = x.id
-                print(first_user)
                 #     # Createtodoactivity
                 if first_user:
                     self.env['mail.activity'].sudo().create({
@@ -410,7 +399,6 @@ class PurchaseOrderInherit(models.Model):
                         'state': 'planned',
                         'summary': f"Need Upload Document {model_id.name}!"
                     })
-
             # Get Document Setting
             document_list = []
             doc_setting_id = document_setting_model.search([('model_id', '=', model_id.id)])
@@ -454,13 +442,8 @@ class PurchaseOrderInherit(models.Model):
             ], limit=1)
             groups_id = approval_line_id.groups_id
             if groups_id:
-                for x in groups_id.users:
-                    if level == 'Proyek' and x.project_id == self.project_id and x.id == self._uid:
-                        cek = True
-                    if level == 'Divisi Operasi' and x.branch_id == self.branch_id and x.id == self._uid:
-                        cek = True
-                    if level == 'Divisi Fungsi' and x.department_id == self.department_id and x.id == self._uid:
-                        cek = True
+                if self.activity_user_id.id == self._uid:
+                    cek = True
 
         if cek == True:
             if approval_id.total_approve == self.step_approve:
@@ -512,19 +495,16 @@ class PurchaseOrderInherit(models.Model):
                     ('sequence', '=', self.step_approve+1),
                     ('approval_id', '=', approval_id.id)
                 ], limit=1)
-                print("groups", groups_line_next)
                 groups_id_next = groups_line_next.groups_id
                 if groups_id_next:
-                    print(groups_id_next.name)
                     for x in groups_id_next.users:
-                        if level == 'Proyek' and x.project_id == self.project_id:
+                        if level == 'Proyek' and  self.project_id in x.project_ids:
                             first_user = x.id
                         if level == 'Divisi Operasi' and x.branch_id == self.branch_id:
                             first_user = x.id
                         if level == 'Divisi Fungsi' and x.department_id == self.department_id:
                             first_user = x.id
 
-                    print(first_user)
                     if first_user:
                         self.step_approve += 1
                         self.env['mail.activity'].sudo().create({
@@ -548,10 +528,7 @@ class PurchaseOrderInherit(models.Model):
                         })
                         if self.activity_ids:
                             for x in self.activity_ids.filtered(lambda x: x.status != 'approved'):
-                                print("masuk")
-                                print(x.user_id)
                                 if x.user_id.id == self._uid:
-                                    print(x.status)
                                     x.status = 'approved'
                                     x.action_done()
                     else:
@@ -579,14 +556,8 @@ class PurchaseOrderInherit(models.Model):
 
             groups_id = approval_line_id.groups_id
             if groups_id:
-                print(groups_id.name)
-                for x in groups_id.users:
-                    if level == 'Proyek' and x.project_id == self.project_id and x.id == self._uid:
-                        cek = True
-                    if level == 'Divisi Operasi' and x.branch_id == self.branch_id and x.id == self._uid:
-                        cek = True
-                    if level == 'Divisi Fungsi' and x.department_id == self.department_id and x.id == self._uid:
-                        cek = True
+                if self.activity_user_id.id == self._uid:
+                    cek = True
 
         if cek == True:
             action = {
@@ -616,7 +587,6 @@ class PurchaseOrderInherit(models.Model):
                     model_id = self.env['ir.model'].search([('model', '=', 'purchase.order')], limit=1)
                     approval_id = self.env['wika.approval.setting'].sudo().search(
                         [('model_id', '=', model_id.id), ('level', '=', level),('transaction_type','=',self.transaction_type)], limit=1)
-                    print('approval_idapproval_idapproval_id')
                     if not approval_id:
                         raise ValidationError(
                             'Approval Setting untuk menu Purchase Orders tidak ditemukan. Silakan hubungi Administrator!')
@@ -624,24 +594,14 @@ class PurchaseOrderInherit(models.Model):
                         ('sequence', '=', 1),
                         ('approval_id', '=', approval_id.id)
                     ], limit=1)
-                    print(approval_line_id)
                     groups_id = approval_line_id.groups_id
                     if groups_id:
-                        print(groups_id.name)
-                        for x in groups_id.users:
-                            if level == 'Proyek' and x.project_id == self.project_id and x.id== self._uid:
-                                cek = True
-                            if level == 'Divisi Operasi' and x.branch_id == self.branch_id and x.id== self._uid:
-                                cek = True
-                            if level == 'Divisi Fungsi' and x.department_id == self.department_id and x.id== self._uid:
-                                cek = True
+                        if self.activity_user_id.id == self._uid:
+                            cek = True
             if cek == True:
                 if self.activity_ids:
                     for x in self.activity_ids.filtered(lambda x: x.status != 'approved'):
-                        print("masuk")
-                        print(x.user_id)
                         if x.user_id.id == self._uid:
-                            print(x.status)
                             x.status = 'approved'
                             x.action_done()
                     self.state = 'uploaded'
@@ -659,12 +619,10 @@ class PurchaseOrderInherit(models.Model):
                         ('sequence', '=', self.step_approve),
                         ('approval_id', '=', approval_id.id)
                     ], limit=1)
-                    print("groups", groups_line)
                     groups_id_next = groups_line.groups_id
                     if groups_id_next:
-                        print (groups_id_next.name)
                         for x in groups_id_next.users:
-                            if level == 'Proyek' and x.project_id == self.project_id:
+                            if level == 'Proyek' and self.project_id in x.project_ids:
                                 first_user = x.id
                             if level == 'Divisi Operasi' and x.branch_id == self.branch_id:
                                 first_user = x.id
@@ -721,20 +679,22 @@ class PurchaseOrderLineInherit(models.Model):
     qty_bap = fields.Float('QTY BAP', compute='_compute_qty_bap')
     sisa_qty_bap = fields.Float('Sisa QTY BAP', compute='_compute_sisa_qty_bap')
 
-    def _compute_is_qty_available(self):
-        for order_line in self:
-            if all(line.sisa_qty_bap == 0 for line in order_line.order_id.order_line):
-                order_line.order_id.is_qty_available = True
-            else:
-                order_line.order_id.is_qty_available = False
+    # @api.depends('sisa_qty_bap')
+    # def _compute_is_qty_available(self):
+    #     for order_line in self:
+    #         if all(line.sisa_qty_bap == 0 for line in order_line.order_id.order_line):
+    #             order_line.order_id.is_qty_available = True
+    #         else:
+    #             order_line.order_id.is_qty_available = False
 
     def _compute_qty_bap(self):
         for x in self:
-            query = """select sum(qty) from wika_berita_acara_pembayaran_line where purchase_line_id=%s
-            """% (x.id)
-            # print ("TEEESSSTTTTTT-----------", query)
-            self.env.cr.execute(query)
-            result = self.env.cr.fetchone()
+            x.qty_bap = 0.0
+            # query = """select sum(qty) from wika_berita_acara_pembayaran_line where purchase_line_id=%s
+            # """% (x.id)
+            # # print ("TEEESSSTTTTTT-----------", query)
+            # self.env.cr.execute(query)
+            # result = self.env.cr.fetchone()
             # bap_line_model = self.env['wika.berita.acara.pembayaran.line'].sudo()
             #
             # total_qty = 0
@@ -743,18 +703,18 @@ class PurchaseOrderLineInherit(models.Model):
             #
             # for bap_line in bap_lines:
             #     total_qty += bap_line.qty
-            if result:
-                x.qty_bap = result[0]
-            else:
-                x.qty_bap=0.0
-                
+            # if result:
+            #     x.qty_bap = result[0]
+            # else:
+            #     x.qty_bap=0.0
+
     @api.depends('product_qty','qty_bap')
     def _compute_sisa_qty_bap(self):
         for x in self:
             if x.qty_bap>0:
                 x.sisa_qty_bap = x.product_qty - x.qty_bap
             else:
-                x.sisa_qty_bap= x.sisa_qty_bap
+                x.sisa_qty_bap= x.product_qty
 
 class PurchaseOrderDocumentLine(models.Model):
     _name = 'wika.po.document.line'

@@ -4,7 +4,7 @@
     'version' : '1.0',
     'summary': 'Ademord Dashboard',
     'sequence': -1,
-    'description': """Ademord (andromedasupendi) Custom Dashboard""",
+    'description': """Ademord Custom Dashboard""",
     'category': 'OWL',
     'depends' : ['base', 'web', 'sale', 'board'],
     'data': [

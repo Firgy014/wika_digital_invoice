@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- tree -->
+    <record id="sap_integration_configure_view_tree" model="ir.ui.view">
+        <field name="name">sap.integration.configure.view.tree</field>
+        <field name="model">sap.integration.configure</field>
+        <field name="arch" type="xml">
+            <tree string="Configure Integration SAP">
+                <field name="folder"/>
+                <field name="sftp_host"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- form -->
+    <record id="sap_integration_configure_view_form" model="ir.ui.view">
+        <field name="name">sap.integration.configure.form</field>
+        <field name="model">sap.integration.configure</field>
+        <field name="type">form</field>
+        <field name="arch" type="xml">
+            <form string="Configure Integration SAP">
+                <sheet>
+                    <group name="sftp_configuration">
+                        <field name="folder"/>
+                        <field name="sftp_folder"/>
+                        <field name="sftp_folder_archive"/>
+                        <field name="sftp_folder_success"/>
+                        <field name="sftp_folder_error"/>
+                        <field name="sftp_host"/>
+                        <field name="sftp_port"/>
+                        <field name="sftp_user" />
+                        <field name="sftp_password" password="True"/>
+                        <field name="sftp_path" placeholder="For example: /odoo/backups/"/>
+                        <button name="test_sftp_connection" type="object" string="Test SFTP Connection"/>
+                    </group>
+
+                    <!-- <separator string="Help" colspan="2"/> -->
+                    <!-- <div name="configuration_details">
+                        Automatic Generate of the record NCL can be scheduled as follows:
+                        <ol>
+                            <li>
+                                Go to Settings / Technical / Automation / Scheduled Actions.
+                            </li>
+                            <li>
+                                Search the action named 'Generate NCL To SAP'.
+                            </li>
+                            <li>
+                                Set the scheduler to active and fill in how often you want generated.
+                            </li>
+                        </ol>
+                    </div> -->
+
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- action -->
+    <record id="action_sap_configure" model="ir.actions.act_window">
+        <field name="name">Config SAP Integration</field>
+        <field name="res_model">sap.integration.configure</field>
+        <field name="view_mode">tree,form</field>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'view_mode': 'tree', 'view_id': ref('wika_integration.sap_integration_configure_view_tree')}),
+            (0, 0, {'view_mode': 'form', 'view_id': ref('wika_integration.sap_integration_configure_view_form')}),
+        ]"/>
+    </record>
+
+    <!-- menuitem -->
+    <menuitem id="config_sap_menu_root" name="Config SAP Integration" parent="base.menu_custom"/>
+    <menuitem id="config_sap_menu_main" name="Config SAP Integration" parent="config_sap_menu_root" action="action_sap_configure"/>
+
+</odoo>

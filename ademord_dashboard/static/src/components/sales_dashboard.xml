@@ -32,7 +32,7 @@
                             grsesuploaded="state.grses.uploaded" grseslate="state.grses.late" urlwaitgrses="state.grses.url.wait"
                             urluploadgrses="state.grses.url.upload" urllategrses="state.grses.url.late"/>
 
-                        <KpiCard name="'Berita Acara Pembayaran'" total="state.bap.total" bapwaits="state.bap.waits"
+                        <KpiCard name="'BAP'" total="state.bap.total" bapwaits="state.bap.waits"
                             bapuploaded="state.bap.uploaded" baplate="state.bap.late" urlwaitbap="state.bap.url.wait"
                             urluploadbap="state.bap.url.upload" urllatebap="state.bap.url.late"/>
 
@@ -44,7 +44,7 @@
                             pruploaded="state.pr.uploaded" prlate="state.pr.late" urlwaitpr="state.pr.url.wait"
                             urluploadpr="state.pr.url.upload" urllatepr="state.pr.url.late"/> -->
 
-                        <div class="shadow-sm border m-2 p-4 bg-white" style="width:810px; height:226px;">
+                        <!-- <div class="shadow-sm border m-2 p-4 bg-white" style="width:810px; height:226px;">
                             <div class="d-flex align-items-center justify-content-between">
                                 <h3 class="text-primary fw-bold">Monthly Purchases</h3>
                                 <div class="px-3 py-1 bg-primary cursor-pointer">
@@ -52,11 +52,11 @@
                                 </div>
                             </div>
                             <ChartRenderer type="'line'" title="'Monthly Billed Purchases'" config="state.monthlySales"/>
-                        </div>
+                        </div> -->
 
                     </div>
                     <div class="row">
-                        <div class="col-lg-6 m-0 p-0">
+                        <!-- <div class="col-lg-6 m-0 p-0">
                             <div class="shadow-sm border m-2 p-4 bg-white">
                                 <div class="d-flex align-items-center justify-content-between">
                                     <h3 class="text-primary fw-bold">Top Projects</h3>
@@ -66,8 +66,8 @@
                                 </div>
                                 <ChartRenderer type="'doughnut'" title="'Top Projects in Digital Invoicing'" config="state.topProjects"/>
                             </div>
-                        </div>
-                        <div class="col-lg-6 m-0 p-0">
+                        </div> -->
+                        <!-- <div class="col-lg-6 m-0 p-0">
                             <div class="shadow-sm border m-2 p-4 bg-white">
                                 <div class="d-flex align-items-center justify-content-between">
                                     <h3 class="text-primary fw-bold">Digital Invoice by Stages</h3>
@@ -77,10 +77,10 @@
                                 </div>
                                 <ChartRenderer type="'pie'" title="'Purchase Report'" config="state.digitalInvoiceReport"/>
                             </div>
-                        </div>
+                        </div> -->
                     </div>
                 </div>
-                <div class="col-lg-5">s
+                <div class="col-lg-5">
                     <!-- <div class="row">
                         <div class="col m-0 p-0">
                             <div class="shadow-sm border m-2 p-4 bg-white">
@@ -98,12 +98,12 @@
                         <div class="col m-0 p-0">
                             <div class="shadow-sm border m-2 p-4 bg-white">
                                 <div class="d-flex align-items-center justify-content-between">
-                                    <h3 class="text-primary fw-bold">Invoice Monitoring</h3>s
+                                    <h3 class="text-primary fw-bold">Invoice Monitoring</h3>
                                     <div class="px-3 py-1 bg-primary cursor-pointer">
                                         <span class="fa fa-arrow-right text-white"/>
                                     </div>
                                 </div>
-                                <ChartRenderer type="'bar'" title="'Invoice Monitoring'" config="state.monthlySales"/>
+                                <ChartRenderer type="'bar'" title="'Invoice Monitoring'" config="state.invoiceMonitoring"/>
                             </div>
                         </div>
                     </div>

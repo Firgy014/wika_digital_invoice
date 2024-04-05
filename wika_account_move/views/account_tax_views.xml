@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="wika_tax_form_inherit" model="ir.ui.view">
+        <field name="name">wika.tax.form.inherit</field>
+        <field name="model">account.tax</field>
+        <field name="inherit_id" ref="account.view_tax_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='amount_type']" position="before">
+                <field name="pph_code" groups="base.group_no_one"/>
+                 <field name="is_progresif"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="wika_tax_group_tree_inherit" model="ir.ui.view">
+        <field name="name">wika.tax.group.tree.inherit</field>
+        <field name="model">account.tax.group</field>
+        <field name="inherit_id" ref="account.view_tax_group_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='property_advance_tax_payment_account_id']" position="after">
+                <field name="pph_group_code" groups="base.group_no_one"/>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>
