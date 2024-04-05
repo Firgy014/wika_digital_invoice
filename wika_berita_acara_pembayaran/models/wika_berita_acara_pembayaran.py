@@ -139,7 +139,88 @@ class WikaBeritaAcaraPembayaran(models.Model):
     terbilang_co = fields.Char('Terbilang cut over', compute='_compute_rupiah_terbilang_cut_over')
     is_fully_invoiced = fields.Boolean(string='Fully Invoiced', compute='_compute_fully_invoiced', default=False,store=True)
     is_cut_over = fields.Boolean('is cut over')
+    value_to_date = fields.Float('Sisa Nilai PO', compute='_check_amount_adjustment')
+    total_adjustment = fields.Float('Total Adjustment', compute='_compute_total_adjustment')
+    total_po = fields.Float(string='Total PO', compute='_compute_total_po')
+    remain_val_po = fields.Float(string='Sisa BAP')
 
+    @api.onchange('po_id')
+    def _onchange_po_id(self):
+        if self.po_id:
+            prev_bap = self.env['wika.berita.acara.pembayaran'].search([
+                ('po_id', '=', self.po_id.id),
+                ('name', '<', self.id)], order='name desc', limit=1)
+
+            if prev_bap:
+                self.remain_val_po = prev_bap.remain_val_po - prev_bap.total_adjustment
+            else:
+                self.remain_val_po = self.total_po
+
+    @api.model
+    def create(self, vals):
+        new_bap = super(WikaBeritaAcaraPembayaran, self).create(vals)
+
+        if vals.get('po_id'):
+            prev_bap = self.search([
+                ('po_id', '=', vals['po_id']),
+                ('name', '<', new_bap.name)], order='name desc', limit=1)
+
+            if prev_bap:
+                new_bap.remain_val_po = prev_bap.remain_val_po - prev_bap.total_adjustment
+            else:
+                new_bap.remain_val_po = new_bap.total_po
+        return new_bap
+
+    def write(self, vals):
+        res = super(WikaBeritaAcaraPembayaran, self).write(vals)
+
+        if 'po_id' in vals:
+            for bap in self:
+                if bap.po_id:
+                    prev_bap = self.search([
+                        ('po_id', '=', bap.po_id.id),
+                        ('name', '<', bap.name)], order='name desc', limit=1)
+
+                    if prev_bap:
+                        bap.remain_val_po = prev_bap.remain_val_po - prev_bap.total_adjustment
+                    else:
+                        bap.remain_val_po = bap.total_po
+        return res
+
+    @api.depends('po_id.amount_untaxed')
+    def _compute_total_po(self):
+        for record in self:
+            total_po = sum(record.po_id.mapped('amount_untaxed'))
+            record.total_po = total_po
+
+    @api.depends('bap_ids.amount_adjustment')
+    def _compute_total_adjustment(self):
+        for record in self:
+            total_adjustment = sum(record.bap_ids.mapped('amount_adjustment'))
+            record.total_adjustment = total_adjustment
+
+    # compute nilai sisa po
+    @api.constrains('total_po', 'total_adjustment', 'value_to_date')
+    def _check_amount_adjustment(self):
+        for record in self:
+            record.value_to_date = record.total_po - record.total_adjustment
+
+    # onchange validation
+    @api.onchange('total_adjustment', 'remain_val_po', 'last_value', 'total_po')
+    def _check_validation_adjustment(self):
+        for record in self:
+            if record.last_value != 0 and record.total_adjustment > record.remain_val_po:
+                raise ValidationError("Total Amount Adjustment tidak boleh melebihi nilai sisa BAP")
+            if record.total_adjustment > record.total_po:
+                raise ValidationError("Nilai Amount Adjustment tidak boleh melebihi nilai kontrak PO")
+                
+    @api.constrains('total_adjustment', 'remain_val_po', 'total_po')
+    def _check_adjustment_constraints(self):
+        for record in self:
+            if record.total_adjustment > record.remain_val_po:
+                raise ValidationError("Total Amount Adjustment tidak boleh melebihi nilai sisa BAP")
+            if record.total_adjustment > record.total_po:
+                raise ValidationError("Total Amount Adjustment tidak boleh melebihi nilai kontrak PO")
 
     @api.onchange('po_id', 'bap_type')
     def _change_button(self):
@@ -1156,7 +1237,7 @@ class WikaBeritaAcaraPembayaranLine(models.Model):
     current_value = fields.Monetary(string='Current Value', compute='_compute_current_value')
     sisa_qty_bap_grses = fields.Float(string='Sisa BAP',digits='Product Unit of Measure')
     qty_invoiced = fields.Float(string='Total Invoiced', compute='_compute_invoiced_bap_qty')
-
+    
     @api.depends('bap_id')
     def _compute_invoiced_bap_qty(self):
         for record in self:
