@@ -143,6 +143,22 @@ class WikaBeritaAcaraPembayaran(models.Model):
     total_adjustment = fields.Float('Total Adjustment', compute='_compute_total_adjustment')
     total_po = fields.Float(string='Total PO', compute='_compute_total_po')
     remain_val_po = fields.Float(string='Sisa BAP')
+    
+    @api.onchange('partner_id', 'bap_ids.product_id')
+    def _onchange_partner_id_product_id(self):
+        if self.partner_id and self.bap_ids:
+            bill_coa_type = self.partner_id.bill_coa_type
+            product_valuation_classes = self.bap_ids.mapped('product_id.valuation_class')
+            if bill_coa_type and product_valuation_classes:
+                payable_setting = self.env['wika.setting.account.payable'].sudo().search([
+                    ('bill_coa_type', '=', bill_coa_type),
+                    ('valuation_class', 'in', product_valuation_classes)
+                ], limit=1)
+                if payable_setting:
+                    self.pph_ids = payable_setting.pph_ids
+                else:
+                    self.pph_ids = False
+        return {'domain': {'pph_ids': [('id', 'in', self.pph_ids.ids)]}}
 
     @api.onchange('po_id')
     def _onchange_po_id(self):
@@ -754,46 +770,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
                             else:
                                 x.write({'stock_move_id': data.stock_move_id.id})
 
-
-
     @api.onchange('po_id','bap_type')
-    def onchange_po_id(self):
-
-    #     if self.po_id:
-    #         self.bap_ids = [(5, 0, 0)]
-    #         bap_lines = []
-    #         price_cut_lines = []
-
-    #         stock_pickings = self.env['stock.picking'].search([('po_id', '=', self.po_id.id)])
-    #         # Mengisi price_cut_lines
-    #         for line in self.po_id.price_cut_ids:
-    #             price_cut_lines.append((0, 0, {
-    #                 'product_id': line.product_id.id,
-    #                 'percentage_amount': line.persentage_amount,
-    #                 'amount': line.amount,
-    #             }))
-
-    #         bap_lines = []
-    #         for picking in stock_pickings.move_ids_without_package.filtered(lambda x: x.sisa_qty_bap>0):
-    #             bap_lines.append((0, 0, {
-    #             'picking_id': picking.picking_id.id,
-    #             'stock_move_id': picking.id,
-    #             'purchase_line_id':picking.purchase_line_id.id or False,
-    #             'unit_price_po':picking.purchase_line_id.price_unit,
-    #             # 'account_move_line_id':aml_src.id or False,
-    #              'sisa_qty_bap_grses':picking.sisa_qty_bap,
-    #             'product_uom':picking.product_uom,
-    #             'product_id': picking.product_id.id,
-    #             'qty': picking.sisa_qty_bap,
-    #             'unit_price': picking.purchase_line_id.price_unit,
-    #             'tax_ids':picking.purchase_line_id.taxes_id.ids,
-    #             'currency_id':picking.purchase_line_id.currency_id.id
-    #         }))
-
-    #         self.bap_ids = bap_lines
-    #         self.price_cut_ids = price_cut_lines
-
-    @api.onchange('po_id', 'bap_type')
     def onchange_po_id(self):
         if self.po_id:
             bap_lines = []
