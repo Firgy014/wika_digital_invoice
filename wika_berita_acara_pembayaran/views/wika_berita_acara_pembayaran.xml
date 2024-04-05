@@ -13,7 +13,7 @@
                     <field name="bap_date"/>
                     <field name="partner_id"/>
                     <field name="po_id"/>
-                    
+                     <field name="name"/>
                     <filter name="filter_divisi" string="Divisi" domain="[('branch_id', '=', uid)]"/>
                     <filter name="filter_department" string="Department" domain="[('department_id', '=', uid)]"/>
                     <!-- <filter string="Project" name="project_id" domain="[('branch_id', '=', uid)]"/>
@@ -22,12 +22,14 @@
                     <filter string="Nomor PO" name="po_id"/> -->
 
                     <group expand="0" string="Group By">
-                        <filter name="name" string="Divisi" context="{'group_by': 'branch_id'}"/>
-                        <filter name="name" string="Department" context="{'group_by': 'department_id'}"/>
-                        <filter name="name" string="Project" context="{'group_by': 'project_id'}"/>
-                        <filter name="name" string="Date" context="{'group_by': 'bap_date'}"/>
-                        <filter name="name" string="vendor" context="{'group_by': 'partner_id'}"/>
-                        <filter name="name" string="Nomor PO" context="{'group_by': 'po_id'}"/>
+                        <filter name="divisi" string="Divisi" context="{'group_by': 'branch_id'}"/>
+                        <filter name="dept" string="Department" context="{'group_by': 'department_id'}"/>
+                        <filter name="project" string="Project" context="{'group_by': 'project_id'}"/>
+                        <filter name="date" string="Date" context="{'group_by': 'bap_date'}"/>
+                        <filter name="vendor" string="Vendor" context="{'group_by': 'partner_id'}"/>
+                        <filter name="nomor_po" string="Nomor PO" context="{'group_by': 'po_id'}"/>
+                        <filter name="bap_type" string="Jenis BAP" context="{'group_by': 'bap_type'}"/>
+
                     </group>
                 </search>
             </field>
@@ -89,13 +91,16 @@
             <field name="model">wika.berita.acara.pembayaran</field>
             <field name="arch" type="xml">
                 <tree string="Berita Acara Pembayaran List">
+                    <field name="name"/>
+                    <field name="bap_type"/>
                     <field name="branch_id"/>
                     <field name="department_id"/>
                     <field name="project_id"/>
-                    <field name="name"/>
                     <field name="partner_id"/>
                     <field name="po_id"/>
+                     <field name="bap_type"/>
                     <field name="state"/>
+                     <field name="total_pembayaran"/>
                     <field name="is_fully_invoiced" groups="base.group_no_one"/>
                 </tree>
             </field>
@@ -137,21 +142,22 @@
                                 <field name="address"  readonly="1" force_save="1"/>
                                 <field name="job"  readonly="1" force_save="1"/>
                                 <field name="step_approve" invisible="1"/>
-                                <field name="is_fully_invoiced" groups="base.group_no_one"/>
-                                <field name="is_cut_over" readonly="1" groups="base.group_no_one"/>
+                                 <field name="is_fully_invoiced" groups="base.group_no_one"/>
+                                <field name="is_cut_over"  groups="base.group_no_one"/>
+
                             </group>
                             <group>
                                 <field name="check_biro" invisible="1"/>
                                 <field name="level" invisible="1"/>
 
-                                <field name="branch_id" domain="[('biro', '=', False)]" 
-                                    attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
-                                <field name="department_id" domain="[('biro', '=', True), ('parent_id', '=', branch_id)]" 
+                                <field name="branch_id" domain="[('biro', '=', False)]"
+                                    attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}" options="{'no_create': True, 'no_create_edit':True}"/>
+                                <field name="department_id" domain="[('biro', '=', True), ('parent_id', '=', branch_id)]"
                                     attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])], 'invisible': [('check_biro', '=', False)]}"/>
-                                <field name="project_id" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
-                                <field name="end_date" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
+                                <field name="project_id" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}" options="{'no_create': True, 'no_create_edit':True}"/>
+                                <field name="end_date" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}" options="{'no_create': True, 'no_create_edit':True}"/>
                                 <field name="bap_date" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}" style="background-color: #dddded;"/>
-                                <field name="pph_ids" domain="[('tax_group_id', '!=', 'PPN')]" widget="many2many_tags" style="background-color: #dddded;"/>
+                                <field name="pph_ids" options="{'no_create': True, 'no_create_edit':True}" domain="[('tax_group_id', '!=', 'PPN')]" widget="many2many_tags" style="background-color: #dddded;"/>
                                 <field name="guarantee_type" attrs="{'invisible': [('bap_type', '!=', 'uang muka')],
                                     'readonly': [('state', 'in', ['uploaded', 'approved'])]}" style="background-color: #dddded;"/>
                                 <field name="guarantee_value" attrs="{'invisible': [('bap_type', '!=', 'uang muka')],
@@ -211,11 +217,12 @@
                         <notebook>
                             <page string="List BAP">
                                 <group>
-                                    <field name="bap_ids" mode="tree,kanban" nolabel="1" colspan="2"
-                                        attrs="{'invisible': [('bap_type', 'not in', ['progress', 'cut over'])]}">
+                                    <field name="bap_ids" mode="tree,kanban" nolabel="1" colspan="2" force_save="1"
+                                        attrs="{'invisible': [('bap_type', 'not in', ['progress', 'cut over'])],'readonly': [('state', 'in', ['approved', 'uploaded'])]}">
                                         <tree string="List BAP" editable="top" create="0">
-                                            <field name="picking_id"/>
-                                            <field name="stock_move_id" invisible="1"/>
+                                           <field name="invoice_line_id" groups="base.group_no_one"/>
+                                            <field name="picking_id" options="{'no_create': True, 'no_create_edit':True}" domain="[('po_id', '=', parent.po_id)]"/>
+                                            <field name="stock_move_id" options="{'no_create': True, 'no_create_edit':True}" domain="[('picking_id', '=', picking_id)]" string="Item GR/SES"/>
                                             <field name="purchase_line_id" invisible="1"/>
                                             <field name="unit_price_po" invisible="1"/>
                                             <field name="sisa_qty_bap_grses" invisible="1"/>
@@ -226,7 +233,10 @@
                                             <field name="tax_ids" widget="many2many_tags" string=""/>
                                             <field name="currency_id" readonly="1" force_save="1"/>
                                             <field name="unit_price" readonly="1" force_save="1"/>
-                                            <field name="sub_total" readonly="1" force_save="1"/>
+
+                                            <field name="sub_total" sum="Total"/>
+                                            <field name="adjustment" />
+                                            <field name="amount_adjustment" sum="Total" attrs="{'invisible': [('adjustment', '!=', True)]}"/>
                                         </tree>
                                     </field>
                                     <field name="price_cut_ids"
@@ -249,6 +259,7 @@
                                         <field name="retensi_qty_total" groups="base.group_no_one"/>
                                         <field name="total_amount"/>
                                         <field name="total_tax" string="Total PPN"/>
+                                        <field name="amount_pph"  />
                                         <field name="total_pph"/>
                                         <field name="total_pembayaran"/>
 
@@ -291,7 +302,7 @@
                                         </tree>
                                         <form string="List Document">
                                             <group>
-                                                <field name="document" widget="pdf_viewer" filename="filename"/>
+                                                <field name="document" attrs="{'readonly': [('state', '=', 'verified')]}" widget="pdf_viewer" filename="filename"/>
                                                 <field name="filename" invisible="1"/>
                                                 <field name="state" invisible="1"/>
                                             </group>

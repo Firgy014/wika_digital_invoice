@@ -8,6 +8,7 @@
         <field name="arch" type="xml">
             <xpath expr="//field[@name='amount_type']" position="before">
                 <field name="pph_code" groups="base.group_no_one"/>
+                 <field name="is_progresif"/>
             </xpath>
         </field>
     </record>

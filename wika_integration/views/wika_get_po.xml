@@ -12,6 +12,8 @@
                     <field name="po_plant"/>
                     <field name="co_code"/>
                      <field name="status"/>
+                     <field name="tgl_create_sap"/>
+                      <field name="tgl_write_sap"/>
                 </tree>
             </field>
         </record>
@@ -31,6 +33,8 @@
                             <field name="po_plant"/>
                             <field name="co_code"/>
                              <field name="status"/>
+                            <field name="tgl_create_sap"/>
+                             <field name="tgl_write_sap"/>
                         </group>
 
                     </sheet>
@@ -64,7 +68,6 @@
                     <p class="oe_black">
 Get PO yang dipilih                    </p>
                     <footer>
-                       <button string="Assign todo" name="asign_todo_all" type="object" default_focus="1" class="btn-primary"/>
                         <button string="Get PO" name="get_po_all" type="object" default_focus="1" class="btn-primary"/>
                         <button string="Cancel"  class="btn-default" special="cancel"/>
                     </footer>

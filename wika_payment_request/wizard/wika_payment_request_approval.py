@@ -19,4 +19,7 @@ class Approval_Line_Wizard(models.TransientModel):
 
         for record in self.env['wika.payment.request.line'].browse(active_ids):
             record.sudo().action_approve()
+            is_sent_to_sap = record.sudo().send_divisi_approved_pr_to_sap()
+            if is_sent_to_sap == True:
+                record.sudo().send_pusat_approved_pr_to_sap()
         return {'type': 'ir.actions.act_window_close'}

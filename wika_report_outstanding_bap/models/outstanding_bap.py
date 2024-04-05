@@ -35,6 +35,7 @@ class WikaOutstandingBap(models.Model):
         ('progress', 'Progress'),
         ('uang muka', 'Uang Muka'),
         ('retensi', 'Retensi'),
+        ('cut over', 'Cut Over'),
         ], string='Jenis BAP', default='progress')
     # potongan_retensi = fields.Float(string='Total Retensi')
     # # non outstanding
@@ -58,7 +59,9 @@ class WikaOutstandingBap(models.Model):
             bap.bap_date AS date_bap, 
             bap.id AS bap_id, 
             bal.qty AS qty_bap, 
-            (bal.unit_price * bal.qty) AS sub_total_bap, 
+            CASE WHEN bal.adjustment='t'  
+						THEN bal.amount_adjustment
+						ELSE (bal.unit_price * bal.qty) END AS sub_total_bap, 
             bap.dp_total AS potongan_uang_muka_dp, 
             bap.retensi_total AS potongan_retensi, 
             bap.dp_qty_total AS potongan_uang_muka_qty_dp, 
@@ -68,7 +71,7 @@ class WikaOutstandingBap(models.Model):
             wika_berita_acara_pembayaran_line bal 
             LEFT JOIN wika_berita_acara_pembayaran bap ON bal.bap_id = bap.id 
         where 
-            bal.bap_id is not null """
+            bal.bap_id is not null  """
 
         # return """
         # SELECT

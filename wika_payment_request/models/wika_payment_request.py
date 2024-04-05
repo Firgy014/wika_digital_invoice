@@ -1,7 +1,10 @@
 from odoo import models, fields, api,_
 from datetime import datetime, timedelta
 from odoo.exceptions import UserError, ValidationError,Warning, AccessError
-
+import random
+import string
+import requests
+import json
 
 class WikaPaymentRequest(models.Model):
     _name = 'wika.payment.request'
@@ -129,6 +132,7 @@ class WikaPaymentRequest(models.Model):
         ('Pusat', 'Pusat'),
     ], string='Status Position')
     approval_line_id= fields.Many2one(comodel_name='wika.approval.setting.line')
+    is_posted_to_sap = fields.Boolean(string='Posted to SAP', default=False)
 
     @api.model
     def _getdefault_branch(self):
@@ -196,7 +200,6 @@ class WikaPaymentRequest(models.Model):
                 level = 'Divisi Fungsi'
             res.level = level
 
-
     @api.depends('department_id')
     def _cek_biro(self):
         for x in self:
@@ -208,7 +211,6 @@ class WikaPaymentRequest(models.Model):
                     x.check_biro = False
             else:
                 x.check_biro = False
-
 
     def assign_requested(self):
         model_model = self.env['ir.model'].sudo()
@@ -279,7 +281,6 @@ class WikaPaymentRequest(models.Model):
         self.step_approve += 1
         self.assign_requested()
 
-
     def action_approve(self):
         if self.activity_user_id.id ==self._uid:
             move_lines = []
@@ -293,12 +294,6 @@ class WikaPaymentRequest(models.Model):
                 print (groups_id_next.name)
                 for x in groups_id_next.users:
                     if self.level == 'Proyek' and x.branch_id == self.branch_id:
-                        # print ("masuk level")
-                        # print (x.branch_id.code)
-                        # print (self.branch_id.code)
-                        # if x.branch_id == self.branch_id:
-                        #     print("ddddddddddddd")
-                        #     cek = True
                         first_user = x.id
                     if self.level == 'Divisi Operasi' and x.branch_id == self.branch_id:
                         first_user = x.id
@@ -307,7 +302,8 @@ class WikaPaymentRequest(models.Model):
                 if first_user:
                     for invoice in self.invoice_ids:
                         print (invoice)
-                        invoice.write({'status_payment': 'Request Divisi'})
+                        invoice.write({'status_payment': 'Request Divisi',
+                                       'payment_block':'C'})
                         self.env['wika.payment.request.line'].sudo().create({
                             'pr_id':self.id,
                             'invoice_id': invoice.id,
@@ -329,13 +325,12 @@ class WikaPaymentRequest(models.Model):
                         'pr_id': self.id
                         })
                     self.write({'state': 'verified','activity_summary':'Request Divisi','approval_stage':'Divisi Operasi'})
+                    self.send_proyek_approved_pr_to_sap()
                 else:
                     raise ValidationError('User Next Approval tidak ditemukan!')
 
         else:
             raise ValidationError('User Akses Anda tidak berhak Approve!')
-
-
 
     def action_reject(self):
         action = self.env.ref('wika_payment_request.action_reject_pr_wizard').read()[0]
@@ -346,6 +341,61 @@ class WikaPaymentRequest(models.Model):
             if record.state in ('request', 'approve'):
                 raise ValidationError('Tidak dapat menghapus ketika status Payment Request dalam keadaan Request atau Approve')
         return super(WikaPaymentRequest, self).unlink()
+    
+    def _generate_random_string(self):
+        length = 32
+        letters_and_digits = string.ascii_uppercase + string.digits
+        random_string = ''.join((random.choice(letters_and_digits) for i in range(length)))
+
+        return random_string
+
+    def send_proyek_approved_pr_to_sap(self):
+        print("masukkk_____proyek")
+        package_id = self._generate_random_string()
+        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+        url_config = self.env['wika.integration'].search([('name', '=', 'URL Payment Request Proyek')], limit=1)
+
+        auth = ('WIKA_INT', 'Initial123')
+        url = url_config.url
+        headers = {'x-csrf-token': 'fetch'}
+        # GET Req
+        response = requests.get(url, headers=headers, auth=auth)
+        fetched_token = response.headers.get('x-csrf-token')
+        fetched_cookies = response.cookies.get_dict()
+        invoice_list = []
+        data_ref = {}
+        for invoice in self.invoice_ids:
+            data_ref = {
+                'BELNR': invoice.payment_reference,
+                'GJAHR': str(invoice.date)[:4],
+                'ZLSPR': invoice.payment_block,
+                'XREF3': invoice.project_id.sap_code
+            }
+            invoice_list.append(data_ref)
+
+        payload = json.dumps({
+            "DEVID": "YFII016",
+            "PACKAGEID": package_id,
+            "COCODE": "A000",
+            "PRCTR": "",
+            "TIMESTAMP": timestamp,
+            "DATA": invoice_list
+        })
+        print (payload)
+        # POST Req
+        post_headers = {
+            'x-csrf-token': fetched_token,
+            'Authorization': 'Basic V0lLQV9JTlQ6SW5pdGlhbDEyMw=='
+        }
+        response_post = requests.request("POST", url, headers=post_headers, data=payload, cookies=fetched_cookies)
+
+        # Loop melalui setiap objek dalam daftar respons
+
+        #parsed_response = json.loads(response_post.text)
+        # message = parsed_response[0]["MESSAGE"]
+        # print(message)
+        self.is_posted_to_sap = True
+
 
 class WikaPrApprovalLine(models.Model):
     _name = 'wika.pr.approval.line'
@@ -440,15 +490,8 @@ class WikaPrLine(models.Model):
             groups_id_next = apploval_line_next_id.groups_id
             first_user=False
             if groups_id_next:
-                print (groups_id_next.name)
                 for x in groups_id_next.users:
                     if self.level == 'Proyek' and x.branch_id == self.branch_id or x.branch_id.parent_id.code == 'Pusat':
-                        # print ("masuk level")
-                        # print (x.branch_id.code)
-                        # print (self.branch_id.code)
-                        # if x.branch_id == self.branch_id:
-                        #     print("ddddddddddddd")
-                        #     cek = True
                         first_user = x.id
                     if self.level == 'Divisi Operasi' and x.branch_id == self.branch_id:
                         first_user = x.id
@@ -461,7 +504,8 @@ class WikaPrLine(models.Model):
                         self.pr_id.write({'activity_summary': 'Request Divisi','approval_stage':'Divisi Operasi'})
                     elif apploval_line_next_id.level_role == 'Pusat':
                         self.pr_id.write({ 'activity_summary': 'Request Pusat','approval_stage':'Pusat'})
-                        self.invoice_id.write({ 'status_payment': 'Request Pusat'})
+                        self.invoice_id.write({'status_payment': 'Request Pusat','payment_block':'D'})
+                        self.send_divisi_approved_pr_to_sap()
 
                     # audit_log_obj = self.env['wika.pr.approval.line'].create({'user_id': self._uid,
                     #         'groups_id' :self.approval_line_id.groups_id.id,
@@ -472,8 +516,105 @@ class WikaPrLine(models.Model):
                 else:
                     raise ValidationError('User Next Approval tidak ditemukan!')
             else:
-                self.invoice_id.write({'status_payment': 'Ready To Pay'})
+                self.send_pusat_approved_pr_to_sap()
                 self.pr_id.write({'state': 'approve'})
                 self.write({'next_user_id': False})
         else:
             raise ValidationError('User Akses Anda tidak berhak Approve!')
+
+    def _generate_random_string(self):
+        length = 32
+        letters_and_digits = string.ascii_uppercase + string.digits
+        random_string = ''.join((random.choice(letters_and_digits) for i in range(length)))
+
+        return random_string
+
+    def send_divisi_approved_pr_to_sap(self):
+        package_id = self._generate_random_string()
+        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+
+        auth = ('WIKA_INT', 'Initial123')
+        url_config = self.env['wika.integration'].search([('name', '=', 'URL Payment Request Divisi')], limit=1)
+
+        url = url_config.url
+        headers = {'x-csrf-token': 'fetch'}
+
+        # GET Req
+        response = requests.get(url, headers=headers, auth=auth)
+        fetched_token = response.headers.get('x-csrf-token')
+        fetched_cookies = response.cookies.get_dict()
+
+        invoice_list = []
+        data_ref = {}
+        data_ref = {
+            'BELNR': self.invoice_id.payment_reference,
+            'GJAHR': str(self.invoice_id.date)[:4],
+            'ZLSPR': 'D',
+            'ZUONR': self.invoice_id.project_id.sap_code
+        }
+        invoice_list.append(data_ref)
+        payload = json.dumps({
+            "DEVID": "YFII018",
+            "PACKAGEID": package_id,
+            "COCODE": "A000",
+            "PRCTR": "",
+            "TIMESTAMP": timestamp,
+            "DATA": invoice_list
+        })
+        # POST Req
+        post_headers = {
+            'x-csrf-token': fetched_token,
+            'Authorization': 'Basic V0lLQV9JTlQ6SW5pdGlhbDEyMw=='
+        }
+        response_post = requests.request("POST", url, headers=post_headers, data=payload, cookies=fetched_cookies)
+        parsed_response = json.loads(response_post.text)
+        message = parsed_response[0]["MESSAGE"]
+        self.invoice_id.msg_sap=message
+        self.pr_id.is_posted_to_sap = True
+
+    def send_pusat_approved_pr_to_sap(self):
+        package_id = self._generate_random_string()
+        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+        self.invoice_id.write({'status_payment': 'Ready To Pay', 'payment_block': ""})
+
+        auth = ('WIKA_INT', 'Initial123')
+        url_config = self.env['wika.integration'].search([('name', '=', 'URL Payment Request Pusat')], limit=1)
+
+        url = url_config.url
+        headers = {'x-csrf-token': 'fetch'}
+
+        # GET Req
+        response = requests.get(url, headers=headers, auth=auth)
+        fetched_token = response.headers.get('x-csrf-token')
+        fetched_cookies = response.cookies.get_dict()
+
+        invoice_list = []
+        data_ref = {}
+
+        data_ref = {
+            'BELNR': self.invoice_id.payment_reference,
+            'GJAHR': str(self.invoice_id.date)[:4],
+            'ZLSPR': "",
+            'ZLSCH': "F"
+        }
+        invoice_list.append(data_ref)
+
+        payload = json.dumps({
+            "DEVID": "YFII019",
+            "PACKAGEID": package_id,
+            "COCODE": "A000",
+            "PRCTR": "",
+            "TIMESTAMP": timestamp,
+            "DATA": invoice_list
+        })
+        # POST Req
+        post_headers = {
+            'x-csrf-token': fetched_token,
+            'Authorization': 'Basic V0lLQV9JTlQ6SW5pdGlhbDEyMw=='
+        }
+        response_post = requests.request("POST", url, headers=post_headers, data=payload, cookies=fetched_cookies)
+
+        parsed_response = json.loads(response_post.text)
+        message = parsed_response[0]["MESSAGE"]
+        self.invoice_id.msg_sap=message
+        self.pr_id.is_posted_to_sap = True

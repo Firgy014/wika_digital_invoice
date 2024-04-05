@@ -18,12 +18,8 @@ class InheritAccountMove(models.Model):
         ('Ready To Pay', 'Ready To Pay'),
         ('Paid', 'Paid')
     ], string='Payment State',default='Not Request')
-    sisa_partial = fields.Float(string='Sisa Partial', compute='_compute_sisa_partial', default=lambda self: self.total_line, store=True)
-    
-    def unlink(self):
-        erorTestttt
-        return super(InheritAccountMove).unlink()
-    
+    msg_sap = fields.Char(string='Message SAP')
+
     @api.depends('partial_request_ids','total_line','status_payment')
     def _compute_amount_pr(self):
         for x in self:

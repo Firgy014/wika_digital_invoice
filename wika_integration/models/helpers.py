@@ -1,7 +1,16 @@
+import logging
+_logger = logging.getLogger(__name__)
+
+try:
+    import paramiko
+except ImportError:
+    raise ImportError(
+        'This module needs paramiko to automatically write backups to the FTP through SFTP. Please install paramiko on your system. (sudo pip3 install paramiko)')
+
 def _get_computed_query():
     return """
 SELECT
-    inv.id,
+	inv.name as NO,
     TO_CHAR(inv.invoice_date, 'yyyymmdd') AS DOC_DATE,
     TO_CHAR(inv.date, 'yyyymmdd') AS PSTNG_DATE,
     inv.no_invoice_vendor AS REF_DOC_NO,
@@ -10,7 +19,10 @@ SELECT
     inv.no_faktur_pajak AS HEADER_TXT,
     line.name AS ITEM_TEXT,
     acc.code AS HKONT,
-    '' AS TAX_BASE_AMOUNT,
+    CASE
+    WHEN inv.retensi_total > 0 THEN CAST(inv.amount_untaxed - inv.retensi_total AS VARCHAR)
+    ELSE '' 
+END AS TAX_BASE_AMOUNT,
     tax_group.pph_group_code AS WI_TAX_TYPE,
     tax.pph_code AS WI_TAX_CODE,
     '' AS WI_TAX_BASE,
@@ -35,9 +47,17 @@ SELECT
         ELSE ''
     END AS SHEET_NO,
     CASE
-        WHEN inv.retention_due IS NOT NULL THEN to_char(inv.retention_due, 'yyyymmdd')
+        WHEN inv.retention_due IS NOT NULL THEN to_char(inv.invoice_date_due, 'yyyymmdd')
         ELSE to_char(inv.date, 'yyyymmdd')
-    END AS RETENTION_DUE_DATE
+    END AS RETENTION_DUE_DATE,
+CASE 
+    WHEN inv.dp_total > 0 THEN 'X'
+    ELSE '' 
+END AS IND_DP,
+CASE 
+    WHEN inv.dp_total > 0 THEN CAST(inv.dp_total AS VARCHAR)
+    ELSE '' 
+END AS DP_AMOUNT
 FROM 
     account_move inv
 LEFT JOIN 
@@ -63,5 +83,5 @@ LEFT JOIN
 left JOIN
     stock_move sm ON sm.id=line.stock_move_id
 WHERE 
-     inv.is_mp_approved = True AND line.display_type = 'product'
+     inv.is_mp_approved = True AND line.display_type = 'product' and inv.cut_off!=True and inv.invoice_number is null
 """

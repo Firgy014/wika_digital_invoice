@@ -59,20 +59,20 @@ class SAPIntegration(models.Model):
         if self.type == 'generate' and self.form == 'vendor_bills':
             res = ''.join(random.sample(string.ascii_uppercase + string.digits, k=N))
             dev_keys = ['YFII015', res,'A000','AD00118N05',today]
-            keys = ['DOC_DATE', 'PSTNG_DATE', 'REF_DOC_NO', 'GROSS_AMOUNT', 'BLINE_DATE', 'HEADER_TXT',
+            keys = ['NO','DOC_DATE', 'PSTNG_DATE', 'REF_DOC_NO', 'GROSS_AMOUNT', 'BLINE_DATE', 'HEADER_TXT',
                     'ITEM_TEXT', 'HKONT', 'TAX_BASE_AMOUNT', 'WI_TAX_TYPE', 'WI_TAX_CODE', 'WI_TAX_BASE',
                     'PO_NUMBER', 'PO_ITEM', 'REF_DOC', 'REF_DOC_YEAR', 'REF_DOC_IT', 'ITEM_AMOUNT',
-                    'QUANTITY', 'SHEET_NO', 'RETENTION_DUE_DATE']
+                    'QUANTITY', 'SHEET_NO', 'RETENTION_DUE_DATE','IND_DP','DP_AMOUNT']
             
             query = helpers._get_computed_query()
 
         self._cr.execute(query)
         vals = self.env.cr.fetchall()
 
-        unique_move_ids = set(val[0] for val in vals)
-        for move_id in unique_move_ids:
-            move = self.env['account.move'].browse(move_id)
-            move.write({'is_generated': True})
+        # unique_move_ids = set(val[0] for val in vals)
+        # for move_id in unique_move_ids:
+        #     move = self.env['account.move'].browse(move_id)
+        #     move.write({'is_generated': True})
 
         buffer = StringIO()
         writer = csv.writer(buffer, delimiter='|')
