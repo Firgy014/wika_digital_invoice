@@ -8,6 +8,8 @@ import math
 import json
 from urllib.request import Request, urlopen
 import logging, json
+import base64
+import binascii
 _logger = logging.getLogger(__name__)
 
 # from terbilang import terbilang
@@ -382,7 +384,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
 
     @api.depends('retensi_total', 'total_pph')
     def compute_total_pembayaran_retensi(self):
-        for record in self:
+        for record in self:  
             retensi_total = record.retensi_total or 0.0
             total_pph = record.total_pph or 0.0
             persentase = 0.11
@@ -617,7 +619,34 @@ class WikaBeritaAcaraPembayaran(models.Model):
         res.assign_todo_first()
         res._compute_cut_over()
         return res
-
+    
+    def _replace_document_object(self, folder_name, document_ids, po_id):
+        documents_model = self.env['documents.document'].sudo()
+        folder_id = self.env['documents.folder'].sudo().search([('name', '=', folder_name)], limit=1)
+        if folder_id:
+            facet_id = self.env['documents.facet'].sudo().search([
+                ('name', '=', 'Documents'),
+                ('folder_id', '=', folder_id.id)
+            ], limit=1)
+            for doc in document_ids.filtered(lambda x: x.state in ('uploaded','rejected')):
+                attachment_id = self.env['ir.attachment'].sudo().create({
+                    'name': doc.filename,
+                    'datas': doc.document,
+                    'res_model': 'documents.document',
+                })
+                if attachment_id:
+                    tag = self.env['documents.tag'].sudo().search([
+                            ('facet_id', '=', facet_id.id),
+                            ('name', '=', doc.document_id.name)
+                        ], limit=1)
+                    documents_model.create({
+                        'attachment_id': attachment_id.id,
+                        'folder_id': folder_id.id,
+                        'tag_ids': tag.ids,
+                        'partner_id': po_id.partner_id.id,
+                        'purchase_id': po_id.id,
+                        'is_po_doc': True
+                    })
 
     @api.depends('department_id')
     def _cek_biro(self):
@@ -799,7 +828,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
                         cek = True
                     if level == 'Divisi Fungsi' and x.department_id == self.department_id and x.id == self._uid:
                         cek = True
-                print (cek)
+                print(cek)
         if cek == True:
             action = {
                 'name': ('Reject Reason'),
@@ -923,7 +952,6 @@ class WikaBeritaAcaraPembayaran(models.Model):
                 raise ValidationError('Document belum di unggah, mohon unggah file terlebih dahulu!')
             if record.bap_type =='cut over' and any(not line.stock_move_id for line in record.bap_ids):
                 raise ValidationError('Data Invoice cut over belum di mapping!')
-
             if any(line.state == 'rejected' for line in record.document_ids):
                 raise ValidationError('Document belum di ubah setelah reject, silahkan cek terlebih dahulu!')
 
@@ -931,7 +959,9 @@ class WikaBeritaAcaraPembayaran(models.Model):
                 raise ValidationError('Document belum di ubah setelah reject, silahkan cek terlebih dahulu!')
 
         cek = False
-        level=self.level
+        level = self.level
+        documents_model = self.env['documents.document'].sudo()
+
         if level:
             model_id = self.env['ir.model'].search([('model', '=', 'wika.berita.acara.pembayaran')], limit=1)
             approval_id = self.env['wika.approval.setting'].sudo().search(
@@ -970,6 +1000,32 @@ class WikaBeritaAcaraPembayaran(models.Model):
                     'note': 'Submit Document',
                     'bap_id': self.id
                 })
+                folder_id = self.env['documents.folder'].sudo().search([('name', '=', 'BAP')], limit=1)
+                if folder_id:
+                    facet_id = self.env['documents.facet'].sudo().search([
+                        ('name', '=', 'Documents'),
+                        ('folder_id', '=', folder_id.id)
+                    ], limit=1)
+                    for doc in self.document_ids.filtered(lambda x: x.state in ('uploaded','rejected')):
+                        # doc.state = 'verified'
+                        attachment_id = self.env['ir.attachment'].sudo().create({
+                            'name': doc.filename,
+                            'datas': doc.document,
+                            'res_model': 'documents.document',
+                        })
+                        if attachment_id:
+                            tag = self.env['documents.tag'].sudo().search([
+                                ('facet_id', '=', facet_id.id),
+                                ('name', '=', doc.document_id.name)
+                            ], limit=1)
+                            documents_model.create({
+                                'attachment_id': attachment_id.id,
+                                'folder_id': folder_id.id,
+                                'tag_ids': tag.ids,
+                                'partner_id': doc.bap_id.partner_id.id,
+                                'purchase_id': self.po_id.id,
+                                'bap_id': self.id,
+                            })
                 groups_line = self.env['wika.approval.setting.line'].search([
                     ('level', '=', level),
                     ('sequence', '=', self.step_approve),
@@ -997,7 +1053,33 @@ class WikaBeritaAcaraPembayaran(models.Model):
                             'status': 'to_approve',
                             'summary': """Need Approval Document BAP"""
                         })
-                    self.push_bap()
+
+            # replace docsss
+            for doc in self.document_ids:
+                if doc.document_id.name == 'Kontrak' and doc.document:
+                    for doc_po in self.po_id.document_ids:
+                        bap_fname = doc.filename
+                        if doc_po.document_id.name == 'Kontrak':
+                            po_fname = doc_po.filename
+                            if bap_fname != po_fname:
+                                doc_po.update({
+                                    'document': doc.document,
+                                    'filename': doc.filename + " " + f'Revised by {self.env.user.name}',
+                                    'state': 'uploaded'
+                                })
+                                self._replace_document_object(folder_name='PO', document_ids=self.document_ids, po_id=self.po_id)
+                elif doc.document_id.name in ['GR', 'Surat Jalan', 'SES'] and doc.document:
+                    for doc_grses in self.bap_ids.picking_id.document_ids:
+                        bap_fname = doc.filename
+                        if doc_grses.document_id.name in ['GR', 'Surat Jalan', 'SES']:
+                            grses_fname = doc_grses.filename
+                            if bap_fname != grses_fname:
+                                doc_grses.update({
+                                    'document': doc.document,
+                                    'filename': doc.filename + " " + f'Revised by {self.env.user.name}',
+                                    'state': 'uploaded'
+                                })
+                                self._replace_document_object(folder_name='GR/SES', document_ids=self.document_ids, po_id=self.po_id)
         else:
             raise ValidationError('User Akses Anda tidak berhak Submit!')
 
@@ -1007,7 +1089,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
                 if any(x.picking_id.state!='approved' for x in record.bap_ids):
                     raise ValidationError('Document GR/SES belum Lengkap silahkan lengkapi terlebih dahulu')
 
-        documents_model = self.env['documents.document'].sudo()
+        # documents_model = self.env['documents.document'].sudo()
         cek = False
         model_id = self.env['ir.model'].search([('model','=', 'wika.berita.acara.pembayaran')], limit=1)
         level=self.level
@@ -1045,32 +1127,34 @@ class WikaBeritaAcaraPembayaran(models.Model):
                     'note': 'Approved',
                     'bap_id': self.id
                 })
-                folder_id = self.env['documents.folder'].sudo().search([('name', '=', 'BAP')], limit=1)
-                if folder_id:
-                    facet_id = self.env['documents.facet'].sudo().search([
-                        ('name', '=', 'Documents'),
-                        ('folder_id', '=', folder_id.id)
-                    ], limit=1)
-                    for doc in self.document_ids.filtered(lambda x: x.state in ('uploaded','rejected')):
-                        doc.state = 'verified'
-                        attachment_id = self.env['ir.attachment'].sudo().create({
-                            'name': doc.filename,
-                            'datas': doc.document,
-                            'res_model': 'documents.document',
-                        })
-                        if attachment_id:
-                            tag = self.env['documents.tag'].sudo().search([
-                                ('facet_id', '=', facet_id.id),
-                                ('name', '=', doc.document_id.name)
-                            ], limit=1)
-                            documents_model.create({
-                                'attachment_id': attachment_id.id,
-                                'folder_id': folder_id.id,
-                                'tag_ids': tag.ids,
-                                'partner_id': doc.bap_id.partner_id.id,
-                                'purchase_id': self.po_id.id,
-                                'bap_id': self.id,
-                            })
+                for doc in self.document_ids.filtered(lambda x: x.state in ('uploaded','rejected')):
+                    doc.state = 'verified'
+                # folder_id = self.env['documents.folder'].sudo().search([('name', '=', 'BAP')], limit=1)
+                # if folder_id:
+                #     facet_id = self.env['documents.facet'].sudo().search([
+                #         ('name', '=', 'Documents'),
+                #         ('folder_id', '=', folder_id.id)
+                #     ], limit=1)
+                #     for doc in self.document_ids.filtered(lambda x: x.state in ('uploaded','rejected')):
+                #         doc.state = 'verified'
+                #         attachment_id = self.env['ir.attachment'].sudo().create({
+                #             'name': doc.filename,
+                #             'datas': doc.document,
+                #             'res_model': 'documents.document',
+                #         })
+                #         if attachment_id:
+                #             tag = self.env['documents.tag'].sudo().search([
+                #                 ('facet_id', '=', facet_id.id),
+                #                 ('name', '=', doc.document_id.name)
+                #             ], limit=1)
+                #             documents_model.create({
+                #                 'attachment_id': attachment_id.id,
+                #                 'folder_id': folder_id.id,
+                #                 'tag_ids': tag.ids,
+                #                 'partner_id': doc.bap_id.partner_id.id,
+                #                 'purchase_id': self.po_id.id,
+                #                 'bap_id': self.id,
+                #             })
                 if self.activity_ids:
                     for x in self.activity_ids.filtered(lambda x: x.status  != 'approved'):
                         if x.user_id.id == self._uid:
