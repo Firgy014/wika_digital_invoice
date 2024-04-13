@@ -11,6 +11,49 @@ class WikaPaymentRequest(models.Model):
     _description = 'Wika Payment Request'
     _inherit = ['mail.thread']
 
+    wika_pr_lines = fields.One2many('wika.payment.request.line', 'pr_id', string='Payment Request Lines')
+
+    @api.onchange('type_payment')
+    def _onchange_type_payment(self):
+        self.invoice_ids = False
+
+    @api.model
+    def default_get(self, fields):
+        res = super(WikaPaymentRequest, self).default_get(fields)
+        res['invoice_ids'] = False
+        return res
+        
+    @api.onchange('invoice_ids')
+    def _onchange_invoice_ids(self):
+        for rec in self:
+            used_partial_ids = self.env['wika.payment.request.line'].search([('pr_id', '!=', self.id)]).mapped('partial_id.id')
+            existing_invoices = rec.move_ids.mapped('invoice_id.id')
+            move_lines = []
+            for invoice in rec.invoice_ids:
+                if invoice.id not in existing_invoices:
+                    for partial in invoice.partial_request_ids.filtered(lambda p: not p.is_already_pr):
+                        if partial.id not in used_partial_ids:
+                            move_lines.append((0, 0, {
+                                'invoice_id': invoice.id,
+                                'partial_id': partial.id,
+                                'partner_id': invoice.partner_id.id,
+                                'branch_id': invoice.branch_id.id,
+                                'project_id': invoice.project_id.id,
+                                'amount': partial.partial_amount,
+                            }))
+            # Remove existing move lines that are not in the current invoice_ids
+            move_lines_ids = [move_id.id for move_id in rec.move_ids if move_id.invoice_id.id in existing_invoices]
+            rec.move_ids = [(3, move_id_id) for move_id_id in move_lines_ids] + move_lines
+
+
+    def write(self, vals):
+        res = super(WikaPaymentRequest, self).write(vals)
+        if 'invoice_ids' in vals:
+            for record in self:
+                lines_to_delete = record.move_ids.filtered(lambda x: x.invoice_id.id not in record.invoice_ids.ids)
+                lines_to_delete.unlink()
+        return res
+        
     @api.model
     def _getdefault_branch(self):
         user_obj = self.env['res.users']
@@ -259,7 +302,8 @@ class WikaPaymentRequest(models.Model):
                 if first_user:
                     for invoice in self.invoice_ids:
                         print (invoice)
-                        invoice.write({'status_payment': 'Request Divisi'})
+                        invoice.write({'status_payment': 'Request Divisi',
+                                       'payment_block':'C'})
                         self.env['wika.payment.request.line'].sudo().create({
                             'pr_id':self.id,
                             'invoice_id': invoice.id,
@@ -309,19 +353,17 @@ class WikaPaymentRequest(models.Model):
         print("masukkk_____proyek")
         package_id = self._generate_random_string()
         timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+        url_config = self.env['wika.integration'].search([('name', '=', 'URL Payment Request Proyek')], limit=1)
 
         auth = ('WIKA_INT', 'Initial123')
-        url = "https://fioridev.wika.co.id/ywikafi016/update-refkey3?sap-client=110"
+        url = url_config.url
         headers = {'x-csrf-token': 'fetch'}
-
         # GET Req
         response = requests.get(url, headers=headers, auth=auth)
         fetched_token = response.headers.get('x-csrf-token')
         fetched_cookies = response.cookies.get_dict()
-
         invoice_list = []
         data_ref = {}
-        
         for invoice in self.invoice_ids:
             data_ref = {
                 'BELNR': invoice.payment_reference,
@@ -339,21 +381,21 @@ class WikaPaymentRequest(models.Model):
             "TIMESTAMP": timestamp,
             "DATA": invoice_list
         })
-
+        print (payload)
         # POST Req
         post_headers = {
             'x-csrf-token': fetched_token,
             'Authorization': 'Basic V0lLQV9JTlQ6SW5pdGlhbDEyMw=='
         }
         response_post = requests.request("POST", url, headers=post_headers, data=payload, cookies=fetched_cookies)
-        if response_post.status_code == 200:
-            self.is_posted_to_sap = True
-            for invoice in self.invoice_ids:
-                invoice.msg_sap = 'ok'
 
-        elif response_post.status_code != 200:
-            for invoice in self.invoice_ids:
-                invoice.msg_sap = 'not_ok'                
+        # Loop melalui setiap objek dalam daftar respons
+
+        #parsed_response = json.loads(response_post.text)
+        # message = parsed_response[0]["MESSAGE"]
+        # print(message)
+        self.is_posted_to_sap = True
+
 
 class WikaPrApprovalLine(models.Model):
     _name = 'wika.pr.approval.line'
@@ -369,8 +411,9 @@ class WikaPrLine(models.Model):
     _name = 'wika.payment.request.line'
     _inherit = ['mail.thread','mail.activity.mixin']
     _description = 'Wika Payment Request Line'
-
+    
     pr_id = fields.Many2one('wika.payment.request', string='No Payment Request')
+    partial_id = fields.Many2one('wika.partial.payment.request', string='No Partial')
     invoice_id = fields.Many2one('account.move', string='Invoice')
     partner_id = fields.Many2one('res.partner', string='Vendor')
     branch_id = fields.Many2one('res.branch',string='Divisi')
@@ -409,6 +452,33 @@ class WikaPrLine(models.Model):
         ('Pusat', 'Pusat'),
     ], string='Position')
     approval_line_id= fields.Many2one(comodel_name='wika.approval.setting.line')
+    is_already_pr = fields.Boolean(string='Already PR', default=False)
+
+    @api.model
+    def create(self, values):
+        line = super(WikaPrLine, self).create(values)
+        # Update is_already_pr in partial.payment.request
+        if line.partial_id:
+            line.partial_id.write({'is_already_pr': True})
+        return line
+
+    def write(self, values):
+        result = super(WikaPrLine, self).write(values)
+        # Update is_already_pr in partial.payment.request
+        if 'partial_id' in values:
+            for line in self:
+                if line.partial_id:
+                    line.partial_id.write({'is_already_pr': True})
+        return result
+
+    def unlink(self):
+        partial_ids = self.mapped('partial_id')
+        result = super(WikaPrLine, self).unlink()
+        # Update is_already_pr in partial.payment.request
+        for partial in partial_ids:
+            if not self.search([('partial_id', '=', partial.id)]):
+                partial.write({'is_already_pr': False})
+        return result
 
     def action_approve(self):
         if self.next_user_id.id ==self._uid:
@@ -420,15 +490,8 @@ class WikaPrLine(models.Model):
             groups_id_next = apploval_line_next_id.groups_id
             first_user=False
             if groups_id_next:
-                print (groups_id_next.name)
                 for x in groups_id_next.users:
                     if self.level == 'Proyek' and x.branch_id == self.branch_id or x.branch_id.parent_id.code == 'Pusat':
-                        # print ("masuk level")
-                        # print (x.branch_id.code)
-                        # print (self.branch_id.code)
-                        # if x.branch_id == self.branch_id:
-                        #     print("ddddddddddddd")
-                        #     cek = True
                         first_user = x.id
                     if self.level == 'Divisi Operasi' and x.branch_id == self.branch_id:
                         first_user = x.id
@@ -441,7 +504,8 @@ class WikaPrLine(models.Model):
                         self.pr_id.write({'activity_summary': 'Request Divisi','approval_stage':'Divisi Operasi'})
                     elif apploval_line_next_id.level_role == 'Pusat':
                         self.pr_id.write({ 'activity_summary': 'Request Pusat','approval_stage':'Pusat'})
-                        self.invoice_id.write({ 'status_payment': 'Request Pusat'})
+                        self.invoice_id.write({'status_payment': 'Request Pusat','payment_block':'D'})
+                        self.send_divisi_approved_pr_to_sap()
 
                     # audit_log_obj = self.env['wika.pr.approval.line'].create({'user_id': self._uid,
                     #         'groups_id' :self.approval_line_id.groups_id.id,
@@ -452,12 +516,12 @@ class WikaPrLine(models.Model):
                 else:
                     raise ValidationError('User Next Approval tidak ditemukan!')
             else:
-                self.invoice_id.write({'status_payment': 'Ready To Pay'})
+                self.send_pusat_approved_pr_to_sap()
                 self.pr_id.write({'state': 'approve'})
                 self.write({'next_user_id': False})
         else:
             raise ValidationError('User Akses Anda tidak berhak Approve!')
-        
+
     def _generate_random_string(self):
         length = 32
         letters_and_digits = string.ascii_uppercase + string.digits
@@ -466,12 +530,13 @@ class WikaPrLine(models.Model):
         return random_string
 
     def send_divisi_approved_pr_to_sap(self):
-        print("masukkk_____divisi")
         package_id = self._generate_random_string()
         timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
 
         auth = ('WIKA_INT', 'Initial123')
-        url = "https://fioridev.wika.co.id/ywikafi016/update-refkey3?sap-client=110"
+        url_config = self.env['wika.integration'].search([('name', '=', 'URL Payment Request Divisi')], limit=1)
+
+        url = url_config.url
         headers = {'x-csrf-token': 'fetch'}
 
         # GET Req
@@ -481,45 +546,41 @@ class WikaPrLine(models.Model):
 
         invoice_list = []
         data_ref = {}
-        
         data_ref = {
             'BELNR': self.invoice_id.payment_reference,
             'GJAHR': str(self.invoice_id.date)[:4],
-            'ZLSPR': self.invoice_id.payment_block,
+            'ZLSPR': 'D',
             'ZUONR': self.invoice_id.project_id.sap_code
         }
         invoice_list.append(data_ref)
-
         payload = json.dumps({
-            "DEVID": "YWIKAFI016A",
+            "DEVID": "YFII018",
             "PACKAGEID": package_id,
             "COCODE": "A000",
             "PRCTR": "",
             "TIMESTAMP": timestamp,
             "DATA": invoice_list
         })
-
         # POST Req
         post_headers = {
             'x-csrf-token': fetched_token,
             'Authorization': 'Basic V0lLQV9JTlQ6SW5pdGlhbDEyMw=='
         }
         response_post = requests.request("POST", url, headers=post_headers, data=payload, cookies=fetched_cookies)
-        if response_post.status_code == 200:
-            self.pr_id.is_posted_to_sap = True
-            return True
-
-        elif response_post.status_code != 200:
-            self.invoice_id.msg_sap = 'not_ok'
-            return False
+        parsed_response = json.loads(response_post.text)
+        message = parsed_response[0]["MESSAGE"]
+        self.invoice_id.msg_sap=message
+        self.pr_id.is_posted_to_sap = True
 
     def send_pusat_approved_pr_to_sap(self):
-        print("masuk_____pusat_____alhamdulillah_____siplah")
         package_id = self._generate_random_string()
         timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+        self.invoice_id.write({'status_payment': 'Ready To Pay', 'payment_block': ""})
 
         auth = ('WIKA_INT', 'Initial123')
-        url = "https://fioridev.wika.co.id/ywikafi016b/update-paymntmethod?sap-client=110"
+        url_config = self.env['wika.integration'].search([('name', '=', 'URL Payment Request Pusat')], limit=1)
+
+        url = url_config.url
         headers = {'x-csrf-token': 'fetch'}
 
         # GET Req
@@ -529,11 +590,11 @@ class WikaPrLine(models.Model):
 
         invoice_list = []
         data_ref = {}
-        
+
         data_ref = {
             'BELNR': self.invoice_id.payment_reference,
             'GJAHR': str(self.invoice_id.date)[:4],
-            'ZLSPR': self.invoice_id.payment_block,
+            'ZLSPR': "",
             'ZLSCH': "F"
         }
         invoice_list.append(data_ref)
@@ -546,15 +607,14 @@ class WikaPrLine(models.Model):
             "TIMESTAMP": timestamp,
             "DATA": invoice_list
         })
-
         # POST Req
         post_headers = {
             'x-csrf-token': fetched_token,
             'Authorization': 'Basic V0lLQV9JTlQ6SW5pdGlhbDEyMw=='
         }
         response_post = requests.request("POST", url, headers=post_headers, data=payload, cookies=fetched_cookies)
-        if response_post.status_code == 200:
-            self.pr_id.is_posted_to_sap = True
 
-        elif response_post.status_code != 200:
-            self.invoice_id.msg_sap = 'not_ok'
+        parsed_response = json.loads(response_post.text)
+        message = parsed_response[0]["MESSAGE"]
+        self.invoice_id.msg_sap=message
+        self.pr_id.is_posted_to_sap = True

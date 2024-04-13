@@ -247,7 +247,7 @@ class WikaInheritedAccountMove(models.Model):
 
         domain = [
             ('folder_id', 'in', ['PO', 'GR/SES', 'BAP', 'Invoicing']),
-            '|', ('bap_id', '=', self.bap_id.id), ('purchase_id', '=', self.po_id.id)
+            '|', ('bap_id', '=', self.bap_id.id), ('bap_id', '=', False), ('purchase_id', '=', self.po_id.id)
         ]
 
         po_number = self.po_id.name if self.po_id else None
