@@ -91,8 +91,20 @@ class PurchaseOrderInherit(models.Model):
 
     def init(self):
         self.env.cr.execute("DELETE FROM purchase_order WHERE state NOT IN ('po', 'uploaded', 'approved')")
-        self.env.cr.execute("ALTER TABLE documents_document DROP CONSTRAINT documents_document_purchase_id_fkey")
-
+        self.env.cr.execute("""
+            DO $$
+            BEGIN
+                IF EXISTS (
+                    SELECT 1
+                    FROM information_schema.constraint_column_usage
+                    WHERE table_name = 'documents_document' AND constraint_name = 'documents_document_purchase_id_fkey'
+                ) THEN
+                    EXECUTE 'ALTER TABLE documents_document DROP CONSTRAINT documents_document_purchase_id_fkey';
+                END IF;
+            END
+            $$;
+        """)
+        
     @api.depends('department_id')
     def _cek_biro(self):
         for x in self:

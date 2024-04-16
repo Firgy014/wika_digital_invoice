@@ -184,11 +184,23 @@ class WikaInheritedAccountMove(models.Model):
     is_mp_approved = fields.Boolean(string='Approved by MP', default=False, store=True)
     cut_off = fields.Boolean(string='Cut Off',default=False,copy=False)
 
+    # @api.depends('date')
+    # def _compute_name_wdigi(self):
+    #     for record in self:
+    #         if record.id:
+    #             sequence = self.env['ir.sequence'].sudo().next_by_code('invoice_number_sequence') or '/'
+    #             record.name = sequence
+    #         else:
+    #             record.name = _('New')
+
     @api.depends('date')
     def _compute_name_wdigi(self):
         for record in self:
-            sequence = self.env['ir.sequence'].sudo().next_by_code('invoice_number_sequence') or '/'
-            record.name = sequence
+            if record._origin.id:  # Check if the record has been saved
+                sequence = self.env['ir.sequence'].sudo().next_by_code('invoice_number_sequence') or '/'
+                record.name = sequence
+            else:
+                record.name = _('New')
 
     @api.depends('total_line', 'invoice_line_ids', 'dp_total','retensi_total', 'invoice_line_ids.tax_ids')
     def compute_total_tax(self):
