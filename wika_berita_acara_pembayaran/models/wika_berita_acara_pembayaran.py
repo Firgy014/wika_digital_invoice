@@ -144,6 +144,28 @@ class WikaBeritaAcaraPembayaran(models.Model):
     total_po = fields.Float(string='Total PO', compute='_compute_total_po')
     remain_val_po = fields.Float(string='Sisa BAP')
     
+    @api.onchange('bap_date')
+    def _onchange_bap_date(self):
+        if self.bap_date:
+            chosen_date = fields.Date.from_string(self.bap_date)
+            current_date = datetime.now().date()
+            if chosen_date.year != current_date.year or chosen_date.month != current_date.month:
+                return {
+                    'warning': {
+                        'title': "Peringatan!",
+                        'message': "Anda hanya dapat memilih tanggal BAP pada bulan dan tahun ini."
+                    }
+                }
+                
+    @api.constrains('bap_date')
+    def _check_bap_date(self):
+        for record in self:
+            if record.bap_date:
+                chosen_date = fields.Date.from_string(record.bap_date)
+                current_date = datetime.now().date()
+                if chosen_date.year != current_date.year or chosen_date.month != current_date.month:
+                    raise ValidationError("Anda hanya dapat memilih tanggal BAP pada bulan dan tahun ini.")
+    
     @api.onchange('partner_id', 'bap_ids.product_id')
     def _onchange_partner_id_product_id(self):
         if self.partner_id and self.bap_ids:
