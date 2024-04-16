@@ -117,28 +117,28 @@ class WikaInheritedAccountMove(models.Model):
             else:
                 x.check_biro = False
 
-    # @api.onchange('invoice_date')
-    # def _onchange_invoice_date(self):
-    #     if isinstance(self, bool):
-    #         return self
-    #     if len(self) != 1:
-    #         raise ValidationError("Hanya satu record yang diharapkan diperbarui!")
-    #
-    #     if self.invoice_date != False and self.invoice_date < self.bap_id.bap_date:
-    #         raise ValidationError("Document Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
-    #     else:
-    #         pass
+    @api.onchange('invoice_date')
+    def _onchange_invoice_date(self):
+        if isinstance(self, bool):
+            return self
+        if len(self) != 1:
+            raise ValidationError("Hanya satu record yang diharapkan diperbarui!")
 
-    # @api.onchange('date')
-    # def _onchange_posting_date(self):
-    #     if not self.date or not self.bap_id or not self.bap_id.bap_date:
-    #         return
-    #     if isinstance(self, bool):
-    #         return self
-    #     if len(self) != 1:
-    #         raise ValidationError("Hanya satu record yang diharapkan diperbarui!")
-    #     if self.date < self.bap_id.bap_date:
-    #         raise ValidationError("Posting Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
+        if self.invoice_date != False and self.invoice_date < self.bap_id.bap_date:
+            raise ValidationError("Document Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
+        else:
+            pass
+
+    @api.onchange('date')
+    def _onchange_posting_date(self):
+        if not self.date or not self.bap_id or not self.bap_id.bap_date:
+            return
+        if isinstance(self, bool):
+            return self
+        if len(self) != 1:
+            raise ValidationError("Hanya satu record yang diharapkan diperbarui!")
+        if self.date < self.bap_id.bap_date:
+            raise ValidationError("Posting Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
 
     state = fields.Selection(
         selection=[
@@ -189,6 +189,36 @@ class WikaInheritedAccountMove(models.Model):
         for record in self:
             sequence = self.env['ir.sequence'].sudo().next_by_code('invoice_number_sequence') or '/'
             record.name = sequence
+
+
+    def unlink(self):
+        for record in self:
+            if record.state=='draft':
+                record.activity_ids.unlink()
+                record.document_ids.unlink()
+                record.history_approval_ids.unlink()
+                record.price_cut_ids.unlink()
+            else:
+                raise ValidationError('Tidak dapat menghapus ketika status Invoice dalam keadaan Upload atau Approve')
+        return super(WikaInheritedAccountMove, self).unlink()
+
+    # @api.depends('date')
+    # def _compute_name_wika(self):
+    #     for record in self:
+    #         if record.date:
+    #             year = str(record.date.year)
+    #             month = str(record.date.month).zfill(2)
+    #             next_number = 1
+    #             while True:
+    #                 name = f"INV/{year}/{month}/{str(next_number).zfill(5)}"
+    #                 existing_record = self.env['account.move'].search([('name', '=', name)], limit=1)
+    #                 if not existing_record:
+    #                     record.name = name
+    #                     break
+    #                 next_number += 1
+    #                 if next_number > 99999:
+    #                     raise ValidationError("Naming sequence limit exceeded.")
+
 
     @api.depends('total_line', 'invoice_line_ids', 'dp_total','retensi_total', 'invoice_line_ids.tax_ids')
     def compute_total_tax(self):
@@ -707,7 +737,6 @@ class WikaInheritedAccountMove(models.Model):
                     ('approval_id', '=', approval_id.id)
                 ], limit=1)
                 groups_id_next = groups_line_next.groups_id
-                print(groups_id_next)
                 if groups_id_next:
                     for x in groups_id_next.users:
                         if level == 'Proyek' :
@@ -720,34 +749,42 @@ class WikaInheritedAccountMove(models.Model):
                     if first_user:
                         self.step_approve += 1
                         self.approval_stage = groups_line_next.level_role
-                        self.env['mail.activity'].sudo().create({
-                            'activity_type_id': 4,
-                            'res_model_id': self.env['ir.model'].sudo().search(
-                                [('model', '=', 'account.move')], limit=1).id,
-                            'res_id': self.id,
-                            'user_id': first_user,
-                            'nomor_po': self.po_id.name,
-                            'date_deadline': fields.Date.today() + timedelta(days=2),
-                            'state': 'planned',
-                            'status': 'to_approve',
-                            'summary': """Need Approval Document Invoicing"""
-                        })
+                        existing_activity = self.env['mail.activity'].sudo().search([
+                            ('res_model_id', '=',
+                             self.env['ir.model'].sudo().search([('model', '=', 'account.move')], limit=1).id),
+                            ('res_id', '=', self.id),
+                            ('user_id', '=', first_user)
+                        ])
+                        if not existing_activity:
+                            self.env['mail.activity'].sudo().create({
+                                'activity_type_id': 4,
+                                'res_model_id': self.env['ir.model'].sudo().search(
+                                    [('model', '=', 'account.move')], limit=1).id,
+                                'res_id': self.id,
+                                'user_id': first_user,
+                                'nomor_po': self.po_id.name,
+                                'date_deadline': fields.Date.today() + timedelta(days=2),
+                                'state': 'planned',
+                                'status': 'to_approve',
+                                'summary': """Need Approval Document Invoice"""
+                            })
 
                         if self.activity_ids:
                             for x in self.activity_ids.filtered(lambda x: x.status != 'approved'):
                                 if x.user_id.id == self._uid:
                                     x.status = 'approved'
                                     x.action_done()
-                        self.env['wika.invoice.approval.line'].create({
-                            'user_id': self._uid,
-                            'groups_id': groups_id.id,
-                            'date': datetime.now(),
-                            'note': 'Verified',
-                            'invoice_id': self.id,
-                            'information': keterangan if approval_line_id.check_approval else False,
-                            'is_show_wizard': True if approval_line_id.check_approval else False,
+                        if not self.is_wizard_cancel:
+                            self.env['wika.invoice.approval.line'].create({
+                                'user_id': self._uid,
+                                'groups_id': groups_id.id,
+                                'date': datetime.now(),
+                                'note': 'Verified',
+                                'invoice_id': self.id,
+                                'information': keterangan if approval_line_id.check_approval else False,
+                                'is_show_wizard': True if approval_line_id.check_approval else False,
+                            })
 
-                        })
                         if approval_line_id.check_approval:
                             self.baseline_date = fields.Date.today()
                             action = {
