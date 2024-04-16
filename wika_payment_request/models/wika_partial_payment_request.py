@@ -42,6 +42,7 @@ class WikaPartialPaymentRequest(models.Model):
         ('Divisi Fungsi', 'Divisi Fungsi'),
         ('Pusat', 'Pusat'),
     ], string='Status Invoice')
+    is_already_pr = fields.Boolean('is_already_pr')
     # documents_count = fields.Integer(string='Total Doc', compute='_compute_documents_count')
     # @api.depends('invoice_ids')
     # def _compute_documents_count(self):
@@ -64,6 +65,18 @@ class WikaPartialPaymentRequest(models.Model):
     #         'res_id': self.id,
     #         'domain': [('invoice_id', 'in', self.invoice_ids.ids), ('folder_id', 'in', ('PO','GR/SES','BAP','Invoicing'))],
     #     }
+
+    # @api.onchange('partial_amount')
+    # def _update_amount_sisa_pr(self):
+    #     if self.invoice_id:
+    #         self.invoice_id._compute_amount_sisa_pr()
+
+    @api.constrains('partial_amount', 'total_invoice')
+    def _check_total_amount(self):
+        for invoice in self:
+            if invoice.partial_amount > invoice.total_invoice:
+                raise UserError("Partial amount request lebih besar dari total invoice. Harap periksa kembali.")
+
 
     def assign_todo_first(self):
         model_model = self.env['ir.model'].sudo()
@@ -169,7 +182,7 @@ class WikaPartialPaymentRequest(models.Model):
             self.project_id=self.invoice_id.project_id.id
             self.department_id=self.invoice_id.department_id.id
             self.partner_id=self.invoice_id.partner_id.id
-            self.total_invoice=self.invoice_id.amount_sisa_pr
+            self.total_invoice=self.invoice_id.sisa_partial
 
 
     def action_submit(self):
