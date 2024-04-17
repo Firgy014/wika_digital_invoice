@@ -912,7 +912,10 @@ class WikaBeritaAcaraPembayaran(models.Model):
         response_post = requests.request("POST", url_push.url, headers=post_headers, data=payload,
                                          cookies=fetched_cookies)
 
+        _logger.info("API BAPPPPPPPPPPPPPPPPPPPPPPPPPP")
 
+        _logger.info(response_post.text)
+        self.notes= (response_post.text)
 
     def action_submit(self):
         if not self.bap_ids:
@@ -997,7 +1000,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
                             'status': 'to_approve',
                             'summary': """Need Approval Document BAP"""
                         })
-                    self.push_bap()
+                    self.sudo().push_bap()
         else:
             raise ValidationError('User Akses Anda tidak berhak Submit!')
 
