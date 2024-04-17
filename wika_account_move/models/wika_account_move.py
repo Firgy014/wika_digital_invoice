@@ -338,6 +338,7 @@ class WikaInheritedAccountMove(models.Model):
         for record in self:
             record.account_id = False
             account_setting_model = self.env['wika.setting.account.payable'].sudo()
+
             if record.level == 'Proyek' and record.valuation_class:
                 account_setting_id = account_setting_model.search([
                     ('valuation_class', '=', record.valuation_class),
@@ -345,6 +346,7 @@ class WikaInheritedAccountMove(models.Model):
                     ('bill_coa_type', '=', record.partner_id.bill_coa_type)
                 ], limit=1)
                 record.account_id = account_setting_id.account_id.id
+                return {'domain': {'pph_ids': [('id', 'in', account_setting_id.pph_ids.ids)]}}
             elif record.level != 'Proyek' and record.valuation_class:
                 account_setting_id = account_setting_model.search([
                     ('valuation_class', '=', record.valuation_class),
@@ -352,6 +354,7 @@ class WikaInheritedAccountMove(models.Model):
                     ('bill_coa_type', '=',  record.partner_id.bill_coa_type)
                 ], limit=1)
                 record.account_id = account_setting_id.account_id.id
+                return {'domain': {'pph_ids': [('id', 'in', account_setting_id.pph_ids.ids)]}}
 
     @api.model_create_multi
     def create(self, vals_list):

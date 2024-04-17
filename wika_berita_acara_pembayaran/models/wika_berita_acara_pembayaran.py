@@ -144,6 +144,22 @@ class WikaBeritaAcaraPembayaran(models.Model):
     total_po = fields.Float(string='Total PO', compute='_compute_total_po')
     remain_val_po = fields.Float(string='Sisa BAP')
 
+    @api.onchange('partner_id', 'bap_ids.product_id')
+    def _onchange_partner_id_product_id(self):
+        if self.partner_id and self.bap_ids:
+            bill_coa_type = self.partner_id.bill_coa_type
+            product_valuation_classes = self.bap_ids.mapped('product_id.valuation_class')
+            if bill_coa_type and product_valuation_classes:
+                payable_setting = self.env['wika.setting.account.payable'].sudo().search([
+                    ('bill_coa_type', '=', bill_coa_type),
+                    ('valuation_class', 'in', product_valuation_classes)
+                ], limit=1)
+                if payable_setting:
+                    return {'domain': {'pph_ids': [('id', 'in', payable_setting.pph_ids.ids)]}}
+                else:
+                    return {'domain': {'pph_ids': [('id', '=', False)]}}
+        return {'domain': {'pph_ids': [('id', '=', False)]}}
+
     @api.onchange('po_id')
     def _onchange_po_id(self):
         if self.po_id:
