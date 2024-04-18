@@ -7,11 +7,10 @@
             <field name="model_id" ref="wika_purchase.model_purchase_order"/>
             <field name="state">code</field>
             <field name="active">False</field>
-	        <field name="code">model.update_po()</field>
+	        <field name="code">model._autoupdate_po(1)</field>
 	        <field name="interval_number">1</field>
 	        <field name="interval_type">days</field>
 	        <field name="numbercall">-1</field>
-	        <field name="doall" eval="False"/>
         </record>
 
      </data>
