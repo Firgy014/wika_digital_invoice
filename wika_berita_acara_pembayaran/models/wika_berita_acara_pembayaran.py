@@ -13,7 +13,7 @@ import binascii
 _logger = logging.getLogger(__name__)
 
 # from terbilang import terbilang
-# import requests
+# import requests# import requests
 
 class WikaBeritaAcaraPembayaran(models.Model):
     _name = 'wika.berita.acara.pembayaran'
@@ -145,6 +145,44 @@ class WikaBeritaAcaraPembayaran(models.Model):
     total_adjustment = fields.Float('Total Adjustment', compute='_compute_total_adjustment')
     total_po = fields.Float(string='Total PO', compute='_compute_total_po')
     remain_val_po = fields.Float(string='Sisa BAP')
+    
+    @api.onchange('bap_date')
+    def _onchange_bap_date(self):
+        if self.bap_date:
+            chosen_date = fields.Date.from_string(self.bap_date)
+            current_date = datetime.now().date()
+            if chosen_date.year != current_date.year or chosen_date.month != current_date.month:
+                return {
+                    'warning': {
+                        'title': "Peringatan!",
+                        'message': "Anda hanya dapat memilih tanggal BAP pada bulan dan tahun ini."
+                    }
+                }
+                
+    @api.constrains('bap_date')
+    def _check_bap_date(self):
+        for record in self:
+            if record.bap_date:
+                chosen_date = fields.Date.from_string(record.bap_date)
+                current_date = datetime.now().date()
+                if chosen_date.year != current_date.year or chosen_date.month != current_date.month:
+                    raise ValidationError("Anda hanya dapat memilih tanggal BAP pada bulan dan tahun ini.")
+    
+    @api.onchange('partner_id', 'bap_ids.product_id')
+    def _onchange_partner_id_product_id(self):
+        if self.partner_id and self.bap_ids:
+            bill_coa_type = self.partner_id.bill_coa_type
+            product_valuation_classes = self.bap_ids.mapped('product_id.valuation_class')
+            if bill_coa_type and product_valuation_classes:
+                payable_setting = self.env['wika.setting.account.payable'].sudo().search([
+                    ('bill_coa_type', '=', bill_coa_type),
+                    ('valuation_class', 'in', product_valuation_classes)
+                ], limit=1)
+                if payable_setting:
+                    self.pph_ids = payable_setting.pph_ids
+                else:
+                    self.pph_ids = False
+        return {'domain': {'pph_ids': [('id', 'in', self.pph_ids.ids)]}}
 
     @api.onchange('po_id')
     def _onchange_po_id(self):
@@ -418,6 +456,102 @@ class WikaBeritaAcaraPembayaran(models.Model):
                 record.terbilang = rupiah_terbilang
             else:
                 record.terbilang = ""
+    
+    @api.depends('total_pembayaran_um')
+    def _compute_rupiah_terbilang_um(self):
+        for record in self:
+            if record.total_pembayaran_um:
+                # Convert float to integer representation of Rupiah
+                rupiah_int = round(record.total_pembayaran_um)  # Pembulatan angka
+                # Convert the integer part to words
+                rupiah_terbilang = num2words(rupiah_int, lang='id') + " rupiah"
+                # If there are cents, add them as well
+                sen = abs(int((record.total_pembayaran_um - rupiah_int) * 100))  # Menghindari masalah pembulatan
+                if sen > 0:
+                    rupiah_terbilang += " dan " + num2words(sen, lang='id') + " sen"
+                record.terbilang_um = rupiah_terbilang
+            else:
+                record.terbilang_um = ""
+
+    @api.depends('total_pembayaran_retensi')
+    def _compute_rupiah_terbilang_retensi(self):
+        for record in self:
+            if record.total_pembayaran_retensi:
+                # Convert float to integer representation of Rupiah
+                rupiah_int = round(record.total_pembayaran_retensi)  # Pembulatan angka
+                # Convert the integer part to words
+                rupiah_terbilang = num2words(rupiah_int, lang='id') + " rupiah"
+                # If there are cents, add them as well
+                sen = abs(int((record.total_pembayaran_retensi - rupiah_int) * 100))  # Menghindari masalah pembulatan
+                if sen > 0:
+                    rupiah_terbilang += " dan " + num2words(sen, lang='id') + " sen"
+                record.terbilang_retensi = rupiah_terbilang
+            else:
+                record.terbilang_retensi = ""
+    
+    @api.depends('total_pembayaran_co')
+    def _compute_rupiah_terbilang_cut_over(self):
+        for record in self:
+            if record.total_pembayaran_co:
+                # Convert float to integer representation of Rupiah
+                rupiah_int = round(record.total_pembayaran_co)  # Pembulatan angka
+                # Convert the integer part to words
+                rupiah_terbilang = num2words(rupiah_int, lang='id') + " rupiah"
+                # If there are cents, add them as well
+                sen = abs(int((record.total_pembayaran_co - rupiah_int) * 100))  # Menghindari masalah pembulatan
+                if sen > 0:
+                    rupiah_terbilang += " dan " + num2words(sen, lang='id') + " sen"
+                record.terbilang_co = rupiah_terbilang
+            else:
+                record.terbilang_co = ""
+
+    @api.depends('total_pembayaran_um')
+    def _compute_rupiah_terbilang_um(self):
+        for record in self:
+            if record.total_pembayaran_um:
+                # Convert float to integer representation of Rupiah
+                rupiah_int = round(record.total_pembayaran_um)  # Pembulatan angka
+                # Convert the integer part to words
+                rupiah_terbilang = num2words(rupiah_int, lang='id') + " rupiah"
+                # If there are cents, add them as well
+                sen = abs(int((record.total_pembayaran_um - rupiah_int) * 100))  # Menghindari masalah pembulatan
+                if sen > 0:
+                    rupiah_terbilang += " dan " + num2words(sen, lang='id') + " sen"
+                record.terbilang_um = rupiah_terbilang
+            else:
+                record.terbilang_um = ""
+
+    @api.depends('total_pembayaran_retensi')
+    def _compute_rupiah_terbilang_retensi(self):
+        for record in self:
+            if record.total_pembayaran_retensi:
+                # Convert float to integer representation of Rupiah
+                rupiah_int = round(record.total_pembayaran_retensi)  # Pembulatan angka
+                # Convert the integer part to words
+                rupiah_terbilang = num2words(rupiah_int, lang='id') + " rupiah"
+                # If there are cents, add them as well
+                sen = abs(int((record.total_pembayaran_retensi - rupiah_int) * 100))  # Menghindari masalah pembulatan
+                if sen > 0:
+                    rupiah_terbilang += " dan " + num2words(sen, lang='id') + " sen"
+                record.terbilang_retensi = rupiah_terbilang
+            else:
+                record.terbilang_retensi = ""
+
+    @api.depends('total_pembayaran_co')
+    def _compute_rupiah_terbilang_cut_over(self):
+        for record in self:
+            if record.total_pembayaran_co:
+                # Convert float to integer representation of Rupiah
+                rupiah_int = round(record.total_pembayaran_co)  # Pembulatan angka
+                # Convert the integer part to words
+                rupiah_terbilang = num2words(rupiah_int, lang='id') + " rupiah"
+                # If there are cents, add them as well
+                sen = abs(int((record.total_pembayaran_co - rupiah_int) * 100))  # Menghindari masalah pembulatan
+                if sen > 0:
+                    rupiah_terbilang += " dan " + num2words(sen, lang='id') + " sen"
+                record.terbilang_co = rupiah_terbilang
+            else:
+                record.terbilang_co = ""
 
     @api.depends('total_pembayaran_um')
     def _compute_rupiah_terbilang_um(self):
@@ -551,7 +685,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
                 bap.dp_total = 0
 
     # compute retensi
-    @api.depends('total_amount', 'amount_pecentage_retensi')
+    @api.depends('total_amount', 'amount_pecentage_retensi', 'bap_type')
     def _compute_retensi_total_percentage(self):
         for bap in self:
             if bap.amount_pecentage_retensi > 0:
@@ -570,6 +704,15 @@ class WikaBeritaAcaraPembayaran(models.Model):
         sequence_parts = sequence.split('/')
         sequence_number = sequence_parts[-1]
         return 'BAP/{}/{:03d}'.format(year, int(sequence_number))
+
+    # @api.onchange('partner_id')
+    # def onchange_partner_id(self):
+    #     if self.partner_id:
+    #         domain = [('partner_id', '=', self.partner_id.id),('state','=','approved')]
+    #         return {'domain': {'po_id': domain}}
+    #     else:
+    #         return {'domain': {'po_id': [('state','=','approved')]}}
+
 
     @api.onchange('partner_id')
     def onchange_partner_id(self):
@@ -678,11 +821,8 @@ class WikaBeritaAcaraPembayaran(models.Model):
                             else:
                                 x.write({'stock_move_id': data.stock_move_id.id})
 
-
-
     @api.onchange('po_id','bap_type')
     def onchange_po_id(self):
-
         if self.po_id:
             bap_lines = []
             price_cut_lines = []
@@ -944,8 +1084,8 @@ class WikaBeritaAcaraPembayaran(models.Model):
 
 
     def action_submit(self):
-        if not self.bap_ids:
-            raise ValidationError('List BAP tidak boleh kosong. Mohon isi List BAP terlebih dahulu!')
+        # if not self.bap_ids:
+        #     raise ValidationError('List BAP tidak boleh kosong. Mohon isi List BAP terlebih dahulu!')
 
         for record in self:
             if any(not line.document for line in record.document_ids):

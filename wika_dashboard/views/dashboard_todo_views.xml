@@ -17,6 +17,11 @@
                 <field name="conv_menu" invisible="1"/>
                 <field name="conv_project" invisible="1"/>
                 <field name="conv_division" invisible="1"/>
+                <field name="branch_id" invisible="1"/>
+                <field name="project_id" invisible="1"/>
+                <field name="conv_menu" invisible="1"/>
+                <field name="conv_project"/>
+                <field name="conv_division"/>
                 <field name="activity_type_id" invisible="1"/>
                 <field name="summary"/>
                 <field name="date_deadline"/>
@@ -42,6 +47,7 @@
                 <group>
                     <field name="res_name"/>
                     <field name="nomor_po"/>
+                    <field name="project_id"/>
                     <field name="activity_type_id"/>
                     <field name="summary"/>
                     <field name="date_deadline"/>
@@ -60,15 +66,17 @@
         <field name="arch" type="xml">
             <search string="Activity">
                 <field name="nomor_po"/>
-                <field name="res_name"/>
-                   <field name="conv_project"/>
+                <field name="conv_project"/>
                 <field name="conv_division"/>
+                <field name="res_name"/>
                 <group expand="0" string="Group By">
                     <filter string="Menu" name="res_model_id" context="{'group_by': 'res_model_id'}"/>
                     <filter string="Nomor PO" name="no_po" context="{'group_by': 'nomor_po'}"/>
                     <filter string="Proyek" name="proyek_test" context="{'group_by': 'project_id'}"/>
                     <filter string="Divisi" name="proyek_test" context="{'group_by': 'branch_id'}"/>
                     <filter string="Status" name="status" context="{'group_by': 'status'}"/>
+                    <filter string="Proyek" name="proyek_test" context="{'group_by': 'conv_project'}"/>
+                    <filter string="Divisi" name="proyek_test" context="{'group_by': 'conv_division'}"/>
                 </group>
             </search>
         </field>

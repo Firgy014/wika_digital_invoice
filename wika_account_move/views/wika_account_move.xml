@@ -11,11 +11,11 @@
                 <header>
                     <button name="action_print_invoice"   attrs="{'invisible': [('is_approval_checked', '=', False)]}" string="Print" type="object" class="oe_highlight"/>
                     <button name="action_submit" string="SUBMIT" type="object" class="oe_highlight"
-                    states="draft,rejected"/>
+                        states="draft,rejected"/>
                     <button name="action_approve" string="APPROVE" type="object" class="btn-success"
-                    states="uploaded"/>
-                     <button name="action_reject" string="REJECT" type="object" class="btn-danger"
-                     states="uploaded"/>
+                        states="uploaded"/>
+                    <button name="action_reject" string="REJECT" type="object" class="btn-danger"
+                        states="uploaded"/>
                     <field name="state" widget="statusbar" statusbar_visible="draft,uploaded,approved"/>
                 </header>
                 <sheet>
@@ -60,7 +60,7 @@
                              <field name="is_mp_approved" groups="base.group_no_one"/>
                             <field name="is_wizard_cancel" readonly="1" invisible="1"/>
                             <field name="cut_off" readonly="1" force_save="1"/>
-                            <field name="is_full_payment" />
+                            <!-- <field name="is_full_payment" /> -->
 
                       </group>
                     </group>
