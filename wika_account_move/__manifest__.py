@@ -40,7 +40,7 @@
         'views/account_tax_views.xml',
         'data/documents_folder_data.xml',
         'report/report_action.xml',
-        'report/report_wika_account_move_divisi_divisi.xml',
+        # 'report/report_wika_account_move_divisi_divisi.xml',
         'report/report_wika_account_move_proyek.xml',
         'report/report_wika_account_move_keuangan.xml',
         'report/report_wika_account_move_keuangan.xml',
