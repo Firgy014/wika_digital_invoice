@@ -2,7 +2,6 @@ from odoo import http
 import requests, json
 from datetime import datetime
 from odoo.http import request, _logger, Response
-# from odoo.tools.translate import _
 from werkzeug.utils import redirect
 
 class wzoneLogin(http.Controller):
