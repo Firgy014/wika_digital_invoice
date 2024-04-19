@@ -108,7 +108,8 @@ class RejectWizard(models.TransientModel):
                                     document_list.append((0, 0, {
                                         'bap_id': bap_id_model.id,
                                         'document_id': document_line.id,
-                                        'state': 'rejected'
+                                        'state': 'rejected',
+                                        'picking_id': doc.picking_id.id
                                     }))
                                 bap_id.document_ids = document_list
                             doc.active = False
