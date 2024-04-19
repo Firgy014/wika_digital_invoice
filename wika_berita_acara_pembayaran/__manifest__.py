@@ -44,7 +44,8 @@
     ],
     'assets': {
         'web.assets_backend': [
-            'wika_berita_acara_pembayaran/static/src/css/custom_styles.css',
+            'wika_berita_acara_pembayaran/static/src/js/**/*.js',
+            'wika_berita_acara_pembayaran/static/src/xml/**/*.xml',
         ],
     },
 }
