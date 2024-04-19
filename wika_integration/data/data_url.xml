@@ -37,4 +37,10 @@
         <field name="app">SAP</field>
         <field name="url">https://fioridev.wika.co.id/ywikafi016b/update-paymntmethod?sap-client=110</field>
     </record>
+    <record id="url_pr_login_sso" model="wika.integration">
+        <field name="name">Login WZONE</field>
+        <field name="app">WZONE</field>
+        <field name="url">https://new-portal.wika.co.id/app/sso/valid</field>
+        <field name="app_secret">bbcdac3c884ba59a188cd3aa18553152</field>
+    </record>
 </odoo>

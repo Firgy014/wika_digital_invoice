@@ -2,49 +2,31 @@ from odoo import http
 import requests, json
 from datetime import datetime
 from odoo.http import request, _logger, Response
+# from odoo.tools.translate import _
+from werkzeug.utils import redirect
 
 class wzoneLogin(http.Controller):
-
-    def _login_redirect(self, uid, redirect=None):
-        return redirect if redirect else '/web'
-
+    
     @http.route('/auth/login/', type='http', auth='public', website=True)
     def index(self, **kw):
+        # Ambil data dari sistem WZONE
         ress = request.env['wika.integration'].sudo().search([('name', '=', 'Login WZONE')], limit=1)
+        token = kw.get('token')
         secret_key = ress.app_secret
         url = ress.url
-        token = kw.get('token')
-        request.redirect('/web/session/destroy')
-        # return token
-        # request.session.logout()
-        res = requests.get(
-            '%s?token=%s&app_secret=%s' % (url, token, secret_key))
-        #     'http://localhost:8070/auth/login/test/')
-        # res = requests.get('http://localhost:8070/auth/login/test/')
+        res = requests.get('%s?token=%s&app_secret=%s' % (url, token, secret_key), verify=False)
         data = json.loads(res.content.decode('utf-8'))
-        # return res.content
-        # return data["responseData"]["nip"]
-        cek_user = request.env['res.users'].sudo().search([('login','=',data["responseData"]["nip"])])
-        if not cek_user:
-            user_vals = {
-                'name': data["responseData"]["nip"],
-                'login': data["responseData"]["nip"],
-                'password': data["responseData"]["nip"],
-                'groups_id':[(6, 0,[])]
-            }
-            user_id = request.env['res.users'].create(user_vals)
-            groups_obj = request.env["res.groups"].sudo().search(['|',('name','=',data["responseData"]["jabatan"]),
-                                                               ('name','=','LOAN')])
-            if groups_obj:
-                for group_obj in groups_obj:
-                    group_obj.write({"users": [(4, user_id.id, 0)]})
-
-        uid = request.session.authenticate(request.session.db, data["responseData"]["nip"], data["responseData"]["nip"])
-        if uid is not False:
-            request.params['login_success'] = True
-            return http.redirect_with_hash(self._login_redirect(uid, redirect='/web'))
-        # return  data
-
+        request.redirect('/web/session/destroy')
+        
+        nip = data.get("responseData", {}).get("nip")
+        
+        user_exists = request.env['res.users'].sudo().search([('login','=',data["responseData"]["nip"])])
+        if user_exists:
+            request.session.authenticate('di_dev_2', login=nip, password= nip)
+            return redirect('/web')
+        else:
+            return "USER/NIP anda tidak terdaftar di WDIGI, Silahkan hubungi Administrator"
+            
     @http.route('/auth/delete/', type='json', methods=['POST'], csrf=False, auth='public', website=True)
     def hapus(self, **kw):
         data = request.jsonrequest
@@ -53,10 +35,6 @@ class wzoneLogin(http.Controller):
         if check_user:
             check_user.active = False
         return data
-
-
-
-
 
 class api(http.Controller):
 
