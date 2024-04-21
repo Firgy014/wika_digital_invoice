@@ -771,7 +771,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
                 ('name', '=', 'Documents'),
                 ('folder_id', '=', folder_id.id)
             ], limit=1)
-            for doc in document_ids.filtered(lambda x: x.state in ('uploaded','rejected')):
+            for doc in document_ids.filtered(lambda x: x.state == 'rejected'):
                 attachment_id = self.env['ir.attachment'].sudo().create({
                     'name': doc.filename,
                     'datas': doc.document,
@@ -1038,7 +1038,6 @@ class WikaBeritaAcaraPembayaran(models.Model):
                 raise AccessError(
                     "Either approval and/or document settings are not found. Please configure it first in the settings menu.")
 
-
     def push_bap(self):
         url_token = self.env['wika.integration'].sudo().search([('name', '=', 'URL_GET_TOKEN')], limit=1)
         url_push = self.env['wika.integration'].sudo().search([('name', '=', 'URL_SEND_BAP')], limit=1)
@@ -1194,32 +1193,33 @@ class WikaBeritaAcaraPembayaran(models.Model):
                             'summary': """Need Approval Document BAP"""
                         })
 
-            # replace docsss
-            for doc in self.document_ids:
-                if doc.document_id.name == 'Kontrak' and doc.document:
-                    for doc_po in self.po_id.document_ids:
-                        bap_fname = doc.filename
-                        if doc_po.document_id.name == 'Kontrak':
-                            po_fname = doc_po.filename
-                            if bap_fname != po_fname:
-                                doc_po.update({
-                                    'document': doc.document,
-                                    'filename': doc.filename + " " + f'Revised by {self.env.user.name}',
-                                    'state': 'uploaded'
-                                })
-                                self._replace_document_object(folder_name='PO', document_ids=self.document_ids, po_id=self.po_id)
-                elif doc.document_id.name in ['GR', 'Surat Jalan', 'SES'] and doc.document:
-                    for doc_grses in self.bap_ids.picking_id.document_ids:
-                        bap_fname = doc.filename
-                        if doc_grses.document_id.name in ['GR', 'Surat Jalan', 'SES']:
-                            grses_fname = doc_grses.filename
-                            if bap_fname != grses_fname:
-                                doc_grses.update({
-                                    'document': doc.document,
-                                    'filename': doc.filename + " " + f'Revised by {self.env.user.name}',
-                                    'state': 'uploaded'
-                                })
-                                self._replace_document_object(folder_name='GR/SES', document_ids=self.document_ids, po_id=self.po_id)
+            # # replace docsss
+            # for doc in self.document_ids:
+            #     if doc.document_id.name == 'Kontrak' and doc.document:
+            #         for doc_po in self.po_id.document_ids:
+            #             bap_fname = doc.filename
+            #             if doc_po.document_id.name == 'Kontrak':
+            #                 po_fname = doc_po.filename
+            #                 if bap_fname != po_fname:
+            #                     doc_po.update({
+            #                         'document': doc.document,
+            #                         'filename': doc.filename + " " + f'Revised by {self.env.user.name}',
+            #                         'state': 'verified'
+            #                     })
+            #                     self._replace_document_object(folder_name='PO', document_ids=self.document_ids, po_id=self.po_id)
+
+            #     elif doc.document_id.name in ['GR', 'Surat Jalan', 'SES'] and doc.document:
+            #         for doc_grses in self.bap_ids.picking_id.document_ids:
+            #             bap_fname = doc.filename
+            #             if doc_grses.document_id.name in ['GR', 'Surat Jalan', 'SES']:
+            #                 grses_fname = doc_grses.filename
+            #                 if bap_fname != grses_fname:
+            #                     doc_grses.update({
+            #                         'document': doc.document,
+            #                         'filename': doc.filename + " " + f'Revised by {self.env.user.name}',
+            #                         'state': 'verified'
+            #                     })
+            #                     self._replace_document_object(folder_name='GR/SES', document_ids=self.document_ids, po_id=self.po_id)
         else:
             raise ValidationError('User Akses Anda tidak berhak Submit!')
 
@@ -1267,6 +1267,34 @@ class WikaBeritaAcaraPembayaran(models.Model):
                     'note': 'Approved',
                     'bap_id': self.id
                 })
+                # replace docsss
+                for doc in self.document_ids:
+                    if doc.document_id.name == 'Kontrak' and doc.document:
+                        for doc_po in self.po_id.document_ids:
+                            bap_fname = doc.filename
+                            if doc_po.document_id.name == 'Kontrak':
+                                po_fname = doc_po.filename
+                                if bap_fname != po_fname:
+                                    doc_po.update({
+                                        'document': doc.document,
+                                        'filename': doc.filename + " " + f'(Revised by {self.env.user.name})',
+                                        'state': 'verified'
+                                    })
+                                    self._replace_document_object(folder_name='PO', document_ids=self.document_ids, po_id=self.po_id)
+
+                    elif doc.document_id.name in ['GR', 'Surat Jalan', 'SES'] and doc.document:
+                        for doc_grses in self.bap_ids.picking_id.document_ids:
+                            bap_fname = doc.filename
+                            if doc_grses.document_id.name in ['GR', 'Surat Jalan', 'SES']:
+                                grses_fname = doc_grses.filename
+                                if bap_fname != grses_fname:
+                                    doc_grses.update({
+                                        'document': doc.document,
+                                        'filename': doc.filename + " " + f'(Revised by {self.env.user.name})',
+                                        'state': 'verified'
+                                    })
+                                    self._replace_document_object(folder_name='GR/SES', document_ids=self.document_ids, po_id=self.po_id)
+
                 for doc in self.document_ids.filtered(lambda x: x.state in ('uploaded','rejected')):
                     doc.state = 'verified'
                 # folder_id = self.env['documents.folder'].sudo().search([('name', '=', 'BAP')], limit=1)
@@ -1523,6 +1551,7 @@ class WikaBapDocumentLine(models.Model):
     _name = 'wika.bap.document.line'
 
     bap_id = fields.Many2one('wika.berita.acara.pembayaran', string='')
+    picking_id = fields.Many2one('stock.picking', string='Nomor GR')
     document_id = fields.Many2one('wika.document.setting', string='Document')
     document = fields.Binary(string="Upload File", attachment=True, store=True, required=True)
     filename = fields.Char(string="File Name")

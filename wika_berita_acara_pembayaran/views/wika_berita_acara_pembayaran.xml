@@ -293,6 +293,7 @@
                                     <field name="document_ids" mode="tree,kanban" nolabel="1" colspan="2">
                                         <tree string="List Document" delete="0" create="0">
                                             <field name="document_id"/>
+                                            <field name="picking_id" groups="base.group_no_one"/>
 <!--
                                             <button name="buttonClickEvent" string="Upload Disini" type="object" attrs="{'invisible': [('state', '=', 'uploaded')]}"  class="fa fa-hand-o-right"/>
 -->

@@ -90,7 +90,6 @@ class PurchaseOrderInherit(models.Model):
 
 
     def init(self):
-        self.env.cr.execute("DELETE FROM purchase_order WHERE state NOT IN ('po', 'uploaded', 'approved')")
         self.env.cr.execute("""
             DO $$
             BEGIN
