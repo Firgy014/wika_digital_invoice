@@ -1,4 +1,4 @@
-from odoo import models, fields
+from odoo import models, fields, api
 from datetime import datetime, timedelta
 
 class RejectWizard(models.TransientModel):
@@ -7,9 +7,25 @@ class RejectWizard(models.TransientModel):
 
     reject_reason = fields.Text(string='Reject Reason')
     document_id = fields.Many2one('wika.document.setting', string='Document')
+    related_document_ids = fields.Many2many('documents.document', string='Related Documents', domain=lambda self: [('purchase_id', '=', self._get_related_documents_domain()[0]), ('folder_id', 'in', self._get_related_documents_domain()[1])])
+    is_reject_doc = fields.Boolean(string='Reject With Document')
+
+    @api.model
+    def _get_related_documents_domain(self):
+        active_id = self.env.context.get('active_id')
+        if active_id:
+            invoice_id = self.env['account.move'].sudo().browse([active_id])
+            return invoice_id.po_id.id, ('PO', 'GR/SES', 'BAP', 'Invoice', 'Faktur Pajak')
+        return False, ()
 
     def cancel(self):
         return
+
+    def _get_first_user(self, groups_name, project_id):
+        first_user_groups_id = self.env['res.groups'].sudo().search([('name', '=', groups_name)], limit=1)
+        for first_user in first_user_groups_id.users:
+            if project_id.sap_code in first_user.name:
+                return first_user
 
     def ok(self):
         groups_id = self.env.context.get('groups_id')

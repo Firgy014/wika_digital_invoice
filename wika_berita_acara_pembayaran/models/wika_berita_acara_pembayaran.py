@@ -1144,45 +1144,24 @@ class WikaBeritaAcaraPembayaran(models.Model):
 
                     elif doc.document_id.name in ['GR', 'Surat Jalan', 'SES'] and doc.document:
                         for doc_grses in self.bap_ids.picking_id.document_ids:
-                            bap_fname = doc.filename
-                            if doc_grses.document_id.name in ['GR', 'Surat Jalan', 'SES']:
-                                grses_fname = doc_grses.filename
-                                if bap_fname != grses_fname:
-                                    doc_grses.update({
-                                        'document': doc.document,
-                                        'filename': doc.filename + " " + f'(Revised by {self.env.user.name})',
-                                        'state': 'verified'
-                                    })
-                                    self._replace_document_object(folder_name='GR/SES', document_ids=self.document_ids, po_id=self.po_id)
+                            print('LENDOCSNEW', len(self.bap_ids.picking_id.document_ids))
+                            # bap_fname = doc.filename
+                            bap_binary = doc.document
+                            # if doc_grses.document_id.name in ['GR', 'Surat Jalan', 'SES']:
+                            # grses_fname = doc_grses.filename
+                            grses_binary = doc_grses.document
+                            if bap_binary != grses_binary:
+                                # masukkk
+                                doc_grses.write({
+                                    'document': doc.document,
+                                    'filename': doc.filename + " " + f'(Revised by {self.env.user.name})',
+                                    'state': 'verified'
+                                })
+                                self._replace_document_object(folder_name='GR/SES', document_ids=self.document_ids, po_id=self.po_id)
 
                 for doc in self.document_ids.filtered(lambda x: x.state in ('uploaded','rejected')):
                     doc.state = 'verified'
-                # folder_id = self.env['documents.folder'].sudo().search([('name', '=', 'BAP')], limit=1)
-                # if folder_id:
-                #     facet_id = self.env['documents.facet'].sudo().search([
-                #         ('name', '=', 'Documents'),
-                #         ('folder_id', '=', folder_id.id)
-                #     ], limit=1)
-                #     for doc in self.document_ids.filtered(lambda x: x.state in ('uploaded','rejected')):
-                #         doc.state = 'verified'
-                #         attachment_id = self.env['ir.attachment'].sudo().create({
-                #             'name': doc.filename,
-                #             'datas': doc.document,
-                #             'res_model': 'documents.document',
-                #         })
-                #         if attachment_id:
-                #             tag = self.env['documents.tag'].sudo().search([
-                #                 ('facet_id', '=', facet_id.id),
-                #                 ('name', '=', doc.document_id.name)
-                #             ], limit=1)
-                #             documents_model.create({
-                #                 'attachment_id': attachment_id.id,
-                #                 'folder_id': folder_id.id,
-                #                 'tag_ids': tag.ids,
-                #                 'partner_id': doc.bap_id.partner_id.id,
-                #                 'purchase_id': self.po_id.id,
-                #                 'bap_id': self.id,
-                #             })
+                    
                 if self.activity_ids:
                     for x in self.activity_ids.filtered(lambda x: x.status  != 'approved'):
                         if x.user_id.id == self._uid:
@@ -1245,6 +1224,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
         for record in self:
             record.documents_count = self.env['documents.document'].search_count(
                 [('purchase_id', '=', record.po_id.id)])
+
     @api.depends('po_id')
     def _compute_invoice_item(self):
         for record in self:
