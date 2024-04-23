@@ -30,15 +30,22 @@ class RejectWizard(models.TransientModel):
         groups_id = self.env.context.get('groups_id')
         active_id = self.env.context.get('active_id')
         bap_model = self.env['wika.berita.acara.pembayaran'].sudo()
+        is_doc_rejection = False
 
         # groups_id = self._context['groups_id']
         if active_id:
             bap_id = bap_model.browse([active_id])
             bap_id_model = bap_model.search([('id', '=', active_id)], limit=1)
             project_id = self.env['project.project'].sudo().browse(bap_id_model.project_id.id)
+            doc_setting_gr_id = False
+            doc_setting_do_id = False
+            doc_setting_ses_id = False
 
             # reject with selected docs
             if self.is_reject_doc == True:
+                len_current_doc = len(bap_id_model.document_ids)
+                len_selected_doc = len(self.related_document_ids)
+                len_total_doc = len_current_doc + len_selected_doc
                 for doc in self.related_document_ids:
                     if doc.folder_id.name == 'PO':
                         if bap_id_model.po_id.transaction_type == 'BTL':
@@ -47,21 +54,7 @@ class RejectWizard(models.TransientModel):
                             first_user = self._get_first_user(groups_name='Kasie Kom', project_id=project_id)
 
                         for x in bap_id_model.po_id.document_ids:
-                            # self.env['mail.activity'].sudo().create({
-                            #     'activity_type_id': 4,
-                            #     'res_model_id': self.env['ir.model'].sudo().search(
-                            #         [('model', '=', 'purchase.order')], limit=1).id,
-                            #     'res_id': doc.purchase_id.id,
-                            #     'user_id': first_user.id,
-                            #     'date_deadline': fields.Date.today() + timedelta(days=2),
-                            #     'state': 'planned',
-                            #     'nomor_po': doc.purchase_id.name,
-                            #     'status': 'todo',
-                            #     'summary': f"""Dokumen {doc.folder_id.name} tidak sesuai dan telah di-reject. Silakan perbaiki dengan dokumen lain."""
-                            # })
-                            x.document = False
                             x.state = 'rejected'
-
                             document_list = []
                             purchase_model_id = self.env['ir.model'].sudo().search([('model', '=', 'purchase.order')], limit=1)
                             doc_setting_id = self.env['wika.document.setting'].sudo().search([('model_id', '=', purchase_model_id.id)])
@@ -75,58 +68,58 @@ class RejectWizard(models.TransientModel):
                                     }))
                                 bap_id.document_ids = document_list
                         doc.active = False
-                        self.env['wika.bap.approval.line'].create({
-                            'user_id': self._uid,
-                            'groups_id': groups_id,
-                            'date': datetime.now(),
-                            'note': "Reject document:" + doc.folder_id.name + "(" + self.reject_reason + ")",
-                            'bap_id': active_id,
-                        })
+                        is_doc_rejection = True
 
                     elif doc.folder_id.name == 'GR/SES':
-                        # for baps in bap_id_model.bap_ids:
                         if doc.picking_id.pick_type == 'gr':
                             first_user = self._get_first_user(groups_name='Kasie KA', project_id=project_id)
                         elif doc.picking_id.pick_type == 'ses':
                             first_user = self._get_first_user(groups_name='Kasie Kom', project_id=project_id)
 
-                        for x in doc.picking_id.document_ids:                                
-                            # self.env['mail.activity'].sudo().create({
-                            #     'activity_type_id': 4,
-                            #     'res_model_id': self.env['ir.model'].sudo().search(
-                            #         [('model', '=', 'stock.picking')], limit=1).id,
-                            #     'res_id': doc.picking_id.id,
-                            #     'user_id': first_user.id,
-                            #     'date_deadline': fields.Date.today() + timedelta(days=2),
-                            #     'state': 'planned',
-                            #     'nomor_po': doc.purchase_id.name,
-                            #     'status': 'todo',
-                            #     'summary': f"""Dokumen {doc.folder_id.name} tidak sesuai dan telah di-reject. Silakan perbaiki dengan dokumen lain."""
-                            # })
-                            x.document = False
+                        for x in doc.picking_id.document_ids:
+                            if x.document_id.name == 'GR':
+                                doc_setting_gr_id = self.env['wika.document.setting'].sudo().search([('name', '=', 'GR')], limit=1)
+
+                            if x.document_id.name == 'Surat Jalan':
+                                doc_setting_do_id = self.env['wika.document.setting'].sudo().search([('name', '=', 'Surat Jalan')], limit=1)
+                                
+                            if x.document_id.name == 'SES':
+                                doc_setting_ses_id = self.env['wika.document.setting'].sudo().search([('name', '=', 'SES')], limit=1)
+
                             x.state = 'rejected'
-
                             document_list = []
-
-                            doc_setting_id = self.env['wika.document.setting'].sudo().search([('name', '=', x.document_id.name)], limit=1)
-
-                    if doc_setting_id:
-                        for document_line in doc_setting_id:
+                            # doc_setting_id = self.env['wika.document.setting'].sudo().search([('name', '=', x.document_id.name)], limit=1)
+                            # doc_setting_id = self.env['wika.document.setting'].sudo().search([('name', '=', x.document_id.name)])
+                            
+                    if doc_setting_gr_id and doc_setting_do_id:
+                        for document_line_gr, document_line_do in zip(doc_setting_gr_id, doc_setting_do_id):
                             document_list.append((0, 0, {
                                 'bap_id': bap_id_model.id,
-                                'document_id': document_line.id,
+                                'document_id': document_line_do.id,
                                 'state': 'rejected',
                                 'picking_id': doc.picking_id.id
                             }))
-                        bap_id.document_ids = document_list
+                            document_list.append((0, 0, {
+                                'bap_id': bap_id_model.id,
+                                'document_id': document_line_gr.id,
+                                'state': 'rejected',
+                                'picking_id': doc.picking_id.id
+                            }))
+                            
+                    if doc_setting_ses_id:
+                        for document_line_ses in doc_setting_ses_id:
+                            document_list.append((0, 0, {
+                                'bap_id': bap_id_model.id,
+                                'document_id': document_line_ses.id,
+                                'state': 'rejected',
+                                'picking_id': doc.picking_id.id
+                            }))
+
+                    bap_id.document_ids = document_list
                     doc.active = False
-                    self.env['wika.bap.approval.line'].create({
-                        'user_id': self._uid,
-                        'groups_id': groups_id,
-                        'date': datetime.now(),
-                        'note': "Reject document:" + doc.folder_id.name + "(" + self.reject_reason + ")",
-                        'bap_id': active_id,
-                    })
+                    is_doc_rejection = True
+                    if len(bap_id.document_ids) == len_total_doc:
+                        break
 
             # logical matrix to handle the reject without docs (x-z-z-x)
             for x in bap_id.document_ids:
@@ -155,13 +148,22 @@ class RejectWizard(models.TransientModel):
                     z.status = 'approved'
                     z.action_done()
 
-            self.env['wika.bap.approval.line'].create({
-                'user_id': self._uid,
-                'groups_id': groups_id,
-                'date': datetime.now(),
-                'note': "Reject (" + self.reject_reason + ")",
-                'bap_id': active_id,
-            })
+            if is_doc_rejection:
+                self.env['wika.bap.approval.line'].create({
+                    'user_id': self._uid,
+                    'groups_id': groups_id,
+                    'date': datetime.now(),
+                    'note': "Reject with document: " + doc.folder_id.name + " (" + self.reject_reason + ")",
+                    'bap_id': active_id,
+                })
+            else:
+                self.env['wika.bap.approval.line'].create({
+                    'user_id': self._uid,
+                    'groups_id': groups_id,
+                    'date': datetime.now(),
+                    'note': "Reject (" + self.reject_reason + ")",
+                    'bap_id': active_id,
+                })
             bap_id_model.write({
                 'step_approve': 1,
                 'state':'rejected'})
