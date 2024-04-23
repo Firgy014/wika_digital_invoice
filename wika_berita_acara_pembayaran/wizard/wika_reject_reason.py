@@ -37,10 +37,15 @@ class RejectWizard(models.TransientModel):
             bap_id = bap_model.browse([active_id])
             bap_id_model = bap_model.search([('id', '=', active_id)], limit=1)
             project_id = self.env['project.project'].sudo().browse(bap_id_model.project_id.id)
+            doc_setting_gr_id = False
+            doc_setting_do_id = False
+            doc_setting_ses_id = False
 
             # reject with selected docs
             if self.is_reject_doc == True:
-                teslen = 0
+                len_current_doc = len(bap_id_model.document_ids)
+                len_selected_doc = len(self.related_document_ids)
+                len_total_doc = len_current_doc + len_selected_doc
                 for doc in self.related_document_ids:
                     if doc.folder_id.name == 'PO':
                         if bap_id_model.po_id.transaction_type == 'BTL':
@@ -71,27 +76,50 @@ class RejectWizard(models.TransientModel):
                         elif doc.picking_id.pick_type == 'ses':
                             first_user = self._get_first_user(groups_name='Kasie Kom', project_id=project_id)
 
-                        for x in doc.picking_id.document_ids:                                
+                        for x in doc.picking_id.document_ids:
+                            if x.document_id.name == 'GR':
+                                doc_setting_gr_id = self.env['wika.document.setting'].sudo().search([('name', '=', 'GR')], limit=1)
+
+                            if x.document_id.name == 'Surat Jalan':
+                                doc_setting_do_id = self.env['wika.document.setting'].sudo().search([('name', '=', 'Surat Jalan')], limit=1)
+                                
+                            if x.document_id.name == 'SES':
+                                doc_setting_ses_id = self.env['wika.document.setting'].sudo().search([('name', '=', 'SES')], limit=1)
+
                             x.state = 'rejected'
                             document_list = []
-                            doc_setting_id = self.env['wika.document.setting'].sudo().search([('name', '=', x.document_id.name)], limit=1)
-
-                    if doc_setting_id:
-                        for document_line in doc_setting_id:
-                            print("NEM",document_line.name)
+                            # doc_setting_id = self.env['wika.document.setting'].sudo().search([('name', '=', x.document_id.name)], limit=1)
+                            # doc_setting_id = self.env['wika.document.setting'].sudo().search([('name', '=', x.document_id.name)])
+                            
+                    if doc_setting_gr_id and doc_setting_do_id:
+                        for document_line_gr, document_line_do in zip(doc_setting_gr_id, doc_setting_do_id):
                             document_list.append((0, 0, {
                                 'bap_id': bap_id_model.id,
-                                'document_id': document_line.id,
+                                'document_id': document_line_do.id,
                                 'state': 'rejected',
                                 'picking_id': doc.picking_id.id
                             }))
-                            teslen += 1
-                        bap_id.document_ids = document_list
+                            document_list.append((0, 0, {
+                                'bap_id': bap_id_model.id,
+                                'document_id': document_line_gr.id,
+                                'state': 'rejected',
+                                'picking_id': doc.picking_id.id
+                            }))
+                            
+                    if doc_setting_ses_id:
+                        for document_line_ses in doc_setting_ses_id:
+                            document_list.append((0, 0, {
+                                'bap_id': bap_id_model.id,
+                                'document_id': document_line_ses.id,
+                                'state': 'rejected',
+                                'picking_id': doc.picking_id.id
+                            }))
+
+                    bap_id.document_ids = document_list
                     doc.active = False
                     is_doc_rejection = True
-                    print("LEEEEENNNN", teslen)
-                    print("LEEEEENNNN", len(bap_id.document_ids))
-                    # stopduls
+                    if len(bap_id.document_ids) == len_total_doc:
+                        break
 
             # logical matrix to handle the reject without docs (x-z-z-x)
             for x in bap_id.document_ids:
