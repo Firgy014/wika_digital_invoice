@@ -145,7 +145,8 @@ class WikaBeritaAcaraPembayaran(models.Model):
     total_adjustment = fields.Float('Total Adjustment', compute='_compute_total_adjustment')
     total_po = fields.Float(string='Total PO', compute='_compute_total_po')
     remain_val_po = fields.Float(string='Sisa BAP')
-    
+    fee_management = fields.Boolean('Rincian Fee Management?')
+
     @api.onchange('bap_date')
     def _onchange_bap_date(self):
         if self.bap_date:
@@ -927,21 +928,27 @@ class WikaBeritaAcaraPembayaran(models.Model):
 
     # compute total pph
     # compute total pph revisi
-    @api.depends('total_amount', 'bap_type','pph_ids.amount','amount_pph','retensi_total')
+    # @api.depends('total_amount', 'bap_type','pph_ids.amount','amount_pph','retensi_total')
+
+    @api.depends('total_amount', 'bap_type', 'pph_ids.amount', 'amount_pph', 'retensi_total', 'fee_management', 'bap_ids.unit_price', 'bap_ids.product_id')
     def compute_total_pph(self):
         for record in self:
             total_pph = 0.0
             if record.bap_type == 'retensi':
                 total_net = record.retensi_total
-                for pph in record.pph_ids:
-                    total_pph += (total_net * pph.amount) / 100
-                record.total_pph = math.floor(total_pph + record.amount_pph)
             else:
-                total_net=record.total_amount-record.retensi_total
-                for pph in record.pph_ids:
-                    total_pph += (total_net * pph.amount) / 100
-                record.total_pph = math.floor(total_pph+record.amount_pph)
+                total_net = record.total_amount - record.retensi_total
 
+            for pph in record.pph_ids:
+                if record.fee_management and any(bap.product_id.default_code == 'SI3000002' for bap in record.bap_ids):
+                    for bap in record.bap_ids.filtered(lambda b: b.product_id.default_code == 'SI3000002'):
+                        total_pph += (bap.unit_price * pph.amount / 100)
+                        # print("TOTAL UNIT PRICE PRODUCT", total_pph)
+                else:
+                    total_pph += (total_net * pph.amount / 100)
+                    # print("TOTAL UNIT PRICE PRODUCT", total_pph)
+
+            record.total_pph = math.floor(total_pph + record.amount_pph)
 
     def action_reject(self):
         user = self.env['res.users'].search([('id', '=', self._uid)], limit=1)
@@ -1504,11 +1511,11 @@ class WikaBeritaAcaraPembayaranLine(models.Model):
     #         if line.qty > line.sisa_qty_bap_grses:
     #             raise ValidationError('Quantity tidak boleh melebihi sisa quantity pada GR/SES!')
 
-    @api.constrains('qty')
-    def _check_qty_limit(self):
-        for line in self:
-            if line.bap_id.bap_type != 'cut over' and line.qty > line.sisa_qty_bap_grses:
-                raise ValidationError('Quantity tidak boleh melebihi sisa quantity pada GR/SES!')
+    # @api.constrains('qty')
+    # def _check_qty_limit(self):
+    #     for line in self:
+    #         if line.bap_id.bap_type != 'cut over' and line.qty > line.sisa_qty_bap_grses:
+    #             raise ValidationError('Quantity tidak boleh melebihi sisa quantity pada GR/SES!')
 
     @api.depends('tax_ids', 'sub_total')
     def compute_sub_total(self):
@@ -1533,11 +1540,11 @@ class WikaBeritaAcaraPembayaranLine(models.Model):
             if record.adjustment != True:
                 record.amount_adjustment = record.qty * record.unit_price
 
-    @api.constrains('picking_id')
-    def _check_picking_id(self):
-        for record in self:
-            if not record.picking_id and record.bap_id.bap_type != 'cut over':
-                raise ValidationError('Field "NO GR/SES" harus diisi. Tidak boleh kosong!')
+    # @api.constrains('picking_id')
+    # def _check_picking_id(self):
+    #     for record in self:
+    #         if not record.picking_id and record.bap_id.bap_type != 'cut over':
+    #             raise ValidationError('Field "NO GR/SES" harus diisi. Tidak boleh kosong!')
 
     @api.depends('unit_price_po', 'qty','adjustment')
     def _compute_current_value(self):
