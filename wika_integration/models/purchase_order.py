@@ -18,14 +18,14 @@ class Purchase_Order(models.Model):
             moves = self.browse(ids)
             try:  # try posting in batch
                 with self.env.cr.savepoint():
-                    moves.update_po(max_difference_days=max_difference_days)  # Mengirimkan parameter dari context
+                    moves.update_po_schedule(max_difference_days=max_difference_days)  # Mengirimkan parameter dari context
 
 
             except UserError:  # if at least one move cannot be posted, handle moves one by one
                 for move in moves:
                     try:
                         with self.env.cr.savepoint():
-                            move.update_po(
+                            move.update_po_schedule(
                                 max_difference_days=max_difference_days)  # Mengirimkan parameter dari context
                     except:
                         pass
@@ -33,7 +33,7 @@ class Purchase_Order(models.Model):
         # if len(records) == 100:  # assumes there are more whenever search hits limit
         self.env.ref('wika_integration.get_po_actions')._trigger()
 
-    def update_po(self,max_difference_days):
+    def update_po_schedule(self,max_difference_days):
         url_config = self.env['wika.integration'].search([('name', '=', 'URL PO')], limit=1)
         url = url_config.url + 'services/auth'
         url_get_po = url_config.url + 'services/getposap'
@@ -155,6 +155,144 @@ class Purchase_Order(models.Model):
 
             #raise UserError(_("Connection Failed. Please Check Your Internet Connection."))
 
+    def update_po(self):
+        url_config = self.env['wika.integration'].search([('name', '=', 'URL PO')], limit=1)
+        url = url_config.url + 'services/auth'
+        url_get_po = url_config.url + 'services/getposap'
+        # print (url)
+        headers = {
+            'Content-Type': 'application/json'
+        }
+        payload = json.dumps({
+            "entitas": "FMS",
+            "skey": "OAZvRmB7HKDdDkKF29DXZwgSmlv9KqQWZNDWV51SACAbhnOvuA1AvZf5FnIBrLxC"
+        })
+        payload = payload.replace('\n', '')
+
+        try:
+            # 1. Get W-KEY TOKEN
+            response = requests.request("POST", url, data=payload, headers=headers)
+            w_key = (response.headers['w-key'])
+            csrf = {'w-access-token': str(w_key)}
+            headers.update(csrf)
+            if self.level=='Proyek':
+                profit_center=self.project_id.sap_code
+            else:
+                profit_center=self.branch_id.sap_code
+            payload_2 = json.dumps({"profit_center": "%s",
+                                    "po_doc": "%s",
+                                    "po_jenis": "",
+                                    "po_dcdat": "",
+                                    "po_crdate": "%s",
+                                    "po_plant": "A000",
+                                    "co_code": "A000",
+                                    "po_del": "",
+                                    "poitem_del": "",
+                                    "incmp_cat": "","po_lcdat":""
+                                    }) % (profit_center, self.name,self.tgl_create_sap)
+            payload_2 = payload_2.replace('\n', '')
+            _logger.info(payload_2)
+            response_2 = requests.request("POST", url_get_po, data=payload_2, headers=headers)
+            txt = json.loads(response_2.text)
+            print (txt)
+            if 'data' in txt:
+                if txt['data']:
+                    vals = []
+                    print (txt['data'])
+                    txt_data = txt['data']
+                    for data in txt_data['isi']:
+                        seq = float(data['po_no'])
+                        qty = float(data['po_qty'])
+                        po_line = self.env['purchase.order.line'].sudo().search([
+                            ('order_id', '=', self.id),
+                            ('sequence', '=', int(seq))], limit=1)
+                        print (po_line)
+                        if po_line.id:
+                            if txt_data['po_jenis'] == 'JASA':
+                                price = float(data['po_price']) / qty
+                            else:
+                                price = float(data['po_price'])
+                            tax = self.env['account.tax'].sudo().search([
+                                ('name', '=', data['tax_code'])], limit=1)
+                            if not tax:
+                                return "Kode Pajak  : %s tidak ditemukan" % data['MWSKZ']
+                            if data['poitem_del'] == 'L':
+                                po_line.write({'active': False})
+                            #
+                            else:
+                                po_line.write({'product_qty': qty, 'price_unit': price,
+                                               'taxes_id': [(6, 0, [x.id for x in tax])]})
+
+                        else:
+                            if data['poitem_del'] == 'L':
+                                continue
+                            else:
+                                print (data['poitem_del'])
+                                if txt_data['po_jenis'] == 'JASA':
+                                    price = float(data['po_price']) / qty
+                                else:
+                                    price = float(data['po_price'])
+                                prod = self.env['product.product'].sudo().search([
+                                    ('default_code', '=', data['prd_no'])], limit=1)
+                                if not prod:
+                                    return "Material/Service  : %s tidak ditemukan" % (data['prd_no'])
+                                tax = self.env['account.tax'].sudo().search([
+                                    ('name', '=', data['tax_code'])], limit=1)
+                                if not tax:
+                                    return "Kode Pajak  : %s tidak ditemukan" % data['MWSKZ']
+
+                                uom = self.env['uom.uom'].sudo().search([
+                                    ('name', '=', data['po_uom'])], limit=1)
+                                if not uom:
+                                    uom = self.env['uom.uom'].sudo().create({
+                                        'name': data['po_uom'], 'category_id': 1})
+                                line = self.env['purchase.order.line'].sudo().create({
+                                        'order_id':self.id,
+                                        'sequence': int(seq),
+                                        'product_id': prod.id if prod else False,
+                                        'product_qty': qty,
+                                        'product_uom': uom.id,
+                                        'price_unit': price,
+                                        'taxes_id': [(6, 0, [x.id for x in tax])]})
+
+                                continue
+                        continue
+                    #     else:
+                    #         print("emang gak masuk sini 4444444444?")
+                    #
+                    #         vals.append((0, 0, {
+                    #             'order_id': self.id,
+                    #             'sequence': int(seq),
+                    #             'product_id': prod.id if prod else False,
+                    #             'product_qty': qty,
+                    #             'product_uom': uom.id,
+                    #             'price_unit': price,
+                    #             'taxes_id': [(6, 0, [x.id for x in tax])]
+                    #
+                    #                  }))
+                    #         print(vals)
+                    # if vals:
+                    #     print ("kkkk")
+                    #     line=self.env['purchase.order.line'].sudo().create({
+                    #         'order_id':self.id,
+                    #         'sequence': int(seq),
+                    #         'product_id': prod.id if prod else False,
+                    #         'product_qty': qty,
+                    #         'product_uom': uom.id,
+                    #         'price_unit': price,
+                    #         'taxes_id': [(6, 0, [x.id for x in tax])]})
+                    #
+                    #     # else:
+                    #     #     po_line.create({'order_id'quantity': qty})
+                    # else:
+                    #     pass
+            else:
+                pass
+        except:
+            pass
+
+
+            #raise UserError(_("Connection Failed. Please Check Your Internet Connection."))
 
     def update_gr(self):
         config = self.env['wika.integration'].search([('name', '=', 'URL GR')], limit=1)
