@@ -35,6 +35,50 @@ class wzoneLogin(http.Controller):
             check_user.active = False
         return data
 
+class WzoneRedirect(http.Controller):
+
+    @http.route('/web/redirect', type='http', auth="public", website=True)
+    def redirect_to_wzone(self, **kw):
+        return request.redirect('http://localhost:8069')
+
+    @http.route('/wdigi.wika.co.id/', type='http', auth="public", website=True)
+    def display_notification(self, **kw):
+        url_config = request.env['ir.config_parameter'].sudo().search([('key','=','web.base.url')])
+        if url_config:
+            return """
+            <html>
+            <head>
+                <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+                <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+                <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+                <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+            </head>
+            <body>
+                <div class="modal" id="notificationModal">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h4 class="modal-title">wdigi.wika.co.id</h4>
+                                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                            </div>
+                            <div class="modal-body">
+                                <p>Saat ini akses seluruh aplikasi harus melalui PORTAL WIKA ZONE, akses 
+                                https://wzone.wika.co.id, dengan USERNAME (NIP) dan PASSWORD tgl lahir (ddmmyyyy)</p>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-primary" data-dismiss="modal">OK</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <script>
+                    $(document).ready(function(){
+                        $('#notificationModal').modal('show');
+                    });
+                </script>
+            </body>
+            </html>
+            """
 class api(http.Controller):
 
     def search_data_api(self, data, table):

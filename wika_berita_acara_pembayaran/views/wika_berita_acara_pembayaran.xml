@@ -141,6 +141,7 @@
                                 <field name="vendor_position"  readonly="1" force_save="1"/>
                                 <field name="address"  readonly="1" force_save="1"/>
                                 <field name="job"  readonly="1" force_save="1"/>
+                                <field name="fee_management"/>
                                 <field name="step_approve" invisible="1"/>
                                  <field name="is_fully_invoiced" groups="base.group_no_one"/>
                                 <field name="is_cut_over"  groups="base.group_no_one"/>
@@ -219,7 +220,7 @@
                                 <group>
                                     <field name="bap_ids" mode="tree,kanban" nolabel="1" colspan="2" force_save="1"
                                         attrs="{'invisible': [('bap_type', 'not in', ['progress', 'cut over'])],'readonly': [('state', 'in', ['approved', 'uploaded'])]}">
-                                        <tree string="List BAP" editable="top" create="0">
+                                        <tree string="List BAP" editable="top" create="1">
                                            <field name="invoice_line_id" groups="base.group_no_one"/>
                                             <field name="picking_id" options="{'no_create': True, 'no_create_edit':True}" domain="[('po_id', '=', parent.po_id)]"/>
                                             <field name="stock_move_id" options="{'no_create': True, 'no_create_edit':True}" domain="[('picking_id', '=', picking_id)]" string="Item GR/SES"/>
@@ -227,12 +228,12 @@
                                             <field name="unit_price_po" invisible="1"/>
                                             <field name="sisa_qty_bap_grses" invisible="1"/>
                                             <field name="qty_invoiced" invisible="1"/>
-                                            <field name="product_id" readonly="1" force_save="1"/>
+                                            <field name="product_id" readonly="0" force_save="1"/>
                                             <field name="product_uom" readonly="1" force_save="1"/>
                                             <field name="qty"/>
                                             <field name="tax_ids" widget="many2many_tags" string=""/>
                                             <field name="currency_id" readonly="1" force_save="1"/>
-                                            <field name="unit_price" readonly="1" force_save="1"/>
+                                            <field name="unit_price" readonly="0" force_save="1"/>
 
                                             <field name="sub_total" sum="Total"/>
                                             <field name="adjustment" />
