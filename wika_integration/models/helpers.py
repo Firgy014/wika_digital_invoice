@@ -40,15 +40,17 @@ END AS TAX_BASE_AMOUNT,
         WHEN po.po_type = 'BARANG' THEN CAST(sm.sequence AS VARCHAR)
         ELSE '' END AS REF_DOC_IT,
                                                                                                    
-    line.price_subtotal AS ITEM_AMOUNT,
+    CASE 
+        WHEN line.amount_adjustment>0 THEN line.amount_adjustment
+        ElSE line.price_subtotal END AS ITEM_AMOUNT,
     line.quantity as QUANTITY,
     CASE
         WHEN po.po_type = 'JASA' THEN sp.name
         ELSE ''
     END AS SHEET_NO,
     CASE
-        WHEN inv.retention_due IS NOT NULL THEN to_char(inv.invoice_date_due, 'yyyymmdd')
-        ELSE to_char(inv.date, 'yyyymmdd')
+        WHEN inv.retensi_total>0 THEN to_char(inv.retention_due, 'yyyymmdd')
+        ELSE to_char(inv.invoice_date_due, 'yyyymmdd')
     END AS RETENTION_DUE_DATE,
 CASE 
     WHEN inv.dp_total > 0 THEN 'X'
