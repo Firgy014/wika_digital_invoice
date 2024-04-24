@@ -251,9 +251,9 @@
                                     <td style="padding: 1px;"></td>
                                     <td style="padding: 1px;"></td>
                                     <td style="text-align: right; padding: 1px;">=</td>
-                                    <td style="text-align: right; padding: 1px;">Rp. <t t-esc="'{:,.0f}'.format(o.retensi_total * 0.11)"/></td>
+                                    <td style="text-align: right; padding: 1px;">Rp. <t t-esc="'{:,.0f}'.format(o.total_tax)"/></td>
                                 </tr>
-                                <t t-set="ppn" t-value="o.retensi_total * 0.11"/>
+                                <t t-set="ppn" t-value="o.total_tax"/>
                                 <tr>
                                     <th style="padding: 1px;" scope="row">4.</th>
                                     <td style="padding: 1px;"><strong>POTONGAN LAIN - LAIN</strong></td>
@@ -284,7 +284,7 @@
                                     <!-- <td style="text-align: right; padding: 1px;">=</td> -->
                                     <!-- <td style="text-align: left; padding: 1px;">Rp.</td> -->
                                 </tr>
-                                <t t-set="total_pembayaran" t-value="o.retensi_total + ppn - o.total_pph"/>
+                                <t t-set="total_pembayaran" t-value="o.total_pembayaran_retensi"/>
                                 <tr>
                                     <th style="padding: 1px;" scope="row">5.</th>
                                     <td style="padding: 1px;"><strong>PEMBAYARAN</strong></td>

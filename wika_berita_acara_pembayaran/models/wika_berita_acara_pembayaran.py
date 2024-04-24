@@ -401,8 +401,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
         for record in self:
             retensi_total = record.retensi_total or 0.0
             total_pph = record.total_pph or 0.0
-            persentase = 0.11
-            total_pembayaran_retensi = retensi_total + (retensi_total * persentase) - total_pph
+            total_pembayaran_retensi = retensi_total - total_pph
             record.total_pembayaran_retensi = total_pembayaran_retensi
 
     @api.depends('retensi_total', 'total_pph', 'dp_total', 'total_tax', 'total_amount')
@@ -754,8 +753,8 @@ class WikaBeritaAcaraPembayaran(models.Model):
                 record.total_tax = math.floor(total_amount_tax)
                 # print("TESSSSSSBORRRRRRR", record.total_tax)
             elif record.bap_type == 'retensi':
-                total_amount_tax = record.po_id.amount_tax
-                record.total_tax = math.floor(total_amount_tax)
+                total_amount_tax = record.retensi_total
+                record.total_tax = math.floor(total_amount_tax) * 0.11
                 # print("TESSSSSSBORRRRRRRETENSIII", record.total_tax)
             else:
                 total_amount = record.total_amount or 0.0

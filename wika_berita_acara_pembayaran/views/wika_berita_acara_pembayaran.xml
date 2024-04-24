@@ -207,7 +207,6 @@
                                 <field name="terbilang" groups="base.group_no_one"/>
                                 <field name="total_pembayaran_um" groups="base.group_no_one"/>
                                 <field name="terbilang_um" groups="base.group_no_one"/>
-                                <field name="total_pembayaran_retensi" groups="base.group_no_one"/>
                                 <field name="terbilang_retensi" groups="base.group_no_one"/>
                                 <field name="total_pembayaran_co" groups="base.group_no_one"/>
                                 <field name="terbilang_co" groups="base.group_no_one"/>
@@ -257,15 +256,16 @@
 
                                     </group>
                                     <group class="oe_subtotal_footer oe_right">
-                                        <field name="retensi_total" groups="base.group_no_one"/>
+                                        <field name="retensi_total" attrs="{'invisible': [('bap_type', '!=', 'retensi')]}"/>
                                         <field name="dp_total" groups="base.group_no_one"/>
                                         <field name="dp_qty_total" groups="base.group_no_one"/>
                                         <field name="retensi_qty_total" groups="base.group_no_one"/>
-                                        <field name="total_amount"/>
+                                        <field name="total_amount" attrs="{'invisible': [('bap_type', 'not in', ('progress', 'cut over'))]}" />
                                         <field name="total_tax" string="Total PPN"/>
                                         <field name="amount_pph"  />
                                         <field name="total_pph"/>
-                                        <field name="total_pembayaran"/>
+                                        <field name="total_pembayaran" attrs="{'invisible': [('bap_type', 'not in', ('progress', 'cut over'))]}"/>
+                                        <field name="total_pembayaran_retensi" attrs="{'invisible': [('bap_type', '!=', 'retensi')]}"/>
 
                                         <field name="grand_total" invisible="1"/>
                                         <field name="total_current_value" groups="base.group_no_one"/>
