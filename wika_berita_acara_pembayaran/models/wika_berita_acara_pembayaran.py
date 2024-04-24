@@ -132,11 +132,9 @@ class WikaBeritaAcaraPembayaran(models.Model):
     total_pembayaran = fields.Float('Pembayaran', compute='compute_total_pembayaran')
     total_pembayaran_um = fields.Float('Pembayaran uang muka', compute='compute_total_pembayaran_um')
     total_pembayaran_retensi = fields.Float('Pembayaran retensi', compute='compute_total_pembayaran_retensi')
-    total_pembayaran_co = fields.Float('Pembayaran cut over', compute='compute_total_pembayaran_cut_over')
     terbilang = fields.Char('Terbilang', compute='_compute_rupiah_terbilang')
     terbilang_um = fields.Char('Terbilang uang muka', compute='_compute_rupiah_terbilang_um')
     terbilang_retensi = fields.Char('Terbilang retensi', compute='_compute_rupiah_terbilang_retensi')
-    terbilang_co = fields.Char('Terbilang cut over', compute='_compute_rupiah_terbilang_cut_over')
     is_fully_invoiced = fields.Boolean(string='Fully Invoiced', compute='_compute_fully_invoiced', default=False,store=True)
     is_cut_over = fields.Boolean('is cut over')
     value_to_date = fields.Float('Sisa Nilai PO', compute='_check_amount_adjustment')
@@ -404,9 +402,9 @@ class WikaBeritaAcaraPembayaran(models.Model):
             else:
                 total_tax = 0.0
 
-            if record.bap_type not in ['uang muka', 'retensi']:
-                total_tax_lines = sum(record.bap_ids.tax_ids.filtered(lambda tax: tax.name != 'V3').mapped('amount'))
-                total_tax = (total_amount - dp_total - retensi_total) * (total_tax_lines / 100)
+            #if record.bap_type not in ['uang muka', 'retensi']:
+            total_tax_lines = sum(record.bap_ids.tax_ids.filtered(lambda tax: tax.name not in ('V3','VA','VB')).mapped('amount'))
+            total_tax = (total_amount - dp_total - retensi_total) * (total_tax_lines / 100)
 
             record.total_pembayaran = total_amount - dp_total - retensi_total + total_tax - total_pph
 
@@ -427,16 +425,6 @@ class WikaBeritaAcaraPembayaran(models.Model):
             total_pembayaran_retensi = retensi_total - total_pph
             record.total_pembayaran_retensi = total_pembayaran_retensi
 
-    @api.depends('retensi_total', 'total_pph', 'dp_total', 'total_tax', 'total_amount')
-    def compute_total_pembayaran_cut_over(self):
-        for record in self:
-            retensi_total = record.retensi_total or 0.0
-            dp_total = record.dp_total or 0.0
-            total_tax = record.total_tax or 0.0
-            total_pph = record.total_pph or 0.0
-            total_amount = record.total_amount or 0.0
-            total_pembayaran_co = total_amount - dp_total - retensi_total + total_tax - total_pph
-            record.total_pembayaran_co = total_pembayaran_co
 
     # # funct terbilang
     @api.depends('total_pembayaran')
@@ -487,21 +475,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
             else:
                 record.terbilang_retensi = ""
 
-    @api.depends('total_pembayaran_co')
-    def _compute_rupiah_terbilang_cut_over(self):
-        for record in self:
-            if record.total_pembayaran_co:
-                # Convert float to integer representation of Rupiah
-                rupiah_int = round(record.total_pembayaran_co)  # Pembulatan angka
-                # Convert the integer part to words
-                rupiah_terbilang = num2words(rupiah_int, lang='id') + " rupiah"
-                # If there are cents, add them as well
-                sen = abs(int((record.total_pembayaran_co - rupiah_int) * 100))  # Menghindari masalah pembulatan
-                if sen > 0:
-                    rupiah_terbilang += " dan " + num2words(sen, lang='id') + " sen"
-                record.terbilang_co = rupiah_terbilang
-            else:
-                record.terbilang_co = ""
+
 
     # @api.depends('bap_date')
     def _compute_last_value(self):

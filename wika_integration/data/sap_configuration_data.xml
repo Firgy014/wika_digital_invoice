@@ -3,12 +3,12 @@
     <data noupdate="0">    
         <record id="wika_sap_configuration_generate_data" model="sap.integration.configure">
             <field name="folder">D:\</field>
-            <field name="sftp_folder">/home/wika-fms/FTP/</field>
-            <field name="sftp_folder_archive">/home/wika-fms/FTP/</field>
-            <field name="sftp_folder_success">/home/wika-fms/FTP/</field>
+            <field name="sftp_folder">/home/wika-fms/FTP/SAPInterface/S4HANAPRD/Outbound/</field>
+            <field name="sftp_folder_archive">/home/wika-fms/FTP/SAPInterface/S4HANAPRD/Outbound/Archive/</field>
+            <field name="sftp_folder_success">/home/wika-fms/FTP/SAPInterface/S4HANAPRD/Outbound/Success/</field>
             <field name="sftp_folder_error">/home/wika-fms/FTP/</field>
 
-            <field name="sftp_path">/home/wika-fms/FTP/</field>
+            <field name="sftp_path">/home/wika-fms/FTP/SAPInterface/S4HANAPRD/Inbound/</field>
             <field name="sftp_host">10.40.0.109</field>
             <field name="sftp_port">22</field>
             <field name="sftp_user">wika-fms</field>
