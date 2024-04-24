@@ -514,7 +514,7 @@ export class OwlSalesDashboard extends Component {
     // === PO COUNTERS ===
     async getTotalPO(){
         let domainTotal = [
-            ['state', 'in', ['po','uploaded','approved']],
+            ['state', 'in', ['po','uploaded','approved','rejected']],
         ]
         const dataTotal = await this.orm.searchCount("purchase.order", domainTotal)
         this.state.po.total = dataTotal
@@ -587,7 +587,7 @@ export class OwlSalesDashboard extends Component {
     // === BAP COUNTERS ===
     async getTotalBAP(){
         let domainTotal = [
-            ['state', 'in', ['draft','uploaded','approved']],
+            ['state', 'in', ['draft','uploaded','approved','rejected']],
         ]
         const dataTotal = await this.orm.searchCount("wika.berita.acara.pembayaran", domainTotal)
         this.state.bap.total = dataTotal
@@ -623,7 +623,7 @@ export class OwlSalesDashboard extends Component {
     // === INVOICE COUNTERS ===
     async getTotalINV(){
         let domainTotal = [
-            ['state', 'in', ['draft','uploaded','approved']],
+            ['state', 'in', ['draft','uploaded','approved','rejected']],
         ]
         const dataTotal = await this.orm.searchCount("account.move", domainTotal)
         this.state.inv.total = dataTotal
@@ -1156,7 +1156,7 @@ export class OwlSalesDashboard extends Component {
 
     async viewTotalPO(){
         let domainTotalPO = [
-            ['state', 'in', ['po','uploaded','approved']],
+            ['state', 'in', ['po','uploaded','approved','rejected']],
         ]
         
         let list_view = await this.orm.searchRead("ir.model.data", [['name', '=', 'purchase_order_tree_wika']], ['res_id'])
