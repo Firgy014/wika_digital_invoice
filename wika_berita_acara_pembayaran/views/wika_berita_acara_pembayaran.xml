@@ -141,6 +141,8 @@
                                 <field name="vendor_position"  readonly="1" force_save="1"/>
                                 <field name="address"  readonly="1" force_save="1"/>
                                 <field name="job"  readonly="1" force_save="1"/>
+                                <field name="fee_management"/>
+
                                 <field name="step_approve" invisible="1"/>
                                  <field name="is_fully_invoiced" groups="base.group_no_one"/>
                                 <field name="is_cut_over"  groups="base.group_no_one"/>

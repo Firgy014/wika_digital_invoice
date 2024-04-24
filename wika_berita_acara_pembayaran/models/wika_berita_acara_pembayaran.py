@@ -143,6 +143,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
     total_adjustment = fields.Float('Total Adjustment', compute='_compute_total_adjustment')
     total_po = fields.Float(string='Total PO', compute='_compute_total_po')
     remain_val_po = fields.Float(string='Sisa BAP')
+    fee_management = fields.Boolean('Rincian Fee Management?')
 
     @api.onchange('bap_date')
     def _onchange_bap_date(self):
@@ -795,7 +796,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
 
     # compute total pph
     # compute total pph revisi
-    @api.depends('total_amount', 'bap_type','pph_ids.amount','amount_pph','retensi_total','dp_total')
+    @api.depends('total_amount', 'bap_type','pph_ids.amount','amount_pph','fee_management','bap_ids.sub_total', 'bap_ids.product_id','retensi_total','dp_total')
     def compute_total_pph(self):
         for record in self:
             total_pph = 0.0
@@ -807,7 +808,11 @@ class WikaBeritaAcaraPembayaran(models.Model):
             else:
                 total_net=record.total_amount-record.retensi_total-record.dp_total
                 for pph in record.pph_ids:
-                    total_pph += (total_net * pph.amount) / 100
+                    if record.fee_management and any(bap.product_id.default_code == 'SI3000002' for bap in record.bap_ids):
+                        for bap in record.bap_ids.filtered(lambda b: b.product_id.default_code == 'SI3000002'):
+                            total_pph += (bap.sub_total * pph.amount / 100)
+                    else:
+                        total_pph += (total_net * pph.amount) / 100
                 record.total_pph = math.floor(total_pph+record.amount_pph)
 
 
