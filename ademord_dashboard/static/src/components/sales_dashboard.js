@@ -513,10 +513,7 @@ export class OwlSalesDashboard extends Component {
 
     // === PO COUNTERS ===
     async getTotalPO(){
-        let domainTotal = [
-            ['state', 'in', ['po','uploaded','approved','rejected']],
-        ]
-        const dataTotal = await this.orm.searchCount("purchase.order", domainTotal)
+        const dataTotal = await this.orm.searchCount("purchase.order", [])
         this.state.po.total = dataTotal
     }
     async getWaitingPO(){
@@ -550,10 +547,7 @@ export class OwlSalesDashboard extends Component {
 
     // === GRSES COUNTERS ===
     async getTotalGRSES(){
-        let domainTotal = [
-            ['state', 'in', ['waits','uploaded','approved','rejected']],
-        ]
-        const dataTotal = await this.orm.searchCount("stock.picking", domainTotal)
+        const dataTotal = await this.orm.searchCount("stock.picking", [])
         this.state.grses.total = dataTotal
     }
     async getWaitingGRSES(){
@@ -586,10 +580,7 @@ export class OwlSalesDashboard extends Component {
     
     // === BAP COUNTERS ===
     async getTotalBAP(){
-        let domainTotal = [
-            ['state', 'in', ['draft','uploaded','approved','rejected']],
-        ]
-        const dataTotal = await this.orm.searchCount("wika.berita.acara.pembayaran", domainTotal)
+        const dataTotal = await this.orm.searchCount("wika.berita.acara.pembayaran", [])
         this.state.bap.total = dataTotal
     }
     async getWaitingBAP(){
@@ -622,10 +613,7 @@ export class OwlSalesDashboard extends Component {
 
     // === INVOICE COUNTERS ===
     async getTotalINV(){
-        let domainTotal = [
-            ['state', 'in', ['draft','uploaded','approved','rejected']],
-        ]
-        const dataTotal = await this.orm.searchCount("account.move", domainTotal)
+        const dataTotal = await this.orm.searchCount("account.move", [])
         this.state.inv.total = dataTotal
     }
     async getWaitingINV(){
