@@ -551,7 +551,7 @@ export class OwlSalesDashboard extends Component {
     // === GRSES COUNTERS ===
     async getTotalGRSES(){
         let domainTotal = [
-            ['state', 'in', ['waits','uploaded','approved']],
+            ['state', 'in', ['waits','uploaded','approved','rejected']],
         ]
         const dataTotal = await this.orm.searchCount("stock.picking", domainTotal)
         this.state.grses.total = dataTotal
