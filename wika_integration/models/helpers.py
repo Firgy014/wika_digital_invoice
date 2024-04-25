@@ -14,7 +14,7 @@ SELECT
     TO_CHAR(inv.invoice_date, 'yyyymmdd') AS DOC_DATE,
     TO_CHAR(inv.date, 'yyyymmdd') AS PSTNG_DATE,
     inv.no_invoice_vendor AS REF_DOC_NO,
-    ROUND(inv.amount_untaxed) AS GROSS_AMOUNT,
+    ROUND(inv.amount_invoice) AS GROSS_AMOUNT,
     TO_CHAR(inv.baseline_date, 'yyyymmdd') AS BLINE_DATE,
     inv.no_faktur_pajak AS HEADER_TXT,
     line.name AS ITEM_TEXT,

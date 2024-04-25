@@ -177,18 +177,20 @@ class sap_integration_configure(models.Model):
                 for line in file:
                     invoice_data = line.strip().split('|')
                     no_inv = invoice_data[0]
-                    invoice_id = invoice_model.search([('name', '=', no_inv),('invoice_number', '=', False)], limit=1)
+                    invoice_id = invoice_model.search([('name', '=', no_inv),('is_mp_approved', '=', True),('invoice_number', '=', False)], limit=1)
                     if invoice_id:
                         invoice_id.write({
                             'invoice_number': invoice_data[1],
                             'year': invoice_data[2],
                             'payment_reference': invoice_data[3],
-                            'dp_doc': invoice_data[4]
+                            'dp_doc': invoice_data[4],
+                            'retensi_doc': invoice_data[5]
                         })
                         updated_invoices.append(no_inv)
                     else:
                         pass
                 shutil.move(file_path, os.path.join(conf_id.sftp_folder_archive, file_name))
         except FileNotFoundError:
-            raise ValidationError(_("File TXT dari SAP atas invoice yang dituju tidak ditemukan!"))
+            pass
+            #raise ValidationError(_("File TXT dari SAP atas invoice yang dituju tidak ditemukan!"))
 
