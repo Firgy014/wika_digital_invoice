@@ -28,7 +28,7 @@
         'security/ir.model.access.csv',
         'views/views.xml',
         'views/templates.xml',
-        # 'views/wika_account_move.xml',
+        'views/wika_account_move.xml',
         'wizard/wika_partial_reject_reason.xml',
         'wizard/wika_reject_reason.xml',
         'wizard/wika_payment_request_approval.xml',
