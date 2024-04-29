@@ -1,17 +1,6 @@
 from odoo import models, fields, api
 from datetime import datetime, timedelta
 
-class DocumentsDocument(models.Model):
-    _inherit = 'documents.document'
-
-    def name_get(self):
-        res = []
-        for document in self:
-            name = document.folder_id.name if document.folder_id else ''
-            name += ' > ' + document.name if document.name != '' else ''
-            res.append((document.id, name))
-        return res
-
 class RejectWizard(models.TransientModel):
     _name = 'reject.wizard.account.move'
     _description = 'Reject Wizard'
