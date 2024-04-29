@@ -8,10 +8,12 @@ import math
 import json
 from urllib.request import Request, urlopen
 import logging, json
+import base64
+import binascii
 _logger = logging.getLogger(__name__)
 
 # from terbilang import terbilang
-# import requests
+# import requests# import requests
 
 class WikaBeritaAcaraPembayaran(models.Model):
     _name = 'wika.berita.acara.pembayaran'
@@ -143,27 +145,27 @@ class WikaBeritaAcaraPembayaran(models.Model):
     remain_val_po = fields.Float(string='Sisa BAP')
     fee_management = fields.Boolean('Rincian Fee Management?')
 
-    @api.onchange('bap_date')
-    def _onchange_bap_date(self):
-        if self.bap_date:
-            chosen_date = fields.Date.from_string(self.bap_date)
-            current_date = datetime.now().date()
-            if chosen_date.year != current_date.year or chosen_date.month != current_date.month:
-                return {
-                    'warning': {
-                        'title': "Peringatan!",
-                        'message': "Anda hanya dapat memilih tanggal BAP pada bulan dan tahun ini."
-                    }
-                }
-
-    @api.constrains('bap_date')
-    def _check_bap_date(self):
-        for record in self:
-            if record.bap_date:
-                chosen_date = fields.Date.from_string(record.bap_date)
-                current_date = datetime.now().date()
-                if chosen_date.year != current_date.year or chosen_date.month != current_date.month:
-                    raise ValidationError("Anda hanya dapat memilih tanggal BAP pada bulan dan tahun ini.")
+    # @api.onchange('bap_date')
+    # def _onchange_bap_date(self):
+    #     if self.bap_date:
+    #         chosen_date = fields.Date.from_string(self.bap_date)
+    #         current_date = datetime.now().date()
+    #         if chosen_date.year != current_date.year or chosen_date.month != current_date.month:
+    #             return {
+    #                 'warning': {
+    #                     'title': "Peringatan!",
+    #                     'message': "Anda hanya dapat memilih tanggal BAP pada bulan dan tahun ini."
+    #                 }
+    #             }
+    #
+    # @api.constrains('bap_date')
+    # def _check_bap_date(self):
+    #     for record in self:
+    #         if record.bap_date:
+    #             chosen_date = fields.Date.from_string(record.bap_date)
+    #             current_date = datetime.now().date()
+    #             if chosen_date.year != current_date.year or chosen_date.month != current_date.month:
+    #                 raise ValidationError("Anda hanya dapat memilih tanggal BAP pada bulan dan tahun ini.")
 
     @api.onchange('partner_id', 'bap_ids.product_id')
     def _onchange_partner_id_product_id(self):
@@ -295,7 +297,6 @@ class WikaBeritaAcaraPembayaran(models.Model):
             #     ])
             #     if any(not x.stock_move_id for x in account_moves):
             #         raise ValidationError(_("Anda belum melakukan mapping GR terhadap Invoice Cut Over!"))
-
 
     @api.depends('bap_ids')
     def _compute_fully_invoiced(self):
@@ -630,6 +631,33 @@ class WikaBeritaAcaraPembayaran(models.Model):
         res._compute_cut_over()
         return res
 
+    def _replace_document_object(self, folder_name, document_ids, po_id):
+        documents_model = self.env['documents.document'].sudo()
+        folder_id = self.env['documents.folder'].sudo().search([('name', '=', folder_name)], limit=1)
+        if folder_id:
+            facet_id = self.env['documents.facet'].sudo().search([
+                ('name', '=', 'Documents'),
+                ('folder_id', '=', folder_id.id)
+            ], limit=1)
+            for doc in document_ids:
+                attachment_id = self.env['ir.attachment'].sudo().create({
+                    'name': doc.filename,
+                    'datas': doc.document,
+                    'res_model': 'documents.document',
+                })
+                if attachment_id:
+                    tag = self.env['documents.tag'].sudo().search([
+                            ('facet_id', '=', facet_id.id),
+                            ('name', '=', doc.document_id.name)
+                        ], limit=1)
+                    documents_model.create({
+                        'attachment_id': attachment_id.id,
+                        'folder_id': folder_id.id,
+                        'tag_ids': tag.ids,
+                        'partner_id': po_id.partner_id.id,
+                        'purchase_id': po_id.id,
+                        'is_po_doc': True
+                    })
 
     @api.depends('department_id')
     def _cek_biro(self):
@@ -934,7 +962,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
         self.notes= (response_post.text)
 
     def action_submit(self):
-        if not self.bap_ids:
+        if not self.bap_ids and self.bap_type  in ('cut over','progress'):
             raise ValidationError('List BAP tidak boleh kosong. Mohon isi List BAP terlebih dahulu!')
 
         for record in self:
