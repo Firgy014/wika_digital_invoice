@@ -1109,7 +1109,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
                                 if bap_fname != po_fname:
                                     doc_po.update({
                                         'document': doc.document,
-                                        'filename': doc.filename + " " + f'(Revised by {self.env.user.name})',
+                                        'filename': f'[Revised by {self.env.user.name}]' + ' ' + doc.filename,
                                         'state': 'verified'
                                     })
                                     self._replace_document_object(folder_name='PO', document_ids=self.document_ids, po_id=self.po_id)
@@ -1123,7 +1123,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
                                     if bap_fname != grses_fname:
                                         doc_grses.update({
                                             'document': doc.document,
-                                            'filename': doc.filename + " " + f'(Revised by {self.env.user.name})',
+                                            'filename': f'[Revised by {self.env.user.name}]' + ' ' + doc.filename,
                                             'state': 'verified'
                                         })
                                         self._replace_document_object(folder_name='GR/SES', document_ids=self.document_ids, po_id=self.po_id)
