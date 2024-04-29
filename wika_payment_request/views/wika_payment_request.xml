@@ -118,7 +118,7 @@
                                             <field name="invoice_date" string="Document Date"/>
                                             <field name="invoice_date_due"/>
                                             <field name="total_partial_pr" string="Amount Request"/>
-                                            <!-- <field name="sisa_partial"/> -->
+                                            <field name="sisa_partial"/>
                                             <field name="is_partial_pr"/>
                                             <field name="status_payment"/>
                                         </tree>

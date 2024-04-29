@@ -94,7 +94,12 @@
                                     attrs="{'readonly': [('state', 'in', [ 'request', 'approve'])], 'invisible': [('check_biro', '=', False)]}"/>
                                 <field name="project_id" 
                                     attrs="{'readonly': [('state', 'in', [ 'request', 'approve'])]}"/>
-                                <field name="is_already_pr" invisible="0"/>
+                                <field name="is_already_pr" invisible="1"/>
+                                <field name="reference"/>
+                                <field name="no_doc_sap"/>
+                                <field name="year"/>
+                                <field name="line_item_char"/>
+                                <field name="remaining_amount" invisible="1"/>
                             </group>
                         </group>
                         <notebook>
