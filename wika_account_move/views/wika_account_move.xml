@@ -11,11 +11,11 @@
                 <header>
                     <button name="action_print_invoice"   attrs="{'invisible': [('is_approval_checked', '=', False)]}" string="Print" type="object" class="oe_highlight"/>
                     <button name="action_submit" string="SUBMIT" type="object" class="oe_highlight"
-                    states="draft,rejected"/>
+                        states="draft,rejected"/>
                     <button name="action_approve" string="APPROVE" type="object" class="btn-success"
-                    states="uploaded"/>
-                     <button name="action_reject" string="REJECT" type="object" class="btn-danger"
-                     states="uploaded"/>
+                        states="uploaded"/>
+                    <button name="action_reject" string="REJECT" type="object" class="btn-danger"
+                        states="uploaded"/>
                     <field name="state" widget="statusbar" statusbar_visible="draft,uploaded,approved"/>
                 </header>
                 <sheet>
@@ -72,7 +72,7 @@
                                 <field name="invoice_line_ids"
                                        widget="section_and_note_one2many"
                                        >
-                                    <tree editable="bottom" create="0" delete="0" string="Journal Items" default_order="sequence, id">
+                                    <tree editable="bottom" create="1" delete="0" string="Journal Items" default_order="sequence, id">
                                         <control>
                                             <create name="add_line_control" string="Add a line"/>
                                             <create name="add_section_control" string="Add a section" context="{'default_display_type': 'line_section'}"/>
@@ -85,17 +85,17 @@
                                                optional="show" readonly="1" force_save="1"
                                                />
                                         <field name="name" string="Item Text"/>
-                                        <field name="quantity" readonly="1" force_save="1"/>
+                                        <field name="quantity" readonly="0" force_save="1"/>
                                         <field name="product_uom_category_id" invisible="1"/>
                                         <field name="product_uom_id" string="UoM" groups="uom.group_uom" readonly="1" force_save="1"/>
-                                        <field name="price_unit" string="Price" readonly="1" force_save="1"/>
+                                        <field name="price_unit" string="Price" readonly="0" force_save="1"/>
                                         <field name="discount" string="Disc.%" optional="hide"/>
                                         <field name="tax_ids" widget="many2many_tags"
                                                optional="show" readonly="1" force_save="1"/>
                                         <field name="price_subtotal"
                                                string="Subtotal"
                                                groups="account.group_show_line_subtotals_tax_excluded"/>
-                                        <field name="amount_sap" readonly="1" force_save="1"/>
+                                        <field name="amount_sap" readonly="0" force_save="1"/>
                                         <field name="price_total"
                                                string="Total"
                                                groups="account.group_show_line_subtotals_tax_included"/>

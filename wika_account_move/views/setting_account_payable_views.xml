@@ -25,6 +25,7 @@
                         <field name="assignment"/>
                         <field name="bill_coa_type" string="COA Type"/>
                         <field name="account_id"/>
+                        <field name="pph_ids" widget="many2many_tags"/>
                     </group>
                 </form>
             </sheet>
