@@ -33,7 +33,7 @@ END AS TAX_BASE_AMOUNT,
         ELSE sp.name
     END AS REF_DOC,
     CASE 
-        WHEN po.po_type != 'JASA' THEN to_char(po.begin_date, 'yyyy')
+        WHEN po.po_type != 'JASA' THEN to_char(sp.date, 'yyyy')
         ELSE ''
     END AS REF_DOC_YEAR,
     CASE 
@@ -77,13 +77,14 @@ LEFT JOIN
 LEFT JOIN
     wika_berita_acara_pembayaran_line bap_line ON bap_line.id = line.bap_line_id
 LEFT JOIN
-    purchase_order_line pol ON pol.id = bap_line.purchase_line_id
-LEFT JOIN
     product_product prod ON prod.id = line.product_id
-LEFT JOIN
-    stock_picking sp ON sp.id = bap_line.picking_id
 left JOIN
     stock_move sm ON sm.id=line.stock_move_id
+LEFT JOIN
+    stock_picking sp ON sp.id = sm.picking_id
+LEFT JOIN
+    purchase_order_line pol ON pol.id = sm.purchase_line_id
 WHERE 
-     inv.is_mp_approved = True AND line.display_type = 'product' and inv.cut_off!=True and inv.invoice_number is null
+     inv.is_mp_approved = True AND line.display_type = 'product' and inv.cut_off!=True and inv.invoice_number is null 
+     AND (line.amount_adjustment > 0 OR line.price_subtotal != 0);
 """
