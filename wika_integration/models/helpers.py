@@ -20,7 +20,7 @@ SELECT
     line.name AS ITEM_TEXT,
     acc.code AS HKONT,
     CASE
-    WHEN inv.retensi_total > 0 THEN CAST(inv.amount_untaxed - inv.retensi_total AS VARCHAR)
+    WHEN inv.retensi_total > 0 THEN CAST(inv.amount_invoice - inv.retensi_total AS VARCHAR)
     ELSE '' 
 END AS TAX_BASE_AMOUNT,
     tax_group.pph_group_code AS WI_TAX_TYPE,
@@ -29,7 +29,7 @@ END AS TAX_BASE_AMOUNT,
     po.name AS PO_NUMBER,
     pol.sequence AS PO_ITEM,
     CASE
-        WHEN sp.pick_type = 'SES' THEN sp.origin
+        WHEN sp.pick_type = 'ses' THEN ''
         ELSE sp.name
     END AS REF_DOC,
     CASE 
