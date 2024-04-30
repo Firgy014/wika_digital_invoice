@@ -223,173 +223,158 @@ class PurchaseOrderInherit(models.Model):
             "IV_EBELN": "%s",
             "IV_REVERSE": "O",
             "IW_CPUDT_RANGE": {
-                "CPUDT_LOW": "%s",
+                "CPUDT_LOW": "",
                 "CPUTM_LOW": "00:00:00",
-                "CPUDT_HIGH": "2025-12-31",
+                "CPUDT_HIGH": "",
                 "CPUTM_HIGH": "23:59:59"
             }
-        }) % (self.name, self.begin_date)
+        }) % (self.name)
         payload = payload.replace('\n', '')
         print(payload)
         try:
             response = requests.request("GET", url_config, data=payload, headers=headers)
             txt = json.loads(response.text)
-
-            #raise UserError(_("Connection Failed. Please Check Your Internet Connection."))
-            if self.po_type != 'JASA':
-                if txt['DATA']:
-                    txt_data = sorted(txt['DATA'], key=lambda x: x["MAT_DOC"])
-                    mat_doc_dict = {}
-                    for hasil in txt_data:
-                        mat_doc = hasil["MAT_DOC"]
-                        if mat_doc in mat_doc_dict:
-                            # Append the item to the existing list
-                            mat_doc_dict[mat_doc].append(hasil)
-                        else:
-                            # Create a new list with the current item
-                            mat_doc_dict[mat_doc] = [hasil]
-                    for mat_doc, items in mat_doc_dict.items():
-                        vals = []
-                        for item in items:
-                            # if item['REVERSE']=='X':
-                            #     active=False
-                            # else:
-                            #     active = True
-                            picking = self.env['stock.picking'].sudo().search([
-                                ('name', '=', mat_doc),('po_id','=',self.id)], limit=1)
-                            if picking:
-                                pass
-                            else:
-                                prod = self.env['product.product'].sudo().search([
-                                            ('default_code', '=', item['MATERIAL'])], limit=1)
-                                qty = float(item['QUANTITY']) * 100
-                                uom = self.env['uom.uom'].sudo().search([
-                                            ('name', '=', item['ENTRY_UOM'])], limit=1)
-                                if not uom:
-                                    uom = self.env['uom.uom'].sudo().create({
-                                        'name': hasil['ENTRY_UOM'], 'category_id': 1})
-                                po_line= self.env['purchase.order.line'].sudo().search([
-                                         ('order_id', '=' ,self.id),('sequence','=',item['PO_ITEM'])] ,limit=1)
-                                vals.append((0, 0, {
-                                    'sequence':item['MATDOC_ITM'],
-                                    'product_id': prod.id if prod else False,
-                                    'quantity_done': float(item['QUANTITY']),
-                                    'product_uom_qty': float(item['QUANTITY']),
-                                    'product_uom': uom.id,
-                                    #'active':active,
-                                    'state':'waits',
-                                    'location_id': 4,
-                                    'location_dest_id': 8,
-                                    'purchase_line_id':po_line.id,
-                                    'name': hasil['PO_NUMBER']
-                                }))
-                                docdate = hasil['DOC_DATE']
-                            if vals:
-                                picking_create = self.env['stock.picking'].sudo().create({
-                                    'name': mat_doc,
-                                    'po_id': self.id,
-                                    'purchase_id':self.id,
-                                    'project_id': self.project_id.id,
-                                    'branch_id': self.branch_id.id,
-                                    'department_id': self.department_id.id if self.department_id.id else False,
-                                    'scheduled_date': docdate,
-                                    'start_date': docdate,
-                                    'partner_id': self.partner_id.id,
-                                    'location_id': 4,
-                                    'location_dest_id': 8,
-                                    'picking_type_id': 1,
-                                    'move_ids': vals,
-                                    'pick_type': 'gr',
-                                    #'move_ids_without_package':vals,
-                                    'company_id': 1,
-                                    'state': 'waits'
-                                })
-                        else:
-                            pass
-                            #raise UserError(_("Data GR Tidak Tersedia di PO TERSEBUT!"))
-                else:
-                    pass
-                    #raise UserError(_("Data GR Tidak Tersedia!"))
-            else:
-                if txt['DATA']:
-                    txt_data = sorted(txt['DATA'], key=lambda x: x["MAT_DOC"])
-                    mat_doc_dict = {}
-                    ses_number_dict = {}
-                    for hasil in txt_data:
-                        mat_doc = hasil["MAT_DOC"]
-                        ses_number = hasil["SES_NUMBER"]
-                        if ses_number in ses_number_dict:
-                            # Append the item to the existing list
-                            ses_number_dict[ses_number].append(hasil)
-                        else:
-                            # Create a new list with the current item
-                            ses_number_dict[ses_number] = [hasil]
-                    for ses_number, items in ses_number_dict.items():
-                        vals = []
-                        for item in items:
-                            # if item['REVERSE'] == 'X':
-                            #     active = False
-                            # else:
-                            #     active = True
-                            picking = self.env['stock.picking'].sudo().search([
-                                ('origin', '=', mat_doc),('name', '=', ses_number),('po_id','=',self.id)], limit=1)
-                            if picking:
-                                pass
-                            prod = self.env['product.product'].sudo().search([
-                                ('default_code', '=', item['MATERIAL'])], limit=1)
-                            qty = float(item['QUANTITY']) * 100
-                            uom = self.env['uom.uom'].sudo().search([
-                                ('name', '=', item['ENTRY_UOM'])], limit=1)
-                            if not uom:
-                                uom = self.env['uom.uom'].sudo().create({
-                                    'name': hasil['ENTRY_UOM'], 'category_id': 1})
-                            po_line = self.env['purchase.order.line'].sudo().search([
-                                ('order_id', '=', self.id), ('sequence', '=', item['PO_ITEM'])], limit=1)
-                            vals.append((0, 0, {
-                                'sequence': item['MATDOC_ITM'],
-                                'product_id': prod.id if prod else False,
-                                'quantity_done': float(item['QUANTITY']),
-                                'product_uom_qty': float(item['QUANTITY']),
-                                'product_uom': uom.id,
-                                #'active': active,
-                                'state':'waits',
-                                'location_id': 4,
-                                'location_dest_id': 8,
-                                'purchase_line_id': po_line.id,
-                                'name': hasil['PO_NUMBER']
-                            }))
-                            docdate = hasil['DOC_DATE']
-                            matdoc = item['MAT_DOC']
-                        if vals:
-                            picking_create = self.env['stock.picking'].sudo().create({
-                                'name': ses_number,
-                                'po_id': self.id,
-                                'purchase_id': self.id,
-                                'project_id': self.project_id.id,
-                                'branch_id': self.branch_id.id,
-                                'department_id': self.department_id.id if self.department_id.id else False,
-                                'scheduled_date': docdate,
-                                'start_date': docdate,
-                                'partner_id': self.partner_id.id,
-                                'location_id': 4,
-                                'location_dest_id': 8,
-                                'picking_type_id': 1,
-                                'move_ids': vals,
-                                'pick_type': 'ses',
-                                'origin':matdoc,
-                                #'move_ids_without_package':vals,
-                                'company_id': 1,
-                                'state': 'waits'
-                            })
-                        else:
-                            pass
-                            #raise UserError(_("Data GR Tidak Tersedia di PO TERSEBUT!"))
-
-                else:
-                    pass
-                    #raise UserError(_("Data GR Tidak Tersedia!"))
         except:
-            pass
+            raise UserError(_("Connection Failed. Please Check Your Internet Connection."))
+        if self.po_type != 'JASA':
+            if txt['DATA']:
+                txt_data = sorted(txt['DATA'], key=lambda x: x["MAT_DOC"])
+                mat_doc_dict = {}
+                for hasil in txt_data:
+                    mat_doc = hasil["MAT_DOC"]
+                    if mat_doc in mat_doc_dict:
+                        # Append the item to the existing list
+                        mat_doc_dict[mat_doc].append(hasil)
+                    else:
+                        # Create a new list with the current item
+                        mat_doc_dict[mat_doc] = [hasil]
+                for mat_doc, items in mat_doc_dict.items():
+                    vals = []
+                    for item in items:
+                        # if item['REVERSE']=='X':
+                        #     active=False
+                        # else:
+                        #     active = True
+                        prod = self.env['product.product'].sudo().search([
+                                    ('default_code', '=', item['MATERIAL'])], limit=1)
+                        qty = float(item['QUANTITY']) * 100
+                        uom = self.env['uom.uom'].sudo().search([
+                                    ('name', '=', item['ENTRY_UOM'])], limit=1)
+                        if not uom:
+                            uom = self.env['uom.uom'].sudo().create({
+                                'name': hasil['ENTRY_UOM'], 'category_id': 1})
+                        po_line= self.env['purchase.order.line'].sudo().search([
+                                 ('order_id', '=' ,self.id),('sequence','=',item['PO_ITEM'])] ,limit=1)
+                        vals.append((0, 0, {
+                            'sequence':item['MATDOC_ITM'],
+                            'product_id': prod.id if prod else False,
+                            'quantity_done': float(item['QUANTITY']),
+                            'product_uom_qty': float(item['QUANTITY']),
+                            'product_uom': uom.id,
+                            #'active':active,
+                            'state':'waits',
+                            'location_id': 4,
+                            'location_dest_id': 8,
+                            'purchase_line_id':po_line.id,
+                            'name': hasil['PO_NUMBER']
+                        }))
+                        docdate = hasil['DOC_DATE']
+                    if vals:
+                        picking_create = self.env['stock.picking'].sudo().create({
+                            'name': mat_doc,
+                            'po_id': self.id,
+                            'purchase_id':self.id,
+                            'project_id': self.project_id.id,
+                            'branch_id': self.branch_id.id,
+                            'department_id': self.department_id.id if self.department_id.id else False,
+                            'scheduled_date': docdate,
+                            'start_date': docdate,
+                            'partner_id': self.partner_id.id,
+                            'location_id': 4,
+                            'location_dest_id': 8,
+                            'picking_type_id': 1,
+                            'move_ids': vals,
+                            'pick_type': 'gr',
+                            #'move_ids_without_package':vals,
+                            'company_id': 1,
+                            'state': 'waits'
+                        })
+                    else:
+                        raise UserError(_("Data GR Tidak Tersedia di PO TERSEBUT!"))
+            else:
+                raise UserError(_("Data GR Tidak Tersedia!"))
+        else:
+            if txt['DATA']:
+                txt_data = sorted(txt['DATA'], key=lambda x: x["MAT_DOC"])
+                mat_doc_dict = {}
+                ses_number_dict = {}
+                for hasil in txt_data:
+                    mat_doc = hasil["MAT_DOC"]
+                    ses_number = hasil["SES_NUMBER"]
+                    if ses_number in ses_number_dict:
+                        # Append the item to the existing list
+                        ses_number_dict[ses_number].append(hasil)
+                    else:
+                        # Create a new list with the current item
+                        ses_number_dict[ses_number] = [hasil]
+                for ses_number, items in ses_number_dict.items():
+                    vals = []
+                    for item in items:
+                        # if item['REVERSE'] == 'X':
+                        #     active = False
+                        # else:
+                        #     active = True
+                        prod = self.env['product.product'].sudo().search([
+                            ('default_code', '=', item['MATERIAL'])], limit=1)
+                        qty = float(item['QUANTITY']) * 100
+                        uom = self.env['uom.uom'].sudo().search([
+                            ('name', '=', item['ENTRY_UOM'])], limit=1)
+                        if not uom:
+                            uom = self.env['uom.uom'].sudo().create({
+                                'name': hasil['ENTRY_UOM'], 'category_id': 1})
+                        po_line = self.env['purchase.order.line'].sudo().search([
+                            ('order_id', '=', self.id), ('sequence', '=', item['PO_ITEM'])], limit=1)
+                        vals.append((0, 0, {
+                            'sequence': item['MATDOC_ITM'],
+                            'product_id': prod.id if prod else False,
+                            'quantity_done': float(item['QUANTITY']),
+                            'product_uom_qty': float(item['QUANTITY']),
+                            'product_uom': uom.id,
+                            #'active': active,
+                            'state':'waits',
+                            'location_id': 4,
+                            'location_dest_id': 8,
+                            'purchase_line_id': po_line.id,
+                            'name': hasil['PO_NUMBER']
+                        }))
+                        docdate = hasil['DOC_DATE']
+                        matdoc = item['MAT_DOC']
+                    if vals:
+                        picking_create = self.env['stock.picking'].sudo().create({
+                            'name': ses_number,
+                            'po_id': self.id,
+                            'purchase_id': self.id,
+                            'project_id': self.project_id.id,
+                            'branch_id': self.branch_id.id,
+                            'department_id': self.department_id.id if self.department_id.id else False,
+                            'scheduled_date': docdate,
+                            'start_date': docdate,
+                            'partner_id': self.partner_id.id,
+                            'location_id': 4,
+                            'location_dest_id': 8,
+                            'picking_type_id': 1,
+                            'move_ids': vals,
+                            'pick_type': 'ses',
+                            'origin':matdoc,
+                            #'move_ids_without_package':vals,
+                            'company_id': 1,
+                            'state': 'waits'
+                        })
+                    else:
+                        raise UserError(_("Data GR Tidak Tersedia di PO TERSEBUT!"))
+
+            else:
+                raise UserError(_("Data GR Tidak Tersedia!"))
 
     def assign_todo_first(self):
         model_model = self.env['ir.model'].sudo()
