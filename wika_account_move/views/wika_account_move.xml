@@ -16,6 +16,7 @@
                     states="uploaded"/>
                      <button name="action_reject" string="REJECT" type="object" class="btn-danger"
                      states="uploaded"/>
+                      <button name="compute_account_payable" string="GET COA" type="object"  groups="base.group_no_one"/>
                     <field name="state" widget="statusbar" statusbar_visible="draft,uploaded,approved"/>
                 </header>
                 <sheet>

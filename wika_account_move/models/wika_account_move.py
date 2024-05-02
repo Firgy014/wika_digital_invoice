@@ -3,6 +3,8 @@ from odoo.exceptions import UserError, ValidationError, Warning, AccessError
 from datetime import datetime,timedelta
 import math
 from odoo.tools.float_utils import float_compare
+from dateutil.relativedelta import relativedelta
+
 class WikaInheritedAccountMove(models.Model):
     _inherit = 'account.move'
 
@@ -178,7 +180,7 @@ class WikaInheritedAccountMove(models.Model):
     retensi_total = fields.Float(string='Total Retensi', compute='_compute_potongan_total', store= True)
     total_tax = fields.Monetary(string='Total Tax', compute='compute_total_tax')
 
-    amount_total_payment = fields.Float(string='Total Invoice', compute='_compute_amount_total_payment', store=True)
+    amount_total_payment = fields.Float(string='Amount Invoice', compute='_compute_amount_total_payment', store=True)
     total_line = fields.Float(string='Total Line', compute='_compute_total_line')
     is_approval_checked = fields.Boolean(string="Approval Checked", compute='_compute_is_approval_checked')
     is_mp_approved = fields.Boolean(string='Approved by MP', default=False, store=True)
@@ -242,10 +244,10 @@ class WikaInheritedAccountMove(models.Model):
             if persentage_retensi >0:
                 x.retensi_total = (x.total_line / 100 ) * persentage_retensi
 
-    @api.depends('total_line', 'dp_total', 'retensi_total','total_pph','total_tax')
+    @api.depends('total_line', 'dp_total', 'retensi_total','total_tax')
     def _compute_amount_total_payment(self):
         for x in self:
-            x.amount_total_payment= x.total_line-x.dp_total-x.retensi_total + x.total_tax -x.total_pph
+            x.amount_total_payment= x.total_line-x.dp_total-x.retensi_total + x.total_tax
 
     def _compute_documents_count(self):
         for record in self:
@@ -332,6 +334,25 @@ class WikaInheritedAccountMove(models.Model):
     def _compute_amount_total(self):
         for move in self:
             move.amount_total_footer = move.total_line-move.dp_total-move.retensi_total -move.total_pph
+
+    @api.depends('partner_id.bill_coa_type', 'valuation_class','retensi_total')
+    def compute_account_payable(self):
+        for record in self:
+            record.account_id = False
+            if record.level == 'Proyek':
+                level=record.level.lower()
+            else:
+                level='nonproyek'
+            account_setting_model = self.env['wika.setting.account.payable'].sudo().search([
+                    ('valuation_class', '=', record.valuation_class),
+                    ('assignment', '=', level),
+                    ('bill_coa_type', '=', record.partner_id.bill_coa_type)
+                ], limit=1)
+            if account_setting_model:
+                record.account_id = account_setting_model.account_id.id
+            if record.retensi_total>0:
+                record.retention_due=record.invoice_date_due+ relativedelta(months=+6)
+
 
     @api.onchange('partner_id', 'valuation_class')
     def onchange_account_payable(self):
@@ -523,6 +544,7 @@ class WikaInheritedAccountMove(models.Model):
         cek = False
         level=self.level
         if level:
+            self.sudo().compute_account_payable()
             model_id = self.env['ir.model'].search([('model', '=', 'account.move')], limit=1)
             approval_id = self.env['wika.approval.setting'].sudo().search(
                 [('model_id', '=', model_id.id), ('level', '=', level)], limit=1)
@@ -777,7 +799,7 @@ class WikaInheritedAccountMove(models.Model):
                                 if x.user_id.id == self._uid:
                                     x.status = 'approved'
                                     x.action_done()
-                        if not self.is_wizard_cancel:
+                        if self.is_wizard_cancel:
                             self.env['wika.invoice.approval.line'].create({
                                 'user_id': self._uid,
                                 'groups_id': groups_id.id,
