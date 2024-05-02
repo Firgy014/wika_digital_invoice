@@ -118,6 +118,7 @@
                                             <field name="invoice_date" string="Document Date"/>
                                             <field name="invoice_date_due"/>
                                             <field name="total_partial_pr" string="Amount Request"/>
+                                            <field name="sisa_partial"/>
                                             <field name="is_partial_pr"/>
                                             <field name="status_payment"/>
                                         </tree>
@@ -129,6 +130,8 @@
                                 <group>
                                     <field name="move_ids" mode="tree" nolabel="1"  colspan="2" >
                                         <tree>
+                                            <field name="invoice_id"/>
+                                            <field name="partial_id"/>
                                             <field name="branch_id"/>
                                             <field name="project_id"/>
                                             <field name="partner_id"/>
