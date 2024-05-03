@@ -72,7 +72,7 @@
                                 <field name="invoice_line_ids"
                                        widget="section_and_note_one2many"
                                        >
-                                    <tree editable="bottom" create="1" delete="0" string="Journal Items" default_order="sequence, id">
+                                    <tree editable="bottom" create="0" delete="0" string="Journal Items" default_order="sequence, id">
                                         <control>
                                             <create name="add_line_control" string="Add a line"/>
                                             <create name="add_section_control" string="Add a section" context="{'default_display_type': 'line_section'}"/>
@@ -145,7 +145,7 @@
                                 <field name="payment_method" groups="base.group_no_one"/>
                                 <field name="approval_stage" readonly="1" force_save="1"/>
                                 <field name="baseline_date" groups="base.group_no_one"/>
-
+                                
                                 <field name="invoice_number" groups="base.group_no_one"/>
                                 <field name="partner_bank_id" string="Bank Account"/>
                                 <field name="account_id" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>

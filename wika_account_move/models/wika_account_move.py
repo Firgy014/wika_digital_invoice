@@ -761,7 +761,7 @@ class WikaInheritedAccountMove(models.Model):
                                 'note': 'Verified',
                                 'invoice_id': self.id,
                                 'information': keterangan if approval_line_id.check_approval else False,
-                                'is_show_wizard': True if approval_line_id.check_approval else False,                            'is_show_wizard': True if approval_line_id.check_approval else False,
+                                'is_show_wizard': True if approval_line_id.check_approval else False,                            
 
                             })
                         if approval_line_id.check_approval:
