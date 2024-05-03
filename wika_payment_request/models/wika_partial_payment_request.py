@@ -22,7 +22,6 @@ class WikaPartialPaymentRequest(models.Model):
     invoice_id  = fields.Many2one(comodel_name='account.move',domain=[('state','=','approved')])
     partner_id  = fields.Many2one(comodel_name='res.partner')
     total_invoice = fields.Float(string='Total Invoice')
-    # partial_amount=fields.Float(string='Partial Amount Request')
     sisa_partial_amount = fields.Float(string='Sisa Partial Invoice')
     level = fields.Selection([
         ('Proyek', 'Proyek'),
@@ -49,6 +48,11 @@ class WikaPartialPaymentRequest(models.Model):
     line_item_char = fields.Char('Line Item Char')
     partial_amount = fields.Float(string='Partial Amount')
     remaining_amount = fields.Float(string='Remaining Amount', compute='_compute_remaining_amount')
+    payment_state = fields.Selection([
+        ('not request', 'Not Request'),
+        ('requested', 'Requested'),
+    ], string='Payment State')
+    payment_request_id = fields.Many2one('wika.payment.request', string='field_name')
 
     @api.depends('total_invoice', 'partial_amount')
     def _compute_remaining_amount(self):
@@ -307,7 +311,7 @@ class WikaPartialPaymentRequest(models.Model):
                     previous_partial_name = self.name
                     previous_sequence_number = int(previous_partial_name.split('/')[-1])
                     new_sequence_number = previous_sequence_number + 1
-                    new_name = f"Partial/{new_sequence_number:04d}"
+                    new_name = f"Partial/{new_sequence_number:05d}"
 
                     remaining_total = self.remaining_amount
                     new_partial = self.env['wika.partial.payment.request'].create({
@@ -452,11 +456,11 @@ class WikaPartialPaymentRequest(models.Model):
 
 
 
-    def unlink(self):
-        for record in self:
-            if record.state !='draft':
-                raise ValidationError('Tidak dapat menghapus ketika status Payment Request dalam keadaan Request atau Approve')
-        return super(WikaPartialPaymentRequest, self).unlink()
+    # def unlink(self):
+    #     for record in self:
+    #         if record.state !='draft':
+    #             raise ValidationError('Tidak dapat menghapus ketika status Payment Request dalam keadaan Request atau Approve')
+    #     return super(WikaPartialPaymentRequest, self).unlink()
 
 class WikaPrDocumentLine(models.Model):
     _name = 'wika.partial.document.line'

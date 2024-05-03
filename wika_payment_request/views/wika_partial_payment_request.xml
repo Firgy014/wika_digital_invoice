@@ -99,7 +99,8 @@
                                 <field name="no_doc_sap"/>
                                 <field name="year"/>
                                 <field name="line_item_char"/>
-                                <field name="remaining_amount" invisible="1"/>
+                                <field name="remaining_amount" invisible="0"/>
+                                <field name="payment_state"/>
                             </group>
                         </group>
                         <notebook>

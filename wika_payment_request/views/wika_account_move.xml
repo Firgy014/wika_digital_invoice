@@ -30,7 +30,7 @@
             <field name="inherit_id" ref="wika_account_move.view_wika_account_move_tree"/>
             <field name="arch" type="xml">
                 <xpath expr="//field[@name='approval_stage']" position="after">
-                        <field name="status_payment" />
+                    <field name="status_payment" />
                 </xpath>
             </field>
         </record>
