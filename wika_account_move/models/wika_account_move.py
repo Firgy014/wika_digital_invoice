@@ -378,6 +378,33 @@ class WikaInheritedAccountMove(models.Model):
             pass
         return record
 
+    def _replace_document_object(self, folder_name, document_ids, po_id):
+        documents_model = self.env['documents.document'].sudo()
+        folder_id = self.env['documents.folder'].sudo().search([('name', '=', folder_name)], limit=1)
+        if folder_id:
+            facet_id = self.env['documents.facet'].sudo().search([
+                ('name', '=', 'Documents'),
+                ('folder_id', '=', folder_id.id)
+            ], limit=1)
+            for doc in document_ids:
+                attachment_id = self.env['ir.attachment'].sudo().create({
+                    'name': doc.filename,
+                    'datas': doc.document,
+                    'res_model': 'documents.document',
+                })
+                if attachment_id:
+                    tag = self.env['documents.tag'].sudo().search([
+                            ('facet_id', '=', facet_id.id),
+                            ('name', '=', doc.document_id.name)
+                        ], limit=1)
+                    documents_model.create({
+                        'attachment_id': attachment_id.id,
+                        'folder_id': folder_id.id,
+                        'tag_ids': tag.ids,
+                        'partner_id': po_id.partner_id.id,
+                        'purchase_id': po_id.id,
+                        'is_po_doc': True
+                    })
 
     @api.constrains('amount_invoice', 'cut_off')
     def check_amount_equal(self):
@@ -493,9 +520,10 @@ class WikaInheritedAccountMove(models.Model):
                 raise ValidationError('Document belum di unggah, mohon unggah file terlebih dahulu!')
         for record in self:
             if any(line.state =='rejected' for line in record.document_ids):
-                raise ValidationError('Document belum di ubah setelah reject, silahkan cek terlebih dahulu!')
+                raise ValidationError('Document belum di ubah setelah di-reject, silahkan cek terlebih dahulu!')
         cek = False
         level=self.level
+        documents_model = self.env['documents.document'].sudo()
         if level:
             model_id = self.env['ir.model'].search([('model', '=', 'account.move')], limit=1)
             approval_id = self.env['wika.approval.setting'].sudo().search(
@@ -529,6 +557,33 @@ class WikaInheritedAccountMove(models.Model):
                     'note': 'Submit Document',
                     'invoice_id': self.id
                 })
+                folder_id = self.env['documents.folder'].sudo().search([('name', '=', 'Invoicing')], limit=1)
+                if folder_id:
+                    facet_id = self.env['documents.facet'].sudo().search([
+                        ('name', '=', 'Documents'),
+                        ('folder_id', '=', folder_id.id)
+                    ], limit=1)
+                    for doc in self.document_ids.filtered(lambda x: x.state in ('uploaded', 'rejected')):
+                        # doc.state = 'verified'
+                        attachment_id = self.env['ir.attachment'].sudo().create({
+                            'name': doc.filename,
+                            'datas': doc.document,
+                            'res_model': 'documents.document',
+                        })
+                        if attachment_id:
+                            tag = self.env['documents.tag'].sudo().search([
+                                ('facet_id', '=', facet_id.id),
+                                ('name', '=', doc.document_id.name)
+                            ], limit=1)
+                            documents_model.create({
+                                'attachment_id': attachment_id.id,
+                                'folder_id': folder_id.id,
+                                'tag_ids': tag.ids,
+                                'partner_id': self.partner_id.id,
+                                'purchase_id': self.bap_id.po_id.id,
+                                'invoice_id': self.id,
+
+                            })
                 groups_line = self.env['wika.approval.setting.line'].search([
                     ('level', '=', level),
                     ('sequence', '=', self.step_approve),
@@ -637,45 +692,85 @@ class WikaInheritedAccountMove(models.Model):
                         cek = True
 
         if cek == True:
-            
             if is_mp == True:
                 self.is_mp_approved = True
-
             if approval_id.total_approve == self.step_approve:
                 self.state = 'approved'
                 self.approval_stage = 'Pusat'
-                if is_mp:
-                    self.baseline_date = datetime.now()
-                folder_id = self.env['documents.folder'].sudo().search([('name', '=', 'Invoicing')], limit=1)
-                # print("TESTTTTTTTTTTTTTTTTTTTTT", folder_id)
-                if folder_id:
-                    facet_id = self.env['documents.facet'].sudo().search([
-                        ('name', '=', 'Documents'),
-                        ('folder_id', '=', folder_id.id)
-                    ], limit=1)
-                    # print("TESTTTTTTTTTERRRRRRR", facet_id)
-                    for doc in self.document_ids.filtered(lambda x: x.state in ('uploaded', 'rejected')):
-                        doc.state = 'verified'
-                        attachment_id = self.env['ir.attachment'].sudo().create({
-                            'name': doc.filename,
-                            'datas': doc.document,
-                            'res_model': 'documents.document',
-                        })
-                        # print("SSSIIIIUUUUUUUUUUUUUUUUUU", attachment_id)
-                        if attachment_id:
-                            tag = self.env['documents.tag'].sudo().search([
-                                ('facet_id', '=', facet_id.id),
-                                ('name', '=', doc.document_id.name)
-                            ], limit=1)
-                            documents_model.create({
-                                'attachment_id': attachment_id.id,
-                                'folder_id': folder_id.id,
-                                'tag_ids': tag.ids,
-                                'partner_id': self.partner_id.id,
-                                'purchase_id': self.bap_id.po_id.id,
-                                'invoice_id': self.id,
+                # folder_id = self.env['documents.folder'].sudo().search([('name', '=', 'Invoicing')], limit=1)
+                # if folder_id:
+                #     facet_id = self.env['documents.facet'].sudo().search([
+                #         ('name', '=', 'Documents'),
+                #         ('folder_id', '=', folder_id.id)
+                #     ], limit=1)
+                #     for doc in self.document_ids.filtered(lambda x: x.state in ('uploaded', 'rejected')):
+                #         doc.state = 'verified'
+                #         attachment_id = self.env['ir.attachment'].sudo().create({
+                #             'name': doc.filename,
+                #             'datas': doc.document,
+                #             'res_model': 'documents.document',
+                #         })
+                #         if attachment_id:
+                #             tag = self.env['documents.tag'].sudo().search([
+                #                 ('facet_id', '=', facet_id.id),
+                #                 ('name', '=', doc.document_id.name)
+                #             ], limit=1)
+                #             documents_model.create({
+                #                 'attachment_id': attachment_id.id,
+                #                 'folder_id': folder_id.id,
+                #                 'tag_ids': tag.ids,
+                #                 'partner_id': self.partner_id.id,
+                #                 'purchase_id': self.bap_id.po_id.id,
+                #                 'invoice_id': self.id,
+                #             })
+                # replace docsss
+                for doc in self.document_ids:
+                    if doc.document_id.name == 'Kontrak' and doc.document:
+                        for doc_po in self.po_id.document_ids:
+                            bap_fname = doc.filename
+                            if doc_po.document_id.name == 'Kontrak':
+                                po_fname = doc_po.filename
+                                if bap_fname != po_fname:
+                                    doc_po.update({
+                                        'document': doc.document,
+                                        'filename': f'[Revised by {self.env.user.name}]' + ' ' + doc.filename,
+                                        'state': 'verified'
+                                    })
+                                    self._replace_document_object(folder_name='PO', document_ids=self.document_ids, po_id=self.po_id)
+                
+                    elif doc.document_id.name in ['GR', 'Surat Jalan', 'SES'] and doc.document:
+                        for doc_grses in self.bap_id.bap_ids.picking_id.document_ids:
+                            if doc_grses.state == 'rejected':
+                                # for docbap in self.bap_id.document_ids:
+                                #     if docbap.picking_id.name == doc_grses.picking_id.name and doc.document_id.name == doc_grses.document_id.name:
+                                bap_fname = doc.filename
+                                grses_fname = doc_grses.filename
+                                if bap_fname != grses_fname:
+                                    doc_grses.update({
+                                        'document': doc.document,
+                                        'filename': f'[Revised by {self.env.user.name}]' + ' ' + doc.filename,
+                                        'state': 'verified'
+                                    })
+                                    self._replace_document_object(folder_name='GR/SES', document_ids=self.document_ids, po_id=self.po_id)
 
-                            })
+
+                    if doc.document_id.name == 'BAP' and doc.document:
+                        for doc_bap in self.bap_id.document_ids:
+                            inv_fname = doc.filename
+                            if doc_bap.document_id.name == 'BAP':
+                                bap_fname = doc_bap.filename
+                                if inv_fname != bap_fname:
+                                    doc_bap.update({
+                                        'document': doc.document,
+                                        'filename': f'[Revised by {self.env.user.name}]' + ' ' + doc.filename,
+                                        'state': 'verified'
+                                    })
+                                    self._replace_document_object(folder_name='BAP', document_ids=self.document_ids, po_id=self.po_id)
+       
+                
+                for doc in self.document_ids.filtered(lambda x: x.state in ('uploaded','rejected')):
+                    doc.state = 'verified'
+                    
                 if self.activity_ids:
                     for x in self.activity_ids.filtered(lambda x: x.status != 'approved'):
                         if x.user_id.id == self._uid:
@@ -1178,14 +1273,11 @@ class WikaInheritedAccountMove(models.Model):
             raise ValidationError('User Akses Anda tidak berhak Reject!')
 
 
-
-
     def unlink(self):
         for record in self:
             if record.state in ('upload', 'approve'):
                 raise ValidationError('Tidak dapat menghapus ketika status Vendor Bils dalam keadaan Upload atau Approve')
         return super(WikaInheritedAccountMove, self).unlink()
-
 
 
     def action_print_invoice(self):

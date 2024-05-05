@@ -281,32 +281,35 @@ export class OwlSalesDashboard extends Component {
                 late:3,
 
                 url: {
+                    total:"/web/po/total",
                     wait:"/web/po/waits",
                     upload:"/web/po/uploads",
                     late:"/web/po/lates",
                 },
             },
-
+            
             grses: {
                 total:100,
                 waits:1,
                 uploaded:2,
                 late:3,
-
+                
                 url: {
+                    total:"/web/grses/total",
                     wait:"/web/grses/waits",
                     upload:"/web/grses/uploads",
                     late:"/web/grses/lates",
                 },
             },
-
+            
             bap: {
                 total:100,
                 waits:1,
                 uploaded:2,
                 late:3,
-
+                
                 url: {
+                    total:"/web/bap/total",
                     wait:"/web/bap/waits",
                     upload:"/web/bap/uploads",
                     late:"/web/bap/lates",
@@ -320,6 +323,7 @@ export class OwlSalesDashboard extends Component {
                 late:3,
 
                 url: {
+                    total:"/web/inv/total",
                     wait:"/web/inv/waits",
                     upload:"/web/inv/uploads",
                     late:"/web/inv/lates",
@@ -513,8 +517,12 @@ export class OwlSalesDashboard extends Component {
 
     // === PO COUNTERS ===
     async getTotalPO(){
+        const menuIdPo = await this.orm.search("ir.ui.menu", [['name', '=', 'Purchase Orders']], { limit: 1 })
+        const actionIdPo = await this.orm.search("ir.actions.act_window", [['context', '=', "{'default_state':'po'}"]])
+        
         const dataTotal = await this.orm.searchCount("purchase.order", [])
         this.state.po.total = dataTotal
+        this.state.po.url.total = `/web#action=${actionIdPo[0]}&model=purchase.order&view_type=list&cids=1&menu_id=${menuIdPo[0]}`
     }
     async getWaitingPO(){
         let domainWaiting = [
@@ -547,8 +555,12 @@ export class OwlSalesDashboard extends Component {
 
     // === GRSES COUNTERS ===
     async getTotalGRSES(){
+        const menuIdGr = await this.orm.search("ir.ui.menu", [['name', '=', 'GR/SES']], { limit: 1 })
+        const actionIdGr = await this.orm.search("ir.actions.act_window", [['context', '=', "{'default_state':'waits'}"]])
+        
         const dataTotal = await this.orm.searchCount("stock.picking", [])
         this.state.grses.total = dataTotal
+        this.state.grses.url.total = `/web#action=${actionIdGr[0]}&model=stock.picking&view_type=list&cids=1&menu_id=${menuIdGr[0]}`
     }
     async getWaitingGRSES(){
         let domainWaiting = [
@@ -580,8 +592,12 @@ export class OwlSalesDashboard extends Component {
     
     // === BAP COUNTERS ===
     async getTotalBAP(){
+        const menuIdBap = await this.orm.search("ir.ui.menu", [['name', '=', 'BAP']], { limit: 1 })
+        const actionIdBap = await this.orm.search("ir.actions.act_window", [['res_model', '=', 'wika.berita.acara.pembayaran']])
+        
         const dataTotal = await this.orm.searchCount("wika.berita.acara.pembayaran", [])
         this.state.bap.total = dataTotal
+        this.state.bap.url.total = `/web#action=${actionIdBap[0]}&model=wika.berita.acara.pembayaran&view_type=list&cids=1&menu_id=${menuIdBap[0]}`
     }
     async getWaitingBAP(){
         let domainWaiting = [
@@ -613,8 +629,12 @@ export class OwlSalesDashboard extends Component {
 
     // === INVOICE COUNTERS ===
     async getTotalINV(){
+        const menuIdInv = await this.orm.search("ir.ui.menu", [['name', '=', 'Invoice']], { limit: 1 })
+        const actionIdInv = await this.orm.search("ir.actions.act_window", [['context', '=', "{'default_move_type': 'in_invoice'}"]])
+        
         const dataTotal = await this.orm.searchCount("account.move", [])
         this.state.inv.total = dataTotal
+        this.state.inv.url.total = `/web#action=${actionIdInv[0]}&model=account.move&view_type=list&cids=1&menu_id=${menuIdInv[0]}`
     }
     async getWaitingINV(){
         let domainWaiting = [
@@ -801,7 +821,6 @@ export class OwlSalesDashboard extends Component {
             let url = `/web#model=mail.activity&view_type=list&action=${existingAction}&menu_id=${menuId}`
             this.state.po.url.late = url
         }
-        console.log("LATE PO URL --->", this.state.po.url.late)
     }
     // === PO URL BUILDERS ===
     
@@ -880,7 +899,6 @@ export class OwlSalesDashboard extends Component {
             let url = `/web#model=mail.activity&view_type=list&action=${existingAction}&menu_id=${menuId}`
             this.state.grses.url.late = url
         }
-        console.log("LATE GR URL --->", this.state.grses.url.late)
     }
     // === GRSES URL BUILDERS ===
 
@@ -959,7 +977,6 @@ export class OwlSalesDashboard extends Component {
             let url = `/web#model=mail.activity&view_type=list&action=${existingAction}&menu_id=${menuId}`
             this.state.bap.url.late = url
         }
-        console.log("LATE BAP URL --->", this.state.bap.url.late)
     }
     // === BAP URL BUILDERS ===
 
@@ -1038,7 +1055,6 @@ export class OwlSalesDashboard extends Component {
             let url = `/web#model=mail.activity&view_type=list&action=${existingAction}&menu_id=${menuId}`
             this.state.inv.url.late = url
         }
-        console.log("LATE INV URL --->", this.state.inv.url.late)
     }
     // === INV URL BUILDERS ===
 
@@ -1117,7 +1133,6 @@ export class OwlSalesDashboard extends Component {
             let url = `/web#model=mail.activity&view_type=list&action=${existingAction}&menu_id=${menuId}`
             this.state.pr.url.late = url
         }
-        console.log("LATE PR URL --->", this.state.pr.url.late)
     }
     // === PR URL BUILDERS ===
 

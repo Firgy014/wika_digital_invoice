@@ -6,24 +6,28 @@
             <div class="shadow-sm border m-2 p-4 bg-white text-center cursor-pointer">
                 <div class="h1 fw-bold text-dark" style="font-size: 48px">
                     <t t-if="props.name === 'Purchase Orders'">
-                        <i class="fa fa-file-text" style="margin-right: 10px;"></i>
+                        <i class="fa fa-file-text" style="margin-right: 10px; color: #1944ff;"></i>
+                        <a t-attf-href="{{props.urltotalpo}}" t-attf-style="color: #1944ff;"><span t-esc="props.totalpo" style="color: #1944ff;"/></a>
                     </t>
                     <t t-elif="props.name === 'GR/SES'">
-                        <i class="fa fa-archive" style="margin-right: 10px;"></i>
+                        <i class="fa fa-archive" style="margin-right: 10px; color: #1944ff;"></i>
+                        <a t-attf-href="{{props.urltotalgrses}}" t-attf-style="color: #1944ff;"><span t-esc="props.totalgr" style="color: #1944ff;"/></a>
                     </t>
                     <t t-elif="props.name === 'BAP'">
-                        <i class="fa fa-files-o" style="margin-right: 10px;"></i>
+                        <i class="fa fa-files-o" style="margin-right: 10px; color: #1944ff;"></i>
+                        <a t-attf-href="{{props.urltotalbap}}" t-attf-style="color: #1944ff;"><span t-esc="props.totalbap" style="color: #1944ff;"/></a>
                     </t>
                     <t t-elif="props.name === 'Invoice'">
-                        <i class="fa fa-money" style="margin-right: 10px;"></i>
+                        <i class="fa fa-money" style="margin-right: 10px; color: #1944ff;"></i>
+                        <a t-attf-href="{{props.urltotalinv}}" t-attf-style="color: #1944ff;"><span t-esc="props.totalinv" style="color: #1944ff;"/></a>
                     </t>
-                    <t t-elif="props.name === 'Pengajuan Pembayaran'">
+                    <!-- <t t-elif="props.name === 'Pengajuan Pembayaran'">
                         <i class="fa fa-credit-card" style="margin-right: 10px;"></i>
-                    </t>
-                    <span t-esc="props.total"/>
+                    </t> -->
+                    <!-- <span t-esc="props.total"/> -->
                 </div>
                 <div class="h3 text-muted">
-                    <span t-esc="props.name"/>
+                    <span t-esc="props.name" style="color: #1944ff;"/>
                 </div>
                 <div class="h3 mt-5">
                     
