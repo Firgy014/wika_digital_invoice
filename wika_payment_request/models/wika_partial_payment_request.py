@@ -19,7 +19,7 @@ class WikaPartialPaymentRequest(models.Model):
     branch_id = fields.Many2one('res.branch', string='Divisi', required=True)
     department_id = fields.Many2one('res.branch', string='Department')
     project_id = fields.Many2one('project.project', string='Project', required=True)
-    invoice_id  = fields.Many2one(comodel_name='account.move',domain=[('state','=','approved')])
+    invoice_id  = fields.Many2one(comodel_name='account.move',domain=[('state','=','approved'), ('sisa_partial', '!=', 0)])
     partner_id  = fields.Many2one(comodel_name='res.partner')
     total_invoice = fields.Float(string='Total Invoice')
     sisa_partial_amount = fields.Float(string='Sisa Partial Invoice')
@@ -58,6 +58,16 @@ class WikaPartialPaymentRequest(models.Model):
     def _compute_remaining_amount(self):
         for record in self:
             record.remaining_amount = record.total_invoice - record.partial_amount
+
+    @api.model
+    def create(self, vals):
+        if vals.get('name', '/') == '/':
+            sequence = self.env['ir.sequence'].next_by_code('wika.partial.payment.request')
+            vals['name'] = sequence
+
+        res = super(WikaPartialPaymentRequest, self).create(vals)
+        res.assign_todo_first()
+        return res
 
     # documents_count = fields.Integer(string='Total Doc', compute='_compute_documents_count')
     # @api.depends('invoice_ids')
@@ -178,12 +188,12 @@ class WikaPartialPaymentRequest(models.Model):
     #         invoices = self.env['account.move'].search([('partner_id', '=', self.partner_id.id)])
     #         self.invoice_ids = [(6, 0, invoices.ids)]
 
-    @api.model
-    def create(self, vals):
-        res =super(WikaPartialPaymentRequest, self).create(vals)
-        res.name = self.env['ir.sequence'].next_by_code('wika.partial.payment.request')
-        res.assign_todo_first()
-        return  res
+    # @api.model
+    # def create(self, vals):
+    #     res =super(WikaPartialPaymentRequest, self).create(vals)
+    #     res.name = self.env['ir.sequence'].next_by_code('wika.partial.payment.request')
+    #     res.assign_todo_first()
+    #     return  res
 
     # @api.depends('invoice_ids')
     # def compute_total(self):
@@ -308,11 +318,14 @@ class WikaPartialPaymentRequest(models.Model):
                 self.remaining_amount = self.total_invoice - self.partial_amount
         
                 if self.remaining_amount > 0:
+                    current_year = datetime.now().year
+                    current_month = datetime.now().month
+                    
                     previous_partial_name = self.name
                     previous_sequence_number = int(previous_partial_name.split('/')[-1])
                     new_sequence_number = previous_sequence_number + 1
-                    new_name = f"Partial/{new_sequence_number:05d}"
-
+                    new_name = f"Partial/{current_year}/{current_month:02d}/{new_sequence_number:03d}"
+                    
                     remaining_total = self.remaining_amount
                     new_partial = self.env['wika.partial.payment.request'].create({
                         'invoice_id': self.invoice_id.id,
@@ -325,6 +338,11 @@ class WikaPartialPaymentRequest(models.Model):
                         'branch_id': self.branch_id.id,
                         'project_id': self.project_id.id,
                     })
+
+                    previous_partial = self.env['wika.partial.payment.request'].search([('name', '=', previous_partial_name)], limit=1)
+                    if previous_partial:
+                        previous_partial.write({'name': previous_partial_name})
+
                 self.env['wika.partial.approval.line'].create({
                     'user_id': self._uid,
                     'groups_id': groups_id.id,
