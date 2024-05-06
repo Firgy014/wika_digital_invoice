@@ -106,7 +106,7 @@
                             </group>
                         </group>
                         <notebook>
-                            <page string="List Invoice">
+                            <page string="List Invoice Full Payment">
                                 <group>   
                                     <field name="invoice_ids" mode="tree" nolabel="1"  colspan="2" attrs="{'readonly': [('state', '=', 'verified')]}">
                                         <tree>
@@ -126,7 +126,22 @@
                                     </field>
                                 </group>
                             </page>
-                             <page string="List Invoice 2" groups="base.group_no_one">
+                            <page string="List Invoice Partial Payment">
+                                <group>
+                                    <field name="partial_payment_ids" mode="tree" nolabel="1"  colspan="2" attrs="{'readonly': [('state', '=', 'verified')]}">
+                                        <tree>
+                                            <field name="name"/>
+                                            <field name="invoice_id"/>
+                                            <field name="branch_id"/>
+                                            <field name="project_id"/>
+                                            <field name="partner_id"/>
+                                            <field name="payment_state"/>
+                                        </tree>
+
+                                    </field>
+                                </group>
+                            </page>
+                            <page string="List Invoice 2" groups="base.group_no_one">
                                 <group>
                                     <field name="move_ids" mode="tree" nolabel="1"  colspan="2" >
                                         <tree>

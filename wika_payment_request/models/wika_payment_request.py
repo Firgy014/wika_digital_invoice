@@ -86,7 +86,12 @@ class WikaPaymentRequest(models.Model):
     branch_id = fields.Many2one('res.branch', string='Divisi', required=True,default=_getdefault_branch)
     department_id = fields.Many2one('res.branch', string='Department')
     project_id = fields.Many2one('project.project', string='Project', required=True,default=_getdefault_project)
-    invoice_ids = fields.Many2many('account.move', string='Invoice', required=True)
+    invoice_ids = fields.Many2many(
+        'account.move',
+        string='Invoice',
+        required=True,
+        domain="[('state', '=', 'approved'), ('status_payment', '=', 'Not Request'), '|', ('partial_request_ids', '=', False), ('partial_request_ids', '=', None)]"
+    )
     move_ids = fields.One2many(
         comodel_name="wika.payment.request.line",
         string="Account Moves",
@@ -134,6 +139,13 @@ class WikaPaymentRequest(models.Model):
     ], string='Status Position')
     approval_line_id= fields.Many2one(comodel_name='wika.approval.setting.line')
     is_posted_to_sap = fields.Boolean(string='Posted to SAP', default=False)
+    partial_payment_ids = fields.Many2many('wika.partial.payment.request', string='Partial',
+        domain="[('state', '=', 'approved'), ('payment_state', '=', 'not request')]")
+
+    @api.onchange('partial_payment_ids')
+    def _check_partial_payment_ids(self):
+        if len(self.partial_payment_ids) > 1:
+            raise UserError("Anda hanya boleh memilih satu baris partial payment.")
 
     @api.model
     def _getdefault_branch(self):
@@ -264,10 +276,10 @@ class WikaPaymentRequest(models.Model):
         #res.assign_todo_first()
         return super(WikaPaymentRequest, self).create(vals)
 
-    @api.depends('invoice_ids')
+    @api.depends('move_ids')
     def compute_total(self):
         for record in self:
-            total_amount = sum(record.invoice_ids.mapped('total_partial_pr'))
+            total_amount = sum(record.move_ids.mapped('amount'))
             record.total = total_amount
 
     def action_submit(self):
@@ -279,12 +291,26 @@ class WikaPaymentRequest(models.Model):
         self.write({'state': 'request'})
         for invoice in self.invoice_ids:
             invoice.write({'status_payment': 'Request Proyek'})
+        for partial_payment in self.partial_payment_ids:
+            partial_payment.write({'payment_state': 'requested'})
         self.step_approve += 1
         self.assign_requested()
 
     def action_approve(self):
         if self.activity_user_id.id ==self._uid:
             move_lines = []
+            for partial in self.partial_payment_ids:
+                move_lines.append((0, 0, {
+                    'invoice_id': partial.invoice_id.id,
+                    'partial_id': partial.id,
+                    'partner_id': partial.invoice_id.partner_id.id,
+                    'branch_id': partial.invoice_id.branch_id.id,
+                    'project_id': partial.invoice_id.project_id.id,
+                    'amount': partial.partial_amount,
+                }))
+
+            self.move_ids = move_lines
+
             approval_id=self.approval_line_id.approval_id
             step_approve=self.approval_line_id.sequence+1
             apploval_line_next_id=self.env['wika.approval.setting.line'].sudo().search(
@@ -332,6 +358,50 @@ class WikaPaymentRequest(models.Model):
 
         else:
             raise ValidationError('User Akses Anda tidak berhak Approve!')
+
+    # def action_approve(self):
+    #     if self.activity_user_id.id == self._uid:
+    #         move_lines = []
+    #         approval_id = self.approval_line_id.approval_id
+    #         step_approve = self.approval_line_id.sequence + 1
+    #         apploval_line_next_id = self.env['wika.approval.setting.line'].sudo().search(
+    #             [('approval_id', '=', approval_id.id), ('sequence', '=', step_approve)], limit=1)
+    #         groups_id_next = apploval_line_next_id.groups_id
+    #         first_user = False
+    #         if groups_id_next:
+    #             print(groups_id_next.name)
+    #             for x in groups_id_next.users:
+    #                 if self.level == 'Proyek' and x.branch_id == self.branch_id:
+    #                     first_user = x.id
+    #                 if self.level == 'Divisi Operasi' and x.branch_id == self.branch_id:
+    #                     first_user = x.id
+    #                 if self.level == 'Divisi Fungsi' and x.department_id == self.department_id:
+    #                     first_user = x.id
+    #             if first_user:
+    #                 for invoice in self.invoice_ids:
+    #                     print(invoice)
+    #                     invoice.write({'status_payment': 'Request Divisi', 'payment_block': 'C'})
+    #                     move_lines.append((0, 0, {
+    #                         'invoice_id': invoice.id,
+    #                         'partial_id': partial.id,
+    #                         'partner_id': invoice.partner_id.id,
+    #                         'branch_id': invoice.branch_id.id,
+    #                         'project_id': invoice.project_id.id,
+    #                         'amount': invoice.total_partial_pr,
+    #                     }))
+    #                 self.move_ids = move_lines  # Mengisi move_ids di model 'wika.payment.request'
+    #                 audit_log_obj = self.env['wika.pr.approval.line'].create({'user_id': self._uid,
+    #                     'groups_id': self.approval_line_id.groups_id.id,
+    #                     'date': datetime.now(),
+    #                     'note': 'Verified',
+    #                     'pr_id': self.id
+    #                     })
+    #                 self.write({'state': 'verified', 'activity_summary': 'Request Divisi', 'approval_stage': 'Divisi Operasi'})
+    #                 # self.send_proyek_approved_pr_to_sap()
+    #             else:
+    #                 raise ValidationError('User Next Approval tidak ditemukan!')
+    #     else:
+    #         raise ValidationError('User Akses Anda tidak berhak Approve!')
 
     def action_reject(self):
         action = self.env.ref('wika_payment_request.action_reject_pr_wizard').read()[0]

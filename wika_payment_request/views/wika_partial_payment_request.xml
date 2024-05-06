@@ -45,6 +45,7 @@
                     <field name="partial_amount" sum="Total Partial"/>
                     <field name="state"/>
                     <field name="is_already_pr"/>
+                    <field name="reference"/>
                 </tree>
             </field>
         </record>
