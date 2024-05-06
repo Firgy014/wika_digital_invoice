@@ -230,7 +230,7 @@ class WikaInheritedAccountMove(models.Model):
             retensi_total = record.retensi_total or 0.0
             tax_percentage = sum(record.invoice_line_ids.tax_ids.mapped('amount')) / 100.0
             total_tax = (total_line - dp_total - retensi_total) * tax_percentage
-            record.total_tax = total_tax
+            record.total_tax = math.floor(total_tax)
 
     @api.depends('total_line', 'price_cut_ids.percentage_amount','price_cut_ids.product_id')
     def _compute_potongan_total(self):
@@ -247,7 +247,7 @@ class WikaInheritedAccountMove(models.Model):
     @api.depends('total_line', 'dp_total', 'retensi_total','total_tax')
     def _compute_amount_total_payment(self):
         for x in self:
-            x.amount_total_payment= x.total_line-x.dp_total-x.retensi_total + x.total_tax
+            x.amount_total_payment= round(x.total_line-x.dp_total-x.retensi_total + x.total_tax)
 
     def _compute_documents_count(self):
         for record in self:
@@ -333,7 +333,7 @@ class WikaInheritedAccountMove(models.Model):
     @api.depends('total_line', 'total_pph','dp_total','retensi_total')
     def _compute_amount_total(self):
         for move in self:
-            move.amount_total_footer = move.total_line-move.dp_total-move.retensi_total -move.total_pph
+            move.amount_total_footer = round(move.total_line-move.dp_total-move.retensi_total -move.total_pph)
 
     @api.depends('partner_id.bill_coa_type', 'valuation_class','retensi_total')
     def compute_account_payable(self):
