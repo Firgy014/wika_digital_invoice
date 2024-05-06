@@ -26,6 +26,7 @@
                     <button string="Import Pelunasan" name="import_pelunasan" type="object" class="oe_highlight"  attrs="{'invisible': [('pelunasan','!=',True)]}"/>
                     <button string="Generate" name="generate_data" type="object" class="oe_highlight" attrs="{'invisible': ['|',('type','=','upload'),('form','!=','ncl')]}"/>
                     <button string="Generate" name="generate_data_vendor_bills" type="object" class="oe_highlight" attrs="{'invisible': ['|',('type','=','upload'),('form','!=','vendor_bills')]}"/>
+                    <button string="Generate" name="generate_data_partial_payment" type="object" class="oe_highlight" attrs="{'invisible': ['|',('type','=','upload'),('form','!=','partial_payment')]}"/>
                     or
                     <button string="Cancel" class="oe_link" special="cancel"/>
                 </footer>
@@ -49,4 +50,3 @@
         sequence="1"/>
 
 </odoo>
-

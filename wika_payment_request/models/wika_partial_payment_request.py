@@ -21,8 +21,8 @@ class WikaPartialPaymentRequest(models.Model):
     project_id = fields.Many2one('project.project', string='Project', required=True)
     invoice_id  = fields.Many2one(comodel_name='account.move',domain=[('state','=','approved')])
     partner_id  = fields.Many2one(comodel_name='res.partner')
-    total_invoice= fields.Float(string='Total Invoice')
-    partial_amount=fields.Float(string='Partial Amount Request')
+    total_invoice = fields.Float(string='Total Invoice')
+    partial_amount = fields.Float(string='Partial Amount Request')
     sisa_partial_amount = fields.Float(string='Sisa Partial Invoice')
     level = fields.Selection([
         ('Proyek', 'Proyek'),
@@ -42,6 +42,7 @@ class WikaPartialPaymentRequest(models.Model):
         ('Divisi Fungsi', 'Divisi Fungsi'),
         ('Pusat', 'Pusat'),
     ], string='Status Invoice')
+    posting_date = fields.Date('Posting Date')
     # documents_count = fields.Integer(string='Total Doc', compute='_compute_documents_count')
     # @api.depends('invoice_ids')
     # def _compute_documents_count(self):

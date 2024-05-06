@@ -88,3 +88,20 @@ WHERE
      inv.is_mp_approved = True AND line.display_type = 'product' and inv.cut_off!=True and inv.invoice_number is null 
      AND (line.amount_adjustment > 0 OR line.price_subtotal != 0);
 """
+
+def _get_computed_partial_payment_query():
+    return """
+      SELECT
+        pp.name as NO,
+        am.payment_reference as DOC_NUMBER,
+          TO_CHAR(am.invoice_date, 'yyyy') AS DOC_YEAR,
+          TO_CHAR(pp.posting_date, 'yyyymmdd') AS POSTING_DATE,
+          TO_CHAR(pp.posting_date, 'mm')::int AS PERIOD,
+          ROUND(pp.partial_amount) AS AMOUNT1,
+          ROUND(pp.total_invoice - pp.partial_amount) AS AMOUNT2
+      FROM 
+          wika_partial_payment_request pp
+      LEFT JOIN account_move am ON am.id = pp.invoice_id
+      WHERE 
+          pp.state = 'approved'
+      """

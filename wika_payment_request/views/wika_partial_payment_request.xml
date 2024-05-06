@@ -23,6 +23,7 @@
                         <filter name="dept" string="Department" context="{'group_by': 'department_id'}"/>
                         <filter name="project" string="Project" context="{'group_by': 'project_id'}"/>
                         <filter name="date" string="Date" context="{'group_by': 'date'}"/>
+                        <filter name="posting_date" string="Posting Date" context="{'group_by': 'posting_date'}"/>
                         <filter name="invoice_id" string="Invoice" context="{'group_by': 'invoice_id'}"/>
 
                         <filter name="vendor" string="Vendor" context="{'group_by': 'partner_id'}"/>
@@ -42,6 +43,7 @@
                     <field name="branch_id"/>
                     <field name="project_id"/>
                     <field name="date"/>
+                    <field name="posting_date"/>
                     <field name="partial_amount" sum="Total Partial"/>
                     <field name="state"/>
                 </tree>
@@ -93,6 +95,8 @@
                                     attrs="{'readonly': [('state', 'in', [ 'request', 'approve'])], 'invisible': [('check_biro', '=', False)]}"/>
                                 <field name="project_id" 
                                     attrs="{'readonly': [('state', 'in', [ 'request', 'approve'])]}"/>
+                                <field name="posting_date" 
+                                attrs="{'readonly': [('state', 'in', [ 'request', 'approve'])]}"/>
                             </group>
                         </group>
                         <notebook>
