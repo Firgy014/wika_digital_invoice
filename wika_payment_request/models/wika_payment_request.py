@@ -444,7 +444,16 @@ class WikaPaymentRequest(models.Model):
                 'XREF3': invoice.project_id.sap_code
             }
             invoice_list.append(data_ref)
-
+            if invoice.retensi_doc:
+                _logger.info("RETENSIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII")
+                data_ref = {
+                    'BELNR': invoice.retensi_doc,
+                    'GJAHR': str(invoice.date)[:4],
+                    'ZLSPR': invoice.payment_block,
+                    'XREF3': invoice.project_id.sap_code
+                }
+                invoice_list.append(data_ref)
+        _logger.info(invoice_list)
         payload = json.dumps({
             "DEVID": "YFII016",
             "PACKAGEID": package_id,
@@ -453,7 +462,7 @@ class WikaPaymentRequest(models.Model):
             "TIMESTAMP": timestamp,
             "DATA": invoice_list
         })
-        print (payload)
+        _logger.info(payload)
         # POST Req
         post_headers = {
             'x-csrf-token': fetched_token,
@@ -625,6 +634,16 @@ class WikaPrLine(models.Model):
             'ZUONR': self.invoice_id.project_id.sap_code
         }
         invoice_list.append(data_ref)
+        if self.invoice_id.retensi_doc:
+            data_ref = {
+                'BELNR': self.invoice_id.retensi_doc,
+                'GJAHR': str(self.invoice_id.date)[:4],
+                'ZLSPR': self.invoice_id.payment_block,
+                'XREF3': self.invoice_id.project_id.sap_code
+            }
+            invoice_list.append(data_ref)
+        _logger.info(invoice_list)
+
         payload = json.dumps({
             "DEVID": "YFII016A",
             "PACKAGEID": package_id,
@@ -671,6 +690,15 @@ class WikaPrLine(models.Model):
             'ZLSCH': "F"
         }
         invoice_list.append(data_ref)
+        if self.invoice_id.retensi_doc:
+            data_ref = {
+                'BELNR': self.invoice_id.retensi_doc,
+                'GJAHR': str(self.invoice_id.date)[:4],
+                'ZLSPR': self.invoice_id.payment_block,
+                'XREF3': self.invoice_id.project_id.sap_code
+            }
+            invoice_list.append(data_ref)
+        _logger.info(invoice_list)
 
         payload = json.dumps({
             "DEVID": "YFII016B",
