@@ -638,8 +638,8 @@ class WikaPrLine(models.Model):
             data_ref = {
                 'BELNR': self.invoice_id.retensi_doc,
                 'GJAHR': str(self.invoice_id.date)[:4],
-                'ZLSPR': self.invoice_id.payment_block,
-                'XREF3': self.invoice_id.project_id.sap_code
+                'ZLSPR': 'D',
+                'ZUONR': self.invoice_id.project_id.sap_code
             }
             invoice_list.append(data_ref)
         _logger.info(invoice_list)
@@ -694,8 +694,8 @@ class WikaPrLine(models.Model):
             data_ref = {
                 'BELNR': self.invoice_id.retensi_doc,
                 'GJAHR': str(self.invoice_id.date)[:4],
-                'ZLSPR': self.invoice_id.payment_block,
-                'XREF3': self.invoice_id.project_id.sap_code
+                'ZLSPR': "",
+                'ZLSCH': "F"
             }
             invoice_list.append(data_ref)
         _logger.info(invoice_list)
