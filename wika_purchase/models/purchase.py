@@ -5,6 +5,8 @@ from odoo.exceptions import UserError
 import requests
 import json
 from datetime import datetime, timedelta
+import logging, json
+_logger = logging.getLogger(__name__)
 
 class PurchaseOrderInherit(models.Model):
     _inherit = 'purchase.order'
@@ -230,12 +232,14 @@ class PurchaseOrderInherit(models.Model):
             }
         }) % (self.name)
         payload = payload.replace('\n', '')
-        print(payload)
+        # print(payload)
+
         try:
             response = requests.request("GET", url_config, data=payload, headers=headers)
             txt = json.loads(response.text)
         except:
             raise UserError(_("Connection Failed. Please Check Your Internet Connection."))
+        
         if self.po_type != 'JASA':
             if txt['DATA']:
                 txt_data = sorted(txt['DATA'], key=lambda x: x["MAT_DOC"])
@@ -248,8 +252,8 @@ class PurchaseOrderInherit(models.Model):
                     else:
                         # Create a new list with the current item
                         mat_doc_dict[mat_doc] = [hasil]
+
                 for mat_doc, items in mat_doc_dict.items():
-                    vals = []
                     for item in items:
                         # if item['REVERSE']=='X':
                         #     active=False
@@ -264,43 +268,121 @@ class PurchaseOrderInherit(models.Model):
                             uom = self.env['uom.uom'].sudo().create({
                                 'name': hasil['ENTRY_UOM'], 'category_id': 1})
                         po_line= self.env['purchase.order.line'].sudo().search([
-                                 ('order_id', '=' ,self.id),('sequence','=',item['PO_ITEM'])] ,limit=1)
-                        vals.append((0, 0, {
-                            'sequence':item['MATDOC_ITM'],
-                            'product_id': prod.id if prod else False,
-                            'quantity_done': float(item['QUANTITY']),
-                            'product_uom_qty': float(item['QUANTITY']),
-                            'product_uom': uom.id,
-                            #'active':active,
-                            'state':'waits',
-                            'location_id': 4,
-                            'location_dest_id': 8,
-                            'purchase_line_id':po_line.id,
-                            'name': hasil['PO_NUMBER']
-                        }))
+                                 ('order_id', '=' ,self.id),('sequence','=', item['PO_ITEM'])] ,limit=1)
+                        
                         docdate = hasil['DOC_DATE']
-                    if vals:
-                        picking_create = self.env['stock.picking'].sudo().create({
-                            'name': mat_doc,
-                            'po_id': self.id,
-                            'purchase_id':self.id,
-                            'project_id': self.project_id.id,
-                            'branch_id': self.branch_id.id,
-                            'department_id': self.department_id.id if self.department_id.id else False,
-                            'scheduled_date': docdate,
-                            'start_date': docdate,
-                            'partner_id': self.partner_id.id,
-                            'location_id': 4,
-                            'location_dest_id': 8,
-                            'picking_type_id': 1,
-                            'move_ids': vals,
-                            'pick_type': 'gr',
-                            #'move_ids_without_package':vals,
-                            'company_id': 1,
-                            'state': 'waits'
-                        })
-                    else:
-                        raise UserError(_("Data GR Tidak Tersedia di PO TERSEBUT!"))
+
+                        # vals = {
+                        #     'sequence':item['MATDOC_ITM'],
+                        #     'product_id': prod.id if prod else False,
+                        #     'quantity_done': float(item['QUANTITY']),
+                        #     'product_uom_qty': float(item['QUANTITY']),
+                        #     'product_uom': uom.id,
+                        #     #'active':active,
+                        #     'state':'waits',
+                        #     'location_id': 4,
+                        #     'location_dest_id': 8,
+                        #     'purchase_line_id': po_line.id,
+                        #     'name': prod.display_name if prod else False,
+                        #     'origin': self.name,
+                        # }
+
+                        picking = self.env['stock.picking'].search([
+                            ('name', '=', mat_doc),
+                            ('scheduled_date', '=', docdate),
+                        ], limit=1)
+                        if not picking:
+                            _logger.info('CREATE PICKINGGGGGGGGGGGGGGGGGGGGGGGGGG')
+                            # _logger.info(mat_doc)
+                            picking_create = self.env['stock.picking'].sudo().create({
+                                'name': mat_doc,
+                                'po_id': self.id,
+                                'purchase_id':self.id,
+                                'project_id': self.project_id.id,
+                                'branch_id': self.branch_id.id,
+                                'department_id': self.department_id.id if self.department_id.id else False,
+                                'scheduled_date': docdate,
+                                'start_date': docdate,
+                                'partner_id': self.partner_id.id,
+                                'location_id': 4,
+                                'location_dest_id': 8,
+                                'picking_type_id': 1,
+                                'pick_type': 'gr',
+                                'move_ids': [(0, 0, {
+                                    'sequence':item['MATDOC_ITM'],
+                                    'product_id': prod.id if prod else False,
+                                    'quantity_done': float(item['QUANTITY']),
+                                    'product_uom_qty': float(item['QUANTITY']),
+                                    'product_uom': uom.id,
+                                    #'active':active,
+                                    'state':'waits',
+                                    'location_id': 4,
+                                    'location_dest_id': 8,
+                                    'purchase_line_id': po_line.id,
+                                    'name': prod.display_name if prod else False,
+                                    'origin': self.name,
+                                })],
+                                #'move_ids_without_package':vals,
+                                'company_id': 1,
+                                'state': 'waits'
+                            })
+                         
+                        else:    
+                            # _logger.info('WRITE PICKINGGGGGGGGGGGGGGGGGGGGGGGGGG')
+                            stock_move = self.env['stock.move'].search([
+                                ('picking_id', '=', picking.id),
+                                ('purchase_line_id', '=', po_line.id),
+                                ('product_id', '=', prod.id if prod else False),
+                            ], limit=1)
+
+                            if not stock_move:
+                                _logger.info('ADD DATA STOCK MOVEEEEEEEEEEE')
+                                # stock_move.sudo().create(vals)
+                                picking.sudo().write({
+                                    'move_ids': [(0, 0, {
+                                        'sequence':item['MATDOC_ITM'],
+                                        'product_id': prod.id if prod else False,
+                                        'quantity_done': float(item['QUANTITY']),
+                                        'product_uom_qty': float(item['QUANTITY']),
+                                        'product_uom': uom.id,
+                                        #'active':active,
+                                        'state':'waits',
+                                        'location_id': 4,
+                                        'location_dest_id': 8,
+                                        'purchase_line_id': po_line.id,
+                                        'name': prod.display_name if prod else False,
+                                        'origin': self.name,
+                                    })],
+                                    'state': 'waits',
+                                })
+                            else:
+                                _logger.info('WRITE STOCK MOVEEEEEEEEEEE')
+                                # stock_move.sudo().write(vals)
+                                picking.sudo().write({
+                                    'move_ids': [(1, stock_move.id, {
+                                        'sequence':item['MATDOC_ITM'],
+                                        'product_id': prod.id if prod else False,
+                                        'quantity_done': float(item['QUANTITY']),
+                                        'product_uom_qty': float(item['QUANTITY']),
+                                        'product_uom': uom.id,
+                                        #'active':active,
+                                        'state':'waits',
+                                        'location_id': 4,
+                                        'location_dest_id': 8,
+                                        'purchase_line_id': po_line.id,
+                                        'name': prod.display_name if prod else False,
+                                        'origin': self.name,
+                                    })],
+                                    'state': 'waits',
+                                })
+
+                                picking.sudo().write({
+                                    'state': 'waits',
+                                })
+                                
+
+                        # hapus isi data detail
+                        # del vals          
             else:
                 raise UserError(_("Data GR Tidak Tersedia!"))
         else:
@@ -317,8 +399,9 @@ class PurchaseOrderInherit(models.Model):
                     else:
                         # Create a new list with the current item
                         ses_number_dict[ses_number] = [hasil]
+
                 for ses_number, items in ses_number_dict.items():
-                    vals = []
+                    # vals = []
                     for item in items:
                         # if item['REVERSE'] == 'X':
                         #     active = False
@@ -334,44 +417,141 @@ class PurchaseOrderInherit(models.Model):
                                 'name': hasil['ENTRY_UOM'], 'category_id': 1})
                         po_line = self.env['purchase.order.line'].sudo().search([
                             ('order_id', '=', self.id), ('sequence', '=', item['PO_ITEM'])], limit=1)
-                        vals.append((0, 0, {
-                            'sequence': item['MATDOC_ITM'],
-                            'product_id': prod.id if prod else False,
-                            'quantity_done': float(item['QUANTITY']),
-                            'product_uom_qty': float(item['QUANTITY']),
-                            'product_uom': uom.id,
-                            #'active': active,
-                            'state':'waits',
-                            'location_id': 4,
-                            'location_dest_id': 8,
-                            'purchase_line_id': po_line.id,
-                            'name': hasil['PO_NUMBER']
-                        }))
                         docdate = hasil['DOC_DATE']
                         matdoc = item['MAT_DOC']
-                    if vals:
-                        picking_create = self.env['stock.picking'].sudo().create({
-                            'name': ses_number,
-                            'po_id': self.id,
-                            'purchase_id': self.id,
-                            'project_id': self.project_id.id,
-                            'branch_id': self.branch_id.id,
-                            'department_id': self.department_id.id if self.department_id.id else False,
-                            'scheduled_date': docdate,
-                            'start_date': docdate,
-                            'partner_id': self.partner_id.id,
-                            'location_id': 4,
-                            'location_dest_id': 8,
-                            'picking_type_id': 1,
-                            'move_ids': vals,
-                            'pick_type': 'ses',
-                            'origin':matdoc,
-                            #'move_ids_without_package':vals,
-                            'company_id': 1,
-                            'state': 'waits'
-                        })
-                    else:
-                        raise UserError(_("Data GR Tidak Tersedia di PO TERSEBUT!"))
+
+                        picking = self.env['stock.picking'].search([
+                            ('name', '=', mat_doc),
+                            ('scheduled_date', '=', docdate),
+                        ], limit=1)
+                        if not picking:
+                            _logger.info('CREATE PICKINGGGGGGGGGGGGGGGGGGGGGGGGGG')
+                            # _logger.info(mat_doc)
+                            picking_create = self.env['stock.picking'].sudo().create({
+                                'name': ses_number,
+                                'po_id': self.id,
+                                'purchase_id': self.id,
+                                'project_id': self.project_id.id,
+                                'branch_id': self.branch_id.id,
+                                'department_id': self.department_id.id if self.department_id.id else False,
+                                'scheduled_date': docdate,
+                                'start_date': docdate,
+                                'partner_id': self.partner_id.id,
+                                'location_id': 4,
+                                'location_dest_id': 8,
+                                'picking_type_id': 1,
+                                'move_ids': [(0, 0, {
+                                    'sequence': item['MATDOC_ITM'],
+                                    'product_id': prod.id if prod else False,
+                                    'quantity_done': float(item['QUANTITY']),
+                                    'product_uom_qty': float(item['QUANTITY']),
+                                    'product_uom': uom.id,
+                                    #'active': active,
+                                    'state':'waits',
+                                    'location_id': 4,
+                                    'location_dest_id': 8,
+                                    'purchase_line_id': po_line.id,
+                                    'name': prod.display_name if prod else False,
+                                    'origin': self.name,
+                                })],
+                                'pick_type': 'ses',
+                                'origin': matdoc,
+                                #'move_ids_without_package':vals,
+                                'company_id': 1,
+                                'state': 'waits'
+                            })
+                         
+                        else:    
+                            # _logger.info('WRITE PICKINGGGGGGGGGGGGGGGGGGGGGGGGGG')
+                            stock_move = self.env['stock.move'].search([
+                                ('picking_id', '=', picking.id),
+                                ('purchase_line_id', '=', po_line.id),
+                                ('product_id', '=', prod.id if prod else False),
+                            ], limit=1)
+
+                            if not stock_move:
+                                _logger.info('ADD DATA STOCK MOVEEEEEEEEEEE')
+                                # stock_move.sudo().create(vals)
+                                picking.sudo().write({
+                                    'move_ids': [(0, 0, {
+                                        'sequence': item['MATDOC_ITM'],
+                                        'product_id': prod.id if prod else False,
+                                        'quantity_done': float(item['QUANTITY']),
+                                        'product_uom_qty': float(item['QUANTITY']),
+                                        'product_uom': uom.id,
+                                        #'active': active,
+                                        'state':'waits',
+                                        'location_id': 4,
+                                        'location_dest_id': 8,
+                                        'purchase_line_id': po_line.id,
+                                        'name': prod.display_name if prod else False,
+                                        'origin': self.name,
+                                    })],
+                                    'state': 'waits',
+                                })
+                            else:
+                                _logger.info('WRITE STOCK MOVEEEEEEEEEEE')
+                                # stock_move.sudo().write(vals)
+                                picking.sudo().write({
+                                    'move_ids': [(1, stock_move.id, {
+                                        'sequence': item['MATDOC_ITM'],
+                                        'product_id': prod.id if prod else False,
+                                        'quantity_done': float(item['QUANTITY']),
+                                        'product_uom_qty': float(item['QUANTITY']),
+                                        'product_uom': uom.id,
+                                        #'active': active,
+                                        'state':'waits',
+                                        'location_id': 4,
+                                        'location_dest_id': 8,
+                                        'purchase_line_id': po_line.id,
+                                        'name': prod.display_name if prod else False,
+                                        'origin': self.name,
+                                    })],
+                                    'state': 'waits',
+                                })
+
+                                picking.sudo().write({
+                                    'state': 'waits',
+                                })
+
+                    #     vals.append((0, 0, {
+                    #         'sequence': item['MATDOC_ITM'],
+                    #         'product_id': prod.id if prod else False,
+                    #         'quantity_done': float(item['QUANTITY']),
+                    #         'product_uom_qty': float(item['QUANTITY']),
+                    #         'product_uom': uom.id,
+                    #         #'active': active,
+                    #         'state':'waits',
+                    #         'location_id': 4,
+                    #         'location_dest_id': 8,
+                    #         'purchase_line_id': po_line.id,
+                    #         'name': hasil['PO_NUMBER']
+                    #     }))
+                    #     docdate = hasil['DOC_DATE']
+                    #     matdoc = item['MAT_DOC']
+                    # if vals:
+                    #     picking_create = self.env['stock.picking'].sudo().create({
+                    #         'name': ses_number,
+                    #         'po_id': self.id,
+                    #         'purchase_id': self.id,
+                    #         'project_id': self.project_id.id,
+                    #         'branch_id': self.branch_id.id,
+                    #         'department_id': self.department_id.id if self.department_id.id else False,
+                    #         'scheduled_date': docdate,
+                    #         'start_date': docdate,
+                    #         'partner_id': self.partner_id.id,
+                    #         'location_id': 4,
+                    #         'location_dest_id': 8,
+                    #         'picking_type_id': 1,
+                    #         'move_ids': vals,
+                    #         'pick_type': 'ses',
+                    #         'origin':matdoc,
+                    #         #'move_ids_without_package':vals,
+                    #         'company_id': 1,
+                    #         'state': 'waits'
+                    #     })
+                    # else:
+                    #     raise UserError(_("Data GR Tidak Tersedia di PO TERSEBUT!"))
 
             else:
                 raise UserError(_("Data GR Tidak Tersedia!"))
