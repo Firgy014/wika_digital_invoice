@@ -84,11 +84,11 @@ class WikaInheritedAccountMove(models.Model):
         for move in self:
             move.is_approval_checked = any(line.is_show_wizard for line in move.history_approval_ids if line.user_id == current_user)
 
-    @api.depends('total_line', 'pph_ids.amount','pph_amount','retensi_total')
+    @api.depends('total_line', 'pph_ids.amount','pph_amount','retensi_total','dp_total')
     def _compute_total_pph(self):
         for record in self:
             total_pph = 0.0
-            total_net = record.total_line - record.retensi_total
+            total_net = record.total_line - record.retensi_total - record.dp_total
             if record.pph_amount>0:
                 record.total_pph = math.floor(record.pph_amount)
             else:
