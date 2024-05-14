@@ -40,9 +40,17 @@
                             invuploaded="state.inv.uploaded" invlate="state.inv.late" urlwaitinv="state.inv.url.wait"
                             urluploadinv="state.inv.url.upload" urllateinv="state.inv.url.late"/>
 
-                        <!-- <KpiCard name="'Pengajuan Pembayaran'" total="state.pr.total" prwaits="state.pr.waits"
+                        <KpiCard name="'Payment Request Proyek'" total="state.pr.total" prwaits="state.pr.waits"
                             pruploaded="state.pr.uploaded" prlate="state.pr.late" urlwaitpr="state.pr.url.wait"
-                            urluploadpr="state.pr.url.upload" urllatepr="state.pr.url.late"/> -->
+                            urluploadpr="state.pr.url.upload" urllatepr="state.pr.url.late"/>
+
+                        <KpiCard name="'Payment Request Divisi'" total="state.pritem.total" pritemwaits="state.pritem.waits"
+                            pritemuploaded="state.pritem.uploaded" pritemlate="state.pritem.late" urlwaitpritem="state.pritem.url.wait" 
+                            urluploadpritem="state.pritem.url.upload" urllatepritem="state.pritem.url.late" users="state.uid"/>
+
+                        <KpiCard name="'Payment Request Pusat'" total="state.pritempus.total" pritempuswaits="state.pritempus.waits"
+                            pritempusuploaded="state.pritempus.uploaded" pritempuslate="state.pritempus.late" urlwaitpritempus="state.pritempus.url.wait" 
+                            urluploadpritempus="state.pritempus.url.upload" urllatepritempus="state.pritempus.url.late" user="state.uid"/>
 
                         <!-- <div class="shadow-sm border m-2 p-4 bg-white" style="width:810px; height:226px;">
                             <div class="d-flex align-items-center justify-content-between">
