@@ -204,6 +204,7 @@ class sap_integration_configure(models.Model):
             outbound_dir = conf_id.sftp_folder
             file_name_prefix = 'YFII018A'
             _logger.info(file_name_prefix + ' DEBUGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG')
+            _logger.info(outbound_dir)
             
             # try:
             # open an SSH connection
@@ -225,7 +226,7 @@ class sap_integration_configure(models.Model):
                         for line in file:
                             invoice_data = line.strip().split('|')
                             no_ppr = invoice_data[0]
-                            ppr_id = partial_payment_request_model.search(['|',('name', '=', no_ppr),('reference', '=', no_ppr)], limit=1)
+                            ppr_id = partial_payment_request_model.search([('no_doc_sap', '=', False), '|',('name', '=', no_ppr),('reference', '=', no_ppr)], limit=1)
                             if ppr_id:
                                 ppr_id.write({
                                     'no_doc_sap': invoice_data[2],
