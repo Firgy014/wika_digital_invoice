@@ -9,3 +9,11 @@ class DocumentsDocumentInherit(models.Model):
     is_po_doc = fields.Boolean(string='Is Purchase Orders Document')
     invoice_id = fields.Many2one('account.move', string='No Invoice')
     bap_id = fields.Many2one('wika.berita.acara.pembayaran', string='No BAP')
+
+    def name_get(self):
+        res = []
+        for document in self:
+            name = document.folder_id.name if document.folder_id else ''
+            name += ' > ' + document.name if document.name != '' else ''
+            res.append((document.id, name))
+        return res

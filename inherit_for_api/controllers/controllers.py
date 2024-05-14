@@ -33,6 +33,7 @@ class wzoneLogin(http.Controller):
             return http.redirect_with_hash(self._login_redirect(uid, redirect='/web'))
         # return  data
 
+
     @http.route('/auth/login/test/', type='http', auth='public')
     def testt(self,**kw):
         data = {
