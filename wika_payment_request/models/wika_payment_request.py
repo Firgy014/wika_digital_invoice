@@ -453,6 +453,15 @@ class WikaPaymentRequest(models.Model):
                     'XREF3': invoice.project_id.sap_code
                 }
                 invoice_list.append(data_ref)
+            if invoice.dp_doc:
+                _logger.info("DP DOCCCCCCCCCCCCCCCCCCCCCCCCCCC")
+                data_ref = {
+                    'BELNR': invoice.dp_doc,
+                    'GJAHR': str(invoice.date)[:4],
+                    'ZLSPR': invoice.payment_block,
+                    'XREF3': invoice.project_id.sap_code
+                }
+                invoice_list.append(data_ref)
         _logger.info(invoice_list)
         payload = json.dumps({
             "DEVID": "YFII016",
@@ -642,6 +651,14 @@ class WikaPrLine(models.Model):
                 'ZUONR': self.invoice_id.project_id.sap_code
             }
             invoice_list.append(data_ref)
+        if self.invoice_id.dp_doc:
+            data_ref = {
+                'BELNR': self.invoice_id.dp_doc,
+                'GJAHR': str(self.invoice_id.date)[:4],
+                'ZLSPR': 'D',
+                'ZUONR': self.invoice_id.project_id.sap_code
+            }
+            invoice_list.append(data_ref)
         _logger.info(invoice_list)
 
         payload = json.dumps({
@@ -693,6 +710,14 @@ class WikaPrLine(models.Model):
         if self.invoice_id.retensi_doc:
             data_ref = {
                 'BELNR': self.invoice_id.retensi_doc,
+                'GJAHR': str(self.invoice_id.date)[:4],
+                'ZLSPR': "",
+                'ZLSCH': "F"
+            }
+            invoice_list.append(data_ref)
+        if self.invoice_id.dp_doc:
+            data_ref = {
+                'BELNR': self.invoice_id.dp_doc,
                 'GJAHR': str(self.invoice_id.date)[:4],
                 'ZLSPR': "",
                 'ZLSCH': "F"

@@ -41,6 +41,7 @@ class WikaPartialPaymentRequest(models.Model):
         ('Divisi Fungsi', 'Divisi Fungsi'),
         ('Pusat', 'Pusat'),
     ], string='Status Invoice')
+    posting_date = fields.Date('Posting Date')
     is_already_pr = fields.Boolean('is_already_pr')
     reference = fields.Char('Reference')
     no_doc_sap = fields.Char('No Doc SAP')
