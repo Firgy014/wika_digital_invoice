@@ -52,6 +52,7 @@ class WikaPartialPaymentRequest(models.Model):
     payment_state = fields.Selection([
         ('not request', 'Not Request'),
         ('requested', 'Requested'),
+        ('paid', 'Paid'),
     ], default='not request', string='Payment State')
     payment_request_id = fields.Many2one('wika.payment.request', string='Payment Request')
 

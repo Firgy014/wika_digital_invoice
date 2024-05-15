@@ -104,4 +104,6 @@ def _get_computed_partial_payment_query():
       LEFT JOIN account_move am ON am.id = pp.invoice_id
       WHERE 
           pp.state = 'approved'
+        AND (pp.total_invoice - pp.partial_amount) > 0
+        AND pp.no_doc_sap IS NULL 
       """
