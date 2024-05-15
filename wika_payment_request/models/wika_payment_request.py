@@ -106,8 +106,12 @@ class WikaPaymentRequest(models.Model):
 
     @api.onchange('partial_payment_ids')
     def _check_partial_payment_ids(self):
-        if len(self.partial_payment_ids) > 1:
-            raise UserError("Anda hanya boleh memilih satu baris partial payment.")
+        selected_invoice_ids = set()
+        for partial_payment in self.partial_payment_ids:
+            if partial_payment.invoice_id:
+                if partial_payment.invoice_id.id in selected_invoice_ids:
+                    raise UserError("Anda tidak dapat memilih lebih dari satu partial payment dengan nomor invoice yang sama.")
+                selected_invoice_ids.add(partial_payment.invoice_id.id)
 
     @api.model
     def _getdefault_branch(self):
@@ -630,12 +634,12 @@ class WikaPrLine(models.Model):
                             if x.user_id.id == self._uid:
                                 x.status = 'approved'
                                 x.action_done()
-                    # audit_log_obj = self.env['wika.pr.approval.line'].create({'user_id': self._uid,
-                    #     'groups_id' :self.approval_line_id.groups_id.id,
-                    #     'date': datetime.now(),
-                    #     'note': 'Verified',
-                    #     'pr_id': self.id
-                    #     })
+                    audit_log_obj = self.env['wika.pr.approval.line'].create({'user_id': self._uid,
+                        'groups_id' :self.approval_line_id.groups_id.id,
+                        'date': datetime.now(),
+                        'note': 'Verified',
+                        'pr_id': self.id
+                        })
                 else:
                     raise ValidationError('User Next Approval tidak ditemukan!')
             else:

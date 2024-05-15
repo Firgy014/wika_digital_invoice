@@ -33,7 +33,7 @@ class WikaPartialPaymentRequest(models.Model):
     step_approve = fields.Integer(string='Step Approve',default=1)
     accounting_doc = fields.Char(string='Accounting Doc SAP')
     history_approval_ids = fields.One2many('wika.partial.approval.line', 'pr_id',
-                                           string='Partial Payment Request  Approval')
+        string='Partial Payment Request  Approval')
     document_ids = fields.One2many('wika.partial.document.line', 'pr_id', string='Document Lines')
     approval_stage = fields.Selection([
         ('Proyek', 'Proyek'),
@@ -51,8 +51,13 @@ class WikaPartialPaymentRequest(models.Model):
     payment_state = fields.Selection([
         ('not request', 'Not Request'),
         ('requested', 'Requested'),
-    ], string='Payment State')
+    ], string='Payment State', default ='not request')
     payment_request_id = fields.Many2one('wika.payment.request', string='field_name')
+
+    @api.constrains('partial_amount')
+    def _constrains_partial_amount(self):
+        if self.partial_amount == 0:
+            raise ValidationError('Nilai amount partial harus lebih besar dari 0. Mohon masukkan nilai yang valid.')
 
     @api.depends('total_invoice', 'partial_amount')
     def _compute_remaining_amount(self):
@@ -74,7 +79,7 @@ class WikaPartialPaymentRequest(models.Model):
             current_year = fields.Date.today().year
             current_month = fields.Date.today().month
 
-            new_name = f"Partial/{current_year}/{current_month:02d}/{new_sequence_number:03d}"
+            new_name = f"Partial/{current_year}/{current_month:02d}/{new_sequence_number:05d}"
             vals['name'] = new_name
 
         res = super(WikaPartialPaymentRequest, self).create(vals)
@@ -346,7 +351,7 @@ class WikaPartialPaymentRequest(models.Model):
                         new_sequence_number = 1
 
                     # Bangun nama baru untuk partial payment request
-                    new_name = f"Partial/{current_year}/{current_month:02d}/{new_sequence_number:03d}"
+                    new_name = f"Partial/{current_year}/{current_month:02d}/{new_sequence_number:05d}"
 
                     remaining_total = self.remaining_amount
                     new_partial = self.env['wika.partial.payment.request'].create({
@@ -358,6 +363,7 @@ class WikaPartialPaymentRequest(models.Model):
                         'date': fields.Date.today(),
                         'branch_id': self.branch_id.id,
                         'project_id': self.project_id.id,
+                        'reference': last_partial.name if last_partial else False
                     })
                 self.env['wika.partial.approval.line'].create({
                     'user_id': self._uid,

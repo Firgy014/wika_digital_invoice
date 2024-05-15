@@ -75,7 +75,12 @@ class WikaInheritedAccountMove(models.Model):
     nomor_payment_request= fields.Char(string='Nomor Payment Request')
     is_approval_checked = fields.Boolean(string="Approval Checked", compute='_compute_is_approval_checked' ,default=False)
     is_wizard_cancel = fields.Boolean(string="Is cancel", default=True)
-
+    bap_type = fields.Selection([
+        ('progress', 'Progress'),
+        ('uang muka', 'Uang Muka'),
+        ('retensi', 'Retensi'),
+        ('cut over', 'Cut Over'),
+        ], string='Jenis BAP', related='bap_id.bap_type', store=True)
     @api.depends('history_approval_ids.is_show_wizard', 'history_approval_ids.user_id')
     def _compute_is_approval_checked(self):
         current_user = self.env.user
@@ -394,7 +399,6 @@ class WikaInheritedAccountMove(models.Model):
         self.po_id = False
         if self.bap_id:
             invoice_lines = []
-            price_cut_lines = []
 
             self.po_id = self.bap_id.po_id.id
             self.partner_id = self.bap_id.po_id.partner_id.id
@@ -405,34 +409,41 @@ class WikaInheritedAccountMove(models.Model):
             self.pph_ids = self.bap_id.pph_ids.ids
             self.total_pph = self.bap_id.total_pph
             self.pph_amount = self.bap_id.amount_pph
-            for bap_line in self.bap_id.bap_ids:
-                invoice_lines.append((0, 0, {
-                    'display_type':'product',
-                    'product_id': bap_line.product_id.id,
-                    'purchase_line_id': bap_line.purchase_line_id.id,
-                    'bap_line_id': bap_line.id,
-                    'picking_id': bap_line.picking_id.id,
-                    'stock_move_id': bap_line.stock_move_id.id,
-                    'quantity': bap_line.qty,
-                    'price_unit': bap_line.unit_price,
-                    'currency_id': self.currency_id.id,
-                    'tax_ids': bap_line.purchase_line_id.taxes_id.ids,
-                    'product_uom_id': bap_line.product_uom.id,
-                    'adjustment':bap_line.adjustment,
-                    'amount_adjustment':bap_line.amount_adjustment,
-                }))
 
-            for cut_line in self.bap_id.price_cut_ids:
-                price_cut_lines.append((0, 0, {
-                    'move_id': self.id,
-                    'product_id': cut_line.product_id.id,
-                    # 'account_id': cut_line.account_id.id,
-                    'percentage_amount': cut_line.percentage_amount,
-                    'amount': cut_line.amount,
-                }))
-
+            if self.bap_type == 'uang muka':
+                for cut_line in self.bap_id.price_cut_ids:
+                    invoice_lines.append((0, 0, {
+                        'product_id': cut_line.product_id.id,
+                        'quantity': 1,
+                        'price_unit': cut_line.amount,
+                        'currency_id': self.currency_id.id,
+                    }))
+            elif self.bap_type == 'retensi':
+                for cut_line in self.bap_id.price_cut_ids:
+                    invoice_lines.append((0, 0, {
+                        'display_type':'product',
+                        'product_id': cut_line.product_id.id,
+                        'quantity': cut_line.qty,
+                        'price_unit': cut_line.amount,
+                    }))
+            else:
+                for bap_line in self.bap_id.bap_ids:
+                    invoice_lines.append((0, 0, {
+                        'display_type':'product',
+                        'product_id': bap_line.product_id.id,
+                        'purchase_line_id': bap_line.purchase_line_id.id,
+                        'bap_line_id': bap_line.id,
+                        'picking_id': bap_line.picking_id.id,
+                        'stock_move_id': bap_line.stock_move_id.id,
+                        'quantity': bap_line.qty,
+                        'price_unit': bap_line.unit_price,
+                        'currency_id': self.currency_id.id,
+                        'tax_ids': bap_line.purchase_line_id.taxes_id.ids,
+                        'product_uom_id': bap_line.product_uom.id,
+                        'adjustment':bap_line.adjustment,
+                        'amount_adjustment':bap_line.amount_adjustment,
+                    }))
             self.invoice_line_ids = invoice_lines
-            self.price_cut_ids = price_cut_lines
 
     def assign_todo_first(self):
         model_model = self.env['ir.model'].sudo()

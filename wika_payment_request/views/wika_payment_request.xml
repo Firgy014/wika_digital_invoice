@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-
     <data>
 
         <!-- filter -->
@@ -14,7 +13,6 @@
                     <field name="project_id"/>
                     <field name="date"/>
                     <field name="name"/>
-                    
                     <filter name="filter_divisi" string="Divisi" domain="[('branch_id', '=', uid)]"/>
                     <filter name="filter_department" string="Department" domain="[('department_id', '=', uid)]"/>
                     <!-- <filter string="Project" name="project_id" domain="[('branch_id', '=', uid)]"/>
@@ -86,23 +84,23 @@
                             <group>
 
                                 <field name="date" attrs="{'readonly': [('state', 'in', [ 'request', 'approve'])]}"/>
-                                <field name="assignment"  groups="base.group_no_one" attrs="{'readonly': [('state', 'in', [ 'request', 'approve'])]}"/>
-                                <field name="reference"  groups="base.group_no_one" attrs="{'readonly': [('state', 'in', [ 'request', 'approve'])]}"/>
-                                <field name="payment_block" required="1" attrs="{'readonly': [('state', 'in', [ 'request', 'approve'])],'invisible': [('state', '!=', 'approve')]}"/>
-                                <field name="payment_method" attrs="{'readonly': [('state', 'in', [ 'request', 'approve'])]}"/>
-                                <field name="total" readonly="1" force_save="1" attrs="{'readonly': [('state', 'in', [ 'request', 'approve'])]}"/>
-                                <field name="step_approve" invisible="1" attrs="{'readonly': [('state', 'in', [ 'request', 'approve'])]}"/>
+                                <field name="assignment"  groups="base.group_no_one" attrs="{'readonly': [('state', 'in', [ 'request', 'verified', 'approve'])]}"/>
+                                <field name="reference"  groups="base.group_no_one" attrs="{'readonly': [('state', 'in', [ 'request', 'verified', 'approve'])]}"/>
+                                <field name="payment_block" required="1" attrs="{'readonly': [('state', 'in', [ 'request', 'verified', 'approve'])],'invisible': [('state', '!=', 'approve')]}"/>
+                                <field name="payment_method" attrs="{'readonly': [('state', 'in', [ 'request', 'verified', 'approve'])]}"/>
+                                <field name="total" readonly="1" force_save="1" attrs="{'readonly': [('state', 'in', [ 'request', 'verified', 'approve'])]}"/>
+                                <field name="step_approve" invisible="1" attrs="{'readonly': [('state', 'in', [ 'request', 'verified', 'approve'])]}"/>
                             </group>
                             <group>
                                 <field name="check_biro" invisible="1"/>
                                 <field name="level" invisible="1"/>
                                  <field name="approval_line_id" invisible="1"/>
                                 <field name="branch_id" domain="[('biro', '=', False)]"
-                                    attrs="{'readonly': [('state', 'in', [ 'request', 'approve'])]}"/>
+                                    attrs="{'readonly': [('state', 'in', [ 'request', 'verified', 'approve'])]}"/>
                                 <field name="department_id" domain="[('biro', '=', True), ('parent_id', '=', branch_id)]" 
-                                    attrs="{'readonly': [('state', 'in', [ 'request', 'approve'])], 'invisible': [('check_biro', '=', False)]}"/>
+                                    attrs="{'readonly': [('state', 'in', [ 'request', 'verified', 'approve'])], 'invisible': [('check_biro', '=', False)]}"/>
                                 <field name="project_id" 
-                                    attrs="{'readonly': [('state', 'in', [ 'request', 'approve'])]}"/>
+                                    attrs="{'readonly': [('state', 'in', [ 'request', 'verified', 'approve'])]}"/>
                             </group>
                         </group>
                         <notebook>
@@ -196,8 +194,7 @@
             <field name="view_mode">tree,form</field>
         </record>
 
-
-             <!-- filter -->
+        <!-- filter -->
         <record id="wika_payment_request_line_view_search" model="ir.ui.view">
             <field name="name">wika.payment.request.line.search</field>
             <field name="model">wika.payment.request.line</field>
@@ -218,6 +215,10 @@
                         <filter name="name" string="Payment Request" context="{'group_by': 'pr_id'}"/>
                         <filter name="name" string="vendor" context="{'group_by': 'partner_id'}"/>
                     </group>
+
+                    <searchpanel>
+                        <field name="pr_id" icon="fa-signal" enable_counters="1"/>
+                    </searchpanel>
                 </search>
             </field>
         </record>
@@ -242,15 +243,15 @@
             </field>
         </record>
 
-                <!-- form -->
+        <!-- form -->
         <record id="wika_payment_request_form_view_form" model="ir.ui.view">
             <field name="name">wika.payment.request.view.form</field>
             <field name="model">wika.payment.request.line</field>
             <field name="arch" type="xml">
                 <form string="Payment Request" create="0" delete="0" edit="1">
                     <header>
-                         <!-- <button type="object" groups="base.group_no_one" string="API DIV" name="send_divisi_approved_pr_to_sap"/> -->
-                         <button type="object" groups="base.group_no_one" string="API PUSAT" name="send_pusat_approved_pr_to_sap"/>
+                        <!-- <button type="object" groups="base.group_no_one" string="API DIV" name="send_divisi_approved_pr_to_sap"/> -->
+                        <button type="object" groups="base.group_no_one" string="API PUSAT" name="send_pusat_approved_pr_to_sap"/>
                     </header>
                     <sheet>
                        <!-- <div name="button_box" position="inside">
@@ -267,7 +268,6 @@
                         </div>
                         <group>
                             <group>
-
                                 <field name="pr_id"/>
                                 <field name="partner_id"/>
                                 <field name="payment_request_date" />
@@ -276,13 +276,11 @@
                                 <field name="amount" readonly="1" force_save="1" />
                                 <field name="step_approve" invisible="1" />
                                 <field name="approval_line_id" invisible="0" />
-
                             </group>
                             <group>
                                 <field name="check_biro" invisible="0"/>
                                 <field name="level" invisible="0"/>
-                                <field name="branch_id" domain="[('biro', '=', False)]"
-                                    />
+                                <field name="branch_id" domain="[('biro', '=', False)]"/>
                                 <field name="department_id" domain="[('biro', '=', True), ('parent_id', '=', branch_id)]"
                                     attrs="{'invisible': [('check_biro', '=', False)]}"/>
                                 <field name="project_id"/>
@@ -324,14 +322,14 @@
                 </form>
             </field>
         </record>
-          <!-- action -->
+
+        <!-- action -->
         <record id="wika_payment_request_line_action_window" model="ir.actions.act_window">
             <field name="name">Payment Request Line</field>
             <field name="res_model">wika.payment.request.line</field>
             <field name="view_mode">tree,form</field>
             <field name="domain">[('next_user_id', '=', uid)]</field>
         </record>
-    </data>
-    
 
+    </data>
 </odoo>

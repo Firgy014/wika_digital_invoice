@@ -13,6 +13,7 @@
                     <field name="partner_id" />
                     <field name="po_id" />
                     <field name="bap_id" />
+                    <field name="bap_type" />
                     <field name="branch_id" />
                     <field name="project_id" />
                     <field name="line_ids" string="Invoice Item"/>
@@ -28,17 +29,17 @@
                         <filter string="Project" name="project_id" domain="[]" context="{'group_by': 'project_id'}"/>
 
                         <separator/>
-                         <filter string="Nomor PO" name="po_id" domain="[]" context="{'group_by': 'po_id'}"/>
-                         <filter string="BAP" name="bap_id" domain="[]" context="{'group_by': 'bap_id'}"/>
-                         <filter string="Vendor" name="partner_id" domain="[]" context="{'group_by': 'partner_id'}"/>
+                        <filter string="Nomor PO" name="po_id" domain="[]" context="{'group_by': 'po_id'}"/>
+                        <filter string="BAP" name="bap_id" domain="[]" context="{'group_by': 'bap_id'}"/>
+                        <filter string="Vendor" name="partner_id" domain="[]" context="{'group_by': 'partner_id'}"/>
 
-                          <separator/>
-                       <filter string="Status Invoice" name="status_invoice_rel" domain="[]" context="{'group_by': 'status_invoice_rel'}"/>
-                       <filter string="Position" name="approval_stage" domain="[]" context="{'group_by': 'approval_stage'}"/>
+                        <separator/>
+                        <filter string="Status Invoice" name="status_invoice_rel" domain="[]" context="{'group_by': 'status_invoice_rel'}"/>
+                        <filter string="Position" name="approval_stage" domain="[]" context="{'group_by': 'approval_stage'}"/>
+                        <filter string="BAP Type" name="bap_type" domain="[]" context="{'group_by': 'bap_type'}"/>
 
                         <filter string="Document Date" name="invoicedate" context="{'group_by': 'invoice_date'}"/>
                         <filter string="Due Date" name="duedate" context="{'group_by': 'invoice_date_due'}"/>
-
                     </group>
                </search>
             </field>
@@ -55,16 +56,14 @@
                     <field name="picking_id" />
                     <field name="project_id" />
                     <field name="branch_id" />
-                   <separator/>
+                    <separator/>
                     <group expand="0" string="Group By">
                         <filter string="Divisi" name="branch_id" domain="[]" context="{'group_by': 'branch_id'}"/>
                         <filter string="Department" name="department_id" domain="[]" context="{'group_by': 'department_id'}"/>
                         <filter string="Project" name="project_id" domain="[]" context="{'group_by': 'project_id'}"/>
-
                         <separator/>
-                         <filter string="GR/SES" name="picking_id" domain="[]" context="{'group_by': 'picking_id'}"/>
-                         <filter string="Vendor" name="partner_id" domain="[]" context="{'group_by': 'partner_id'}"/>
-
+                        <filter string="GR/SES" name="picking_id" domain="[]" context="{'group_by': 'picking_id'}"/>
+                        <filter string="Vendor" name="partner_id" domain="[]" context="{'group_by': 'partner_id'}"/>
                     </group>
                </search>
             </field>
