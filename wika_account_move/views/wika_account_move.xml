@@ -10,13 +10,11 @@
             <form string="Invoice Form">
                 <header>
                     <button name="action_print_invoice"   attrs="{'invisible': [('is_approval_checked', '=', False)]}" string="Print" type="object" class="oe_highlight"/>
-                    <button name="action_submit" string="SUBMIT" type="object" class="oe_highlight"
-                    states="draft,rejected"/>
-                    <button name="action_approve" string="APPROVE" type="object" class="btn-success"
-                    states="uploaded"/>
-                     <button name="action_reject" string="REJECT" type="object" class="btn-danger"
-                     states="uploaded"/>
-                      <button name="compute_account_payable" string="GET COA" type="object"  groups="base.group_no_one"/>
+                    <button name="action_submit" string="SUBMIT" type="object" class="oe_highlight" states="draft,rejected"/>
+                    <button name="action_approve" string="APPROVE" type="object" class="btn-success" states="uploaded"/>
+                    <button name="action_reject" string="REJECT" type="object" class="btn-danger" states="uploaded"/>
+                    <button name="compute_account_payable" string="GET COA" type="object"  groups="base.group_no_one"/>
+                    <button name="add_pricecut_scf" string="ADD POTONGAN SCF" type="object" class="btn-success" attrs="{'invisible': [('state', 'not in', ['draft', 'rejected'])]}"/>
                     <field name="state" widget="statusbar" statusbar_visible="draft,uploaded,approved"/>
                 </header>
                 <sheet>
@@ -188,6 +186,8 @@
                                 <field name="amount"/>
                             </tree>
                         </field>
+                        <field name="total_scf_cut" readonly="1" groups="base.group_no_one"/>
+
                         </group>
                         <group string="Total Potongan">
 
