@@ -185,6 +185,15 @@ class WikaInheritedAccountMove(models.Model):
     is_approval_checked = fields.Boolean(string="Approval Checked", compute='_compute_is_approval_checked')
     is_mp_approved = fields.Boolean(string='Approved by MP', default=False, store=True)
     cut_off = fields.Boolean(string='Cut Off',default=False,copy=False)
+    ap_type = fields.Selection([
+        ('ap_po', 'AP PO'),
+        ('ap_nonpo', 'AP NON PO')
+    ], string='Invoice AP Type', compute='_compute_ap_type', store=True)
+
+    @api.depends('po_id')
+    def _compute_ap_type(self):
+        for record in self:
+            record.ap_type = 'ap_po' if record.po_id else 'ap_nonpo'
 
     @api.depends('date')
     def _compute_name_wdigi(self):
@@ -380,7 +389,10 @@ class WikaInheritedAccountMove(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         record = super(WikaInheritedAccountMove, self).create(vals_list)
-        record.assign_todo_first()
+        if record.ap_type == 'ap_po':
+            record.assign_todo_first()
+        elif record.ap_type == 'ap_nonpo':
+            record.assign_todo_first_without_activities()
 
         if isinstance(record, bool):
             return record
@@ -395,10 +407,11 @@ class WikaInheritedAccountMove(models.Model):
             pass
 
         #posting date
-        if record.date != False and record.date < record.bap_id.bap_date and record.cut_off!=True:
-            raise ValidationError("Posting Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
-        else:
-            pass
+        if record.ap_type == 'ap_po':
+            if record.date != False and record.date < record.bap_id.bap_date and record.cut_off!=True:
+                raise ValidationError("Posting Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
+            else:
+                pass
 
         return record
 
@@ -534,6 +547,27 @@ class WikaInheritedAccountMove(models.Model):
                 else:
                     raise AccessError("Data dokumen tidak ada!")
 
+    def assign_todo_first_without_activities(self):
+        model_model = self.env['ir.model'].sudo()
+        model_id = model_model.search([('model', '=', 'account.move')], limit=1)
+        document_setting_model = self.env['wika.document.setting'].sudo()
+        doc_setting_id = document_setting_model.search([
+            ('model_id', '=', model_id.id),
+            ('name', '=', 'Lain-lain')
+        ], limit=1)
+        # for res in self:
+        if doc_setting_id:
+            document_list = []
+            for document_line in doc_setting_id:
+                document_list.append((0, 0, {
+                    'invoice_id': self.id,
+                    'document_id': document_line.id,
+                    'state': 'waiting'
+                }))
+            self.document_ids = document_list
+        else:
+            raise AccessError("Data dokumen tidak ada!")
+    
     def action_submit(self):
         for record in self:
             if any(not line.document for line in record.document_ids):

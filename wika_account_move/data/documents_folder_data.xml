@@ -1,6 +1,4 @@
 <odoo>
-
-
     <record id="documents_tag_invoice" model="documents.tag">
         <field name="name">Invoice</field>
         <field name="facet_id" ref="wika_account_move.documents_facet_account_move"/>
@@ -8,6 +6,11 @@
     
     <record id="documents_tag_faktur_pajak" model="documents.tag">
         <field name="name">Faktur Pajak</field>
+        <field name="facet_id" ref="wika_account_move.documents_facet_account_move"/>
+    </record>
+
+    <record id="documents_tag_lain_lain" model="documents.tag">
+        <field name="name">Lain-lain</field>
         <field name="facet_id" ref="wika_account_move.documents_facet_account_move"/>
     </record>
 
