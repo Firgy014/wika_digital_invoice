@@ -226,13 +226,16 @@ class sap_integration_configure(models.Model):
                         for line in file:
                             invoice_data = line.strip().split('|')
                             no_ppr = invoice_data[0]
-                            ppr_id = partial_payment_request_model.search([('no_doc_sap', '=', False), '|',('name', '=', no_ppr),('reference', '=', no_ppr)], limit=1)
-                            if ppr_id:
-                                ppr_id.write({
-                                    'no_doc_sap': invoice_data[2],
-                                    'year': invoice_data[3]
-                                })
-                                updated_ppr.append(no_ppr)
+                            ppr_ids = partial_payment_request_model.search([('no_doc_sap', '=', False), '|',
+                                                                           ('name', '=', no_ppr),
+                                                                           ('reference', '=', no_ppr)])
+                            if ppr_ids:
+                                for ppr_id in ppr_ids:
+                                    ppr_id.write({
+                                        'no_doc_sap': invoice_data[2],
+                                        'year': invoice_data[3]
+                                    })
+                                    updated_ppr.append(no_ppr)
                             
                     
                         # _logger.info(file_path)
