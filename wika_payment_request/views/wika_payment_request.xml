@@ -214,7 +214,8 @@
                     </group>
 
                     <searchpanel>
-                        <field name="pr_id" icon="fa-signal" enable_counters="1"/>
+                        <field name="branch_id" icon="fa-signal" enable_counters="1"/>
+                        <field name="project_id" icon="fa-signal" enable_counters="1"/>
                     </searchpanel>
                 </search>
             </field>
