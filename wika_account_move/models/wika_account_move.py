@@ -6,7 +6,6 @@ from odoo.tools.float_utils import float_compare
 class WikaInheritedAccountMove(models.Model):
     _inherit = 'account.move'
 
-
     name = fields.Char(
         string='Number',
         compute='_compute_name_wdigi', inverse='_inverse_name', readonly=False, store=True,
@@ -93,6 +92,13 @@ class WikaInheritedAccountMove(models.Model):
                 for pph in record.pph_ids:
                     total_pph += (total_net* pph.amount) / 100
                 record.total_pph = math.floor(total_pph)
+
+            total_pph_cbasis = 0
+            for line in record.invoice_line_ids:
+                total_pph_cbasis += line.pph_cash_basis
+            record.total_pph += total_pph_cbasis 
+                
+
 
     @api.depends('history_approval_ids')
     def _compute_status_invoice(self):
@@ -374,10 +380,11 @@ class WikaInheritedAccountMove(models.Model):
             pass
 
         #posting date
-        if record.date != False and record.date < record.bap_id.bap_date and record.cut_off!=True:
-            raise ValidationError("Posting Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
-        else:
-            pass
+        if record.bap_id.bap_date:
+            if record.date != False and record.date < record.bap_id.bap_date and record.cut_off!=True:
+                raise ValidationError("Posting Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
+            else:
+                pass
 
         return record
 
