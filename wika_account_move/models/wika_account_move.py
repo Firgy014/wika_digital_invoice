@@ -193,6 +193,14 @@ class WikaInheritedAccountMove(models.Model):
         ('ap_po', 'AP PO'),
         ('ap_nonpo', 'AP NON PO')
     ], string='Invoice AP Type', compute='_compute_ap_type', store=True)
+    amount_scf = fields.Float(string='Amount SCF')
+    total_scf_cut = fields.Float(string='Total Potongan SCF', compute='_compute_total_scf_cut')
+
+    @api.depends('price_cut_ids.amount', 'amount_scf')
+    def _compute_total_scf_cut(self):
+        for record in self:
+            total_price_cut = sum(line.amount for line in record.price_cut_ids if line.product_id.name == 'Potongan SCF')
+            record.total_scf_cut = total_price_cut + record.amount_scf
 
     @api.depends('po_id')
     def _compute_ap_type(self):
@@ -204,7 +212,6 @@ class WikaInheritedAccountMove(models.Model):
         for record in self:
             sequence = self.env['ir.sequence'].sudo().next_by_code('invoice_number_sequence') or '/'
             record.name = sequence
-
 
     def unlink(self):
         for record in self:
@@ -257,10 +264,10 @@ class WikaInheritedAccountMove(models.Model):
             if persentage_retensi >0:
                 x.retensi_total = (x.total_line / 100 ) * persentage_retensi
 
-    @api.depends('total_line', 'dp_total', 'retensi_total','total_tax')
+    @api.depends('total_line', 'dp_total', 'retensi_total','total_tax','total_scf_cut')
     def _compute_amount_total_payment(self):
         for x in self:
-            x.amount_total_payment= round(x.total_line-x.dp_total-x.retensi_total + x.total_tax)
+            x.amount_total_payment= round(x.total_line-x.dp_total-x.retensi_total -x.total_scf_cut + x.total_tax)
 
     def _compute_documents_count(self):
         for record in self:
@@ -343,10 +350,10 @@ class WikaInheritedAccountMove(models.Model):
             total_line = total
             x.total_line=round(total_line)
 
-    @api.depends('total_line', 'total_pph','dp_total','retensi_total')
+    @api.depends('total_line', 'total_pph','dp_total','retensi_total','total_scf_cut')
     def _compute_amount_total(self):
         for move in self:
-            move.amount_total_footer = round(move.total_line-move.dp_total-move.retensi_total -move.total_pph)
+            move.amount_total_footer = round(move.total_line-move.dp_total-move.retensi_total -move.total_pph-move.total_scf_cut)
 
     @api.depends('partner_id.bill_coa_type', 'valuation_class','retensi_total')
     def compute_account_payable(self):
@@ -905,8 +912,18 @@ class WikaInheritedAccountMove(models.Model):
         else:
             raise ValidationError('User Akses Anda tidak berhak Reject!')
 
-
-
+    def add_pricecut_scf(self):
+        action = {
+            'name': ('Masukkan Nilai Amount Potongan SCF'),
+            'type': "ir.actions.act_window",
+            'res_model': "wika.amount.scf.wizard",
+            'view_type': "form",
+            'target': 'new',
+            'view_mode': "form",
+            # 'context': {'groups_id': groups_id.id},
+            'view_id': self.env.ref('wika_account_move.view_amount_scf_price_cut_form').id,
+        }
+        return action
 
     def unlink(self):
         for record in self:
@@ -978,7 +995,21 @@ class AccountMovePriceCutList(models.Model):
     account_id = fields.Many2one('account.account', string='Account')
     percentage_amount = fields.Float(string='Percentage Amount')
     amount = fields.Float(string='Amount')
-    
+    wbs_project_definition = fields.Char(
+        string='WBS Project Definition',
+        compute='_compute_wbs_project_definition',
+        store=True
+    )
+
+    @api.depends('move_id.project_id.sap_code')
+    def _compute_wbs_project_definition(self):
+        for record in self:
+            if record.move_id.project_id.sap_code:
+                sap_code = record.move_id.project_id.sap_code
+                record.wbs_project_definition = sap_code[:-1] + '-3-50-99'
+            else:
+                record.wbs_project_definition = False
+
     # def _compute_account_pricecut(self):
     #     move_id = self.env['account.move'].browse([self.move_id.id])
     #     if move_id:

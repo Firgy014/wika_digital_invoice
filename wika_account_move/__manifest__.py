@@ -43,6 +43,7 @@
         'report/report_wika_account_move_keuangan.xml',
         'report/report_wika_account_move_proyek.xml',
         'views/wika_special_gl.xml',
+        'data/pricecut_scf_data.xml',
         'data/documents_folder_data.xml',
         'data/document_setting_data.xml',
         'data/special_gl.xml',
@@ -50,6 +51,7 @@
         'views/action.xml',
 
         'wizard/wika_reject_reason.xml',
+        'wizard/amount_scf.xml',
         'wizard/wika_approval_account_move.xml',
 
         'views/sequence_data.xml',
