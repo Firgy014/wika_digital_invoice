@@ -46,7 +46,7 @@
 
                         <KpiCard name="'Payment Request Divisi'" total="state.pritem.total" pritemwaits="state.pritem.waits"
                             pritemuploaded="state.pritem.uploaded" pritemlate="state.pritem.late" urlwaitpritem="state.pritem.url.wait" 
-                            urluploadpritem="state.pritem.url.upload" urllatepritem="state.pritem.url.late" user="state.uid"/>
+                            urluploadpritem="state.pritem.url.upload" urllatepritem="state.pritem.url.late" users="state.uid"/>
 
                         <KpiCard name="'Payment Request Pusat'" total="state.pritempus.total" pritempuswaits="state.pritempus.waits"
                             pritempusuploaded="state.pritempus.uploaded" pritempuslate="state.pritempus.late" urlwaitpritempus="state.pritempus.url.wait" 

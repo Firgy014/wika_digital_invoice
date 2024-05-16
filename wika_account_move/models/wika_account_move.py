@@ -419,8 +419,6 @@ class WikaInheritedAccountMove(models.Model):
         if not float_compare(record.amount_invoice, round(record.total_line),precision_digits=precision_digits) == 0 and record.cut_off !=True:
             raise UserError("Amount Invoice Harus sama dengan Total !")
 
-
-
     @api.onchange('bap_id')
     def _onchange_bap_id(self):
         self.po_id = False

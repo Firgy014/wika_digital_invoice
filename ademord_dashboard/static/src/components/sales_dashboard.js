@@ -12,34 +12,33 @@ import { routeToUrl } from "@web/core/browser/router_service"
 var session = require('web.session');
 console.log("CHECK USER", session);
 
-var core = require('web.core');
-console.log("CHECK USER COREEEEEEEEE", core);
+// var core = require('web.core');
+// console.log("CHECK USER COREEEEEEEEE", core);
 
-var rpc = require('web.rpc');
-console.log("CHECK USER RPCCCCCCC", rpc);
-
+// var rpc = require('web.rpc');
+// console.log("CHECK USER RPCCCCCCC", rpc);
 
 export class OwlSalesDashboard extends Component {
 
-    async fetchUsersData() {
-        try {
-            const users = await rpc.query({
-                model: 'res.users',
-                method: 'search_read',
-                args: [[['id', '=', session.uid]]], // Mengambil data pengguna berdasarkan ID pengguna yang sedang login
-                kwargs: {
-                    fields: ['id', 'name', 'email', 'level'], // Bidang yang ingin Anda ambil
-                    limit: 1 // Kita hanya mengambil satu pengguna yang sedang login
-                }
-            });
-            console.log("User data:", users);
-            if (users.length > 0) {
-                this.state.userData = users[0];
-            }
-        } catch (error) {
-            console.error("Error fetching user data:", error);
-        }
-    }
+    // async fetchUsersData() {
+    //     try {
+    //         const users = await rpc.query({
+    //             model: 'res.users',
+    //             method: 'search_read',
+    //             args: [[['id', '=', session.uid]]], // Mengambil data pengguna berdasarkan ID pengguna yang sedang login
+    //             kwargs: {
+    //                 fields: ['id', 'name', 'email', 'level'], // Bidang yang ingin Anda ambil
+    //                 limit: 1 // Kita hanya mengambil satu pengguna yang sedang login
+    //             }
+    //         });
+    //         console.log("User data:", users);
+    //         if (users.length > 0) {
+    //             this.state.userData = users[0];
+    //         }
+    //     } catch (error) {
+    //         console.error("Error fetching user data:", error);
+    //     }
+    // }
 
     // top products
     async getTopProjects(){
@@ -300,7 +299,6 @@ export class OwlSalesDashboard extends Component {
         this.state = useState({
             uid: session.uid,
             user: session.uid,
-            
             quotations: {
                 value:10,
                 percentage:6,
@@ -419,8 +417,7 @@ export class OwlSalesDashboard extends Component {
 
         onWillStart(async ()=>{
             this.getDates()
-            // await super.onWillStart(...arguments)
-            await this.fetchUsersData()
+            // await this.fetchUsersData()
             // PO
             await this.getTotalPO()
             await this.getWaitingPO()
@@ -811,9 +808,9 @@ export class OwlSalesDashboard extends Component {
             // ['approval_line_id.level_role', '=', 'Divisi Operasi'],
             ['next_user_id', '=', user],
         ];
-        console.log("CHECK USER LOGIN DIV", domainTotal);
+        // console.log("CHECK USER LOGIN DIV", domainTotal);
         const dataTotal = await this.orm.searchCount("wika.payment.request.line", domainTotal);
-        console.log("TESTTT ADA TOTAL NYA GAK DIV", dataTotal);
+        // console.log("TESTTT ADA TOTAL NYA GAK DIV", dataTotal);
         this.state.pritem.total = dataTotal;
     }
     
@@ -821,7 +818,6 @@ export class OwlSalesDashboard extends Component {
     async getWaitingPRitem() {
         let domainWaiting = [
             // ['status', '=', 'todo'],
-            // ['approved_by_divisi', '=', true] // Filter berdasarkan approved_by_divisi
         ];
         const dataWaits = await this.orm.searchCount("wika.payment.request.line", domainWaiting)
         this.state.pritem.waits = dataWaits
@@ -869,7 +865,6 @@ export class OwlSalesDashboard extends Component {
     async getWaitingPRitempus() {
         let domainWaiting = [
             // ['status', '=', 'todo'],
-            ['approved_by_pusat', '=', true] // Filter berdasarkan approved_by_pusat
         ];
         const dataWaits = await this.orm.searchCount("wika.payment.request.line", domainWaiting)
         this.state.pritempus.waits = dataWaits
@@ -1442,7 +1437,7 @@ export class OwlSalesDashboard extends Component {
             ['approval_line_id.level_role', '=', 'Pusat'],
             ['next_user_id', '=', user],
         ];
-        console.log("CHECK LEVEL ROLE DAN UUID")
+        // console.log("CHECK LEVEL ROLE DAN UUID")
         
         const url = `/web#action=${actionId}&model=${model}&view_type=list&cids=1&menu_id=${menuId}&domain=${JSON.stringify(domain)}`;
         this.state.pritempus.url.upload = url;

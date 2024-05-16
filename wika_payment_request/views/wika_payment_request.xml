@@ -59,8 +59,8 @@
                     <header>
                         <button name="action_submit" type="object" string="Request" states="draft" class="btn-primary"/>
                         <button name="action_approve" type="object" string="APPROVE" states="request" class="btn-success"/>
-                      <!--  <button name="%(wika_payment_request.action_reject_pr_wizard)d" type="action" string="REJECT" states="request" class="btn-danger"/>
-                  -->      <field name="state" widget="statusbar" statusbar_visible="draft,request,verified"/>
+                      <!--  <button name="%(wika_payment_request.action_reject_pr_wizard)d" type="action" string="REJECT" states="request" class="btn-danger"/> -->   
+                        <field name="state" widget="statusbar" statusbar_visible="draft,request,verified"/>
                     </header>
                     <header>
                         <button name="send_proyek_approved_pr_to_sap" type="object" string="TEST API PROYEK" class="btn-info" groups="base.group_no_one"/>
@@ -82,7 +82,6 @@
                         </div>
                         <group>
                             <group>
-
                                 <field name="date" attrs="{'readonly': [('state', 'in', [ 'request', 'approve'])]}"/>
                                 <field name="assignment"  groups="base.group_no_one" attrs="{'readonly': [('state', 'in', [ 'request', 'verified', 'approve'])]}"/>
                                 <field name="reference"  groups="base.group_no_one" attrs="{'readonly': [('state', 'in', [ 'request', 'verified', 'approve'])]}"/>
@@ -120,7 +119,6 @@
                                             <field name="is_partial_pr"/>
                                             <field name="status_payment"/>
                                         </tree>
-
                                     </field>
                                 </group>
                             </page>
@@ -151,7 +149,6 @@
                                             <field name="amount" string="Amount Request"/>
                                             <field name="is_partial_pr"/>
                                         </tree>
-
                                     </field>
                                 </group>
                             </page>
@@ -237,8 +234,6 @@
                     <field name="amount" sum="Total Amount"/>
                     <field name="is_partial_pr"/>
                     <field name="next_user_id"/>
-                    <field name="approved_by_divisi"/>
-                    <field name="approved_by_pusat"/>
                 </tree>
             </field>
         </record>
@@ -275,26 +270,23 @@
                                 <field name="payment_method" />
                                 <field name="amount" readonly="1" force_save="1" />
                                 <field name="step_approve" invisible="1" />
-                                <field name="approval_line_id" invisible="0" />
+                                <field name="approval_line_id" invisible="1" />
                             </group>
                             <group>
-                                <field name="check_biro" invisible="0"/>
-                                <field name="level" invisible="0"/>
+                                <field name="check_biro" invisible="1"/>
+                                <field name="level" invisible="1"/>
                                 <field name="branch_id" domain="[('biro', '=', False)]"/>
                                 <field name="department_id" domain="[('biro', '=', True), ('parent_id', '=', branch_id)]"
                                     attrs="{'invisible': [('check_biro', '=', False)]}"/>
                                 <field name="project_id"/>
-                                <field name="approved_by_divisi"/>
-                                <field name="approved_by_pusat"/>
-                                <field name="next_user_id"/>
-                                <field name="approval_stage"/>
+                                <field name="next_user_id" readonly="1"/>
+                                <field name="approval_stage" invisible="1"/>
                             </group>
                         </group>
-                       <!-- <notebook>
+                        <notebook>
                             <page string="List Approval">
                                 <group>
-                                    <field name="history_approval_ids" mode="tree" nolabel="1"  colspan="2"
-                                        attrs="{'readonly': [('state', 'in', [ 'request', 'approve'])]}" readonly="1">
+                                    <field name="history_approval_pr_item_ids" mode="tree" nolabel="1"  colspan="2" readonly="1">
                                         <tree string="List Approval">
                                             <field name="user_id"/>
                                             <field name="groups_id"/>
@@ -312,7 +304,7 @@
                                     </field>
                                 </group>
                             </page>
-                        </notebook>-->
+                        </notebook>
                     </sheet>
                     <div class="oe_chatter">
                         <field name="message_follower_ids"/>

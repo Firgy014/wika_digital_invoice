@@ -8,4 +8,6 @@ access_wika_partial_payment_approval,Partial payment,model_wika_partial_approval
 access_wika_partial_wizard,Partial Wizard,model_partial_reject_wizard_pr,,1,1,1,1
 access_wika_pr_line,access_wika_pr_line,model_wika_payment_request_line,,1,1,1,1
 access_wika_pr_line_approval,access_wika_pr_line_approval,model_payment_request_line_wizard,,1,1,1,1
+access_wika_pr_approval_payment_item, Wika Approval Payment Item,model_wika_pr_approval_payment_item,,1,1,1,1
+
 
