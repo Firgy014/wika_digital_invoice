@@ -99,39 +99,45 @@
                         </t>
                         <!-- PR -->
                         <t t-elif="props.name === 'Payment Request Proyek'">
-                            <!-- <div class="col-12">
-                                <a t-attf-href="{{props.urlwaitpr}}" type="object"><span t-esc="props.prwaits"/> To Upload</a>
-                            </div> -->
-                            <div class="col-12">
-                                <a t-attf-href="{{props.urluploadpr}}" type="object"><span t-esc="props.pruploaded"/> To Approve</a>
-                            </div>
-                            <div class="col-12">
-                                <a t-attf-href="{{props.urllatepr}}" type="object"><span t-esc="props.prlate"/> Late</a>
+                            <div style="padding-left: 2vw;">
+                                <!-- <div class="col-12">
+                                    <a t-attf-href="{{props.urlwaitpr}}" type="object"><span t-esc="props.prwaits"/> To Upload</a>
+                                </div> -->
+                                <div class="col-12" style="text-align-last: left;">
+                                    <a t-attf-href="{{props.urluploadpr}}" type="object"><span t-esc="props.pruploaded"/> To Approve</a>
+                                </div>
+                                <div class="col-12" style="text-align-last: left;">
+                                    <a t-attf-href="{{props.urllatepr}}" type="object"><span t-esc="props.prlate"/> Late</a>
+                                </div>
                             </div>
                         </t>
                         <!-- PR ITEM Divisi -->
                         <t t-elif="props.name === 'Payment Request Divisi'">
-                            <!-- <div class="col-12">
-                                <a t-attf-href="{{props.urlwaitpritem}}" type="object"><span t-esc="props.pritemwaits"/> List Item</a>
-                            </div> -->
-                            <div class="col-12">
-                                <a t-attf-href="{{props.urluploadpritem}}" type="object"><span t-esc="props.pritemuploaded"/> To Approve</a>
+                            <div style="padding-left: 2vw;">
+                                <!-- <div class="col-12">
+                                    <a t-attf-href="{{props.urlwaitpritem}}" type="object"><span t-esc="props.pritemwaits"/> List Item</a>
+                                </div> -->
+                                <div class="col-12" style="text-align-last: left;">
+                                    <a t-attf-href="{{props.urluploadpritem}}" type="object"><span t-esc="props.pritemuploaded"/> To Approve</a>
+                                </div>
+                                <!-- <div class="col-12">
+                                    <a t-attf-href="{{props.urllatepritem}}" type="object"><span t-esc="props.pritemlate"/> Late</a>
+                                </div> -->
                             </div>
-                            <!-- <div class="col-12">
-                                <a t-attf-href="{{props.urllatepritem}}" type="object"><span t-esc="props.pritemlate"/> Late</a>
-                            </div> -->
                         </t>
                         <!-- PR ITEM Pusat -->
                         <t t-elif="props.name === 'Payment Request Pusat'">
-                            <!-- <div class="col-12">
-                                <a t-attf-href="{{props.urlwaitpritempus}}" type="object"><span t-esc="props.pritempuswaits"/> List Item</a>
-                            </div> -->
-                            <div class="col-12">
-                                <a t-attf-href="{{props.urluploadpritempus}}" type="object"><span t-esc="props.pritempusuploaded"/> To Approve</a>
+                            <div style="padding-left: 2vw;">
+                                <!-- <div class="col-12">
+                                    <a t-attf-href="{{props.urlwaitpritempus}}" type="object"><span t-esc="props.pritempuswaits"/> List Item</a>
+                                </div> -->
+                                <div class="col-12" style="text-align-last: left;">
+                                    <a t-attf-href="{{props.urluploadpritempus}}" type="object"><span t-esc="props.pritempusuploaded"/> To Approve</a>
+                                </div>
+                                <!-- <div class="col-12">
+                                    <a t-attf-href="{{props.urllatepritempus}}" type="object"><span t-esc="props.pritempuslate"/> Late</a>
+                                </div> -->
                             </div>
-                            <!-- <div class="col-12">
-                                <a t-attf-href="{{props.urllatepritempus}}" type="object"><span t-esc="props.pritempuslate"/> Late</a>
-                            </div> -->
                         </t>
                     </div>
                 </div>
