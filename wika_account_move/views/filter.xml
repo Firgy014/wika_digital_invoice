@@ -10,18 +10,18 @@
             <field name="arch" type="xml">
                 <search string="Search Invoice">
                     <field name="name" string="Invoice"/>
+                    <field name="payment_reference"/>
+                    <field name="invoice_number"/>
                     <field name="partner_id" />
                     <field name="po_id" />
                     <field name="bap_id" />
                     <field name="branch_id" />
                     <field name="project_id" />
                     <field name="line_ids" string="Invoice Item"/>
-                    <filter domain="[('invoice_user_id', '=', uid)]" name="myinvoices" help="My Invoices"/>
                     <separator/>
                     <filter name="draft" string="Draft" domain="[('state','=','draft')]"/>
                     <filter name="upload" string="Uploaded" domain="[('state', '=', 'uploaded')]"/>
                     <filter name="approved" string="Approved" domain="[('state', '=', 'approved')]"/>
-
                     <group expand="0" string="Group By">
                         <filter string="Divisi" name="branch_id" domain="[]" context="{'group_by': 'branch_id'}"/>
                         <filter string="Department" name="department_id" domain="[]" context="{'group_by': 'department_id'}"/>

@@ -1,0 +1,7 @@
+<odoo>
+    <record id="document_setting_other" model="wika.document.setting">
+        <field name="name">Lain-lain</field>
+        <field name="model_id" ref="account.model_account_move"/>
+        <field name="transaction_type"></field>
+    </record>
+</odoo>
