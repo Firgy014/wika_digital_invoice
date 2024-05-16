@@ -58,22 +58,25 @@ class WikaPaymentRequest(models.Model):
     @api.model
     def _getdefault_branch(self):
         user_obj = self.env['res.users']
-        branch_id = user_obj.browse(self.env.user.id).branch_id or False
-        project_id = user_obj.browse(self.env.user.id).project_id or False
-        if branch_id and not project_id:
+        branch_id = user_obj.browse(self.env.user.id).branch_id or []
+        project_ids = user_obj.browse(self.env.user.id).project_ids
+        if branch_id and not project_ids:
             branch_id=branch_id.id
-        elif project_id and not branch_id:
-            branch_id=project_id.branch_id.id
+        else:
+            branch_ids = [project.branch_id.id for project in project_ids if project.branch_id]
+            print (branch_ids)
+            branch_id = [('id', 'in', branch_ids)]
+            print (branch_id)
         return branch_id
 
     @api.model
     def _getdefault_project(self):
-        user_obj = self.env['res.users']
-        project_id = user_obj.browse(self.env.user.id).project_id or False
-        if project_id:
-            project_id=project_id.id
+        user_obj = self.env['res.users'].browse(self.env.user.id)
+        project_id=[]
+        project_ids = user_obj.project_ids.ids
+        if project_ids:
+            project_id= [('id', 'in', project_ids)]
         return project_id
-
     name = fields.Char(string='Nomor Payment Request', readonly=True ,default='/')
     date = fields.Date(string='Tanggal Payment Request', required=True, default=fields.Date.today)
     state = fields.Selection([
@@ -83,9 +86,9 @@ class WikaPaymentRequest(models.Model):
         ('approve', 'Approved'),
         ('reject', 'Rejected'),
     ], readonly=True, string='status', default='draft')
-    branch_id = fields.Many2one('res.branch', string='Divisi', required=True,default=_getdefault_branch)
+    branch_id = fields.Many2one('res.branch', string='Divisi', required=True,default=_getdefault_branch,domain=_getdefault_branch)
     department_id = fields.Many2one('res.branch', string='Department')
-    project_id = fields.Many2one('project.project', string='Project', required=True,default=_getdefault_project)
+    project_id = fields.Many2one('project.project', string='Project', required=True,default=_getdefault_project,domain=_getdefault_project)
     invoice_ids = fields.Many2many(
         'account.move',
         string='Invoice',
@@ -338,7 +341,7 @@ class WikaPaymentRequest(models.Model):
                             'branch_id': invoice.branch_id.id,
                             'project_id': invoice.project_id.id,
                             'department_id': invoice.department_id.id,
-                            'amount': invoice.total_partial_pr,
+                            'amount': invoice.amount_total_footer,
                             'is_partial_pr': invoice.is_partial_pr,
                             'payment_method': self.payment_method,
                             'payment_request_date': self.date,
