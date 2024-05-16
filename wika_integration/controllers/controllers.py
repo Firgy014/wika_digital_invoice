@@ -79,6 +79,7 @@ class WzoneRedirect(http.Controller):
             </body>
             </html>
             """
+            
 class api(http.Controller):
 
     def search_data_api(self, data, table):

@@ -12,8 +12,35 @@ import { routeToUrl } from "@web/core/browser/router_service"
 var session = require('web.session');
 console.log("CHECK USER", session);
 
+var core = require('web.core');
+console.log("CHECK USER COREEEEEEEEE", core);
+
+var rpc = require('web.rpc');
+console.log("CHECK USER RPCCCCCCC", rpc);
+
+
 export class OwlSalesDashboard extends Component {
-    
+
+    async fetchUsersData() {
+        try {
+            const users = await rpc.query({
+                model: 'res.users',
+                method: 'search_read',
+                args: [[['id', '=', session.uid]]], // Mengambil data pengguna berdasarkan ID pengguna yang sedang login
+                kwargs: {
+                    fields: ['id', 'name', 'email', 'level'], // Bidang yang ingin Anda ambil
+                    limit: 1 // Kita hanya mengambil satu pengguna yang sedang login
+                }
+            });
+            console.log("User data:", users);
+            if (users.length > 0) {
+                this.state.userData = users[0];
+            }
+        } catch (error) {
+            console.error("Error fetching user data:", error);
+        }
+    }
+
     // top products
     async getTopProjects(){
         let domain = [['branch_id', '!=', false], ['sap_code', '!=', false]]
@@ -273,6 +300,7 @@ export class OwlSalesDashboard extends Component {
         this.state = useState({
             uid: session.uid,
             user: session.uid,
+            
             quotations: {
                 value:10,
                 percentage:6,
@@ -387,8 +415,8 @@ export class OwlSalesDashboard extends Component {
 
         onWillStart(async ()=>{
             this.getDates()
-            // await this.getQuotations()
-
+            // await super.onWillStart(...arguments)
+            await this.fetchUsersData()
             // PO
             await this.getTotalPO()
             await this.getWaitingPO()
@@ -472,6 +500,7 @@ export class OwlSalesDashboard extends Component {
             await this.getMonthlySales()
             await this.getInvoiceMonitoringData()
             await this.getPartnerOrders()
+
         })
     }
 
