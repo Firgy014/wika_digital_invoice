@@ -51,6 +51,7 @@
         'views/action.xml',
 
         'wizard/wika_reject_reason.xml',
+        'wizard/amount_scf.xml',
         'wizard/wika_approval_account_move.xml',
 
         'views/sequence_data.xml',

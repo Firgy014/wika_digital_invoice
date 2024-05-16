@@ -909,18 +909,17 @@ class WikaInheritedAccountMove(models.Model):
             raise ValidationError('User Akses Anda tidak berhak Reject!')
 
     def add_pricecut_scf(self):
-        # action = {
-        #     'name': ('Masukkan Nilai Amount Potongan SCF'),
-        #     'type': "ir.actions.act_window",
-        #     'res_model': "amount.scf.wizard",
-        #     'view_type': "form",
-        #     'target': 'new',
-        #     'view_mode': "form",
-        #     'context': {'groups_id': groups_id.id},
-        #     # 'view_id': self.env.ref('wika_account_move.reject_wizard_form').id,
-        # }
-        # return action
-        pass
+        action = {
+            'name': ('Masukkan Nilai Amount Potongan SCF'),
+            'type': "ir.actions.act_window",
+            'res_model': "wika.amount.scf.wizard",
+            'view_type': "form",
+            'target': 'new',
+            'view_mode': "form",
+            # 'context': {'groups_id': groups_id.id},
+            'view_id': self.env.ref('wika_account_move.view_amount_scf_price_cut_form').id,
+        }
+        return action
 
     def unlink(self):
         for record in self:
