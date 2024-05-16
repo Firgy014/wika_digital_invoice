@@ -157,6 +157,63 @@ class sap_integration_configure(models.Model):
             if 'transport' in locals():
                 transport.close()
 
+    # def _update_invoice(self):
+    #     import os
+    #     import shutil
+        
+    #     invoice_model = self.env['account.move'].sudo()
+    #     conf_model = self.env['sap.integration.configure'].sudo()
+
+    #     conf_id = conf_model.search([('sftp_folder_archive', '!=', False)], limit=1)
+    #     if conf_id:
+    #         outbound_dir = conf_id.sftp_folder
+    #         file_name_prefix = 'YFII015A'
+    #         for file_name in os.listdir(outbound_dir):
+    #             if file_name.startswith(file_name_prefix):
+    #                 file_path = os.path.join(outbound_dir, file_name)
+
+    #     updated_invoices = []
+    #     try:
+    #         with open(file_path, 'r') as file_txt:
+    #             next(file_txt)  # Skip the header line
+    #             next(file_txt)  # Skip the column titles
+    #             for line in file_txt:
+    #                 invoice_data = line.strip().split('|')
+    #                 print("invoice_data", invoice_data)
+    #                 no_inv = invoice_data[0]
+    #                 print('noinnnnnv',no_inv)
+    #                 invoice_id = invoice_model.search([
+    #                     ('name', '=', no_inv),
+    #                     ('is_mp_approved', '=', True),
+    #                     ('invoice_number', '=', False)
+    #                 ], limit=1)
+    #                 if invoice_id:
+    #                     update_vals = {
+    #                         'invoice_number': invoice_data[3],  # ACC_DOC
+    #                         'year': invoice_data[2],  # GJAHR
+    #                         'dp_doc': invoice_data[4],  # DP_DOC
+    #                         'retensi_doc': invoice_data[5],  # RET_DOC
+    #                     }
+    #                     if invoice_data[6]:  # AP_DOC
+    #                         print("ada")
+    #                         update_vals.update({
+    #                             'payment_reference': invoice_data[6],
+    #                             'no_doc_sap': invoice_data[1]  # BELNR
+    #                         })
+    #                     else:
+    #                         print("gaada")
+    #                         update_vals['payment_reference'] = invoice_data[1]  # BELNR
+
+    #                     invoice_id.write(update_vals)
+    #                     updated_invoices.append(no_inv)
+    #                 else:
+    #                     pass
+    #             shutil.move(file_path, os.path.join(conf_id.sftp_folder_archive, file_name))
+    #     except FileNotFoundError:
+    #         pass
+    #     print('ALHAMDULILLAH')
+    #         #raise ValidationError(_("File TXT dari SAP atas invoice yang dituju tidak ditemukan!"))
+
     def _update_invoice(self):
         invoice_model = self.env['account.move'].sudo()
         conf_model = self.env['sap.integration.configure'].sudo()
@@ -171,26 +228,38 @@ class sap_integration_configure(models.Model):
 
         updated_invoices = []
         try:
-            with open(file_path, 'r') as file:
-                next(file)  # Skip the header line
-                next(file)  # Skip the column titles
-                for line in file:
+            with open(file_path, 'r') as file_txt:
+                next(file_txt)  # Skip the header line
+                next(file_txt)  # Skip the column titles
+                for line in file_txt:
                     invoice_data = line.strip().split('|')
-                    no_inv = invoice_data[0]
-                    invoice_id = invoice_model.search([('name', '=', no_inv),('is_mp_approved', '=', True),('invoice_number', '=', False)], limit=1)
+                    print("invoice_data", invoice_data)
+                    acc_doc = invoice_data[3]  # ACC_DOC
+                    invoice_id = invoice_model.search([
+                        ('name', '=', acc_doc),
+                        ('is_mp_approved', '=', True),
+                        ('invoice_number', '=', False)
+                    ], limit=1)
                     if invoice_id:
-                        invoice_id.write({
-                            'invoice_number': invoice_data[1],
-                            'year': invoice_data[2],
-                            'payment_reference': invoice_data[3],
-                            'dp_doc': invoice_data[4],
-                            'retensi_doc': invoice_data[5]
-                        })
-                        updated_invoices.append(no_inv)
+                        update_vals = {
+                            'name': acc_doc,
+                            'year': invoice_data[2],  # GJAHR
+                            'dp_doc': invoice_data[4],  # DP_DOC
+                            'retensi_doc': invoice_data[5],  # RET_DOC
+                        }
+                        if invoice_data[6]:  # AP_DOC
+                            update_vals.update({
+                                'payment_reference': invoice_data[6],
+                                'no_doc_sap': invoice_data[1]  # BELNR
+                            })
+                        else:
+                            update_vals['payment_reference'] = invoice_data[1]  # BELNR
+
+                        invoice_id.write(update_vals)
+                        updated_invoices.append(acc_doc)
                     else:
                         pass
                 shutil.move(file_path, os.path.join(conf_id.sftp_folder_archive, file_name))
         except FileNotFoundError:
             pass
-            #raise ValidationError(_("File TXT dari SAP atas invoice yang dituju tidak ditemukan!"))
 
