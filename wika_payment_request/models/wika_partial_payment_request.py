@@ -55,6 +55,12 @@ class WikaPartialPaymentRequest(models.Model):
         ('paid', 'Paid'),
     ], default='not request', string='Payment State')
     payment_request_id = fields.Many2one('wika.payment.request', string='Payment Request')
+    # === Payment fields === #
+    payment_id = fields.Many2one(
+        comodel_name='account.payment',
+        string="Payment",
+        copy=False,
+    )
 
     @api.depends('total_invoice', 'partial_amount')
     def _compute_remaining_amount(self):

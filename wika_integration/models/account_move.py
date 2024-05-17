@@ -9,12 +9,38 @@ class AccountMoveInheritWika(models.Model):
     year = fields.Char(string='Invoice Year')
     dp_doc = fields.Char(string='DP Doc')
     retensi_doc = fields.Char(string='Retensi Doc')
+    payment_move_ids = fields.One2many(
+        'account.payment',
+        'payment_move_id',
+        string='Payments',
+        copy=False,
+        readonly=True,
+        states={'draft': [('readonly', False)]},
+    )
+    amount_due = fields.Float('Amount Due')
 
-    # @api.model_create_multi
-    # def create(self, vals_list):
-    #     _logger.info("DEBUGGGGG ON CREATE ACCOUNT MOVE")
-    #     _logger.info(vals_list)
-    #     record = super(AccountMoveInheritWika, self).create(vals_list)
+    def _compute_amount_due(self):
+        for rec in self:
+            total_paid = 0
+            if self.partial_request_ids:
+                residual_amount = rec.sisa_partial
+            else:    
+                total_paid = sum(rec.payment_move_ids.mapped('amount'))
+                residual_amount = rec.amount_total_payment - total_paid
+            
+            _logger.info("Total Paid %s Residual Amount %s" % (str(total_paid), str(residual_amount)))
+
+            rec.amount_due = residual_amount
+
+    def _set_payment_paid(self):
+        for rec in self:
+            if rec.amount_due == 0:
+                rec.payment_state = 'paid'
+    
+    @api.depends('amount_residual', 'move_type', 'state', 'company_id')
+    def _compute_payment_state(self):
+        for rec in self:
+            rec._set_payment_paid() 
 
 class AccountMoveLine(models.Model):
     _inherit = 'account.move.line'

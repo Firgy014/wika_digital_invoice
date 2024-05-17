@@ -38,6 +38,7 @@
         'views/wika_get_gr.xml',
         'views/purchase_order.xml',
         'views/templates.xml',
+        'views/account_payment_views.xml',
     ],
     # only loaded in demonstration mode
     'demo': [

@@ -104,7 +104,7 @@ class wika_get_po(models.Model):
                                         }) % (profit_center, no_po, tgl_write_sap)
                 payload_2 = payload_2.replace('\n', '')
                
-                _logger.info(payload_2)
+                # _logger.info(payload_2)
             
                 response_2 = requests.request("POST", url_get_po, data=payload_2, headers=headers)
                 # _logger.info(response_2.text)
@@ -152,7 +152,7 @@ class wika_get_po(models.Model):
                             
                             # Looping pengisian data detail po
                             for hasil in data['isi']:
-                                _logger.info("DEBUG DETAIL : =============================================================")
+                                # _logger.info("DEBUG DETAIL : =============================================================")
                                 
                                 seq = float(hasil['po_no'])
                                 line_active = True
@@ -272,8 +272,8 @@ class wika_get_po(models.Model):
                                 po_create.get_gr()
                         
                         else: # Update PO
-                            _logger.info("DEBUG UPDATE : =============================================================")
-                            _logger.info(po)
+                            # _logger.info("DEBUG UPDATE PO: =============================================================")
+                            # _logger.info(po)
                             current_date = fields.Date.today()
                             po_lcdat = datetime.strptime(data['po_lcdat'], '%Y-%m-%d').date()
                             difference = current_date - po_lcdat
@@ -426,14 +426,14 @@ class wika_get_po(models.Model):
                 payload_2 = payload_2.replace('\n', '')
                 _logger.info(payload_2)
                 response_2 = requests.request("POST", url_get_po, data=payload_2, headers=headers)
-                print("RRRRRRRRRRRRRRRRRRRRRRRRRR",response_2.status_code)
+                # print("RRRRRRRRRRRRRRRRRRRRRRRRRR",response_2.status_code)
                 if response_2.status_code==200:
                     txt = json.loads(response_2.text)
                     print(txt['data'])
                     if txt['data']:
                         txt_data = txt['data']
                         if isinstance(txt_data, list):
-                            print ("1111111111111111111")
+                            # print ("1111111111111111111")
                             for data in txt_data:
                                 vals = []
                                 potongan = []
@@ -532,7 +532,7 @@ class wika_get_po(models.Model):
                                                 return "Kode Profit Center : %s tidak ditemukan" % data['prctr']
                                         if hasil['poitem_del'] == 'L':
                                             line_active = False
-                                        print ("[[[[[[[[[[[[[[[[[[")
+                                        # print ("[[[[[[[[[[[[[[[[[[")
                                         vals.append((0, 0, {
                                             'sequence': int(seq),
                                             'product_id': prod.id if prod else False,
@@ -545,7 +545,7 @@ class wika_get_po(models.Model):
                                         }))
                                         print (vals)
                                 else:
-                                    print ("SSSSSSSSSSSSSSSSSSSSS")
+                                    # print ("SSSSSSSSSSSSSSSSSSSSS")
 
                                     for hasil in data['isi']:
                                         seq = float(hasil['po_no'])
@@ -557,7 +557,7 @@ class wika_get_po(models.Model):
                                 if not vals:
                                     continue
                                 else:
-                                    print ("DDDDDDDDDDDDD")
+                                    # print ("DDDDDDDDDDDDD")
                                     po_create = self.env['purchase.order'].sudo().create({
                                         'name': data['po_doc'],
                                         'payment_term_id': payment_term.id if payment_term else False,
@@ -576,7 +576,7 @@ class wika_get_po(models.Model):
                                     })
                                     po_create.get_gr()
                         else:
-                            print("22222222222222222")
+                            # print("22222222222222222")
                             vals = []
                             potongan = []
                             # if txt_data['po_del'] == 'C':
@@ -750,7 +750,7 @@ class wika_get_po(models.Model):
             "incmp_cat" : "","po_lcdat":""
         }) % (self.profit_center, self.name, self.po_plant, self.co_code)
             payload_2 = payload_2.replace('\n', '')
-            _logger.info(payload_2)
+            # _logger.info(payload_2)
             response_2 = requests.request("POST", url_get_po, data=payload_2, headers=headers)
             txt = json.loads(response_2.text)
             if txt['data']:

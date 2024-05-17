@@ -40,7 +40,7 @@
             <field name="model_id" ref="wika_integration.model_wika_get_payment_status" />
             <field name="state">code</field>
             <field name="active">False</field>
-            <field name="code">model._auto_get_payment_status('2024/04/30')</field>
+            <field name="code">model._auto_get_payment_status('2024/04/30', '2024/04/30', '5100000018')</field>
             <field name="interval_number">1</field>
             <field name="interval_type">days</field>
             <field name="numbercall">1</field>
