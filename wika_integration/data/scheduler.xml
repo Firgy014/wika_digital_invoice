@@ -51,7 +51,7 @@
             <field name="model_id" ref="wika_integration.model_wika_get_invoice_non_po" />
             <field name="state">code</field>
             <field name="active">False</field>
-            <field name="code">model.get_create_update_invoice_non_po('2024-01-01', '2024-01-30', '1700000003')</field>
+            <field name="code">model.get_create_update_invoice_non_po('2024-03-01', '2024-03-30', '')</field>
             <field name="interval_number">1</field>
             <field name="interval_type">days</field>
             <field name="numbercall">1</field>

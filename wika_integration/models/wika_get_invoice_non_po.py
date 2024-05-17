@@ -73,20 +73,20 @@ class wika_get_invoice_non_po(models.Model):
                     v_item_text = inv_rec[14];
                     v_profit_center = trim(inv_rec[15]);
                             
-                    -- RAISE NOTICE 'profit_center %', v_profit_center;
+--                     RAISE NOTICE 'profit_center %', v_profit_center;
 										SELECT id, branch_id INTO v_project_id, v_branch_id FROM project_project WHERE sap_code = v_profit_center;
-										-- RAISE NOTICE 'v_project_id %', v_project_id;
-										-- RAISE NOTICE 'v_branch_id %', v_branch_id;
+										RAISE NOTICE 'v_project_id %', v_project_id;
+										RAISE NOTICE 'v_branch_id %', v_branch_id;
                     IF v_project_id IS NOT NULL AND v_branch_id IS NOT NULL THEN
-                        -- RAISE NOTICE 'v_vendor %', v_vendor;
+--                         RAISE NOTICE 'v_vendor %', v_vendor;
 												SELECT id INTO v_vendor_id FROM res_partner WHERE sap_code = v_vendor;
-												-- RAISE NOTICE 'v_vendor_id %', v_vendor_id;
+												RAISE NOTICE 'v_vendor_id %', v_vendor_id;
 
                         IF v_vendor_id IS NOT NULL THEN
                             SELECT id FROM res_currency INTO v_currency_id WHERE name = v_currency;
-														-- RAISE NOTICE 'v_currency_id %', v_currency_id;
+														RAISE NOTICE 'v_currency_id %', v_currency_id;
                             SELECT id FROM account_payment_term WHERE name::text LIKE '%ZC00%' INTO v_payment_term_id;
-														-- RAISE NOTICE 'v_payment_term_id %', v_payment_term_id;
+														RAISE NOTICE 'v_payment_term_id %', v_payment_term_id;
                             SELECT id FROM account_move INTO v_invoice_exist WHERE payment_reference = v_doc_number and year = v_year;
                             RAISE NOTICE 'v_invoice_exist %', v_invoice_exist;
 														IF v_invoice_exist IS NULL THEN
@@ -94,7 +94,8 @@ class wika_get_invoice_non_po(models.Model):
                                 INSERT INTO account_move (
                                     name, project_id, branch_id,
                                     payment_reference, year, currency_id, 
-                                    date, invoice_date, partner_id, 
+                                    date, invoice_date, invoice_date_due, 
+																		partner_id, 
                                     invoice_payment_term_id, no_faktur_pajak, no_invoice_vendor,
                                     state, move_type, journal_id,
 																		auto_post, extract_state, 
@@ -102,7 +103,8 @@ class wika_get_invoice_non_po(models.Model):
                                 ) VALUES (
                                     v_doc_number || v_year, v_project_id, v_branch_id,
                                     v_doc_number, v_year, v_currency_id,
-                                    v_posting_date, v_posting_date, v_vendor_id, 
+                                    v_posting_date, v_posting_date, v_posting_date, 
+																		v_vendor_id, 
                                     v_payment_term_id, v_header_text, v_reference,
                                     'draft', 'in_invoice', 2,
 																		'no', 'no_extract_requested',
@@ -122,6 +124,7 @@ class wika_get_invoice_non_po(models.Model):
                                     currency_id = v_currency_id, 
                                     date = v_posting_date, 
                                     invoice_date = v_posting_date, 
+																		invoice_date_due = v_posting_date, 
                                     partner_id = v_vendor_id, 
                                     invoice_payment_term_id = v_payment_term_id, 
                                     no_faktur_pajak = v_header_text, 
@@ -139,18 +142,18 @@ class wika_get_invoice_non_po(models.Model):
                                 INSERT INTO account_move_line (
                                     move_id, move_name, sequence,
                                     name, quantity, price_unit, 
-                                    pph_cash_basis, date,
+                                    price_subtotal, amount_sap, pph_cash_basis, 
+																		date,
                                     parent_state, currency_id, company_currency_id,
-									display_type, account_id, account_root_id,
-                                    company_id,
+																		display_type, account_id, account_root_id,
                                     create_date, create_uid
                                 ) VALUES (
                                     v_resource_id, v_doc_number || v_year, v_line_item,
-                                    v_item_text, 1, v_amount::numeric,
-                                    v_pph_cbasis::numeric, v_posting_date, 
+                                    v_item_text, 1, ABS(v_amount::numeric),
+                                    ABS(v_amount::numeric), ABS(v_amount::numeric), ABS(v_pph_cbasis::numeric*), 
+																		v_posting_date, 
                                     'draft', v_currency_id, 13,
-									'product', 67, 53049,
-                                    1,
+																		'product', 67, 53049,
                                     (now() at time zone 'UTC'), v_uid
                                 );
                             ELSE
@@ -161,13 +164,24 @@ class wika_get_invoice_non_po(models.Model):
                                     name = v_item_text, 
                                     quantity = 1, 
                                     price_unit = v_amount::numeric, 
-                                    pph_cash_basis = v_pph_cbasis::numeric, 
+																		price_subtotal = v_amount::numeric,
+																		amount_sap = v_amount::numeric,
+                                    pph_cash_basis = ABS(v_pph_cbasis::numeric), 
                                     date = v_posting_date,
                                     parent_state = 'draft',
                                     create_date = (now() at time zone 'UTC'), 
                                     create_uid = v_uid
                                 WHERE id = v_move_line_id;
                             END IF;
+														-- update invoice
+														
+														UPDATE account_move SET
+																amount_total_footer = (SELECT SUM(price_subtotal)-SUM(pph_cash_basis) FROM account_move_line WHERE move_id =v_resource_id), 
+																amount_total_payment = (SELECT SUM(price_subtotal)-SUM(pph_cash_basis) FROM account_move_line WHERE move_id =v_resource_id),
+																amount_untaxed_signed = (SELECT SUM(price_subtotal) FROM account_move_line WHERE move_id =v_resource_id),
+																amount_total_signed = (SELECT SUM(price_subtotal)-SUM(pph_cash_basis) FROM account_move_line WHERE move_id =v_resource_id),
+																amount_total_in_currency_signed = (SELECT SUM(price_subtotal)-SUM(pph_cash_basis) FROM account_move_line WHERE move_id =v_resource_id)
+														WHERE id = v_resource_id;
                         END IF;
                     END IF;
 
@@ -214,6 +228,8 @@ class wika_get_invoice_non_po(models.Model):
                 # diurutkan berdasarakan tahun dan doc number
                 txt_data = sorted(result['DATA'], key=lambda x: (x["YEAR"], x["DOC_NUMBER"]))
                 i = 0
+                sap_codes = []
+                vendors = []
                 for data in txt_data:
                     # _logger.info(data)
                     doc_number = data["DOC_NUMBER"]
@@ -249,24 +265,31 @@ class wika_get_invoice_non_po(models.Model):
                         str(item_text),
                         str(profit_center),
                     ]
-                    # _logger.info(recs)
-                    recs = "~~".join(recs)    
-                    data_final.append(recs)
 
-                i = i+1
+                    recs = "~~".join(recs)
+                    data_final.append(recs)
+                    # if profit_center:
+                    #     sap_codes.append(str(profit_center))
+
+                    vendors.append(str(vendor))
+                    i = i+1
+
                 data_final = "|".join(data_final)
-                # _logger.info("DATA FINAL %s = %s" % (i, data_final))
+                # _logger.info("-----Project %s = %s" % (i, sap_codes))
+                # _logger.info("-----Vendor %s = %s" % (i, vendors))
+                _logger.info("-----DATA FINAL %s = %s" % (i, data_final))
 
                 cr = self.env.cr
                 cr.execute("select wika_cu_inv_non_po(%s)", (data_final,))
+                _logger.info(_("-----Import Data Berhasil-----"))
             else:
-                raise UserError(_("Data Payment Status Tidak Tersedia!"))
+                raise UserError(_("Data Tidak Tersedia!"))
             
         except UserError:
             _logger.info("ERRORRRRRRR")
             _logger.info(UserError)
             self.status='-'
         
-        self.env.ref('wika_integration.get_create_update_invoice_non_po')._trigger()
+        # self.env.ref('wika_integration.get_create_update_invoice_non_po')._trigger()
     
    
