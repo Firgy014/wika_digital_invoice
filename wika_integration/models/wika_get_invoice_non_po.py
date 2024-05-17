@@ -106,7 +106,7 @@ class wika_get_invoice_non_po(models.Model):
                                     v_posting_date, v_posting_date, v_posting_date, 
 																		v_vendor_id, 
                                     v_payment_term_id, v_header_text, v_reference,
-                                    'draft', 'in_invoice', 2,
+                                    'approved', 'in_invoice', 2,
 																		'no', 'no_extract_requested',
                                     (now() at time zone 'UTC'), v_uid
                                 ) 
@@ -152,7 +152,7 @@ class wika_get_invoice_non_po(models.Model):
                                     v_item_text, 1, ABS(v_amount::numeric),
                                     ABS(v_amount::numeric), ABS(v_amount::numeric), ABS(v_pph_cbasis::numeric), 
 																		v_posting_date, 
-                                    'draft', v_currency_id, 13,
+                                    'approved', v_currency_id, 13,
 																		'product', 67, 53049,
                                     (now() at time zone 'UTC'), v_uid
                                 );
@@ -178,6 +178,7 @@ class wika_get_invoice_non_po(models.Model):
 														UPDATE account_move SET
 																amount_total_footer = (SELECT SUM(price_subtotal)-SUM(pph_cash_basis) FROM account_move_line WHERE move_id =v_resource_id), 
 																amount_total_payment = (SELECT SUM(price_subtotal)-SUM(pph_cash_basis) FROM account_move_line WHERE move_id =v_resource_id),
+																amount_invoice = (SELECT SUM(price_subtotal) FROM account_move_line WHERE move_id =v_resource_id),
 																amount_untaxed_signed = (SELECT SUM(price_subtotal) FROM account_move_line WHERE move_id =v_resource_id),
 																amount_total_signed = (SELECT SUM(price_subtotal)-SUM(pph_cash_basis) FROM account_move_line WHERE move_id =v_resource_id),
 																amount_total_in_currency_signed = (SELECT SUM(price_subtotal)-SUM(pph_cash_basis) FROM account_move_line WHERE move_id =v_resource_id)
