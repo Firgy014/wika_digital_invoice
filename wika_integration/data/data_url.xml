@@ -1,4 +1,5 @@
 <odoo>
+    <data noupdate="1">
     <record id="url_gr_ses" model="wika.integration">
         <field name="name">URL GR</field>
         <field name="app">SAP</field>
@@ -37,4 +38,10 @@
         <field name="app">SAP</field>
         <field name="url">https://fiori.wika.co.id/ywikafi016b/update-paymntmethod?sap-client=300</field>
     </record>
+        <record id="url_invoice_non_po" model="wika.integration">
+        <field name="name">URL_INV_NON_PO</field>
+        <field name="app">SAP</field>
+        <field name="url">https://fioridev.wika.co.id/ywikafi025/listinvoicenonpo?sap-client=110</field>
+    </record>
+    </data>
 </odoo>
