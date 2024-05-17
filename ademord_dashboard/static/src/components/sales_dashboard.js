@@ -5,7 +5,7 @@ import { KpiCard } from "./kpi_card/kpi_card"
 import { ChartRenderer } from "./chart_renderer/chart_renderer"
 import { loadJS } from "@web/core/assets"
 import { useService } from "@web/core/utils/hooks"
-const { Component, onWillStart, useRef, onMounted, useState } = owl
+const { Component, onWillStart, useRef, onMounted, useState, xml } = owl
 import { getColor } from "@web/views/graph/colors"
 import { browser } from "@web/core/browser/browser"
 import { routeToUrl } from "@web/core/browser/router_service"
@@ -15,30 +15,35 @@ console.log("CHECK USER", session);
 // var core = require('web.core');
 // console.log("CHECK USER COREEEEEEEEE", core);
 
-// var rpc = require('web.rpc');
+var rpc = require('web.rpc');
 // console.log("CHECK USER RPCCCCCCC", rpc);
 
 export class OwlSalesDashboard extends Component {
 
-    // async fetchUsersData() {
-    //     try {
-    //         const users = await rpc.query({
-    //             model: 'res.users',
-    //             method: 'search_read',
-    //             args: [[['id', '=', session.uid]]], // Mengambil data pengguna berdasarkan ID pengguna yang sedang login
-    //             kwargs: {
-    //                 fields: ['id', 'name', 'email', 'level'], // Bidang yang ingin Anda ambil
-    //                 limit: 1 // Kita hanya mengambil satu pengguna yang sedang login
-    //             }
-    //         });
-    //         console.log("User data:", users);
-    //         if (users.length > 0) {
-    //             this.state.userData = users[0];
-    //         }
-    //     } catch (error) {
-    //         console.error("Error fetching user data:", error);
-    //     }
-    // }
+    async fetchUsersData() {
+        try {
+            let users = await rpc.query({
+                model: 'res.users',
+                method: 'search_read',
+                args: [[['id', '=', session.uid]]], // Mengambil data pengguna berdasarkan ID pengguna yang sedang login
+                kwargs: {
+                    fields: ['id', 'name', 'email', 'level'], // Bidang yang ingin Anda ambil
+                    // limit: 1 // Kita hanya mengambil satu pengguna yang sedang login
+                }
+            });
+            console.log("masuk 1");
+            console.log("User data:", users);
+            if (users.length > 0) {
+                this.state.userData = users[0];
+            }
+        } catch (error) {
+            console.error("Error fetching user data:", error);
+            console.log("masuk 2");
+            console.log("console erorrr", error);
+
+        }
+        console.log("masuk 3");
+    }
 
     // top products
     async getTopProjects(){
@@ -401,6 +406,7 @@ export class OwlSalesDashboard extends Component {
             },
 
             period:90,
+            // userData:[],
         })
         this.orm = useService("orm")
         this.actionService = useService("action")
@@ -413,102 +419,114 @@ export class OwlSalesDashboard extends Component {
             search.old_chartjs = old_chartjs != null ? "0":"1"
             hash.action = 86
             browser.location.href = browser.location.origin + routeToUrl(router.current)
-        }
+        }   
+
+        // onWillUnmount(() => {
+        //     this.__destroyed = true;
+        // });
 
         onWillStart(async ()=>{
-            this.getDates()
-            // await this.fetchUsersData()
-            // PO
-            await this.getTotalPO()
-            await this.getWaitingPO()
-            await this.getUploadedPO()
-            await this.getLatePO()
-            // PO Urls
-            await this.getPoUrlWait()
-            await this.getPoUrlUpload()
-            await this.getPoUrlLate()
+            try {
+                this.getDates()
+                await this.fetchUsersData()
+                const promises = [
+                    // PO
+                    await this.getTotalPO(),
+                    await this.getWaitingPO(),
+                    await this.getUploadedPO(),
+                    await this.getLatePO(),
+                    // PO Urls
+                    await this.getPoUrlWait(),
+                    await this.getPoUrlUpload(),
+                    await this.getPoUrlLate(),
+    
+                    // GRSES
+                    await this.getTotalGRSES(),
+                    await this.getWaitingGRSES(),
+                    await this.getUploadedGRSES(),
+                    await this.getLateGRSES(),
+                    // GRSES Urls
+                    await this.getGrsesUrlWait(),
+                    await this.getGrsesUrlUpload(),
+                    await this.getGrsesUrlLate(),
+    
+                    // BAP
+                    await this.getTotalBAP(),
+                    await this.getWaitingBAP(),
+                    await this.getUploadedBAP(),
+                    await this.getLateBAP(),
+                    // BAP Urls
+                    await this.getBapUrlWait(),
+                    await this.getBapUrlUpload(),
+                    await this.getBapUrlLate(),
+    
+                    // INV
+                    await this.getTotalINV(),
+                    await this.getWaitingINV(),
+                    await this.getUploadedINV(),
+                    await this.getLateINV(),
+                    // INV Urls
+                    await this.getInvUrlWait(),
+                    await this.getInvUrlUpload(),
+                    await this.getInvUrlLate(),
+    
+                    // PR
+                    await this.getTotalPR(),
+                    await this.getWaitingPR(),
+                    await this.getUploadedPR(),
+                    await this.getLatePR(),
+    
+                    // PR Urls
+                    await this.getPrUrlWait(),
+                    await this.getPrUrlUpload(),
+                    await this.getPrUrlLate(),
+    
+                    // PR item
+                    await this.getTotalPRitem(),
+                    await this.getWaitingPRitem(),
+                    await this.getUploadedPRitem(),
+                    await this.getLatePRitem(),
+                    
+                    // PR item url
+                    await this.getPrItemUrlWait(),
+                    await this.getPrItemUrlUpload(),
+                    await this.getPrItemUrlLate(),
+    
+                    // PR item pusat
+                    await this.getTotalPRitempus(),
+                    await this.getWaitingPRitempus(),
+                    await this.getUploadedPRitempus(),
+                    await this.getLatePRitempus(),
+                    
+                    // PR item pusat url
+                    await this.getPrItemPusUrlWait(),
+                    await this.getPrItemPusUrlUpload(),
+                    await this.getPrItemPusUrlLate(),
+    
+                    // New Pie
+                    await this.getDigitalInvoiceReport(),
+                    
+                    // Existings
+                    await this.getOrders(),
+                    await this.getTopProjects(),
+                    // await this.getTopSalesPeople()
+                    await this.getMonthlySales(),
+                    await this.getInvoiceMonitoringData(),
+                    await this.getPartnerOrders(),
+                ];
+                await Promise.all(promises);
 
-            // GRSES
-            await this.getTotalGRSES()
-            await this.getWaitingGRSES()
-            await this.getUploadedGRSES()
-            await this.getLateGRSES()
-            // GRSES Urls
-            await this.getGrsesUrlWait()
-            await this.getGrsesUrlUpload()
-            await this.getGrsesUrlLate()
-
-            // BAP
-            await this.getTotalBAP()
-            await this.getWaitingBAP()
-            await this.getUploadedBAP()
-            await this.getLateBAP()
-            // BAP Urls
-            await this.getBapUrlWait()
-            await this.getBapUrlUpload()
-            await this.getBapUrlLate()
-
-            // INV
-            await this.getTotalINV()
-            await this.getWaitingINV()
-            await this.getUploadedINV()
-            await this.getLateINV()
-            // INV Urls
-            await this.getInvUrlWait()
-            await this.getInvUrlUpload()
-            await this.getInvUrlLate()
-
-            // PR
-            await this.getTotalPR()
-            await this.getWaitingPR()
-            await this.getUploadedPR()
-            await this.getLatePR()
-
-            // PR Urls
-            await this.getPrUrlWait()
-            await this.getPrUrlUpload()
-            await this.getPrUrlLate()
-
-            // PR item
-            await this.getTotalPRitem()
-            await this.getWaitingPRitem()
-            await this.getUploadedPRitem()
-            await this.getLatePRitem()
-            
-            // PR item url
-            await this.getPrItemUrlWait()
-            await this.getPrItemUrlUpload()
-            await this.getPrItemUrlLate()
-
-            // PR item pusat
-            await this.getTotalPRitempus()
-            await this.getWaitingPRitempus()
-            await this.getUploadedPRitempus()
-            await this.getLatePRitempus()
-            
-            // PR item pusat url
-            await this.getPrItemPusUrlWait()
-            await this.getPrItemPusUrlUpload()
-            await this.getPrItemPusUrlLate()
-
-            // New Pie
-            await this.getDigitalInvoiceReport()
-            
-            // Existings
-            await this.getOrders()
-            await this.getTopProjects()
-            // await this.getTopSalesPeople()
-            await this.getMonthlySales()
-            await this.getInvoiceMonitoringData()
-            await this.getPartnerOrders()
-
-        })
+            } catch (error) {
+                console.error("Error during onWillStart:", error);
+            }
+        });
     }
 
     async onChangePeriod(){
         this.getDates()
         // await this.getQuotations()
         // PO
+        // await this.fetchUsersData()
         await this.getTotalPO()
         await this.getWaitingPO()
         await this.getUploadedPO()
