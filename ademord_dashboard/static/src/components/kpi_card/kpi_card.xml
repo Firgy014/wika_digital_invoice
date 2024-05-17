@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <templates>
     <t t-name="owl.KpiCard" owl="1">
-        <t t-if="(props.name !== 'Payment Request Divisi' or (props.users !== 50 and props.users !== 49)) 
+        <t t-if="(props.name !== 'Payment Request Divisi' or (props.user !== 50 and props.user !== 49 and props.user !== 256)) 
             and (props.name !== 'Payment Request Pusat' or (props.user !== 36 
             and props.user !== 37 and props.user !== 38 and props.user !== 39 
             and props.user !== 44 and props.user !== 45 and props.user !== 46 
