@@ -279,10 +279,10 @@ class WikaPaymentRequest(models.Model):
         #res.assign_todo_first()
         return super(WikaPaymentRequest, self).create(vals)
 
-    @api.depends('move_ids')
+    @api.depends('invoice_ids.amount_total_footer')
     def compute_total(self):
         for record in self:
-            total_amount = sum(record.move_ids.mapped('amount'))
+            total_amount = sum(record.invoice_ids.mapped('amount_total_footer'))
             record.total = total_amount
 
     def action_submit(self):
