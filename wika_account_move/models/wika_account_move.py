@@ -96,6 +96,13 @@ class WikaInheritedAccountMove(models.Model):
                     total_pph += (total_net* pph.amount) / 100
                 record.total_pph = math.floor(total_pph)
 
+            total_pph_cbasis = 0
+            # for line in record.invoice_line_ids:
+            #     total_pph_cbasis += line.pph_cash_basis
+            # record.total_pph += total_pph_cbasis
+
+
+
     @api.depends('history_approval_ids')
     def _compute_status_invoice(self):
         for record in self:
@@ -405,24 +412,24 @@ class WikaInheritedAccountMove(models.Model):
         elif record.ap_type == 'ap_nonpo':
             record.assign_todo_first_without_activities()
 
-        if isinstance(record, bool):
-            return record
-        if len(record) != 1:
-            raise ValidationError("Hanya satu record yang diharapkan diperbarui!")
+        # if isinstance(record, bool):
+        #     return record
+        # if len(record) != 1:
+        #     raise ValidationError("Hanya satu record yang diharapkan diperbarui!")
 
         
         #document date
-        if record.invoice_date != False and record.invoice_date < record.bap_id.bap_date and record.cut_off!=True:
-            raise ValidationError("Document Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
-        else:
-            pass
-
-        #posting date
-        if record.ap_type == 'ap_po':
-            if record.date != False and record.date < record.bap_id.bap_date and record.cut_off!=True:
-                raise ValidationError("Posting Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
-            else:
-                pass
+        # if record.invoice_date != False and record.invoice_date < record.bap_id.bap_date and record.cut_off!=True:
+        #     raise ValidationError("Document Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
+        # else:
+        #     pass
+        #
+        # #posting date
+        # if record.ap_type == 'ap_po':
+        #     if record.date != False and record.date < record.bap_id.bap_date and record.cut_off!=True:
+        #         raise ValidationError("Posting Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
+        #     else:
+        #         pass
 
         return record
 
