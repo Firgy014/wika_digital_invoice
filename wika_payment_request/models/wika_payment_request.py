@@ -678,11 +678,11 @@ class WikaPrLine(models.Model):
             'Authorization': 'Basic V0lLQV9JTlQ6SW5pdGlhbDEyMw=='
         }
         response_post = requests.request("POST", url, headers=post_headers, data=payload, cookies=fetched_cookies)
-        parsed_response = json.loads(response_post.text)
-        message = parsed_response[0]["MESSAGE"]
-        self.invoice_id.msg_sap=message
-        _logger.info(response_post.text)
-        self.pr_id.is_posted_to_sap = True
+        #parsed_response = json.loads(response_post.text)
+        #message = parsed_response[0]["MESSAGE"]
+        #self.invoice_id.msg_sap=message
+        #_logger.info(response_post.text)
+        #self.pr_id.is_posted_to_sap = True
 
     def send_pusat_approved_pr_to_sap(self):
         package_id = self._generate_random_string()
@@ -742,8 +742,8 @@ class WikaPrLine(models.Model):
             'Authorization': 'Basic V0lLQV9JTlQ6SW5pdGlhbDEyMw=='
         }
         response_post = requests.request("POST", url, headers=post_headers, data=payload, cookies=fetched_cookies)
-        _logger.info(response_post.text)
-        parsed_response = json.loads(response_post.text)
-        message = parsed_response[0]["MESSAGE"]
-        self.invoice_id.msg_sap=message
-        self.pr_id.is_posted_to_sap = True
+        #_logger.info(response_post.text)
+        #parsed_response = json.loads(response_post.text)
+        #message = parsed_response[0]["MESSAGE"]
+        #self.invoice_id.msg_sap=message
+        #self.pr_id.is_posted_to_sap = True
