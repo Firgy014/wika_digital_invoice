@@ -1,147 +1,148 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <templates>
     <t t-name="owl.KpiCard" owl="1">
-        <t t-if="(props.name !== 'Payment Request Divisi' or (props.users !== 50 and props.users !== 49)) 
-            and (props.name !== 'Payment Request Pusat' or (props.user !== 36 
-            and props.user !== 37 and props.user !== 38 and props.user !== 39 
-            and props.user !== 44 and props.user !== 45 and props.user !== 46 
-            and props.user !== 47))">
-            <div class="col-lg-3 m-0 p-0">
-                <!-- <div class="shadow-sm border m-2 p-4 bg-white text-center cursor-pointer" t-on-click="()=>props.onClick()"> -->
-                <div class="shadow-sm border m-2 p-4 bg-white text-center cursor-pointer">
-                    <div class="h1 fw-bold text-dark" style="font-size: 48px">
-                        <t t-if="props.name === 'Purchase Orders'">
-                            <i class="fa fa-file-text" style="margin-right: 10px;"></i>
-                        </t>
-                        <t t-elif="props.name === 'GR/SES'">
-                            <i class="fa fa-archive" style="margin-right: 10px;"></i>
-                        </t>
-                        <t t-elif="props.name === 'BAP'">
-                            <i class="fa fa-files-o" style="margin-right: 10px;"></i>
-                        </t>
-                        <t t-elif="props.name === 'Invoice'">
-                            <i class="fa fa-money" style="margin-right: 10px;"></i>
-                        </t>
-                        <t t-elif="props.name === 'Payment Request Proyek'">
-                            <i class="fa fa-credit-card" style="margin-right: 10px;"></i>
-                        </t>
-                        <t t-elif="props.name === 'Payment Request Divisi'">
-                            <i class="fa fa-credit-card" style="margin-right: 10px;"></i>
-                        </t>
-                        <t t-elif="props.name === 'Payment Request Pusat'">
-                            <i class="fa fa-credit-card" style="margin-right: 10px;"></i>
-                        </t>
-                        <span t-esc="props.total"/>
-                    </div>
-                    <div class="h3 text-muted">
-                        <span t-esc="props.name"/>
-                    </div>
-                    <div class="h3 mt-5">
-                        
-                        <!-- PO -->
-                        <t t-if="props.name === 'Purchase Orders'">
-                            <div style="padding-left: 1vw;">
-                                <div class="col-12" style="text-align-last: left;">
-                                    <a t-attf-href="{{props.urlwait}}" t-attf-style="{{props.waits >= 1 ? 'color: red;' : ''}}" type="object"><span t-esc="props.waits"/> To Upload</a>
-                                </div>
-                                <div class="col-12" style="text-align-last: left;">
-                                    <a t-attf-href="{{props.urlupload}}" t-attf-style="{{props.uploaded >= 1 ? 'color: red;' : ''}}" type="object"><span t-esc="props.uploaded"/> To Approve</a>
-                                </div>
-                                <div class="col-12" style="text-align-last: left;">
-                                    <a t-attf-href="{{props.urllate}}" t-attf-style="{{props.late >= 1 ? 'color: red;' : ''}}" type="object"><span t-esc="props.late"/> Late</a>
-                                </div>
+        <div class="col-lg-3 m-0 p-0">
+            <!-- <div class="shadow-sm border m-2 p-4 bg-white text-center cursor-pointer" t-on-click="()=>props.onClick()"> -->
+            <div class="shadow-sm border m-2 p-4 bg-white text-center cursor-pointer">
+                <div class="h1 fw-bold text-dark" style="font-size: 48px">
+                    <t t-if="props.name === 'Purchase Orders'">
+                        <i class="fa fa-file-text" style="margin-right: 10px; color: #000000;"></i>
+                        <a t-attf-href="{{props.urltotalpo}}" t-attf-style="color: #000000;"><span t-esc="props.totalpo" style="color: #000000;"/></a>
+                    </t>
+                    <t t-elif="props.name === 'GR/SES'">
+                        <i class="fa fa-archive" style="margin-right: 10px; color: #000000;"></i>
+                        <a t-attf-href="{{props.urltotalgrses}}" t-attf-style="color: #000000;"><span t-esc="props.totalgr" style="color: #000000;"/></a>
+                    </t>
+                    <t t-elif="props.name === 'BAP'">
+                        <i class="fa fa-files-o" style="margin-right: 10px; color: #000000;"></i>
+                        <a t-attf-href="{{props.urltotalbap}}" t-attf-style="color: #000000;"><span t-esc="props.totalbap" style="color: #000000;"/></a>
+                    </t>
+                    <t t-elif="props.name === 'Invoice'">
+                        <i class="fa fa-money" style="margin-right: 10px; color: #000000;"></i>
+                        <a t-attf-href="{{props.urltotalinv}}" t-attf-style="color: #000000;"><span t-esc="props.totalinv" style="color: #000000;"/></a>
+                    </t>
+                    <t t-elif="props.name === 'Payment Request Proyek'">
+                        <i class="fa fa-credit-card" style="margin-right: 10px; color: #000000;"></i>
+                        <a t-attf-href="{{props.urltotalinv}}" t-attf-style="color: #000000;"><span t-esc="props.totalpr" style="color: #000000;"/></a>
+                    </t>
+                    <t t-elif="props.name === 'Payment Request Divisi'">
+                        <i class="fa fa-credit-card" style="margin-right: 10px; color: #000000;"></i>
+                        <a t-attf-href="{{props.urltotalinv}}" t-attf-style="color: #000000;"><span t-esc="props.totalprdiv" style="color: #000000;"/></a>
+                    </t>
+                    <t t-elif="props.name === 'Payment Request Pusat'">
+                        <i class="fa fa-credit-card" style="margin-right: 10px; color: #000000;"></i>
+                        <a t-attf-href="{{props.urltotalinv}}" t-attf-style="color: #000000;"><span t-esc="props.totalprpus" style="color: #000000;"/></a>
+                    </t>
+                    <span t-esc="props.total"/>
+                </div>
+                <div class="h3 text-muted">
+                    <span t-esc="props.name"/>
+                </div>
+                <div class="h3 mt-5">
+                    
+                    <!-- PO -->
+                    <t t-if="props.name === 'Purchase Orders'">
+                        <div style="padding-left: 1vw;">
+                            <div class="col-12" style="text-align-last: left;">
+                                <a t-attf-href="{{props.urlwait}}" t-attf-style="{{props.waits >= 1 ? 'color: red;' : ''}}" type="object"><span t-esc="props.waits"/> To Upload</a>
                             </div>
-                        </t>
-                        
-                        <!-- GRSES -->
-                        <t t-elif="props.name === 'GR/SES'">
-                            <div style="padding-left: 2vw;">
-                                <div class="col-12" style="text-align-last: left;">
-                                    <a t-attf-href="{{props.urlwaitgrses}}" t-attf-style="{{props.grseswaits >= 1 ? 'color: red;' : ''}}" type="object"><span t-esc="props.grseswaits"/> To Upload</a>
-                                </div>
-                                <div class="col-12" style="text-align-last: left;">
-                                    <a t-attf-href="{{props.urluploadgrses}}" t-attf-style="{{props.grsesuploaded >= 1 ? 'color: red;' : ''}}" type="object"><span t-esc="props.grsesuploaded"/> To Approve</a>
-                                </div>
-                                <div class="col-12" style="text-align-last: left;">
-                                    <a t-attf-href="{{props.urllategrses}}" t-attf-style="{{props.grseslate >= 1 ? 'color: red;' : ''}}" type="object"><span t-esc="props.grseslate"/> Late</a>
-                                </div>
+                            <div class="col-12" style="text-align-last: left;">
+                                <a t-attf-href="{{props.urlupload}}" t-attf-style="{{props.uploaded >= 1 ? 'color: red;' : ''}}" type="object"><span t-esc="props.uploaded"/> To Approve</a>
                             </div>
-                        </t>
+                            <div class="col-12" style="text-align-last: left;">
+                                <a t-attf-href="{{props.urllate}}" t-attf-style="{{props.late >= 1 ? 'color: red;' : ''}}" type="object"><span t-esc="props.late"/> Late</a>
+                            </div>
+                        </div>
+                    </t>
+                    
+                    <!-- GRSES -->
+                    <t t-elif="props.name === 'GR/SES'">
+                        <div style="padding-left: 2vw;">
+                            <div class="col-12" style="text-align-last: left;">
+                                <a t-attf-href="{{props.urlwaitgrses}}" t-attf-style="{{props.grseswaits >= 1 ? 'color: red;' : ''}}" type="object"><span t-esc="props.grseswaits"/> To Upload</a>
+                            </div>
+                            <div class="col-12" style="text-align-last: left;">
+                                <a t-attf-href="{{props.urluploadgrses}}" t-attf-style="{{props.grsesuploaded >= 1 ? 'color: red;' : ''}}" type="object"><span t-esc="props.grsesuploaded"/> To Approve</a>
+                            </div>
+                            <div class="col-12" style="text-align-last: left;">
+                                <a t-attf-href="{{props.urllategrses}}" t-attf-style="{{props.grseslate >= 1 ? 'color: red;' : ''}}" type="object"><span t-esc="props.grseslate"/> Late</a>
+                            </div>
+                        </div>
+                    </t>
 
-                        <!-- BAP -->
-                        <t t-elif="props.name === 'BAP'">
-                            <div style="padding-left: 2vw;">
-                                <div class="col-12" style="text-align-last: left;">
-                                    <a t-attf-href="{{props.urlwaitbap}}" t-attf-style="{{props.bapwaits >= 1 ? 'color: red;' : ''}}" type="object"><span t-esc="props.bapwaits"/> To Upload</a>
-                                </div>
-                                <div class="col-12" style="text-align-last: left;">
-                                    <a t-attf-href="{{props.urluploadbap}}" t-attf-style="{{props.bapuploaded >= 1 ? 'color: red;' : ''}}" type="object"><span t-esc="props.bapuploaded"/> To Approve</a>
-                                </div>
-                                <div class="col-12" style="text-align-last: left;">
-                                    <a t-attf-href="{{props.urllatebap}}" t-attf-style="{{props.baplate >= 1 ? 'color: red;' : ''}}" type="object"><span t-esc="props.baplate"/> Late</a>
-                                </div>
+                    <!-- BAP -->
+                    <t t-elif="props.name === 'BAP'">
+                        <div style="padding-left: 2vw;">
+                            <div class="col-12" style="text-align-last: left;">
+                                <a t-attf-href="{{props.urlwaitbap}}" t-attf-style="{{props.bapwaits >= 1 ? 'color: red;' : ''}}" type="object"><span t-esc="props.bapwaits"/> To Upload</a>
                             </div>
-                        </t>
+                            <div class="col-12" style="text-align-last: left;">
+                                <a t-attf-href="{{props.urluploadbap}}" t-attf-style="{{props.bapuploaded >= 1 ? 'color: red;' : ''}}" type="object"><span t-esc="props.bapuploaded"/> To Approve</a>
+                            </div>
+                            <div class="col-12" style="text-align-last: left;">
+                                <a t-attf-href="{{props.urllatebap}}" t-attf-style="{{props.baplate >= 1 ? 'color: red;' : ''}}" type="object"><span t-esc="props.baplate"/> Late</a>
+                            </div>
+                        </div>
+                    </t>
 
-                        <!-- INVOICE -->
-                        <t t-elif="props.name === 'Invoice'">
-                            <div style="padding-left: 2vw;">
-                                <div class="col-12" style="text-align-last: left;">
-                                    <a t-attf-href="{{props.urlwaitinv}}" t-attf-style="{{props.invwaits >= 1 ? 'color: red;' : ''}}" type="object"><span t-esc="props.invwaits"/> To Upload</a>
-                                </div>
-                                <div class="col-12" style="text-align-last: left;">
-                                    <a t-attf-href="{{props.urluploadinv}}" t-attf-style="{{props.invuploaded >= 1 ? 'color: red;' : ''}}" type="object"><span t-esc="props.invuploaded"/> To Approve</a>
-                                </div>
-                                <div class="col-12" style="text-align-last: left;">
-                                    <a t-attf-href="{{props.urllateinv}}" t-attf-style="{{props.invlate >= 1 ? 'color: red;' : ''}}" type="object"><span t-esc="props.invlate"/> Late</a>
-                                </div>
+                    <!-- INVOICE -->
+                    <t t-elif="props.name === 'Invoice'">
+                        <div style="padding-left: 2vw;">
+                            <div class="col-12" style="text-align-last: left;">
+                                <a t-attf-href="{{props.urlwaitinv}}" t-attf-style="{{props.invwaits >= 1 ? 'color: red;' : ''}}" type="object"><span t-esc="props.invwaits"/> To Upload</a>
                             </div>
-                        </t>
-                        <!-- PR -->
-                        <t t-elif="props.name === 'Payment Request Proyek'">
-                            <div style="padding-left: 2vw;">
-                                <!-- <div class="col-12">
-                                    <a t-attf-href="{{props.urlwaitpr}}" type="object"><span t-esc="props.prwaits"/> To Upload</a>
-                                </div> -->
-                                <div class="col-12" style="text-align-last: left;">
-                                    <a t-attf-href="{{props.urluploadpr}}" type="object"><span t-esc="props.pruploaded"/> To Approve</a>
-                                </div>
-                                <div class="col-12" style="text-align-last: left;">
-                                    <a t-attf-href="{{props.urllatepr}}" type="object"><span t-esc="props.prlate"/> Late</a>
-                                </div>
+                            <div class="col-12" style="text-align-last: left;">
+                                <a t-attf-href="{{props.urluploadinv}}" t-attf-style="{{props.invuploaded >= 1 ? 'color: red;' : ''}}" type="object"><span t-esc="props.invuploaded"/> To Approve</a>
                             </div>
-                        </t>
-                        <!-- PR ITEM Divisi -->
-                        <t t-elif="props.name === 'Payment Request Divisi'">
-                            <div style="padding-left: 2vw;">
-                                <!-- <div class="col-12">
-                                    <a t-attf-href="{{props.urlwaitpritem}}" type="object"><span t-esc="props.pritemwaits"/> List Item</a>
-                                </div> -->
-                                <div class="col-12" style="text-align-last: left;">
-                                    <a t-attf-href="{{props.urluploadpritem}}" type="object"><span t-esc="props.pritemuploaded"/> To Approve</a>
-                                </div>
-                                <!-- <div class="col-12">
-                                    <a t-attf-href="{{props.urllatepritem}}" type="object"><span t-esc="props.pritemlate"/> Late</a>
-                                </div> -->
+                            <div class="col-12" style="text-align-last: left;">
+                                <a t-attf-href="{{props.urllateinv}}" t-attf-style="{{props.invlate >= 1 ? 'color: red;' : ''}}" type="object"><span t-esc="props.invlate"/> Late</a>
                             </div>
-                        </t>
-                        <!-- PR ITEM Pusat -->
-                        <t t-elif="props.name === 'Payment Request Pusat'">
-                            <div style="padding-left: 2vw;">
-                                <!-- <div class="col-12">
-                                    <a t-attf-href="{{props.urlwaitpritempus}}" type="object"><span t-esc="props.pritempuswaits"/> List Item</a>
-                                </div> -->
-                                <div class="col-12" style="text-align-last: left;">
-                                    <a t-attf-href="{{props.urluploadpritempus}}" type="object"><span t-esc="props.pritempusuploaded"/> To Approve</a>
-                                </div>
-                                <!-- <div class="col-12">
-                                    <a t-attf-href="{{props.urllatepritempus}}" type="object"><span t-esc="props.pritempuslate"/> Late</a>
-                                </div> -->
+                        </div>
+                    </t>
+                    <!-- PR -->
+                    <t t-elif="props.name === 'Payment Request Proyek'">
+                        <div style="padding-left: 2vw;">
+                            <!-- <div class="col-12">
+                                <a t-attf-href="{{props.urlwaitpr}}" type="object"><span t-esc="props.prwaits"/> To Upload</a>
+                            </div> -->
+                            <div class="col-12" style="text-align-last: left;">
+                                <a t-attf-href="{{props.urluploadpr}}" type="object"><span t-esc="props.pruploaded"/> To Approve</a>
                             </div>
-                        </t>
-                    </div>
+                            <div class="col-12" style="text-align-last: left;">
+                                <a t-attf-href="{{props.urllatepr}}" type="object"><span t-esc="props.prlate"/> Late</a>
+                            </div>
+                        </div>
+                    </t>
+                    <!-- PR ITEM Divisi -->
+                    <t t-elif="props.name === 'Payment Request Divisi'">
+                        <div style="padding-left: 2vw;">
+                            <!-- <div class="col-12">
+                                <a t-attf-href="{{props.urlwaitpritem}}" type="object"><span t-esc="props.pritemwaits"/> List Item</a>
+                            </div> -->
+                            <div class="col-12" style="text-align-last: left;">
+                                <a t-attf-href="{{props.urluploadpritem}}" type="object"><span t-esc="props.pritemuploaded"/> To Approve</a>
+                            </div>
+                            <!-- <div class="col-12">
+                                <a t-attf-href="{{props.urllatepritem}}" type="object"><span t-esc="props.pritemlate"/> Late</a>
+                            </div> -->
+                        </div>
+                    </t>
+                    <!-- PR ITEM Pusat -->
+                    <t t-elif="props.name === 'Payment Request Pusat'">
+                        <div style="padding-left: 2vw;">
+                            <!-- <div class="col-12">
+                                <a t-attf-href="{{props.urlwaitpritempus}}" type="object"><span t-esc="props.pritempuswaits"/> List Item</a>
+                            </div> -->
+                            <div class="col-12" style="text-align-last: left;">
+                                <a t-attf-href="{{props.urluploadpritempus}}" type="object"><span t-esc="props.pritempusuploaded"/> To Approve</a>
+                            </div>
+                            <!-- <div class="col-12">
+                                <a t-attf-href="{{props.urllatepritempus}}" type="object"><span t-esc="props.pritempuslate"/> Late</a>
+                            </div> -->
+                        </div>
+                    </t>
                 </div>
             </div>
-        </t>
+        </div>
     </t>
 </templates>
