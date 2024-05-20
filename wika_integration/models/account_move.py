@@ -23,7 +23,9 @@ class AccountMoveInheritWika(models.Model):
         for rec in self:
             total_paid = 0
             if self.partial_request_ids:
-                residual_amount = rec.sisa_partial
+                tot_partial_amount = sum(rec.partial_request_ids.filtered(lambda x : x.payment_state == 'paid').mapped('partial_amount'))
+                residual_amount = rec.amount_total_payment - tot_partial_amount
+                # residual_amount = rec.sisa_partial
             else:    
                 total_paid = sum(rec.payment_move_ids.mapped('amount'))
                 residual_amount = rec.amount_total_payment - total_paid
@@ -31,16 +33,14 @@ class AccountMoveInheritWika(models.Model):
             _logger.info("Total Paid %s Residual Amount %s" % (str(total_paid), str(residual_amount)))
 
             rec.amount_due = residual_amount
-
-    def _set_payment_paid(self):
-        for rec in self:
-            if rec.amount_due == 0:
-                rec.payment_state = 'paid'
     
     @api.depends('amount_residual', 'move_type', 'state', 'company_id')
     def _compute_payment_state(self):
         for rec in self:
-            rec._set_payment_paid() 
+            if rec.amount_due == 0:
+                rec.payment_state = 'paid'
+            else:
+                rec.payment_state = 'not_paid'
 
 class AccountMoveLine(models.Model):
     _inherit = 'account.move.line'
