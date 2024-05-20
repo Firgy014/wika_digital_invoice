@@ -40,19 +40,19 @@
                             invuploaded="state.inv.uploaded" invlate="state.inv.late" urlwaitinv="state.inv.url.wait"
                             urluploadinv="state.inv.url.upload" urllateinv="state.inv.url.late"/>
 
-                        <t t-if="state.userData.level !== 'Divisi Operasi' &amp;&amp; state.userData.level !== 'Pusat'">
+                        <t t-if="!state.userData.level || state.userData.level === 'Proyek'">
                             <KpiCard name="'Payment Request Proyek'" totalpr="state.pr.total" prwaits="state.pr.waits"
                                 pruploaded="state.pr.uploaded" prlate="state.pr.late" urlwaitpr="state.pr.url.wait"
                                 urluploadpr="state.pr.url.upload" urllatepr="state.pr.url.late" urltotalpr="state.pr.url.total"/>
                         </t>
 
-                        <t t-if="state.userData.level === 'Divisi Operasi'">
+                        <t t-if="!state.userData.level || state.userData.level === 'Divisi Operasi'">
                             <KpiCard name="'Payment Request Divisi'" totalprdiv="state.pritem.total" pritemwaits="state.pritem.waits"
                                 pritemuploaded="state.pritem.uploaded" pritemlate="state.pritem.late" urlwaitpritem="state.pritem.url.wait" 
                                 urluploadpritem="state.pritem.url.upload" urllatepritem="state.pritem.url.late" urltotalprdiv="state.pr.url.total"/>
                         </t>
 
-                        <t t-if="state.userData.level === 'Pusat'">
+                        <t t-if="!state.userData.level || state.userData.level === 'Pusat'">
                             <KpiCard name="'Payment Request Pusat'" totalprpus="state.pritempus.total" pritempuswaits="state.pritempus.waits"
                                 pritempusuploaded="state.pritempus.uploaded" pritempuslate="state.pritempus.late" urlwaitpritempus="state.pritempus.url.wait" 
                                 urluploadpritempus="state.pritempus.url.upload" urllatepritempus="state.pritempus.url.late"/>
