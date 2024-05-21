@@ -62,15 +62,17 @@ class wika_get_po(models.Model):
             # 1. Get W-KEY TOKEN
             response = requests.request("POST", url, data=payload, headers=headers)
             w_key = (response.headers['w-key'])
+            # _logger.info("DEBUG: =================================================================================")
+            # _logger.info(w_key)
             csrf = {'w-access-token': str(w_key)}
             headers.update(csrf)
 
             records = self.search([])
-            # records = self.search([('jenis', '=', 'tes')])
-            # _logger.info("DEBUG: =================================================================================")
+            # records = self.search([('jenis', '=', 'debug')])
+            
             # _logger.info(response)
             for record in records:
-                tgl_update=fields.Date.today() + timedelta(days=-1)
+                tgl_update=fields.Date.today() + timedelta(days=int(max_difference_days)*-1)
                 if record.profit_center:
                     profit_center = record.profit_center
                 else:
@@ -111,19 +113,27 @@ class wika_get_po(models.Model):
                 if response_2.status_code==200:
                     txt = json.loads(response_2.text)
                     txt_data = txt['data']
-                    # _logger.info(txt_data)
-                    for data in txt_data:
-                        # _logger.info("DEBUG: =================================================================================")
-                        # _logger.info(data)
+                    _logger.info("# === TXT DATA === #")
+                    _logger.info(txt_data)
+                    list_txt_data = []
+                    if isinstance(txt_data, list):
+                        list_txt_data = txt_data
+                    else:
+                        list_txt_data.append(txt_data)
+
+                    for data in list_txt_data:
+                        _logger.info("# === IMPORT DATA === #")
+                        _logger.info(data)
                         vals = []
                         potongan = []
-                        po = self.env['purchase.order'].sudo().search([
+                        po = self.env['purchase.order'].search([
                             ('name', '=', data['po_doc']), ('tgl_create_sap', '=', data['po_crdat']),
                             ('state', '!=', 'cancel')], limit=1)
+                        _logger.info("# === PO === #")
+                        _logger.info(data)
                         if not po:
-                            # _logger.info("DEBUG CREATE : =============================================================")
-                            # _logger.info(data)
-                            # print (data['po_doc'])
+                            _logger.info("# === CREATE PO === #")
+                            _logger.info(data)
                             dp = float(data['dp_amt'])
                             retensi = float(data['ret_pc'])
                             if 'pay_terms' in data and data['pay_terms'] != '':
@@ -152,8 +162,7 @@ class wika_get_po(models.Model):
                             
                             # Looping pengisian data detail po
                             for hasil in data['isi']:
-                                # _logger.info("DEBUG DETAIL : =============================================================")
-                                
+                                _logger.info("# === DEBUG DETAIL === #")
                                 seq = float(hasil['po_no'])
                                 line_active = True
                                 state = 'po'
@@ -163,27 +172,27 @@ class wika_get_po(models.Model):
                                 if not prod:
                                     prod = self.env['product.product'].sudo().create({
                                         ('name', '=', hasil['prd_no']), ('default_code', '=', hasil['prd_no'])})
-                                # _logger.info(prod)    
+                                _logger.info(prod)    
                                 qty = float(hasil['po_qty'])
                                 
                                 if data['po_jenis'] == 'JASA':
                                     price = float(hasil['po_price']) / qty
                                 else:
                                     price = float(hasil['po_price'])
-                                # _logger.info("price")
-                                # _logger.info(price)
+                                _logger.info("# === PRICE === #")
+                                _logger.info("price")
                                 tax = self.env['account.tax'].sudo().search([
                                     ('name', '=', hasil['tax_code'])], limit=1)
                                 if not tax:
                                     return "Kode Pajak  : %s tidak ditemukan" % hasil['MWSKZ']
-                                # _logger.info("tax")
-                                # _logger.info(tax)
+                                _logger.info("# === TAX === #")
+                                _logger.info(tax)
                                 curr = self.env['res.currency'].sudo().search([
                                     ('name', '=', data['curr'])], limit=1)
                                 if not curr:
                                     continue
-                                # _logger.info("curr")
-                                # _logger.info(curr)
+                                _logger.info("# === CURRENCY === #")
+                                _logger.info(curr)
                                 vendor = self.env['res.partner'].sudo().search([
                                     ('sap_code', '=', data['vendor'])], limit=1)
                                 if not vendor:
@@ -191,8 +200,8 @@ class wika_get_po(models.Model):
                                     # vendor = self.env['res.partner'].sudo().create({
                                     #     'name': data['vendor'], 'sap_code': data['vendor']})
                                     
-                                # _logger.info("vendor")
-                                # _logger.info(vendor)
+                                _logger.info("# === VENDOR === #")
+                                _logger.info(vendor)
                                 sql = """
                                     SELECT 
                                         id
@@ -272,8 +281,8 @@ class wika_get_po(models.Model):
                                 po_create.get_gr()
                         
                         else: # Update PO
-                            # _logger.info("DEBUG UPDATE PO: =============================================================")
-                            # _logger.info(po)
+                            _logger.info("# === UPDATE PO === #")
+                            _logger.info(po)
                             current_date = fields.Date.today()
                             po_lcdat = datetime.strptime(data['po_lcdat'], '%Y-%m-%d').date()
                             difference = current_date - po_lcdat
@@ -284,14 +293,15 @@ class wika_get_po(models.Model):
                                     po_line = self.env['purchase.order.line'].sudo().search([
                                         ('order_id', '=', po.id),
                                         ('sequence', '=', int(seq))], limit=1)
-                                    # _logger.info(po_line.id)
+                                    _logger.info("# === PO LINE ID === #")
+                                    _logger.info(po_line.id)
                                     current_datetime_str = fields.Datetime.now()+ timedelta(hours=7)
 
                                     noted_message = f"updated {current_datetime_str}"
                                     po.write({'notes': noted_message})
                                     
                                     if po_line.id:
-                                        # _logger.info("WRITE : =============================================================")
+                                        _logger.info("# === WRITE PO === #")
                                         if data['po_jenis'] == 'JASA':
                                             price = float(hasil['po_price']) / qty
                                         else:
@@ -345,8 +355,11 @@ class wika_get_po(models.Model):
                                 po.sudo().update_gr()
                             else:
                                 continue    
+                
                 else:
                     pass
+
+            _logger.info("# === IMPORT DATA BERHASIL === #")
         except:
             pass
 
