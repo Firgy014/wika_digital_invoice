@@ -71,6 +71,9 @@ class wika_get_po(models.Model):
             # records = self.search([('jenis', '=', 'debug')])
             
             # _logger.info(response)
+            i = 0
+            tot_i = 0
+            tot_u = 0 
             for record in records:
                 tgl_update=fields.Date.today() + timedelta(days=int(max_difference_days)*-1)
                 if record.profit_center:
@@ -106,7 +109,7 @@ class wika_get_po(models.Model):
                                         }) % (profit_center, no_po, tgl_write_sap)
                 payload_2 = payload_2.replace('\n', '')
                
-                # _logger.info(payload_2)
+                _logger.info(payload_2)
             
                 response_2 = requests.request("POST", url_get_po, data=payload_2, headers=headers)
                 # _logger.info(response_2.text)
@@ -114,13 +117,13 @@ class wika_get_po(models.Model):
                     txt = json.loads(response_2.text)
                     txt_data = txt['data']
                     _logger.info("# === TXT DATA === #")
-                    _logger.info(txt_data)
                     list_txt_data = []
                     if isinstance(txt_data, list):
                         list_txt_data = txt_data
                     else:
                         list_txt_data.append(txt_data)
-
+         
+                    _logger.info(list_txt_data)
                     for data in list_txt_data:
                         _logger.info("# === IMPORT DATA === #")
                         _logger.info(data)
@@ -130,7 +133,7 @@ class wika_get_po(models.Model):
                             ('name', '=', data['po_doc']), ('tgl_create_sap', '=', data['po_crdat']),
                             ('state', '!=', 'cancel')], limit=1)
                         _logger.info("# === PO === #")
-                        _logger.info(data)
+                        # _logger.info(data)
                         if not po:
                             _logger.info("# === CREATE PO === #")
                             _logger.info(data)
@@ -189,19 +192,20 @@ class wika_get_po(models.Model):
                                 _logger.info(tax)
                                 curr = self.env['res.currency'].sudo().search([
                                     ('name', '=', data['curr'])], limit=1)
-                                if not curr:
-                                    continue
                                 _logger.info("# === CURRENCY === #")
                                 _logger.info(curr)
+                                if not curr:
+                                    continue
+                                
                                 vendor = self.env['res.partner'].sudo().search([
                                     ('sap_code', '=', data['vendor'])], limit=1)
+                                _logger.info("# === VENDOR === #")
+                                _logger.info(vendor)
                                 if not vendor:
                                     continue
                                     # vendor = self.env['res.partner'].sudo().create({
                                     #     'name': data['vendor'], 'sap_code': data['vendor']})
                                     
-                                _logger.info("# === VENDOR === #")
-                                _logger.info(vendor)
                                 sql = """
                                     SELECT 
                                         id
@@ -217,7 +221,8 @@ class wika_get_po(models.Model):
                                 uom = self.env['uom.uom'].browse(uoms[0][0])
                                 # uom = self.env['uom.uom'].sudo().search([
                                 #     ('name', '=', hasil['po_uom'])], limit=1)
-                                
+                                _logger.info("# === UOM === #")
+                                _logger.info(uom)
                                 if not uom:
                                     uom = self.env['uom.uom'].sudo().create({
                                         'name': hasil['po_uom'], 'category_id': 1})
@@ -256,10 +261,9 @@ class wika_get_po(models.Model):
                                     'taxes_id': [(6, 0, [x.id for x in tax])]
 
                                 }))
-
                             
                             if not vals:
-                                    continue
+                                continue
                             else:
                                 po_create = self.env['purchase.order'].sudo().create({
                                     'name': data['po_doc'],
@@ -277,8 +281,10 @@ class wika_get_po(models.Model):
                                     'tgl_create_sap': data['po_crdat']
 
                                 })
-                                # _logger.info(po_create)
-                                po_create.get_gr()
+                                _logger.info("# === PO CREATED === #")
+                                _logger.info(po_create)
+                                # po_create.get_gr()
+                                tot_i += 1
                         
                         else: # Update PO
                             _logger.info("# === UPDATE PO === #")
@@ -351,15 +357,12 @@ class wika_get_po(models.Model):
 
                                         continue
 
-                                    continue
-                                po.sudo().update_gr()
-                            else:
-                                continue    
-                
-                else:
-                    pass
+                                # po.update_gr()
+                                tot_u += 1
+                               
+                        i += 1
 
-            _logger.info("# === IMPORT DATA BERHASIL === #")
+            _logger.info("# === IMPORT DATA BERHASIL === # %s %s %s" % (str(i), str(tot_i), str(tot_u)))
         except:
             pass
 
