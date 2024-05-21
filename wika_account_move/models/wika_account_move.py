@@ -191,6 +191,13 @@ class WikaInheritedAccountMove(models.Model):
     ], string='Invoice AP Type', compute='_compute_ap_type', store=True)
     amount_scf = fields.Float(string='Amount SCF')
     total_scf_cut = fields.Float(string='Total Potongan SCF', compute='_compute_total_scf_cut')
+    journal_item_sap_ids = fields.One2many('wika.account.move.journal.sap', 'invoice_id', string='Journal SAP')
+    total_ap_sap = fields.Float(string='Total AP SAP', compute='_compute_total_ap_sap')
+
+    @api.depends('journal_item_sap_ids.amount')
+    def _compute_total_ap_sap(self):
+        for record in self:
+            record.total_ap_sap = sum(line.amount for line in record.journal_item_sap_ids)
 
     @api.depends('price_cut_ids.amount', 'amount_scf')
     def _compute_total_scf_cut(self):
