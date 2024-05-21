@@ -191,6 +191,13 @@ class WikaInheritedAccountMove(models.Model):
     is_approval_checked = fields.Boolean(string="Approval Checked", compute='_compute_is_approval_checked')
     is_mp_approved = fields.Boolean(string='Approved by MP', default=False, store=True)
     cut_off = fields.Boolean(string='Cut Off',default=False,copy=False)
+    journal_item_sap_ids = fields.One2many('wika.account.move.journal.sap', 'invoice_id', string='Journal SAP')
+    total_ap_sap = fields.Float(string='Total AP SAP', compute='_compute_total_ap_sap')
+
+    @api.depends('journal_item_sap_ids.amount')
+    def _compute_total_ap_sap(self):
+        for record in self:
+            record.total_ap_sap = sum(line.amount for line in record.journal_item_sap_ids)
 
     @api.depends('date')
     def _compute_name_wdigi(self):
