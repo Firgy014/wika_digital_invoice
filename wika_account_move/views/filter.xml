@@ -9,7 +9,8 @@
             <field name="model">account.move</field>
             <field name="arch" type="xml">
                 <search string="Search Invoice">
-                    <field name="name" string="Invoice" />
+                    <field name="name" string="Invoice"/>
+                    <field name="ap_type"/>
                     <field name="partner_id" />
                     <field name="po_id" />
                     <field name="bap_id" />

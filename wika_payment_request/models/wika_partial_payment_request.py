@@ -20,7 +20,9 @@ class WikaPartialPaymentRequest(models.Model):
     department_id = fields.Many2one('res.branch', string='Department')
     project_id = fields.Many2one('project.project', string='Project', required=True)
     invoice_id  = fields.Many2one(comodel_name='account.move',domain=[('state','=','approved'), ('sisa_partial', '!=', 0)])
+    invoice_id  = fields.Many2one(comodel_name='account.move',domain=[('state','=','approved'), ('sisa_partial', '!=', 0)])
     partner_id  = fields.Many2one(comodel_name='res.partner')
+    total_invoice = fields.Float(string='Total Invoice')
     total_invoice = fields.Float(string='Total Invoice')
     sisa_partial_amount = fields.Float(string='Sisa Partial Invoice')
     level = fields.Selection([
@@ -61,6 +63,35 @@ class WikaPartialPaymentRequest(models.Model):
         string="Payment",
         copy=False,
     )
+
+    @api.depends('total_invoice', 'partial_amount')
+    def _compute_remaining_amount(self):
+        for record in self:
+            record.remaining_amount = record.total_invoice - record.partial_amount
+
+    @api.model
+    def create(self, vals):
+        if vals.get('name', '/') == '/':
+            sequence = self.env['ir.sequence'].next_by_code('wika.partial.payment.request')
+            vals['name'] = sequence
+
+        res = super(WikaPartialPaymentRequest, self).create(vals)
+        res.assign_todo_first()
+        return res
+
+    posting_date = fields.Date('Posting Date')
+    is_already_pr = fields.Boolean('is_already_pr')
+    reference = fields.Char('Reference')
+    no_doc_sap = fields.Char('No Doc SAP')
+    year = fields.Char('Tahun')
+    line_item_char = fields.Char('Line Item Char')
+    partial_amount = fields.Float(string='Partial Amount')
+    remaining_amount = fields.Float(string='Remaining Amount', compute='_compute_remaining_amount')
+    payment_state = fields.Selection([
+        ('not request', 'Not Request'),
+        ('requested', 'Requested'),
+    ], default='not request', string='Payment State')
+    payment_request_id = fields.Many2one('wika.payment.request', string='Payment Request')
 
     @api.depends('total_invoice', 'partial_amount')
     def _compute_remaining_amount(self):

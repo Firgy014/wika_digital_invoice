@@ -1,0 +1,23 @@
+<odoo>
+    <data>
+        <record id="product_product_potongan_scf" model="product.product">
+            <field name="name">Potongan SCF</field>
+        </record>
+
+        <record id="wika_account_move_pricecut_line_1" model="wika.account.move.pricecut.line">
+            <field name="product_id" ref="product_product_potongan_scf"/>
+        </record>
+
+        <!-- <record id="wika_account_move_pricecut_line_1" model="wika.account.move.pricecut.line">
+            <field name="product_id" ref="product_product_potongan_scf"/>
+            <field name="move_id"/>
+            <field name="move_line_id"/>
+            <field name="special_gl_id"/>
+            <field name="account_id"/>
+            <field name="percentage_amount"/>
+            <field name="amount"/>
+            <field name="wbs_project_definition"/>
+        </record> -->
+
+    </data>
+</odoo>

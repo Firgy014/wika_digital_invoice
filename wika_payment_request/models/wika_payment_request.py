@@ -7,6 +7,8 @@ import requests
 import json
 import logging
 _logger = logging.getLogger(__name__)
+import logging
+_logger = logging.getLogger(__name__)
 class WikaPaymentRequest(models.Model):
     _name = 'wika.payment.request'
     _description = 'Wika Payment Request'
@@ -55,25 +57,71 @@ class WikaPaymentRequest(models.Model):
                 lines_to_delete.unlink()
         return res
 
+    wika_pr_lines = fields.One2many('wika.payment.request.line', 'pr_id', string='Payment Request Lines')
+
+    @api.onchange('type_payment')
+    def _onchange_type_payment(self):
+        self.invoice_ids = False
+
+    @api.model
+    def default_get(self, fields):
+        res = super(WikaPaymentRequest, self).default_get(fields)
+        res['invoice_ids'] = False
+        return res
+
+    @api.onchange('invoice_ids')
+    def _onchange_invoice_ids(self):
+        for rec in self:
+            used_partial_ids = self.env['wika.payment.request.line'].search([('pr_id', '!=', self.id)]).mapped('partial_id.id')
+            existing_invoices = rec.move_ids.mapped('invoice_id.id')
+            move_lines = []
+            for invoice in rec.invoice_ids:
+                if invoice.id not in existing_invoices:
+                    for partial in invoice.partial_request_ids.filtered(lambda p: not p.is_already_pr):
+                        if partial.id not in used_partial_ids:
+                            move_lines.append((0, 0, {
+                                'invoice_id': invoice.id,
+                                'partial_id': partial.id,
+                                'partner_id': invoice.partner_id.id,
+                                'branch_id': invoice.branch_id.id,
+                                'project_id': invoice.project_id.id,
+                                'amount': partial.partial_amount,
+                            }))
+            # Remove existing move lines that are not in the current invoice_ids
+            move_lines_ids = [move_id.id for move_id in rec.move_ids if move_id.invoice_id.id in existing_invoices]
+            rec.move_ids = [(3, move_id_id) for move_id_id in move_lines_ids] + move_lines
+
+
+    def write(self, vals):
+        res = super(WikaPaymentRequest, self).write(vals)
+        if 'invoice_ids' in vals:
+            for record in self:
+                lines_to_delete = record.move_ids.filtered(lambda x: x.invoice_id.id not in record.invoice_ids.ids)
+                lines_to_delete.unlink()
+        return res
+
     @api.model
     def _getdefault_branch(self):
         user_obj = self.env['res.users']
-        branch_id = user_obj.browse(self.env.user.id).branch_id or False
-        project_id = user_obj.browse(self.env.user.id).project_id or False
-        if branch_id and not project_id:
+        branch_id = user_obj.browse(self.env.user.id).branch_id or []
+        project_ids = user_obj.browse(self.env.user.id).project_ids
+        if branch_id and not project_ids:
             branch_id=branch_id.id
-        elif project_id and not branch_id:
-            branch_id=project_id.branch_id.id
+        else:
+            branch_ids = [project.branch_id.id for project in project_ids if project.branch_id]
+            print (branch_ids)
+            branch_id = [('id', 'in', branch_ids)]
+            print (branch_id)
         return branch_id
 
     @api.model
     def _getdefault_project(self):
-        user_obj = self.env['res.users']
-        project_id = user_obj.browse(self.env.user.id).project_id or False
-        if project_id:
-            project_id=project_id.id
+        user_obj = self.env['res.users'].browse(self.env.user.id)
+        project_id=[]
+        project_ids = user_obj.project_ids.ids
+        if project_ids:
+            project_id= [('id', 'in', project_ids)]
         return project_id
-
     name = fields.Char(string='Nomor Payment Request', readonly=True ,default='/')
     date = fields.Date(string='Tanggal Payment Request', required=True, default=fields.Date.today)
     state = fields.Selection([
@@ -83,7 +131,7 @@ class WikaPaymentRequest(models.Model):
         ('approve', 'Approved'),
         ('reject', 'Rejected'),
     ], readonly=True, string='status', default='draft')
-    branch_id = fields.Many2one('res.branch', string='Divisi', required=True,default=_getdefault_branch)
+    branch_id = fields.Many2one('res.branch', string='Divisi', required=True,default=_getdefault_branch,domain=_getdefault_branch)
     department_id = fields.Many2one('res.branch', string='Department')
     project_id = fields.Many2one('project.project', string='Project', required=True,default=_getdefault_project)
     invoice_ids = fields.Many2many(
@@ -141,6 +189,19 @@ class WikaPaymentRequest(models.Model):
     is_posted_to_sap = fields.Boolean(string='Posted to SAP', default=False)
     partial_payment_ids = fields.Many2many('wika.partial.payment.request', string='Partial',
         domain="[('state', '=', 'approved'), ('payment_state', '=', 'not request')]")
+
+    @api.onchange('partial_payment_ids')
+    def _check_partial_payment_ids(self):
+        if len(self.partial_payment_ids) > 1:
+            raise UserError("Anda hanya boleh memilih satu baris partial payment.")
+    partial_payment_ids = fields.Many2many('wika.partial.payment.request', string='Partial',
+        domain="[('state', '=', 'approved'), ('payment_state', '=', 'not request')]")
+    journal_item_sap_ids = fields.Many2many(
+        'wika.account.move.journal.sap',
+        string='Invoice SAP'
+        # required=True,
+        # domain="[('state', '=', 'approved'), ('status_payment', '=', 'Not Request'), '|', ('partial_request_ids', '=', False), ('partial_request_ids', '=', None)]"
+    )
 
     @api.onchange('partial_payment_ids')
     def _check_partial_payment_ids(self):
@@ -276,10 +337,10 @@ class WikaPaymentRequest(models.Model):
         #res.assign_todo_first()
         return super(WikaPaymentRequest, self).create(vals)
 
-    @api.depends('move_ids')
+    @api.depends('invoice_ids.amount_total_footer')
     def compute_total(self):
         for record in self:
-            total_amount = sum(record.move_ids.mapped('amount'))
+            total_amount = sum(record.invoice_ids.mapped('amount_total_footer'))
             record.total = total_amount
 
     def action_submit(self):
@@ -338,7 +399,7 @@ class WikaPaymentRequest(models.Model):
                             'branch_id': invoice.branch_id.id,
                             'project_id': invoice.project_id.id,
                             'department_id': invoice.department_id.id,
-                            'amount': invoice.total_partial_pr,
+                            'amount': invoice.amount_total_footer,
                             'is_partial_pr': invoice.is_partial_pr,
                             'payment_method': self.payment_method,
                             'payment_request_date': self.date,
@@ -444,7 +505,25 @@ class WikaPaymentRequest(models.Model):
                 'XREF3': invoice.project_id.sap_code
             }
             invoice_list.append(data_ref)
-
+            if invoice.retensi_doc:
+                _logger.info("RETENSIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII")
+                data_ref = {
+                    'BELNR': invoice.retensi_doc,
+                    'GJAHR': str(invoice.date)[:4],
+                    'ZLSPR': invoice.payment_block,
+                    'XREF3': invoice.project_id.sap_code
+                }
+                invoice_list.append(data_ref)
+            if invoice.dp_doc:
+                _logger.info("DP DOCCCCCCCCCCCCCCCCCCCCCCCCCCC")
+                data_ref = {
+                    'BELNR': invoice.dp_doc,
+                    'GJAHR': str(invoice.date)[:4],
+                    'ZLSPR': invoice.payment_block,
+                    'XREF3': invoice.project_id.sap_code
+                }
+                invoice_list.append(data_ref)
+        _logger.info(invoice_list)
         payload = json.dumps({
             "DEVID": "YFII016",
             "PACKAGEID": package_id,
@@ -453,7 +532,7 @@ class WikaPaymentRequest(models.Model):
             "TIMESTAMP": timestamp,
             "DATA": invoice_list
         })
-        print (payload)
+        _logger.info(payload)
         # POST Req
         post_headers = {
             'x-csrf-token': fetched_token,
@@ -625,6 +704,24 @@ class WikaPrLine(models.Model):
             'ZUONR': self.invoice_id.project_id.sap_code
         }
         invoice_list.append(data_ref)
+        if self.invoice_id.retensi_doc:
+            data_ref = {
+                'BELNR': self.invoice_id.retensi_doc,
+                'GJAHR': str(self.invoice_id.date)[:4],
+                'ZLSPR': 'D',
+                'ZUONR': self.invoice_id.project_id.sap_code
+            }
+            invoice_list.append(data_ref)
+        if self.invoice_id.dp_doc:
+            data_ref = {
+                'BELNR': self.invoice_id.dp_doc,
+                'GJAHR': str(self.invoice_id.date)[:4],
+                'ZLSPR': 'D',
+                'ZUONR': self.invoice_id.project_id.sap_code
+            }
+            invoice_list.append(data_ref)
+        _logger.info(invoice_list)
+
         payload = json.dumps({
             "DEVID": "YFII016A",
             "PACKAGEID": package_id,
@@ -639,11 +736,12 @@ class WikaPrLine(models.Model):
             'Authorization': 'Basic V0lLQV9JTlQ6SW5pdGlhbDEyMw=='
         }
         response_post = requests.request("POST", url, headers=post_headers, data=payload, cookies=fetched_cookies)
-        parsed_response = json.loads(response_post.text)
-        message = parsed_response[0]["MESSAGE"]
-        self.invoice_id.msg_sap=message
+        #parsed_response = json.loads(response_post.text)
+        #message = parsed_response[0]["MESSAGE"]
+        #self.invoice_id.msg_sap=message
         _logger.info(response_post.text)
-        self.pr_id.is_posted_to_sap = True
+        #_logger.info(response_post.text)
+        #self.pr_id.is_posted_to_sap = True
 
     def send_pusat_approved_pr_to_sap(self):
         package_id = self._generate_random_string()
@@ -671,6 +769,23 @@ class WikaPrLine(models.Model):
             'ZLSCH': "F"
         }
         invoice_list.append(data_ref)
+        if self.invoice_id.retensi_doc:
+            data_ref = {
+                'BELNR': self.invoice_id.retensi_doc,
+                'GJAHR': str(self.invoice_id.date)[:4],
+                'ZLSPR': "",
+                'ZLSCH': "F"
+            }
+            invoice_list.append(data_ref)
+        if self.invoice_id.dp_doc:
+            data_ref = {
+                'BELNR': self.invoice_id.dp_doc,
+                'GJAHR': str(self.invoice_id.date)[:4],
+                'ZLSPR': "",
+                'ZLSCH': "F"
+            }
+            invoice_list.append(data_ref)
+        _logger.info(invoice_list)
 
         payload = json.dumps({
             "DEVID": "YFII016B",
@@ -686,8 +801,8 @@ class WikaPrLine(models.Model):
             'Authorization': 'Basic V0lLQV9JTlQ6SW5pdGlhbDEyMw=='
         }
         response_post = requests.request("POST", url, headers=post_headers, data=payload, cookies=fetched_cookies)
-        _logger.info(response_post.text)
-        parsed_response = json.loads(response_post.text)
-        message = parsed_response[0]["MESSAGE"]
-        self.invoice_id.msg_sap=message
-        self.pr_id.is_posted_to_sap = True
+        _logger.info(response_post.text)        #_logger.info(response_post.text)
+        #parsed_response = json.loads(response_post.text)
+        #message = parsed_response[0]["MESSAGE"]
+        #self.invoice_id.msg_sap=message
+        #self.pr_id.is_posted_to_sap = True

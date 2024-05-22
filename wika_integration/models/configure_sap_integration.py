@@ -163,12 +163,14 @@ class sap_integration_configure(models.Model):
         conf_model = self.env['sap.integration.configure'].sudo()
 
         conf_id = conf_model.search([('sftp_folder_archive', '!=', False)], limit=1)
+        file_path = None  # Initialize file_path to None
         if conf_id:
             outbound_dir = conf_id.sftp_folder
             file_name_prefix = 'YFII015A'
             for file_name in os.listdir(outbound_dir):
                 if file_name.startswith(file_name_prefix):
                     file_path = os.path.join(outbound_dir, file_name)
+                    break
 
         updated_invoices = []
         try:

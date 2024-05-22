@@ -6,19 +6,32 @@
             <div class="shadow-sm border m-2 p-4 bg-white text-center cursor-pointer">
                 <div class="h1 fw-bold text-dark" style="font-size: 48px">
                     <t t-if="props.name === 'Purchase Orders'">
-                        <i class="fa fa-file-text" style="margin-right: 10px;"></i>
+                        <i class="fa fa-file-text" style="margin-right: 10px; color: #000000;"></i>
+                        <a t-attf-href="{{props.urltotalpo}}" t-attf-style="color: #000000;"><span t-esc="props.totalpo" style="color: #000000;"/></a>
                     </t>
                     <t t-elif="props.name === 'GR/SES'">
-                        <i class="fa fa-archive" style="margin-right: 10px;"></i>
+                        <i class="fa fa-archive" style="margin-right: 10px; color: #000000;"></i>
+                        <a t-attf-href="{{props.urltotalgrses}}" t-attf-style="color: #000000;"><span t-esc="props.totalgr" style="color: #000000;"/></a>
                     </t>
                     <t t-elif="props.name === 'BAP'">
-                        <i class="fa fa-files-o" style="margin-right: 10px;"></i>
+                        <i class="fa fa-files-o" style="margin-right: 10px; color: #000000;"></i>
+                        <a t-attf-href="{{props.urltotalbap}}" t-attf-style="color: #000000;"><span t-esc="props.totalbap" style="color: #000000;"/></a>
                     </t>
                     <t t-elif="props.name === 'Invoice'">
-                        <i class="fa fa-money" style="margin-right: 10px;"></i>
+                        <i class="fa fa-money" style="margin-right: 10px; color: #000000;"></i>
+                        <a t-attf-href="{{props.urltotalinv}}" t-attf-style="color: #000000;"><span t-esc="props.totalinv" style="color: #000000;"/></a>
                     </t>
-                    <t t-elif="props.name === 'Pengajuan Pembayaran'">
-                        <i class="fa fa-credit-card" style="margin-right: 10px;"></i>
+                    <t t-elif="props.name === 'Payment Request Proyek'">
+                        <i class="fa fa-credit-card" style="margin-right: 10px; color: #000000;"></i>
+                        <a t-attf-href="{{props.urltotalinv}}" t-attf-style="color: #000000;"><span t-esc="props.totalpr" style="color: #000000;"/></a>
+                    </t>
+                    <t t-elif="props.name === 'Payment Request Divisi'">
+                        <i class="fa fa-credit-card" style="margin-right: 10px; color: #000000;"></i>
+                        <a t-attf-href="{{props.urltotalinv}}" t-attf-style="color: #000000;"><span t-esc="props.totalprdiv" style="color: #000000;"/></a>
+                    </t>
+                    <t t-elif="props.name === 'Payment Request Pusat'">
+                        <i class="fa fa-credit-card" style="margin-right: 10px; color: #000000;"></i>
+                        <a t-attf-href="{{props.urltotalinv}}" t-attf-style="color: #000000;"><span t-esc="props.totalprpus" style="color: #000000;"/></a>
                     </t>
                     <span t-esc="props.total"/>
                 </div>
@@ -87,17 +100,47 @@
                         </div>
                     </t>
                     <!-- PR -->
-                    <!-- <t t-elif="props.name === 'Pengajuan Pembayaran'">
-                        <div class="col-12">
-                            <a t-attf-href="{{props.urlwaitpr}}" type="object"><span t-esc="props.prwaits"/> To Upload</a>
+                    <t t-elif="props.name === 'Payment Request Proyek'">
+                        <div style="padding-left: 2vw;">
+                            <!-- <div class="col-12">
+                                <a t-attf-href="{{props.urlwaitpr}}" type="object"><span t-esc="props.prwaits"/> To Upload</a>
+                            </div> -->
+                            <div class="col-12" style="text-align-last: left;">
+                                <a t-attf-href="{{props.urluploadpr}}" type="object"><span t-esc="props.pruploaded"/> To Approve</a>
+                            </div>
+                            <div class="col-12" style="text-align-last: left;">
+                                <a t-attf-href="{{props.urllatepr}}" type="object"><span t-esc="props.prlate"/> Late</a>
+                            </div>
                         </div>
-                        <div class="col-12">
-                            <a t-attf-href="{{props.urluploadpr}}" type="object"><span t-esc="props.pruploaded"/> To Approve</a>
+                    </t>
+                    <!-- PR ITEM Divisi -->
+                    <t t-elif="props.name === 'Payment Request Divisi'">
+                        <div style="padding-left: 2vw;">
+                            <!-- <div class="col-12">
+                                <a t-attf-href="{{props.urlwaitpritem}}" type="object"><span t-esc="props.pritemwaits"/> List Item</a>
+                            </div> -->
+                            <div class="col-12" style="text-align-last: left;">
+                                <a t-attf-href="{{props.urluploadpritem}}" type="object"><span t-esc="props.pritemuploaded"/> To Approve</a>
+                            </div>
+                            <!-- <div class="col-12">
+                                <a t-attf-href="{{props.urllatepritem}}" type="object"><span t-esc="props.pritemlate"/> Late</a>
+                            </div> -->
                         </div>
-                        <div class="col-12">
-                            <a t-attf-href="{{props.urllatepr}}" type="object"><span t-esc="props.prlate"/> Late</a>
+                    </t>
+                    <!-- PR ITEM Pusat -->
+                    <t t-elif="props.name === 'Payment Request Pusat'">
+                        <div style="padding-left: 2vw;">
+                            <!-- <div class="col-12">
+                                <a t-attf-href="{{props.urlwaitpritempus}}" type="object"><span t-esc="props.pritempuswaits"/> List Item</a>
+                            </div> -->
+                            <div class="col-12" style="text-align-last: left;">
+                                <a t-attf-href="{{props.urluploadpritempus}}" type="object"><span t-esc="props.pritempusuploaded"/> To Approve</a>
+                            </div>
+                            <!-- <div class="col-12">
+                                <a t-attf-href="{{props.urllatepritempus}}" type="object"><span t-esc="props.pritempuslate"/> Late</a>
+                            </div> -->
                         </div>
-                    </t> -->
+                    </t>
                 </div>
             </div>
         </div>
