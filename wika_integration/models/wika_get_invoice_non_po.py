@@ -26,7 +26,7 @@ class wika_get_invoice_non_po(models.Model):
                 records TEXT[];
                 rec TEXT;
                 inv_rec TEXT[];
-								project_rec TEXT[];
+				project_rec TEXT[];
                 v_doc_number TEXT; 
                 v_line_item INTEGER; 
                 v_year TEXT;
@@ -43,6 +43,7 @@ class wika_get_invoice_non_po(models.Model):
                 v_item_text TEXT;
                 v_profit_center TEXT;
 				v_company_id INTEGER;
+                v_payment_state TEXT;
                 
                 v_project_id INTEGER;
                 v_branch_id INTEGER;
@@ -79,57 +80,64 @@ class wika_get_invoice_non_po(models.Model):
                     v_vendor_id = trim(inv_rec[18]);
 										
                     SELECT id FROM res_currency INTO v_currency_id WHERE name = v_currency;
-                                                RAISE NOTICE 'v_currency_id %', v_currency_id;
+                    -- RAISE NOTICE 'v_currency_id %', v_currency_id;
                     SELECT id FROM account_payment_term WHERE name::text LIKE '%v_top%' INTO v_payment_term_id;
-                                                RAISE NOTICE 'v_payment_term_id %', v_payment_term_id;
-                    SELECT id FROM account_move INTO v_invoice_exist 
+                    -- RAISE NOTICE 'v_payment_term_id %', v_payment_term_id;
+                    v_payment_state = '';
+                    SELECT id, payment_state FROM account_move
                         WHERE payment_reference = v_doc_number AND year = v_year 
-                        AND project_id = v_project_id AND partner_id = v_vendor_id;
-                    RAISE NOTICE 'v_invoice_exist %', v_invoice_exist;
+                        AND project_id = v_project_id AND partner_id = v_vendor_id
+                        INTO v_invoice_exist, v_payment_state;
+                    
+                    -- RAISE NOTICE 'v_invoice_exist %', v_invoice_exist;
+                    RAISE NOTICE 'payment_state %', payment_state;
                     IF v_invoice_exist IS NULL THEN
                         -- insert invoice
                         INSERT INTO account_move (
                             name, project_id, branch_id,
                             payment_reference, year, currency_id, 
                             date, invoice_date, invoice_date_due, 
-                                                                partner_id, 
+                            partner_id, 
                             invoice_payment_term_id, no_faktur_pajak, no_invoice_vendor,
                             state, move_type, journal_id,
-                                                                auto_post, extract_state, company_id, 
+                            auto_post, extract_state, company_id, 
+                            payment_state,
                             create_date, create_uid
                         ) VALUES (
                             v_doc_number || v_year, v_project_id, v_branch_id,
                             v_doc_number, v_year, v_currency_id,
                             v_posting_date, v_posting_date, v_posting_date, 
-                                                                v_vendor_id, 
+                            v_vendor_id, 
                             v_payment_term_id, v_header_text, v_reference,
                             'approved', 'in_invoice', 2,
-                                                                'no', 'no_extract_requested', v_company_id
+                            'no', 'no_extract_requested', v_company_id,
+                            'Not Request',
                             (now() at time zone 'UTC'), v_uid
                         ) 
                         returning id INTO v_resource_id;
-                                                        RAISE NOTICE 'v_resource_id %', v_resource_id;
+                        RAISE NOTICE 'v_resource_id %', v_resource_id;
                     ELSE
-                        -- update invoice
-                        v_resource_id = v_invoice_exist;
-                        UPDATE account_move SET
-                            name = v_doc_number || v_year, 
-                            project_id = v_project_id, 
-                            branch_id = v_branch_id,
-                            payment_reference = v_doc_number, 
-                            year = v_year, 
-                            currency_id = v_currency_id, 
-                            date = v_posting_date, 
-                            invoice_date = v_posting_date, 
-                                                                invoice_date_due = v_posting_date, 
-                            partner_id = v_vendor_id, 
-                            invoice_payment_term_id = v_payment_term_id, 
-                            no_faktur_pajak = v_header_text, 
-                            no_invoice_vendor = v_reference,
-                            write_date = (now() at time zone 'UTC'), 
-                            write_uid = v_uid
-                        WHERE id = v_resource_id;
-
+                        IF v_payment_state == 'Not Request' THEN
+                            -- update invoice
+                            v_resource_id = v_invoice_exist;
+                            UPDATE account_move SET
+                                name = v_doc_number || v_year, 
+                                project_id = v_project_id, 
+                                branch_id = v_branch_id,
+                                payment_reference = v_doc_number, 
+                                year = v_year, 
+                                currency_id = v_currency_id, 
+                                date = v_posting_date, 
+                                invoice_date = v_posting_date, 
+                                invoice_date_due = v_posting_date, 
+                                partner_id = v_vendor_id, 
+                                invoice_payment_term_id = v_payment_term_id, 
+                                no_faktur_pajak = v_header_text, 
+                                no_invoice_vendor = v_reference,
+                                write_date = (now() at time zone 'UTC'), 
+                                write_uid = v_uid
+                            WHERE id = v_resource_id;
+                        END IF;
                     END IF;
                     
                     -- Upsert invoice detail
@@ -140,10 +148,10 @@ class wika_get_invoice_non_po(models.Model):
                             move_id, move_name, sequence,
                             name, quantity, price_unit, 
                             price_subtotal, amount_sap, pph_cash_basis, 
-                                                                date,
+                            date,
                             parent_state, currency_id, company_currency_id,
-                                                                display_type, account_id, account_root_id,
-                                                                company_id,
+                            display_type, account_id, account_root_id,
+                            company_id,
                             create_date, create_uid
                         ) VALUES (
                             v_resource_id, v_doc_number || v_year, v_line_item,
@@ -156,24 +164,26 @@ class wika_get_invoice_non_po(models.Model):
                             (now() at time zone 'UTC'), v_uid
                         );
                     ELSE
-                        -- Update invoice detail
-                        UPDATE account_move_line SET 
-                            move_name = v_doc_number || v_year, 
-                            sequence = v_line_item,        
-                            name = v_item_text, 
-                            quantity = 1, 
-                            price_unit = v_amount::numeric, 
-                                                                price_subtotal = v_amount::numeric,
-                                                                amount_sap = v_amount::numeric,
-                            pph_cash_basis = ABS(v_pph_cbasis::numeric), 
-                            date = v_posting_date,
-                            parent_state = 'draft',
-                            create_date = (now() at time zone 'UTC'), 
-                            create_uid = v_uid
-                        WHERE id = v_move_line_id;
+                        IF v_payment_state == 'Not Request' THEN
+                            -- Update invoice detail
+                            UPDATE account_move_line SET 
+                                move_name = v_doc_number || v_year, 
+                                sequence = v_line_item,        
+                                name = v_item_text, 
+                                quantity = 1, 
+                                price_unit = v_amount::numeric, 
+                                price_subtotal = v_amount::numeric,
+                                amount_sap = v_amount::numeric,
+                                pph_cash_basis = ABS(v_pph_cbasis::numeric), 
+                                date = v_posting_date,
+                                parent_state = 'draft',
+                                create_date = (now() at time zone 'UTC'), 
+                                create_uid = v_uid
+                            WHERE id = v_move_line_id;
+                        END IF;
                     END IF;
+                            
                     -- update invoice
-                    
                     UPDATE account_move SET
                             amount_total_footer = (SELECT SUM(price_subtotal)-SUM(pph_cash_basis) FROM account_move_line WHERE move_id =v_resource_id), 
                             amount_total_payment = (SELECT SUM(price_subtotal)-SUM(pph_cash_basis) FROM account_move_line WHERE move_id =v_resource_id),
