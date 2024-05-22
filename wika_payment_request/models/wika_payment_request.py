@@ -144,6 +144,12 @@ class WikaPaymentRequest(models.Model):
     is_posted_to_sap = fields.Boolean(string='Posted to SAP', default=False)
     partial_payment_ids = fields.Many2many('wika.partial.payment.request', string='Partial',
         domain="[('state', '=', 'approved'), ('payment_state', '=', 'not request')]")
+    journal_item_sap_ids = fields.Many2many(
+        'wika.account.move.journal.sap',
+        string='Invoice SAP'
+        # required=True,
+        # domain="[('state', '=', 'approved'), ('status_payment', '=', 'Not Request'), '|', ('partial_request_ids', '=', False), ('partial_request_ids', '=', None)]"
+    )
 
     @api.onchange('partial_payment_ids')
     def _check_partial_payment_ids(self):

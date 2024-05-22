@@ -202,6 +202,13 @@ class WikaInheritedAccountMove(models.Model):
     ], string='Invoice AP Type', compute='_compute_ap_type', store=True)
     amount_scf = fields.Float(string='Amount SCF')
     total_scf_cut = fields.Float(string='Total Potongan SCF', compute='_compute_total_scf_cut')
+    journal_item_sap_ids = fields.One2many('wika.account.move.journal.sap', 'invoice_id', string='Journal SAP')
+    total_ap_sap = fields.Float(string='Total AP SAP', compute='_compute_total_ap_sap')
+
+    @api.depends('journal_item_sap_ids.amount')
+    def _compute_total_ap_sap(self):
+        for record in self:
+            record.total_ap_sap = sum(line.amount for line in record.journal_item_sap_ids)
 
     @api.depends('price_cut_ids.amount', 'amount_scf')
     def _compute_total_scf_cut(self):
@@ -419,17 +426,17 @@ class WikaInheritedAccountMove(models.Model):
 
         
         #document date
-        # if record.invoice_date != False and record.invoice_date < record.bap_id.bap_date and record.cut_off!=True:
-        #     raise ValidationError("Document Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
-        # else:
-        #     pass
-        #
-        # #posting date
-        # if record.ap_type == 'ap_po':
-        #     if record.date != False and record.date < record.bap_id.bap_date and record.cut_off!=True:
-        #         raise ValidationError("Posting Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
-        #     else:
-        #         pass
+        if record.invoice_date != False and record.invoice_date < record.bap_id.bap_date and record.cut_off!=True:
+            raise ValidationError("Document Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
+        else:
+            pass
+
+        #posting date
+        if record.ap_type == 'ap_po':
+            if record.date != False and record.date < record.bap_id.bap_date and record.cut_off!=True:
+                raise ValidationError("Posting Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
+            else:
+                pass
 
         return record
 
@@ -585,7 +592,7 @@ class WikaInheritedAccountMove(models.Model):
             self.document_ids = document_list
         else:
             raise AccessError("Data dokumen tidak ada!")
-
+    
     def action_submit(self):
         for record in self:
             if any(not line.document for line in record.document_ids):
@@ -1016,7 +1023,7 @@ class AccountMovePriceCutList(models.Model):
                 record.wbs_project_definition = sap_code[:-1] + '-3-50-99'
             else:
                 record.wbs_project_definition = False
-
+                
     # def _compute_account_pricecut(self):
     #     move_id = self.env['account.move'].browse([self.move_id.id])
     #     if move_id:

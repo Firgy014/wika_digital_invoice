@@ -10,8 +10,7 @@
             <field name="arch" type="xml">
                 <search string="Search Invoice">
                     <field name="name" string="Invoice"/>
-                    <field name="payment_reference"/>
-                    <field name="invoice_number"/>
+                    <field name="ap_type"/>
                     <field name="partner_id" />
                     <field name="po_id" />
                     <field name="bap_id" />

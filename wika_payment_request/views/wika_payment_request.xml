@@ -105,7 +105,7 @@
                             </group>
                         </group>
                         <notebook>
-                            <page string="List Invoice Full Payment">
+                            <!-- <page string="List Invoice Full Payment">
                                 <group>   
                                     <field name="invoice_ids" mode="tree" nolabel="1"  colspan="2" context="{'tree_view_ref': 'wika_account_move.view_wika_account_move_tree','search_view_ref':'wika_account_move.view_wika_account_move_filter'}" attrs="{'readonly': [('state', '=', 'verified')]}">
                                         <tree>
@@ -120,6 +120,22 @@
                                             <field name="status_payment"/>
                                         </tree>
 
+                                    </field>
+                                </group>
+                            </page> -->
+                            <page string="List Invoice SAP Full Payment">
+                                <group>   
+                                    <field name="journal_item_sap_ids" mode="tree" nolabel="1"  colspan="2" attrs="{'readonly': [('state', '=', 'verified')]}">
+                                        <tree>
+                                            <field name="doc_number"/>
+                                            <field name="amount"/>
+                                            <field name="line"/>
+                                            <field name="project_id"/>
+                                            <field name="branch_id"/>
+                                            <field name="partner_id"/>
+                                            <field name="po_id"/>
+                                            <field name="status"/>
+                                        </tree>
                                     </field>
                                 </group>
                             </page>

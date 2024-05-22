@@ -14,7 +14,7 @@
                     <button name="action_approve" string="APPROVE" type="object" class="btn-success" states="uploaded"/>
                     <button name="action_reject" string="REJECT" type="object" class="btn-danger" states="uploaded"/>
                     <button name="compute_account_payable" string="GET COA" type="object"  groups="base.group_no_one"/>
-                    <button name="add_pricecut_scf" string="ADD POTONGAN SCF" type="object" attrs="{'invisible': [('state', 'in', ['draft', 'rejected'])]}"/>
+                    <button name="add_pricecut_scf" string="ADD POTONGAN SCF" type="object" attrs="{'invisible': [('state', 'not in', ['draft', 'rejected'])]}"/>
                     <field name="state" widget="statusbar" statusbar_visible="draft,uploaded,approved"/>
                 </header>
                 <sheet>
@@ -170,6 +170,26 @@
                             </form>
                         </field>
                     </page>
+
+                    <page string="Journal SAP">
+                         <field name="journal_item_sap_ids" nolable="1" attrs="{'readonly': [('state', 'in', ('uploaded', 'approved'))]}">
+                            <tree editable="top">
+                                <field name="invoice_id" invisible="1"/>
+                                <field name="doc_number"/>
+                                <field name="amount"/>
+                                <field name="line"/>
+                                <field name="project_id"/>
+                                <field name="branch_id"/>
+                                <field name="partner_id"/>
+                                <field name="po_id"/>
+                                <field name="status"/>
+                            </tree>
+                        </field>
+                        <group string="Total AP SAP">
+                            <field name="total_ap_sap" readonly="1"/>
+                        </group>
+                    </page>
+
                     <page string="Potongan Lain-lain dan PPH">
                         <group string="PPH">
                             <field name="pph_ids" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}" domain="[('tax_group_id', '!=', 'PPN')]"/>
@@ -183,15 +203,16 @@
                                 <field name="special_gl_id"/>
                                  <field name="wbs_project_definition"/>
                                 <field name="account_id"/>
+                                <field name="wbs_project_definition"/>
                                 <field name="percentage_amount"/>
                                 <field name="amount"/>
                             </tree>
                         </field>
+
                         </group>
                         <group string="Total Potongan">
                             <field name="dp_total"/>
                             <field name="retensi_total"/>
-                             <field name="amount_scf"/>
                             <field name="total_scf_cut" readonly="1"/>
                         </group>
                     </page>

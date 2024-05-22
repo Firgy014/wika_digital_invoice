@@ -162,35 +162,51 @@ class sap_integration_configure(models.Model):
         conf_model = self.env['sap.integration.configure'].sudo()
 
         conf_id = conf_model.search([('sftp_folder_archive', '!=', False)], limit=1)
+        file_path = None  # Initialize file_path to None
         if conf_id:
             outbound_dir = conf_id.sftp_folder
             file_name_prefix = 'YFII015A'
             for file_name in os.listdir(outbound_dir):
                 if file_name.startswith(file_name_prefix):
                     file_path = os.path.join(outbound_dir, file_name)
+                    break
 
-        updated_invoices = []
-        try:
-            with open(file_path, 'r') as file:
-                next(file)  # Skip the header line
-                next(file)  # Skip the column titles
-                for line in file:
-                    invoice_data = line.strip().split('|')
-                    no_inv = invoice_data[0]
-                    invoice_id = invoice_model.search([('name', '=', no_inv),('is_mp_approved', '=', True),('invoice_number', '=', False)], limit=1)
-                    if invoice_id:
-                        invoice_id.write({
-                            'invoice_number': invoice_data[1],
-                            'year': invoice_data[2],
-                            'payment_reference': invoice_data[3],
-                            'dp_doc': invoice_data[4],
-                            'retensi_doc': invoice_data[5]
-                        })
-                        updated_invoices.append(no_inv)
-                    else:
-                        pass
-                shutil.move(file_path, os.path.join(conf_id.sftp_folder_archive, file_name))
-        except FileNotFoundError:
-            pass
-            #raise ValidationError(_("File TXT dari SAP atas invoice yang dituju tidak ditemukan!"))
+        if file_path:
+            updated_invoices = []
+            try:
+                with open(file_path, 'r') as file_txt:
+                    next(file_txt)  # Skip header
+                    next(file_txt)  # Skip column title
+                    for line in file_txt:
+                        invoice_data = line.strip().split('|')
+                        acc_doc = invoice_data[3]  # ACC_DOC
+                        invoice_id = invoice_model.search([
+                            ('name', '=', acc_doc),
+                            ('is_mp_approved', '=', True),
+                            ('invoice_number', '=', False)
+                        ], limit=1)
+                        if invoice_id:
+                            update_vals = {
+                                'name': acc_doc,
+                                'year': invoice_data[2],  # GJAHR
+                                'dp_doc': invoice_data[4],  # DP_DOC
+                                'retensi_doc': invoice_data[5],  # RET_DOC
+                            }
+                            if invoice_data[6]:  # AP_DOC
+                                update_vals.update({
+                                    'payment_reference': invoice_data[6],
+                                    'no_doc_sap': invoice_data[1]  # BELNR
+                                })
+                            else:
+                                update_vals['payment_reference'] = invoice_data[1]  # BELNR
 
+                            invoice_id.write(update_vals)
+                            updated_invoices.append(acc_doc)
+                        else:
+                            pass
+                    shutil.move(file_path, os.path.join(conf_id.sftp_folder_archive, file_name))
+            except FileNotFoundError:
+                pass
+                # raise ValidationError(_("File TXT dari SAP atas invoice yang dituju tidak ditemukan!"))
+        else:
+            _logger.error("No file found with prefix {} in directory {}".format(file_name_prefix, outbound_dir))
