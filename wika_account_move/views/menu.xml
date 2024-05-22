@@ -36,6 +36,13 @@
             parent="main_menu_account_move_config"
             sequence="100"/>
 
+        <menuitem
+            action="action_doc_ap_non_po"
+            id="sub_menu_wika_doc_ap_non_po"
+            name="DOC AP Non PO"
+            parent="wika_berita_acara_pembayaran.wika_berita_acara_pembayaran_menu_root"
+            sequence="16"/>
+
     </data>
     
 </odoo>

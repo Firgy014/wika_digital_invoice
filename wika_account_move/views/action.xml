@@ -36,6 +36,12 @@
                 (0, 0, {'view_mode': 'form', 'view_id': ref('wika_account_move.view_setting_account_payable_form')}),
             ]"/>
         </record>
+
+        <record id="action_doc_ap_non_po" model="ir.actions.act_window">
+            <field name="name">Doc AP Non PO</field>
+            <field name="res_model">doc.ap.non.po</field>
+            <field name="view_mode">tree,form</field>
+        </record>
     
     </data>
     

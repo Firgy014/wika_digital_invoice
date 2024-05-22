@@ -36,6 +36,7 @@
         'views/product_views.xml',
         'views/wika_account_move.xml',
         'views/wika_account_move_line.xml',
+        'views/doc_ap_non_po.xml',
 
         'views/account_tax_views.xml',
         'data/documents_folder_data.xml',
