@@ -96,6 +96,13 @@ class WikaInheritedAccountMove(models.Model):
                     total_pph += (total_net* pph.amount) / 100
                 record.total_pph = math.floor(total_pph)
 
+            total_pph_cbasis = 0
+            # for line in record.invoice_line_ids:
+            #     total_pph_cbasis += line.pph_cash_basis
+            # record.total_pph += total_pph_cbasis
+
+
+
     @api.depends('history_approval_ids')
     def _compute_status_invoice(self):
         for record in self:
@@ -126,8 +133,11 @@ class WikaInheritedAccountMove(models.Model):
         if len(self) != 1:
             raise ValidationError("Hanya satu record yang diharapkan diperbarui!")
 
-        if self.invoice_date != False and self.invoice_date < self.bap_id.bap_date:
-            raise ValidationError("Document Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
+        if self.invoice_date != False and self.bap_id:
+            if self.invoice_date < self.bap_id.bap_date:
+                raise ValidationError("Document Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
+            else:
+                pass
         else:
             pass
 
@@ -139,8 +149,9 @@ class WikaInheritedAccountMove(models.Model):
             return self
         if len(self) != 1:
             raise ValidationError("Hanya satu record yang diharapkan diperbarui!")
-        if self.date < self.bap_id.bap_date:
-            raise ValidationError("Posting Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
+        if self.bap_id:
+            if self.date < self.bap_id.bap_date:
+                raise ValidationError("Posting Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
 
     state = fields.Selection(
         selection=[
@@ -267,10 +278,10 @@ class WikaInheritedAccountMove(models.Model):
             if persentage_retensi >0:
                 x.retensi_total = (x.total_line / 100 ) * persentage_retensi
 
-    @api.depends('total_line', 'dp_total', 'retensi_total','total_tax')
+    @api.depends('total_line', 'dp_total', 'retensi_total','total_tax','total_scf_cut')
     def _compute_amount_total_payment(self):
         for x in self:
-            x.amount_total_payment= round(x.total_line-x.dp_total-x.retensi_total + x.total_tax)
+            x.amount_total_payment= round(x.total_line-x.dp_total-x.retensi_total -x.total_scf_cut + x.total_tax)
 
     def _compute_documents_count(self):
         for record in self:
@@ -408,10 +419,10 @@ class WikaInheritedAccountMove(models.Model):
         elif record.ap_type == 'ap_nonpo':
             record.assign_todo_first_without_activities()
 
-        if isinstance(record, bool):
-            return record
-        if len(record) != 1:
-            raise ValidationError("Hanya satu record yang diharapkan diperbarui!")
+        # if isinstance(record, bool):
+        #     return record
+        # if len(record) != 1:
+        #     raise ValidationError("Hanya satu record yang diharapkan diperbarui!")
 
         
         #document date

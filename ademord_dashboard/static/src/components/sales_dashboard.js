@@ -5,12 +5,46 @@ import { KpiCard } from "./kpi_card/kpi_card"
 import { ChartRenderer } from "./chart_renderer/chart_renderer"
 import { loadJS } from "@web/core/assets"
 import { useService } from "@web/core/utils/hooks"
-const { Component, onWillStart, useRef, onMounted, useState } = owl
+const { Component, onWillStart, useRef, onMounted, useState, xml } = owl
 import { getColor } from "@web/views/graph/colors"
 import { browser } from "@web/core/browser/browser"
 import { routeToUrl } from "@web/core/browser/router_service"
+var session = require('web.session');
+console.log("CHECK USER", session);
+
+// var core = require('web.core');
+// console.log("CHECK USER COREEEEEEEEE", core);
+
+var rpc = require('web.rpc');
+// console.log("CHECK USER RPCCCCCCC", rpc);
 
 export class OwlSalesDashboard extends Component {
+
+    async fetchUsersData() {
+        try {
+            let users = await rpc.query({
+                model: 'res.users',
+                method: 'search_read',
+                args: [[['id', '=', session.uid]]], // Mengambil data pengguna berdasarkan ID pengguna yang sedang login
+                kwargs: {
+                    fields: ['id', 'name', 'email', 'level'], // Bidang yang ingin Anda ambil
+                    // limit: 1 // Kita hanya mengambil satu pengguna yang sedang login
+                }
+            });
+            console.log("masuk 1");
+            console.log("User data:", users);
+            if (users.length > 0) {
+                this.state.userData = users[0];
+            }
+        } catch (error) {
+            console.error("Error fetching user data:", error);
+            console.log("masuk 2");
+            console.log("console erorrr", error);
+
+        }
+        console.log("masuk 3");
+    }
+
     // top products
     async getTopProjects(){
         let domain = [['branch_id', '!=', false], ['sap_code', '!=', false]]
@@ -268,6 +302,8 @@ export class OwlSalesDashboard extends Component {
 
     setup(){
         this.state = useState({
+            uid: session.uid,
+            user: session.uid,
             quotations: {
                 value:10,
                 percentage:6,
@@ -281,32 +317,35 @@ export class OwlSalesDashboard extends Component {
                 late:3,
 
                 url: {
+                    total:"/web/po/total",
                     wait:"/web/po/waits",
                     upload:"/web/po/uploads",
                     late:"/web/po/lates",
                 },
             },
-
+            
             grses: {
                 total:100,
                 waits:1,
                 uploaded:2,
                 late:3,
-
+                
                 url: {
+                    total:"/web/grses/total",
                     wait:"/web/grses/waits",
                     upload:"/web/grses/uploads",
                     late:"/web/grses/lates",
                 },
             },
-
+            
             bap: {
                 total:100,
                 waits:1,
                 uploaded:2,
                 late:3,
-
+                
                 url: {
+                    total:"/web/bap/total",
                     wait:"/web/bap/waits",
                     upload:"/web/bap/uploads",
                     late:"/web/bap/lates",
@@ -320,6 +359,7 @@ export class OwlSalesDashboard extends Component {
                 late:3,
 
                 url: {
+                    total:"/web/inv/total",
                     wait:"/web/inv/waits",
                     upload:"/web/inv/uploads",
                     late:"/web/inv/lates",
@@ -339,7 +379,34 @@ export class OwlSalesDashboard extends Component {
                 },
             },
 
+            pritem: {
+                total:100,
+                waits:1,
+                uploaded:2,
+                late:3,
+
+                url: {
+                    wait:"/web/pritem/waits",
+                    upload:"/web/pritem/uploads",
+                    late:"/web/pritem/lates",
+                },
+            },
+
+            pritempus: {
+                total:100,
+                waits:1,
+                uploaded:2,
+                late:3,
+
+                url: {
+                    wait:"/web/pritempus/waits",
+                    upload:"/web/pritempus/uploads",
+                    late:"/web/pritempus/lates",
+                },
+            },
+
             period:90,
+            // userData:[],
         })
         this.orm = useService("orm")
         this.actionService = useService("action")
@@ -352,79 +419,114 @@ export class OwlSalesDashboard extends Component {
             search.old_chartjs = old_chartjs != null ? "0":"1"
             hash.action = 86
             browser.location.href = browser.location.origin + routeToUrl(router.current)
-        }
+        }   
+
+        // onWillUnmount(() => {
+        //     this.__destroyed = true;
+        // });
 
         onWillStart(async ()=>{
-            this.getDates()
-            // await this.getQuotations()
+            try {
+                this.getDates()
+                await this.fetchUsersData()
+                const promises = [
+                    // PO
+                    await this.getTotalPO(),
+                    await this.getWaitingPO(),
+                    await this.getUploadedPO(),
+                    await this.getLatePO(),
+                    // PO Urls
+                    await this.getPoUrlWait(),
+                    await this.getPoUrlUpload(),
+                    await this.getPoUrlLate(),
+    
+                    // GRSES
+                    await this.getTotalGRSES(),
+                    await this.getWaitingGRSES(),
+                    await this.getUploadedGRSES(),
+                    await this.getLateGRSES(),
+                    // GRSES Urls
+                    await this.getGrsesUrlWait(),
+                    await this.getGrsesUrlUpload(),
+                    await this.getGrsesUrlLate(),
+    
+                    // BAP
+                    await this.getTotalBAP(),
+                    await this.getWaitingBAP(),
+                    await this.getUploadedBAP(),
+                    await this.getLateBAP(),
+                    // BAP Urls
+                    await this.getBapUrlWait(),
+                    await this.getBapUrlUpload(),
+                    await this.getBapUrlLate(),
+    
+                    // INV
+                    await this.getTotalINV(),
+                    await this.getWaitingINV(),
+                    await this.getUploadedINV(),
+                    await this.getLateINV(),
+                    // INV Urls
+                    await this.getInvUrlWait(),
+                    await this.getInvUrlUpload(),
+                    await this.getInvUrlLate(),
+    
+                    // PR
+                    await this.getTotalPR(),
+                    await this.getWaitingPR(),
+                    await this.getUploadedPR(),
+                    await this.getLatePR(),
+    
+                    // PR Urls
+                    await this.getPrUrlWait(),
+                    await this.getPrUrlUpload(),
+                    await this.getPrUrlLate(),
+    
+                    // PR item
+                    await this.getTotalPRitem(),
+                    await this.getWaitingPRitem(),
+                    await this.getUploadedPRitem(),
+                    await this.getLatePRitem(),
+                    
+                    // PR item url
+                    await this.getPrItemUrlWait(),
+                    await this.getPrItemUrlUpload(),
+                    await this.getPrItemUrlLate(),
+    
+                    // PR item pusat
+                    await this.getTotalPRitempus(),
+                    await this.getWaitingPRitempus(),
+                    await this.getUploadedPRitempus(),
+                    await this.getLatePRitempus(),
+                    
+                    // PR item pusat url
+                    await this.getPrItemPusUrlWait(),
+                    await this.getPrItemPusUrlUpload(),
+                    await this.getPrItemPusUrlLate(),
+    
+                    // New Pie
+                    await this.getDigitalInvoiceReport(),
+                    
+                    // Existings
+                    await this.getOrders(),
+                    await this.getTopProjects(),
+                    // await this.getTopSalesPeople()
+                    await this.getMonthlySales(),
+                    await this.getInvoiceMonitoringData(),
+                    await this.getPartnerOrders(),
+                ];
+                await Promise.all(promises);
 
-            // PO
-            await this.getTotalPO()
-            await this.getWaitingPO()
-            await this.getUploadedPO()
-            await this.getLatePO()
-            // PO Urls
-            await this.getPoUrlWait()
-            await this.getPoUrlUpload()
-            await this.getPoUrlLate()
-
-            // GRSES
-            await this.getTotalGRSES()
-            await this.getWaitingGRSES()
-            await this.getUploadedGRSES()
-            await this.getLateGRSES()
-            // GRSES Urls
-            await this.getGrsesUrlWait()
-            await this.getGrsesUrlUpload()
-            await this.getGrsesUrlLate()
-
-            // BAP
-            await this.getTotalBAP()
-            await this.getWaitingBAP()
-            await this.getUploadedBAP()
-            await this.getLateBAP()
-            // BAP Urls
-            await this.getBapUrlWait()
-            await this.getBapUrlUpload()
-            await this.getBapUrlLate()
-
-            // INV
-            await this.getTotalINV()
-            await this.getWaitingINV()
-            await this.getUploadedINV()
-            await this.getLateINV()
-            // INV Urls
-            await this.getInvUrlWait()
-            await this.getInvUrlUpload()
-            await this.getInvUrlLate()
-
-            // PR
-            await this.getTotalPR()
-            await this.getWaitingPR()
-            await this.getUploadedPR()
-            await this.getLatePR()
-            // PR Urls
-            await this.getPrUrlWait()
-            await this.getPrUrlUpload()
-            await this.getPrUrlLate()
-
-            // New Pie
-            await this.getDigitalInvoiceReport()
-            
-            // Existings
-            await this.getOrders()
-            await this.getTopProjects()
-            // await this.getTopSalesPeople()
-            await this.getMonthlySales()
-            await this.getInvoiceMonitoringData()
-            await this.getPartnerOrders()
-        })
+            } catch (error) {
+                console.error("Error during onWillStart:", error);
+            }
+        });
     }
 
     async onChangePeriod(){
         this.getDates()
         // await this.getQuotations()
         // PO
+        // await this.fetchUsersData()
         await this.getTotalPO()
         await this.getWaitingPO()
         await this.getUploadedPO()
@@ -474,9 +576,30 @@ export class OwlSalesDashboard extends Component {
         await this.getPrUrlUpload()
         await this.getPrUrlLate()
         
-        // New Pie
-        await this.getDigitalInvoiceReport()
+        // PR item
+        await this.getTotalPRitem()
+        await this.getWaitingPRitem()
+        await this.getUploadedPRitem()
+        await this.getLatePRitem()
         
+        // PR item url
+        await this.getPrItemUrlWait()
+        await this.getPrItemUrlUpload()
+        await this.getPrItemUrlLate()
+
+        // PR item pusat
+        await this.getTotalPRitempus()
+        await this.getWaitingPRitempus()
+        await this.getUploadedPRitempus()
+        await this.getLatePRitempus()
+        
+        // PR item pusat url
+        await this.getPrItemPusUrlWait()
+        await this.getPrItemPusUrlUpload()
+        await this.getPrItemPusUrlLate()
+
+        // New Pie
+        await this.getDigitalInvoiceReport()      
 
         // Existings
         await this.getOrders()
@@ -513,11 +636,12 @@ export class OwlSalesDashboard extends Component {
 
     // === PO COUNTERS ===
     async getTotalPO(){
-        let domainTotal = [
-            ['state', 'in', ['po','uploaded','approved','rejected']],
-        ]
-        const dataTotal = await this.orm.searchCount("purchase.order", domainTotal)
+        const menuIdPo = await this.orm.search("ir.ui.menu", [['name', '=', 'Purchase Orders']], { limit: 1 })
+        const actionIdPo = await this.orm.search("ir.actions.act_window", [['context', '=', "{'default_state':'po'}"]])
+        
+        const dataTotal = await this.orm.searchCount("purchase.order", [])
         this.state.po.total = dataTotal
+        this.state.po.url.total = `/web#action=${actionIdPo[0]}&model=purchase.order&view_type=list&cids=1&menu_id=${menuIdPo[0]}`
     }
     async getWaitingPO(){
         let domainWaiting = [
@@ -550,11 +674,12 @@ export class OwlSalesDashboard extends Component {
 
     // === GRSES COUNTERS ===
     async getTotalGRSES(){
-        let domainTotal = [
-            ['state', 'in', ['waits','uploaded','approved','rejected']],
-        ]
-        const dataTotal = await this.orm.searchCount("stock.picking", domainTotal)
+        const menuIdGr = await this.orm.search("ir.ui.menu", [['name', '=', 'GR/SES']], { limit: 1 })
+        const actionIdGr = await this.orm.search("ir.actions.act_window", [['context', '=', "{'default_state':'waits'}"]])
+        
+        const dataTotal = await this.orm.searchCount("stock.picking", [])
         this.state.grses.total = dataTotal
+        this.state.grses.url.total = `/web#action=${actionIdGr[0]}&model=stock.picking&view_type=list&cids=1&menu_id=${menuIdGr[0]}`
     }
     async getWaitingGRSES(){
         let domainWaiting = [
@@ -586,11 +711,12 @@ export class OwlSalesDashboard extends Component {
     
     // === BAP COUNTERS ===
     async getTotalBAP(){
-        let domainTotal = [
-            ['state', 'in', ['draft','uploaded','approved','rejected']],
-        ]
-        const dataTotal = await this.orm.searchCount("wika.berita.acara.pembayaran", domainTotal)
+        const menuIdBap = await this.orm.search("ir.ui.menu", [['name', '=', 'BAP']], { limit: 1 })
+        const actionIdBap = await this.orm.search("ir.actions.act_window", [['res_model', '=', 'wika.berita.acara.pembayaran']])
+        
+        const dataTotal = await this.orm.searchCount("wika.berita.acara.pembayaran", [])
         this.state.bap.total = dataTotal
+        this.state.bap.url.total = `/web#action=${actionIdBap[0]}&model=wika.berita.acara.pembayaran&view_type=list&cids=1&menu_id=${menuIdBap[0]}`
     }
     async getWaitingBAP(){
         let domainWaiting = [
@@ -622,11 +748,12 @@ export class OwlSalesDashboard extends Component {
 
     // === INVOICE COUNTERS ===
     async getTotalINV(){
-        let domainTotal = [
-            ['state', 'in', ['draft','uploaded','approved','rejected']],
-        ]
-        const dataTotal = await this.orm.searchCount("account.move", domainTotal)
+        const menuIdInv = await this.orm.search("ir.ui.menu", [['name', '=', 'Invoice']], { limit: 1 })
+        const actionIdInv = await this.orm.search("ir.actions.act_window", [['context', '=', "{'default_move_type': 'in_invoice'}"]])
+        
+        const dataTotal = await this.orm.searchCount("account.move", [])
         this.state.inv.total = dataTotal
+        this.state.inv.url.total = `/web#action=${actionIdInv[0]}&model=account.move&view_type=list&cids=1&menu_id=${menuIdInv[0]}`
     }
     async getWaitingINV(){
         let domainWaiting = [
@@ -661,7 +788,7 @@ export class OwlSalesDashboard extends Component {
         let domainTotal = [
             ['state', 'in', ['draft','uploaded','request','approved']],
         ]
-        const dataTotal = await this.orm.searchCount("wika.payment.request", domainTotal)
+        const dataTotal = await this.orm.searchCount("wika.payment.request", [])
         this.state.pr.total = dataTotal
     }
     async getWaitingPR(){
@@ -690,8 +817,100 @@ export class OwlSalesDashboard extends Component {
         const dataLate = await this.orm.searchCount("mail.activity", domainLate)
         this.state.pr.late = dataLate
     }
+    // === PR item Divisi COUNTERS ===
+
+    async getTotalPRitem() {
+        const user = session.uid;
+        console.log("CHECK USER LOGIN DIV", user);
+        let domainTotal = [
+            // ['approval_line_id.level_role', '=', 'Divisi Operasi'],
+            ['next_user_id', '=', user],
+        ];
+        // console.log("CHECK USER LOGIN DIV", domainTotal);
+        const dataTotal = await this.orm.searchCount("wika.payment.request.line", domainTotal);
+        // console.log("TESTTT ADA TOTAL NYA GAK DIV", dataTotal);
+        this.state.pritem.total = dataTotal;
+    }
+    
+    
+    async getWaitingPRitem() {
+        let domainWaiting = [
+            // ['status', '=', 'todo'],
+        ];
+        const dataWaits = await this.orm.searchCount("wika.payment.request.line", domainWaiting)
+        this.state.pritem.waits = dataWaits
+    }
+
+    async getUploadedPRitem() {
+        const user = session.uid; // Dapatkan ID pengguna yang login
+        console.log("CHECK USER LOGIN DIV", user);
+        let domainUploaded = [
+            // ['approval_line_id.level_role', '=', 'Divisi Operasi'],
+            ['next_user_id', '=', user],
+        ];
+        // console.log("CHECK USER LOGIN DIV", domainUploaded);
+        const dataUploaded = await this.orm.searchCount("wika.payment.request.line", domainUploaded);
+        // console.log("TESTTT ADA DATANYA GAK DIV", dataUploaded);
+        this.state.pritem.uploaded = dataUploaded;
+    }
+
+    async getLatePRitem(){
+        let domainLate = [
+            ['res_model', '=', 'wika.payment.request.line'],
+            ['is_expired', '=', true]
+        ]
+        const dataLate = await this.orm.searchCount("mail.activity", domainLate)
+        this.state.pritem.late = dataLate
+    }
     // ======================
 
+    // === PR item Pusat COUNTERS ===
+
+    async getTotalPRitempus() {
+        const user = session.uid;
+        let domainTotal = [
+            ['approval_line_id.level_role', '=', 'Pusat'],
+            ['next_user_id', '=', user],
+            // ['approval_line_id.check_approval', '=', true]
+            // ['next_user_id', '=', this.uid],
+            // ['approval_stage', '=', 'Pusat']
+        ];
+        const dataTotal = await this.orm.searchCount("wika.payment.request.line", domainTotal)
+        // console.log("TESTTT ADA TOTAL NYA GAK PUS", dataTotal)
+        this.state.pritempus.total = dataTotal
+    }
+    
+    async getWaitingPRitempus() {
+        let domainWaiting = [
+            // ['status', '=', 'todo'],
+        ];
+        const dataWaits = await this.orm.searchCount("wika.payment.request.line", domainWaiting)
+        this.state.pritempus.waits = dataWaits
+    }
+
+    async getUploadedPRitempus() {
+        const user = session.uid;
+        let domainUploaded = [
+            ['approval_line_id.level_role', '=', 'Pusat'],
+            ['next_user_id', '=', user],
+            // ['approval_line_id.check_approval', '=', true]
+            // ['next_user_id', '=', this.uid],
+            // ['approval_stage', '=', 'Pusat']
+        ];
+        const dataUploaded = await this.orm.searchCount("wika.payment.request.line", domainUploaded)
+        // console.log("TESTTT ADA DATANYA GAK PUS", dataUploaded)
+        this.state.pritempus.uploaded = dataUploaded
+    }
+
+    async getLatePRitempus(){
+        let domainLate = [
+            ['res_model', '=', 'wika.payment.request.line'],
+            ['is_expired', '=', true]
+        ]
+        const dataLate = await this.orm.searchCount("mail.activity", domainLate)
+        this.state.pritempus.late = dataLate
+    }
+    // ======================
 
     async getOrders(){
         let domain = [['state', 'in', ['sale', 'done']]]
@@ -813,7 +1032,6 @@ export class OwlSalesDashboard extends Component {
             let url = `/web#model=mail.activity&view_type=list&action=${existingAction}&menu_id=${menuId}`
             this.state.po.url.late = url
         }
-        console.log("LATE PO URL --->", this.state.po.url.late)
     }
     // === PO URL BUILDERS ===
     
@@ -892,7 +1110,6 @@ export class OwlSalesDashboard extends Component {
             let url = `/web#model=mail.activity&view_type=list&action=${existingAction}&menu_id=${menuId}`
             this.state.grses.url.late = url
         }
-        console.log("LATE GR URL --->", this.state.grses.url.late)
     }
     // === GRSES URL BUILDERS ===
 
@@ -971,7 +1188,6 @@ export class OwlSalesDashboard extends Component {
             let url = `/web#model=mail.activity&view_type=list&action=${existingAction}&menu_id=${menuId}`
             this.state.bap.url.late = url
         }
-        console.log("LATE BAP URL --->", this.state.bap.url.late)
     }
     // === BAP URL BUILDERS ===
 
@@ -1050,7 +1266,6 @@ export class OwlSalesDashboard extends Component {
             let url = `/web#model=mail.activity&view_type=list&action=${existingAction}&menu_id=${menuId}`
             this.state.inv.url.late = url
         }
-        console.log("LATE INV URL --->", this.state.inv.url.late)
     }
     // === INV URL BUILDERS ===
 
@@ -1129,11 +1344,148 @@ export class OwlSalesDashboard extends Component {
             let url = `/web#model=mail.activity&view_type=list&action=${existingAction}&menu_id=${menuId}`
             this.state.pr.url.late = url
         }
-        console.log("LATE PR URL --->", this.state.pr.url.late)
     }
     // === PR URL BUILDERS ===
 
+    // === PR ITEM DIVISI URL BUILDERS
+    async getPrItemUrlWait(){
+        let domainView = [['name', '=', 'mail.activity.todo.view.tree'], ['model', '=', 'mail.activity']]
+        let domainMenu = [['name', '=', 'Dashboard'], ['web_icon', 'ilike', 'wika_dashboard']]
+        let domainAction = [
+            ['name','=','Payment Request Item to Upload'],
+            ['domain', '=', "[('status', '=', 'todo'), ('res_model', '=', 'wika.payment.request.line')]"]
+        ]
+        const viewId = await this.orm.search("ir.ui.view", domainView)
+        const existingAction = await this.orm.search("ir.actions.act_window", domainAction)
+        const menuId = await this.orm.search("ir.ui.menu", domainMenu)
 
+        if (existingAction[0] === 0 || existingAction.length === 0) {
+            const actionId = await this.orm.create('ir.actions.act_window', [{
+                name: 'Payment Request Item to Upload',
+                res_model: 'mail.activity',
+                view_mode: 'tree',
+                view_id: viewId[0],
+                domain: "[('status', '=', 'todo'), ('res_model', '=', 'wika.payment.request.line')]"
+            }])
+            let url = `/web#model=mail.activity&view_type=list&action=${actionId}&menu_id=${menuId}`
+            this.state.pritem.url.wait = url
+        } else {
+            let url = `/web#model=mail.activity&view_type=list&action=${existingAction}&menu_id=${menuId}`
+            this.state.pritem.url.wait = url
+        }
+    }
+    
+    async getPrItemUrlUpload() {
+        const model = 'wika.payment.request.line';
+        const menuId = await this.orm.search("ir.ui.menu", [['name', '=', 'Dashboard']]);
+        
+        const actionId = 745;
+        
+        let domain = [
+            ['approval_line_id.level_role', '=', 'Divisi Operasi'],
+            // ['next_user_id', '=', user],
+        ];
+        
+        const url = `/web#action=${actionId}&model=${model}&view_type=list&cids=1&menu_id=${menuId}&domain=${JSON.stringify(domain)}`;
+        this.state.pritem.url.upload = url;
+    }
+
+    async getPrItemUrlLate(){
+        let domainView = [['name', '=', 'mail.activity.todo.view.tree'], ['model', '=', 'mail.activity']]
+        let domainMenu = [['name', '=', 'Dashboard'], ['web_icon', 'ilike', 'wika_dashboard']]
+        let domainAction = [['name', '=', 'Late Pengajuan Pembayaran Approval'], ['domain', '=', "[('res_model', '=', 'wika.payment.request.line'), ('is_expired', '=', True)]"]]
+        const viewId = await this.orm.search("ir.ui.view", domainView)
+        const existingAction = await this.orm.search("ir.actions.act_window", domainAction)
+        const menuId = await this.orm.search("ir.ui.menu", domainMenu)
+
+        if (existingAction[0] === 0 || existingAction.length === 0) {
+            const actionId = await this.orm.create('ir.actions.act_window', [{
+                name: 'Late Pengajuan Pembayaran Approval',
+                res_model: 'mail.activity',
+                view_mode: 'tree',
+                view_id: viewId[0],
+                domain: "[('res_model', '=', 'wika.payment.request.line'), ('is_expired', '=', True)]"
+            }])
+            let url = `/web#model=mail.activity&view_type=list&action=${actionId}&menu_id=${menuId}`
+            this.state.pritem.url.late = url
+        } else {
+            let url = `/web#model=mail.activity&view_type=list&action=${existingAction}&menu_id=${menuId}`
+            this.state.pritem.url.late = url
+        }
+        console.log("LATE PR URL --->", this.state.pr.url.late)
+    }
+    // === PR ITEM DIVISI URL BUILDERS
+
+    // === PR ITEM PUSAT URL BUILDERS
+    async getPrItemPusUrlWait(){
+        let domainView = [['name', '=', 'mail.activity.todo.view.tree'], ['model', '=', 'mail.activity']]
+        let domainMenu = [['name', '=', 'Dashboard'], ['web_icon', 'ilike', 'wika_dashboard']]
+        let domainAction = [
+            ['name','=','Payment Request Item to Upload'],
+            ['domain', '=', "[('status', '=', 'todo'), ('res_model', '=', 'wika.payment.request.line')]"]
+        ]
+        const viewId = await this.orm.search("ir.ui.view", domainView)
+        const existingAction = await this.orm.search("ir.actions.act_window", domainAction)
+        const menuId = await this.orm.search("ir.ui.menu", domainMenu)
+
+        if (existingAction[0] === 0 || existingAction.length === 0) {
+            const actionId = await this.orm.create('ir.actions.act_window', [{
+                name: 'Payment Request Item to Upload',
+                res_model: 'mail.activity',
+                view_mode: 'tree',
+                view_id: viewId[0],
+                domain: "[('status', '=', 'todo'), ('res_model', '=', 'wika.payment.request.line')]"
+            }])
+            let url = `/web#model=mail.activity&view_type=list&action=${actionId}&menu_id=${menuId}`
+            this.state.pritempus.url.wait = url
+        } else {
+            let url = `/web#model=mail.activity&view_type=list&action=${existingAction}&menu_id=${menuId}`
+            this.state.pritempus.url.wait = url
+        }
+    }
+
+    async getPrItemPusUrlUpload() {
+        const model = 'wika.payment.request.line';
+        const menuId = await this.orm.search("ir.ui.menu", [['name', '=', 'Dashboard']]);
+        
+        const actionId = 745;
+        const user = session.uid;
+        
+        let domain = [
+            ['approval_line_id.level_role', '=', 'Pusat'],
+            ['next_user_id', '=', user],
+        ];
+        // console.log("CHECK LEVEL ROLE DAN UUID")
+        
+        const url = `/web#action=${actionId}&model=${model}&view_type=list&cids=1&menu_id=${menuId}&domain=${JSON.stringify(domain)}`;
+        this.state.pritempus.url.upload = url;
+    }
+    
+    async getPrItemPusUrlLate(){
+        let domainView = [['name', '=', 'mail.activity.todo.view.tree'], ['model', '=', 'mail.activity']]
+        let domainMenu = [['name', '=', 'Dashboard'], ['web_icon', 'ilike', 'wika_dashboard']]
+        let domainAction = [['name', '=', 'Late Pengajuan Pembayaran Approval'], ['domain', '=', "[('res_model', '=', 'wika.payment.request.line'), ('is_expired', '=', True)]"]]
+        const viewId = await this.orm.search("ir.ui.view", domainView)
+        const existingAction = await this.orm.search("ir.actions.act_window", domainAction)
+        const menuId = await this.orm.search("ir.ui.menu", domainMenu)
+
+        if (existingAction[0] === 0 || existingAction.length === 0) {
+            const actionId = await this.orm.create('ir.actions.act_window', [{
+                name: 'Late Pengajuan Pembayaran Approval',
+                res_model: 'mail.activity',
+                view_mode: 'tree',
+                view_id: viewId[0],
+                domain: "[('res_model', '=', 'wika.payment.request.line'), ('is_expired', '=', True)]"
+            }])
+            let url = `/web#model=mail.activity&view_type=list&action=${actionId}&menu_id=${menuId}`
+            this.state.pritempus.url.late = url
+        } else {
+            let url = `/web#model=mail.activity&view_type=list&action=${existingAction}&menu_id=${menuId}`
+            this.state.pritempus.url.late = url
+        }
+        console.log("LATE PR URL --->", this.state.pr.url.late)
+    }
+    // === PR ITEM PUSAT URL BUILDERS
     async viewQuotations(){
         let domain = [['state', 'in', ['sent', 'draft']]]
         if (this.state.period > 0){
@@ -1156,7 +1508,7 @@ export class OwlSalesDashboard extends Component {
 
     async viewTotalPO(){
         let domainTotalPO = [
-            ['state', 'in', ['po','uploaded','approved','rejected']],
+            ['state', 'in', ['po','uploaded','approved']],
         ]
         
         let list_view = await this.orm.searchRead("ir.model.data", [['name', '=', 'purchase_order_tree_wika']], ['res_id'])
