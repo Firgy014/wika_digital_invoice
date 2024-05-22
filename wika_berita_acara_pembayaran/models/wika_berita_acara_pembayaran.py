@@ -1348,6 +1348,7 @@ class WikaBapDocumentLine(models.Model):
 
     bap_id = fields.Many2one('wika.berita.acara.pembayaran', string='')
     document_id = fields.Many2one('wika.document.setting', string='Document')
+    picking_id = fields.Many2one('stock.picking', string='Nomor GR')
     document = fields.Binary(string="Upload File", attachment=True, store=True, required=True)
     filename = fields.Char(string="File Name")
     state = fields.Selection([
