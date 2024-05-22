@@ -105,7 +105,7 @@
                             </group>
                         </group>
                         <notebook>
-                            <!-- <page string="List Invoice Full Payment">
+                            <!-- <page string="List Invoice Full Payment Full Payment">
                                 <group>   
                                     <field name="invoice_ids" mode="tree" nolabel="1"  colspan="2" context="{'tree_view_ref': 'wika_account_move.view_wika_account_move_tree','search_view_ref':'wika_account_move.view_wika_account_move_filter'}" attrs="{'readonly': [('state', '=', 'verified')]}">
                                         <tree>
@@ -116,8 +116,25 @@
                                             <field name="po_id"/>
                                             <field name="invoice_date" string="Document Date"/>
                                             <field name="invoice_date_due"/>
-                                            <field name="amount_total_footer" string="Net Amount" sum="Total"/>
+                                            <field name="total_partial_pr" string="Amount Request"/>
+                                            <field name="sisa_partial"/>
+                                            <field name="is_partial_pr"/>
                                             <field name="status_payment"/>
+                                        </tree>
+
+                                    </field>
+                                </group>
+                            </page>
+                            <page string="List Invoice Partial Payment">
+                                <group>
+                                    <field name="partial_payment_ids" mode="tree" nolabel="1"  colspan="2" attrs="{'readonly': [('state', '=', 'verified')]}">
+                                        <tree>
+                                            <field name="name"/>
+                                            <field name="invoice_id"/>
+                                            <field name="branch_id"/>
+                                            <field name="project_id"/>
+                                            <field name="partner_id"/>
+                                            <field name="payment_state"/>
                                         </tree>
 
                                     </field>

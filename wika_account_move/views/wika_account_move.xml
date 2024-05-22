@@ -23,6 +23,9 @@
                             <field string="Documents" name="documents_count" widget="statinfo"/>
                         </button>
                     </div>
+                    <!-- Payment status for invoices / receipts -->
+                    <widget name="web_ribbon" title="Paid"
+                    attrs="{'invisible': ['|', ('payment_state', '!=', 'paid'), ('move_type', 'not in', ('out_invoice', 'out_refund', 'in_invoice', 'in_refund', 'out_receipt', 'in_receipt'))]}"/>
                     <div class="oe_title">
                         <h1>
                             <field name="name"  readonly="1" force_save="1"/>
@@ -170,26 +173,24 @@
                             </form>
                         </field>
                     </page>
-
                     <page string="Journal SAP">
-                         <field name="journal_item_sap_ids" nolable="1" attrs="{'readonly': [('state', 'in', ('uploaded', 'approved'))]}">
-                            <tree editable="top">
-                                <field name="invoice_id" invisible="1"/>
-                                <field name="doc_number"/>
-                                <field name="amount"/>
-                                <field name="line"/>
-                                <field name="project_id"/>
-                                <field name="branch_id"/>
-                                <field name="partner_id"/>
-                                <field name="po_id"/>
-                                <field name="status"/>
-                            </tree>
-                        </field>
-                        <group string="Total AP SAP">
-                            <field name="total_ap_sap" readonly="1"/>
-                        </group>
-                    </page>
-
+                        <field name="journal_item_sap_ids" nolable="1" attrs="{'readonly': [('state', 'in', ('uploaded', 'approved'))]}">
+                           <tree editable="top">
+                               <field name="invoice_id" invisible="1"/>
+                               <field name="doc_number"/>
+                               <field name="amount"/>
+                               <field name="line"/>
+                               <field name="project_id"/>
+                               <field name="branch_id"/>
+                               <field name="partner_id"/>
+                               <field name="po_id"/>
+                               <field name="status"/>
+                           </tree>
+                       </field>
+                       <group string="Total AP SAP">
+                           <field name="total_ap_sap" readonly="1"/>
+                       </group>
+                   </page>
                     <page string="Potongan Lain-lain dan PPH">
                         <group string="PPH">
                             <field name="pph_ids" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}" domain="[('tax_group_id', '!=', 'PPN')]"/>

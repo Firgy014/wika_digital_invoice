@@ -49,4 +49,4 @@ class InheritAccountMove(models.Model):
             if x.partial_request_ids:
                 x.is_partial_pr =True
             else:
-                x.is_partial_pr=False
+                x.is_partial_pr=False        

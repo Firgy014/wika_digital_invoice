@@ -9,6 +9,7 @@ import json
 from . import helpers
 import os
 import io
+
 _logger = logging.getLogger(__name__)
 try:
     import csv
@@ -171,42 +172,89 @@ class sap_integration_configure(models.Model):
                     file_path = os.path.join(outbound_dir, file_name)
                     break
 
-        if file_path:
-            updated_invoices = []
-            try:
-                with open(file_path, 'r') as file_txt:
-                    next(file_txt)  # Skip header
-                    next(file_txt)  # Skip column title
-                    for line in file_txt:
-                        invoice_data = line.strip().split('|')
-                        acc_doc = invoice_data[3]  # ACC_DOC
-                        invoice_id = invoice_model.search([
-                            ('name', '=', acc_doc),
-                            ('is_mp_approved', '=', True),
-                            ('invoice_number', '=', False)
-                        ], limit=1)
-                        if invoice_id:
-                            update_vals = {
-                                'name': acc_doc,
-                                'year': invoice_data[2],  # GJAHR
-                                'dp_doc': invoice_data[4],  # DP_DOC
-                                'retensi_doc': invoice_data[5],  # RET_DOC
-                            }
-                            if invoice_data[6]:  # AP_DOC
-                                update_vals.update({
-                                    'payment_reference': invoice_data[6],
-                                    'no_doc_sap': invoice_data[1]  # BELNR
-                                })
-                            else:
-                                update_vals['payment_reference'] = invoice_data[1]  # BELNR
+        updated_invoices = []
+        try:
+            with open(file_path, 'r') as file:
+                next(file)  # Skip the header line
+                next(file)  # Skip the column titles
+                for line in file:
+                    invoice_data = line.strip().split('|')
+                    no_inv = invoice_data[0]
+                    invoice_id = invoice_model.search([('name', '=', no_inv),('is_mp_approved', '=', True),('invoice_number', '=', False)], limit=1)
+                    if invoice_id:
+                        invoice_id.write({
+                            'invoice_number': invoice_data[1],
+                            'year': invoice_data[2],
+                            'payment_reference': invoice_data[3],
+                            'dp_doc': invoice_data[4],
+                            'retensi_doc': invoice_data[5]
+                        })
+                        updated_invoices.append(no_inv)
+                    else:
+                        pass
+                shutil.move(file_path, os.path.join(conf_id.sftp_folder_archive, file_name))
+        except FileNotFoundError:
+            pass
+            raise ValidationError(_("File TXT dari SAP atas invoice yang dituju tidak ditemukan!"))
 
-                            invoice_id.write(update_vals)
-                            updated_invoices.append(acc_doc)
-                        else:
-                            pass
-                    shutil.move(file_path, os.path.join(conf_id.sftp_folder_archive, file_name))
-            except FileNotFoundError:
-                pass
+    def _update_payment_partial_request(self):
+        partial_payment_request_model = self.env['wika.partial.payment.request'].sudo()
+        conf_model = self.env['sap.integration.configure'].sudo()
+
+        conf_id = conf_model.search([('sftp_folder_archive', '!=', False)], limit=1)
+        if conf_id:
+            outbound_dir = conf_id.sftp_folder
+            file_name_prefix = 'YFII018A'
+            _logger.info(file_name_prefix + ' DEBUGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG')
+            _logger.info(outbound_dir)
+            
+            # try:
+            # open an SSH connection
+            client = paramiko.SSHClient()
+            client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            client.connect(conf_id['sftp_host'], 22, conf_id['sftp_user'], conf_id['sftp_password'])
+            # read the file using SFTP
+            updated_ppr = []
+            sftp = client.open_sftp()
+            
+            for file_name in sftp.listdir(outbound_dir):
+                # _logger.info(file_name)
+                if file_name.startswith(file_name_prefix):
+                    file_path = os.path.join(outbound_dir, file_name)
+                    _logger.info(file_path)
+                    with sftp.open(file_path, 'r') as file:
+                        next(file)  # Skip the header line
+                        next(file)  # Skip the column titles
+                        for line in file:
+                            invoice_data = line.strip().split('|')
+                            no_ppr = invoice_data[0]
+                            ppr_ids = partial_payment_request_model.search([('no_doc_sap', '=', False), '|',
+                                                                           ('name', '=', no_ppr),
+                                                                           ('reference', '=', no_ppr)])
+                            if ppr_ids:
+                                for ppr_id in ppr_ids:
+                                    ppr_id.write({
+                                        'no_doc_sap': invoice_data[2],
+                                        'year': invoice_data[3]
+                                    })
+                                    updated_ppr.append(no_ppr)
+                            
+                    
+                        # _logger.info(file_path)
+                        # _logger.info(os.path.join(conf_id.sftp_folder_archive, file_name))
+                        try:
+                            sftp.remove(os.path.join(conf_id.sftp_folder_archive, file_name))
+                        except OSError:
+                            _logger.info("%s could not be deleted\n" % file_name)
+                        
+                        sftp.rename(file_path, os.path.join(conf_id.sftp_folder_archive, file_name))
+            # close the connections
+            sftp.close()
+            client.close()
+
+            # except FileNotFoundError:
+            #     pass
                 # raise ValidationError(_("File TXT dari SAP atas invoice yang dituju tidak ditemukan!"))
-        else:
-            _logger.error("No file found with prefix {} in directory {}".format(file_name_prefix, outbound_dir))
+
+        
+

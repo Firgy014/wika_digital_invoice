@@ -18,6 +18,7 @@
     # for the full list
     'category': 'Uncategorized',
     'version': '0.1',
+    'license': 'LGPL-3',
 
     # any module necessary for this one to work correctly
     'depends': ['base','inherit_for_api','base_setup','wika_account_move'],
@@ -37,6 +38,7 @@
         'views/wika_get_gr.xml',
         'views/purchase_order.xml',
         'views/templates.xml',
+        'views/account_payment_views.xml',
     ],
     # only loaded in demonstration mode
     'demo': [

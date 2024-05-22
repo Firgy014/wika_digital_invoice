@@ -34,7 +34,7 @@ class wika_get_po(models.Model):
                 "CPUDT_HIGH": "%s",
                 "CPUTM_HIGH": "23:59:59"
             }
-        }) % (self.name, self.tgl_mulai,self.tgl_akhir)
+        }) % (self.name, self.tgl_mulai, self.tgl_akhir)
         payload = payload.replace('\n', '')
         print(payload)
         try:

@@ -8,3 +8,5 @@ access_wika_account_move_pricecut_line,List of Other Price Cut,model_wika_accoun
 access_approval_wizard_account_move, Approval Wizard,model_approval_wizard_account_move,,1,1,1,1
 access_wika_amount_scf_wizard,Potongan SCF,model_wika_amount_scf_wizard,,1,1,1,1
 access_wika_account_move_journal_sap,Journal SAP,model_wika_account_move_journal_sap,,1,1,1,1
+access_wika_account_move_journal_sap,Journal SAP,model_wika_account_move_journal_sap,,1,1,1,1
+access_doc_ap_non_po,Doc AP Non PO,model_doc_ap_non_po,,1,1,1,1

@@ -8,7 +8,6 @@ from dateutil.relativedelta import relativedelta
 class WikaInheritedAccountMove(models.Model):
     _inherit = 'account.move'
 
-
     name = fields.Char(
         string='Number',
         compute='_compute_name_wdigi', inverse='_inverse_name', readonly=False, store=True,
@@ -21,7 +20,7 @@ class WikaInheritedAccountMove(models.Model):
         string='BAP',
         domain="[('state', '=', 'approved'), ('is_cut_over', '!=', True)]"
     )
-    branch_id = fields.Many2one('res.branch', string='Divisi', required=True)
+    branch_id = fields.Many2one('res.branch', string='Divisi', required=True, default=122)
     department_id = fields.Many2one('res.branch', string='Department')
     project_id = fields.Many2one('project.project', string='Project')
     document_ids = fields.One2many('wika.invoice.document.line', 'invoice_id', string='Document Line', required=True)
@@ -29,7 +28,7 @@ class WikaInheritedAccountMove(models.Model):
     reject_reason_account = fields.Text(string='Reject Reason')
     step_approve = fields.Integer(string='Step Approve',default=1)
     no_doc_sap = fields.Char(string='No Doc SAP')
-    no_invoice_vendor = fields.Char(string='Nomor Invoice Vendor',required=True)
+    no_invoice_vendor = fields.Char(string='Nomor Invoice Vendor',required=True, default='-')
     invoice_number = fields.Char(string='Invoice Number')
     baseline_date = fields.Date(string='Baseline Date')
     retention_due = fields.Date(string='Retention Due')
@@ -97,10 +96,10 @@ class WikaInheritedAccountMove(models.Model):
                 record.total_pph = math.floor(total_pph)
 
             total_pph_cbasis = 0
-            # for line in record.invoice_line_ids:
-            #     total_pph_cbasis += line.pph_cash_basis
-            # record.total_pph += total_pph_cbasis
-
+            for line in record.invoice_line_ids:
+                total_pph_cbasis += line.pph_cash_basis
+            record.total_pph += total_pph_cbasis 
+                
 
 
     @api.depends('history_approval_ids')
@@ -220,6 +219,13 @@ class WikaInheritedAccountMove(models.Model):
     def _compute_ap_type(self):
         for record in self:
             record.ap_type = 'ap_po' if record.po_id else 'ap_nonpo'
+    journal_item_sap_ids = fields.One2many('wika.account.move.journal.sap', 'invoice_id', string='Journal SAP')
+    total_ap_sap = fields.Float(string='Total AP SAP', compute='_compute_total_ap_sap')
+
+    @api.depends('journal_item_sap_ids.amount')
+    def _compute_total_ap_sap(self):
+        for record in self:
+            record.total_ap_sap = sum(line.amount for line in record.journal_item_sap_ids)
 
     @api.depends('date')
     def _compute_name_wdigi(self):
@@ -958,7 +964,6 @@ class WikaInheritedAccountMove(models.Model):
             return self.env.ref('wika_account_move.report_wika_account_move_keuangan_action').report_action(self)
         else:
             return super(WikaInheritedAccountMove, self).action_print_invoice()
-
 
 class WikaInvoiceDocumentLine(models.Model):
     _name = 'wika.invoice.document.line'

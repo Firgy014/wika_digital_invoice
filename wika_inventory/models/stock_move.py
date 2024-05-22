@@ -1,4 +1,6 @@
 from odoo import models, fields, api
+import logging, json
+_logger = logging.getLogger(__name__)
 
 class StockMoveInherit(models.Model):
     _inherit = 'stock.move'
@@ -77,4 +79,15 @@ class StockMoveLineInherit(models.Model):
     _inherit = 'stock.move.line'
 
     active = fields.Boolean(default=True)
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        for vals in vals_list:
+            vals['state'] = 'draft'
+
+        _logger.info('vals_listTTTTTTTTTTTT')
+        _logger.info(vals_list)
+        
+        res = super(StockMoveLineInherit, self).create(vals_list)
+        return res
 
