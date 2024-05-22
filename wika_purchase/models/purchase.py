@@ -121,10 +121,11 @@ class PurchaseOrderInherit(models.Model):
     @api.depends('order_line.product_id.default_code')
     def cek_transaction_type(self):
         for x in self.order_line:
-            if x.product_id.default_code[0] in ('A','C','D','E'):
-                self.transaction_type='BL'
-            else:
-                self.transaction_type = 'BTL'
+            if x.product_id.default_code:
+                if x.product_id.default_code[0] in ('A','C','D','E'):
+                    self.transaction_type='BL'
+                else:
+                    self.transaction_type = 'BTL'
 
     # def get_gr(self):
     #     url_config = self.env['wika.integration'].search([('name', '=', 'URL GR')], limit=1).url

@@ -50,6 +50,7 @@
             <field name="arch" type="xml">
                 <search string="Search">
                     <field name="profit_center" />
+                    <field name="name" />
                 </search>
             </field>
         </record>
