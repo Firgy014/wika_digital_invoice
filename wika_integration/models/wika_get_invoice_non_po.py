@@ -308,4 +308,45 @@ class wika_get_invoice_non_po(models.Model):
         
         # self.env.ref('wika_integration.get_create_update_invoice_non_po')._trigger()
     
-   
+    def update_doc_bap(self):
+        baps = self.env['wika.berita.acara.pembayaran'].search([('state', '=', 'approved')])
+        _logger.info("----- BAP -----")
+        _logger.info(baps)
+        folder_id = self.env['documents.folder'].sudo().search([('name', '=', 'BAP')], limit=1)
+        documents_model = self.env['documents.document'].sudo()
+        if folder_id:
+            facet_id = self.env['documents.facet'].sudo().search([
+                ('name', '=', 'Documents'),
+                ('folder_id', '=', folder_id.id)
+            ], limit=1)
+            for bap in baps:    
+                _logger.info(bap)
+                for doc in bap.document_ids.filtered(lambda x: x.state in ('uploaded','rejected','verified')):
+                    # doc.state = 'verified'
+                    attachment_id = self.env['ir.attachment'].sudo().create({
+                        'name': doc.filename,
+                        'datas': doc.document,
+                        'res_model': 'documents.document',
+                    })
+                    if attachment_id:
+                        tag = self.env['documents.tag'].sudo().search([
+                            ('facet_id', '=', facet_id.id),
+                            ('name', '=', doc.document_id.name)
+                        ], limit=1)
+
+                        doc_exist = documents_model.search([
+                            ('folder_id', '=', folder_id.id),
+                            ('partner_id', '=', doc.bap_id.partner_id.id),
+                            ('purchase_id', '=', bap.po_id.id),
+                            ('bap_id', '=', bap.id)
+                        ], limit=1)
+                        if not doc_exist:
+                            documents_model.create({
+                                'attachment_id': attachment_id.id,
+                                'folder_id': folder_id.id,
+                                'tag_ids': tag.ids,
+                                'partner_id': doc.bap_id.partner_id.id,
+                                'purchase_id': bap.po_id.id,
+                                'bap_id': bap.id,
+                            })
+            _logger.info("----- BAP BERHASIL -----")

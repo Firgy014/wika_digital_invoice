@@ -1180,6 +1180,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
         for record in self:
             record.documents_count = self.env['documents.document'].search_count(
                 [('purchase_id', '=', record.po_id.id)])
+            
     @api.depends('po_id')
     def _compute_invoice_item(self):
         for record in self:
