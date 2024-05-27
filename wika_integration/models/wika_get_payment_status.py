@@ -38,41 +38,73 @@ class wika_get_payment_status(models.Model):
         # _logger.info("# === CEK PAYLOAD === #")
         # _logger.info(payload)
 
-        try:
-            response = requests.request("GET", url_config, data=payload, headers=headers)
-            txt = json.loads(response.text)
+        # try:
+        response = requests.request("GET", url_config, data=payload, headers=headers)
+        txt = json.loads(response.text)
 
-            if txt['DATA']:
-                _logger.info("# === IMPORT DATA === #")
-                company_id = self.env.company.id
-                # _logger.info(txt['DATA'])
-                # txt_data = sorted(txt['DATA'], key=lambda x: x["DOC_NUMBER"])
-                txt_data = txt['DATA']
-                for data in txt_data:
-                    # _logger.info(data)
-                    doc_number = data["DOC_NUMBER"]
-                    year = str(data["YEAR"])
-                    line_item = data["LINE_ITEM"]
-                    amount = data["AMOUNT"]
-                    clear_date = data["CLEAR_DATE"]
-                    status = data["STATUS"]
-                    new_name = doc_number+str(year)
+        if txt['DATA']:
+            _logger.info("# === IMPORT DATA === #")
+            company_id = self.env.company.id
+            # _logger.info(txt['DATA'])
+            txt_data0 = sorted(txt['DATA'], key=lambda x: x["DOC_NUMBER"])
+            txt_data = filter(lambda x: (x["STATUS"] == "X"), txt_data0)
+            
+            # txt_data = txt['DATA']
+            for data in txt_data:
+                # _logger.info(data)
+                doc_number = data["DOC_NUMBER"]
+                year = str(data["YEAR"])
+                line_item = data["LINE_ITEM"]
+                amount = data["AMOUNT"]
+                clear_date = data["CLEAR_DATE"]
+                clear_doc = data["CLEAR_DOC"]
+                status = data["STATUS"]
+                new_name = doc_number+str(year)
 
-                    # _logger.info("# === CEK ACCOUNT MOVE === #" + year + doc_number )
-                    account_move = self.env['account.move'].search([('payment_reference', '=', doc_number),
-                                                     ('year', '=', year)], limit=1)
-                    if account_move:
+                _logger.info("# === CEK ACCOUNT MOVE === #" + year + doc_number )
+                account_move = self.env['account.move'].search([('payment_reference', '=', doc_number),
+                                                    ('year', '=', year)], limit=1)
+                if account_move:
+                    account_payment = self.env['account.payment'].search([('ref', '=', doc_number),
+                                                                            ('date', '=', clear_date)])
+                    if not account_payment:
+                        _logger.info("# === INSERT PAYMENT === #")
+                        account_payment_created = self.env['account.payment'].create({
+                            'name': new_name,
+                            'date': clear_date,
+                            'partner_id': account_move.partner_id.id, 
+                            'payment_move_id': account_move.id, 
+                            'line_item': line_item, 
+                            'amount': abs(amount), 
+                            'ref': doc_number,
+                            'company_id': company_id,
+                            'payment_type': 'inbound',
+                            'partner_type': 'supplier'
+                        })
+
+                        if account_payment_created:
+                            payment_id = account_payment_created.id
+                            account_move.write({'payment_id': payment_id})
+                            account_move._compute_amount_due()
+                            account_move.action_post()
+                else:
+                    _logger.info("# === CEK PARTIAL PAYMENT REQUEST === #" + year + doc_number )
+                    partial_payment_request = self.env['wika.partial.payment.request'].search([
+                        ('reference', '=', doc_number),
+                        ('year', '=', year)], limit=1)
+                    if partial_payment_request:
+                        _logger.info("# === INSERT PAYMENT === #")
+                        _logger.info(partial_payment_request)
                         account_payment = self.env['account.payment'].search([('ref', '=', doc_number),
-                                                                              ('date', '=', clear_date)])
+                                                                            ('date', '=', clear_date)])
                         if not account_payment:
-                            # _logger.info("# === INSERT PAYMENT === #")
                             account_payment_created = self.env['account.payment'].create({
                                 'name': new_name,
                                 'date': clear_date,
-                                'partner_id': account_move.partner_id.id, 
-                                'payment_move_id': account_move.id, 
+                                'partner_id': partial_payment_request.partner_id.id,
+                                'payment_move_id': account_move.id,  
                                 'line_item': line_item, 
-                                'amount': amount, 
+                                'amount': abs(amount), 
                                 'ref': doc_number,
                                 'company_id': company_id,
                                 'payment_type': 'inbound',
@@ -80,51 +112,24 @@ class wika_get_payment_status(models.Model):
                             })
 
                             if account_payment_created:
+                                # _logger.info("ADA")
                                 payment_id = account_payment_created.id
-                                account_move.write({'payment_id': payment_id})
-                                account_move._compute_amount_due()
-                                account_move.action_post()
-                    else:
-                        # _logger.info("# === CEK PARTIAL PAYMENT REQUEST === #" + year + doc_number )
-                        partial_payment_request = self.env['wika.partial.payment.request'].search([
-                            ('no_doc_sap', '=', doc_number),
-                            ('year', '=', year)], limit=1)
-                        if partial_payment_request:
-                            # _logger.info("# === INSERT PAYMENT === #")
-                            # _logger.info(partial_payment_request)
-                            account_payment = self.env['account.payment'].search([('ref', '=', doc_number),
-                                                                              ('date', '=', clear_date)])
-                            if not account_payment:
-                                account_payment_created = self.env['account.payment'].create({
-                                    'name': new_name,
-                                    'date': clear_date,
-                                    'partner_id': partial_payment_request.partner_id.id,
-                                    'payment_move_id': account_move.id,  
-                                    'line_item': line_item, 
-                                    'amount': amount, 
-                                    'ref': doc_number,
-                                    'company_id': company_id,
-                                    'payment_type': 'inbound',
-                                    'partner_type': 'supplier'
-                                })
+                                partial_payment_request.invoice_id.write({'payment_id': payment_id})
+                                partial_payment_request.invoice_id._compute_amount_due()
+                                partial_payment_request.invoice_id.action_post()
+                                partial_payment_request.write({'payment_state': 'paid',
+                                                                'payment_id': payment_id,
+                                                                'no_doc_sap': clear_doc
+                                                                })
 
-                                if account_payment_created:
-                                    # _logger.info("ADA")
-                                    payment_id = account_payment_created.id
-                                    partial_payment_request.invoice_id.write({'payment_id': payment_id})
-                                    partial_payment_request.invoice_id._compute_amount_due()
-                                    partial_payment_request.invoice_id.action_post()
-                                    partial_payment_request.write({'payment_state': 'paid',
-                                                                   'payment_id': payment_id})
-
-                _logger.info("# === IMPORT DATA SUKSES === #")
-            else:
-                raise UserError(_("Data Payment Status Tidak Tersedia!"))
+            _logger.info("# === IMPORT DATA SUKSES === #")
+        else:
+            raise UserError(_("Data Payment Status Tidak Tersedia!"))
             
-        except UserError:
-            _logger.info("ERRORRRRRRR")
-            _logger.info(UserError)
-            self.status='-'
+        # except UserError:
+        #     _logger.info("ERRORRRRRRR")
+        #     _logger.info(UserError)
+        #     self.status='-'
 
         self.env.ref('wika_integration.get_payment_status')._trigger()
     
