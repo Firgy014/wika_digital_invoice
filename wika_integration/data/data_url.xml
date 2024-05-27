@@ -47,7 +47,7 @@
             <field name="url">https://fiori.wika.co.id/ywikafi025/listinvoicenonpo?sap-client=300</field>
         </record>
         <record id="url_payment_status" model="wika.integration">
-            <field name="name">URL Payment Status</field>
+            <field name="name">URL_PAYMENT_STATUS</field>
             <field name="app">SAP</field>
             <field name="url">https://fioridev.wika.co.id/ywikafi023/paymentstatus?sap-client=110</field>
         </record>
