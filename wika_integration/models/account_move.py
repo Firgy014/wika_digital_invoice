@@ -36,6 +36,7 @@ class AccountMoveInheritWika(models.Model):
     
     @api.depends('amount_residual', 'move_type', 'state', 'company_id')
     def _compute_payment_state(self):
+        self._compute_amount_due();
         for rec in self:
             if rec.amount_due == 0:
                 rec.payment_state = 'paid'
