@@ -350,8 +350,10 @@ class WikaPaymentRequest(models.Model):
         for x in self.move_ids:
             x.write({'state':'request','nomor_payment_request':self.name,'payment_request_date':self.date,'payment_method':self.payment_method})
         self.write({'state': 'request'})
-        for invoice in self.invoice_ids:
-            invoice.write({'status_payment': 'Request Proyek'})
+        # for invoice in self.invoice_ids:
+        #     invoice.write({'status_payment': 'Request Proyek'})
+        for invoice in self.journal_item_sap_ids:
+            invoice.write({'status': 'req_proyek'})
         for partial_payment in self.partial_payment_ids:
             partial_payment.write({'payment_state': 'requested'})
         self.step_approve += 1
@@ -388,10 +390,26 @@ class WikaPaymentRequest(models.Model):
                     if self.level == 'Divisi Fungsi' and x.department_id == self.department_id:
                         first_user = x.id
                 if first_user:
-                    for invoice in self.invoice_ids:
-                        print (invoice)
-                        invoice.write({'status_payment': 'Request Divisi',
-                                       'payment_block':'C'})
+                    # for invoice in self.invoice_ids:
+                    #     print (invoice)
+                    #     invoice.write({'status_payment': 'Request Divisi',
+                    #                    'payment_block':'C'})
+                    #     self.env['wika.payment.request.line'].sudo().create({
+                    #         'pr_id':self.id,
+                    #         'invoice_id': invoice.id,
+                    #         'partner_id': invoice.partner_id.id,
+                    #         'branch_id': invoice.branch_id.id,
+                    #         'project_id': invoice.project_id.id,
+                    #         'department_id': invoice.department_id.id,
+                    #         'amount': invoice.total_partial_pr,
+                    #         'is_partial_pr': invoice.is_partial_pr,
+                    #         'payment_method': self.payment_method,
+                    #         'payment_request_date': self.date,
+                    #         'approval_line_id':apploval_line_next_id.id,
+                    #         'next_user_id':first_user
+                    #     })
+                    for invoice in self.journal_item_sap_ids:
+                        invoice.write({'status': 'req_divisi'})
                         self.env['wika.payment.request.line'].sudo().create({
                             'pr_id':self.id,
                             'invoice_id': invoice.id,
