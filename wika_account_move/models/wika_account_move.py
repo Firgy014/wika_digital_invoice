@@ -4,6 +4,8 @@ from datetime import datetime,timedelta
 import math
 from odoo.tools.float_utils import float_compare
 from dateutil.relativedelta import relativedelta
+import logging, json
+_logger = logging.getLogger(__name__)
 
 class WikaInheritedAccountMove(models.Model):
     _inherit = 'account.move'
@@ -76,6 +78,10 @@ class WikaInheritedAccountMove(models.Model):
     nomor_payment_request= fields.Char(string='Nomor Payment Request')
     is_approval_checked = fields.Boolean(string="Approval Checked", compute='_compute_is_approval_checked' ,default=False)
     is_wizard_cancel = fields.Boolean(string="Is cancel", default=True)
+
+    _sql_constraints = [
+        ('name_invoice_uniq', 'unique (name, year)', 'The name of the invoice must be unique per year !')
+    ]
 
     @api.depends('history_approval_ids.is_show_wizard', 'history_approval_ids.user_id')
     def _compute_is_approval_checked(self):
@@ -230,8 +236,10 @@ class WikaInheritedAccountMove(models.Model):
     @api.depends('date')
     def _compute_name_wdigi(self):
         for record in self:
-            sequence = self.env['ir.sequence'].sudo().next_by_code('invoice_number_sequence') or '/'
-            record.name = sequence
+            record_has_name = record.name and record.name != '/'
+            if not record_has_name:
+                sequence = self.env['ir.sequence'].sudo().next_by_code('invoice_number_sequence') or '/'
+                record.name = sequence
 
     def unlink(self):
         for record in self:
