@@ -201,6 +201,7 @@
                                 <field name="move_id" invisible="1"/>
                                 <field name="product_id"/>
                                 <field name="special_gl_id"/>
+                                 <field name="wbs_project_definition"/>
                                 <field name="account_id"/>
                                 <field name="wbs_project_definition"/>
                                 <field name="percentage_amount"/>
@@ -257,7 +258,8 @@
                         <field name="po_id"/>
                         <field name="invoice_date" string="Document Date"/>
                         <field name="invoice_date_due"/>
-                        <field name="amount_invoice" sum="Total" string="Untaxed Amount"/>
+                        <field name="total_line" sum="Total" string="Untaxed Amount"/>
+                        <field name="amount_total_footer" sum="Net Amount" string="Net Amount"/>
                         <field name="state" invisible="1"/>
                         <field name="status_invoice_rel"/>
                         <field name="approval_stage"  widget="badge"  optional="show"/>

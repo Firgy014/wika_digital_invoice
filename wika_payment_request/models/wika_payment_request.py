@@ -58,22 +58,25 @@ class WikaPaymentRequest(models.Model):
     @api.model
     def _getdefault_branch(self):
         user_obj = self.env['res.users']
-        branch_id = user_obj.browse(self.env.user.id).branch_id or False
-        project_id = user_obj.browse(self.env.user.id).project_id or False
-        if branch_id and not project_id:
+        branch_id = user_obj.browse(self.env.user.id).branch_id or []
+        project_ids = user_obj.browse(self.env.user.id).project_ids
+        if branch_id and not project_ids:
             branch_id=branch_id.id
-        elif project_id and not branch_id:
-            branch_id=project_id.branch_id.id
+        else:
+            branch_ids = [project.branch_id.id for project in project_ids if project.branch_id]
+            print (branch_ids)
+            branch_id = [('id', 'in', branch_ids)]
+            print (branch_id)
         return branch_id
 
     @api.model
     def _getdefault_project(self):
-        user_obj = self.env['res.users']
-        project_id = user_obj.browse(self.env.user.id).project_id or False
-        if project_id:
-            project_id=project_id.id
+        user_obj = self.env['res.users'].browse(self.env.user.id)
+        project_id=[]
+        project_ids = user_obj.project_ids.ids
+        if project_ids:
+            project_id= [('id', 'in', project_ids)]
         return project_id
-
     name = fields.Char(string='Nomor Payment Request', readonly=True ,default='/')
     date = fields.Date(string='Tanggal Payment Request', required=True, default=fields.Date.today)
     state = fields.Selection([
@@ -83,9 +86,9 @@ class WikaPaymentRequest(models.Model):
         ('approve', 'Approved'),
         ('reject', 'Rejected'),
     ], readonly=True, string='status', default='draft')
-    branch_id = fields.Many2one('res.branch', string='Divisi', required=True,default=_getdefault_branch)
+    branch_id = fields.Many2one('res.branch', string='Divisi', required=True,default=_getdefault_branch,domain=_getdefault_branch)
     department_id = fields.Many2one('res.branch', string='Department')
-    project_id = fields.Many2one('project.project', string='Project', required=True,default=_getdefault_project)
+    project_id = fields.Many2one('project.project', string='Project', required=True,default=_getdefault_project,domain=_getdefault_project)
     invoice_ids = fields.Many2many(
         'account.move',
         string='Invoice',
@@ -282,10 +285,10 @@ class WikaPaymentRequest(models.Model):
         #res.assign_todo_first()
         return super(WikaPaymentRequest, self).create(vals)
 
-    @api.depends('move_ids')
+    @api.depends('invoice_ids.amount_total_footer')
     def compute_total(self):
         for record in self:
-            total_amount = sum(record.move_ids.mapped('amount'))
+            total_amount = sum(record.invoice_ids.mapped('amount_total_footer'))
             record.total = total_amount
 
     def action_submit(self):
@@ -356,14 +359,14 @@ class WikaPaymentRequest(models.Model):
                     for invoice in self.journal_item_sap_ids:
                         invoice.write({'status': 'req_divisi'})
                         self.env['wika.payment.request.line'].sudo().create({
-                            'pr_id': self.id,
-                            'invoice_id': invoice.invoice_id.id,
-                            'partner_id': invoice.invoice_id.partner_id.id,
-                            'branch_id': invoice.invoice_id.branch_id.id,
-                            'project_id': invoice.invoice_id.project_id.id,
-                            'department_id': invoice.invoice_id.department_id.id,
-                            'amount': invoice.invoice_id.total_partial_pr,
-                            'is_partial_pr': invoice.invoice_id.is_partial_pr,
+                            'pr_id':self.id,
+                            'invoice_id': invoice.id,
+                            'partner_id': invoice.partner_id.id,
+                            'branch_id': invoice.branch_id.id,
+                            'project_id': invoice.project_id.id,
+                            'department_id': invoice.department_id.id,
+                            'amount': invoice.amount_total_footer,
+                            'is_partial_pr': invoice.is_partial_pr,
                             'payment_method': self.payment_method,
                             'payment_request_date': self.date,
                             'approval_line_id':apploval_line_next_id.id,
@@ -699,11 +702,11 @@ class WikaPrLine(models.Model):
             'Authorization': 'Basic V0lLQV9JTlQ6SW5pdGlhbDEyMw=='
         }
         response_post = requests.request("POST", url, headers=post_headers, data=payload, cookies=fetched_cookies)
-        parsed_response = json.loads(response_post.text)
-        message = parsed_response[0]["MESSAGE"]
-        self.invoice_id.msg_sap=message
-        _logger.info(response_post.text)
-        self.pr_id.is_posted_to_sap = True
+        #parsed_response = json.loads(response_post.text)
+        #message = parsed_response[0]["MESSAGE"]
+        #self.invoice_id.msg_sap=message
+        #_logger.info(response_post.text)
+        #self.pr_id.is_posted_to_sap = True
 
     def send_pusat_approved_pr_to_sap(self):
         package_id = self._generate_random_string()
@@ -763,8 +766,8 @@ class WikaPrLine(models.Model):
             'Authorization': 'Basic V0lLQV9JTlQ6SW5pdGlhbDEyMw=='
         }
         response_post = requests.request("POST", url, headers=post_headers, data=payload, cookies=fetched_cookies)
-        _logger.info(response_post.text)
-        parsed_response = json.loads(response_post.text)
-        message = parsed_response[0]["MESSAGE"]
-        self.invoice_id.msg_sap=message
-        self.pr_id.is_posted_to_sap = True
+        #_logger.info(response_post.text)
+        #parsed_response = json.loads(response_post.text)
+        #message = parsed_response[0]["MESSAGE"]
+        #self.invoice_id.msg_sap=message
+        #self.pr_id.is_posted_to_sap = True
