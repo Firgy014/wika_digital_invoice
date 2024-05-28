@@ -240,6 +240,7 @@ class PurchaseOrderInherit(models.Model):
         except:
             raise UserError(_("Connection Failed. Please Check Your Internet Connection."))
         
+        company_id = self.env.company.id
         if self.po_type != 'JASA':
             if txt['DATA']:
                 txt_data = sorted(txt['DATA'], key=lambda x: x["MAT_DOC"])
@@ -259,15 +260,15 @@ class PurchaseOrderInherit(models.Model):
                         #     active=False
                         # else:
                         #     active = True
-                        prod = self.env['product.product'].sudo().search([
+                        prod = self.env['product.product'].search([
                                     ('default_code', '=', item['MATERIAL'])], limit=1)
                         qty = float(item['QUANTITY']) * 100
-                        uom = self.env['uom.uom'].sudo().search([
+                        uom = self.env['uom.uom'].search([
                                     ('name', '=', item['ENTRY_UOM'])], limit=1)
                         if not uom:
-                            uom = self.env['uom.uom'].sudo().create({
+                            uom = self.env['uom.uom'].create({
                                 'name': item['ENTRY_UOM'], 'category_id': 1})
-                        po_line= self.env['purchase.order.line'].sudo().search([
+                        po_line= self.env['purchase.order.line'].search([
                                  ('order_id', '=' ,self.id),('sequence','=', item['PO_ITEM'])] ,limit=1)
                         
                         docdate = item['DOC_DATE']
@@ -283,7 +284,7 @@ class PurchaseOrderInherit(models.Model):
                         if not picking:
                             _logger.info('# === CREATE PICKING BARANG === #')
                             # _logger.info(mat_doc)
-                            picking_create = self.env['stock.picking'].sudo().create({
+                            picking_create = self.env['stock.picking'].create({
                                 'name': mat_doc,
                                 'po_id': self.id,
                                 'purchase_id':self.id,
@@ -312,8 +313,12 @@ class PurchaseOrderInherit(models.Model):
                                     'origin': self.name,
                                 })],
                                 #'move_ids_without_package':vals,
-                                'company_id': 1,
+                                'company_id': company_id,
                                 'state': 'waits'
+                            })
+                            
+                            picking_create.write({
+                                'state': 'waits',
                             })
                          
                         else:    
@@ -324,9 +329,9 @@ class PurchaseOrderInherit(models.Model):
                             ], limit=1)
 
                             if not stock_move:
-                                _logger.info('# === ADD STOCK MOVE JASA === #')
-                                # stock_move.sudo().create(vals)
-                                picking.sudo().write({
+                                _logger.info('# === ADD STOCK MOVE BARANG === #')
+                                # stock_move.create(vals)
+                                picking.write({
                                     'move_ids': [(0, 0, {
                                         'sequence': item['MATDOC_ITM'],
                                         'product_id': prod.id if prod else False,
@@ -343,10 +348,13 @@ class PurchaseOrderInherit(models.Model):
                                     })],
                                     'state': 'waits',
                                 })
+                                picking.write({
+                                    'state': 'waits',
+                                })
                             else:
-                                _logger.info('# === WRITE STOCK MOVE === #')
+                                _logger.info('# === WRITE STOCK MOVE BARANG === #')
                                 # stock_move.sudo().write(vals)
-                                picking.sudo().write({
+                                picking.write({
                                     'move_ids': [(1, stock_move.id, {
                                         'sequence':item['MATDOC_ITM'],
                                         'product_id': prod.id if prod else False,
@@ -364,7 +372,7 @@ class PurchaseOrderInherit(models.Model):
                                     'state': 'waits',
                                 })
 
-                                picking.sudo().write({
+                                picking.write({
                                     'state': 'waits',
                                 })
                                 
@@ -395,15 +403,15 @@ class PurchaseOrderInherit(models.Model):
                         #     active = False
                         # else:
                         #     active = True
-                        prod = self.env['product.product'].sudo().search([
+                        prod = self.env['product.product'].search([
                             ('default_code', '=', item['MATERIAL'])], limit=1)
                         qty = float(item['QUANTITY']) * 100
-                        uom = self.env['uom.uom'].sudo().search([
+                        uom = self.env['uom.uom'].search([
                             ('name', '=', item['ENTRY_UOM'])], limit=1)
                         if not uom:
-                            uom = self.env['uom.uom'].sudo().create({
+                            uom = self.env['uom.uom'].create({
                                 'name': item['ENTRY_UOM'], 'category_id': 1})
-                        po_line = self.env['purchase.order.line'].sudo().search([
+                        po_line = self.env['purchase.order.line'].search([
                             ('order_id', '=', self.id), ('sequence', '=', item['PO_ITEM'])], limit=1)
                         matdoc = item['MAT_DOC']
                         docdate = item['DOC_DATE']
@@ -419,7 +427,7 @@ class PurchaseOrderInherit(models.Model):
                         if not picking:
                             _logger.info('# === CREATE PICKING JASA === #')
                             # _logger.info(mat_doc)
-                            picking_create = self.env['stock.picking'].sudo().create({
+                            picking_create = self.env['stock.picking'].create({
                                 'name': ses_number,
                                 'po_id': self.id,
                                 'purchase_id': self.id,
@@ -449,8 +457,12 @@ class PurchaseOrderInherit(models.Model):
                                 'pick_type': 'ses',
                                 'origin': matdoc,
                                 #'move_ids_without_package':vals,
-                                'company_id': 1,
+                                'company_id': company_id,
                                 'state': 'waits'
+                            })
+
+                            picking_create.write({
+                                'state': 'waits',
                             })
                          
                         else:    
@@ -462,8 +474,8 @@ class PurchaseOrderInherit(models.Model):
 
                             if not stock_move:
                                 _logger.info('# === ADD STOCK MOVE JASA === #')
-                                # stock_move.sudo().create(vals)
-                                picking.sudo().write({
+                                # stock_move.create(vals)
+                                picking.write({
                                     'move_ids': [(0, 0, {
                                         'sequence': item['MATDOC_ITM'],
                                         'product_id': prod.id if prod else False,
@@ -480,10 +492,14 @@ class PurchaseOrderInherit(models.Model):
                                     })],
                                     'state': 'waits',
                                 })
+
+                                picking.write({
+                                    'state': 'waits',
+                                })
                             else:
                                 _logger.info('# === WRITE STOCK MOVE JASA === #')
                                 # stock_move.sudo().write(vals)
-                                picking.sudo().write({
+                                picking.write({
                                     'move_ids': [(1, stock_move.id, {
                                         'sequence': item['MATDOC_ITM'],
                                         'product_id': prod.id if prod else False,
@@ -501,7 +517,7 @@ class PurchaseOrderInherit(models.Model):
                                     'state': 'waits',
                                 })
 
-                                picking.sudo().write({
+                                picking.write({
                                     'state': 'waits',
                                 })
             else:
