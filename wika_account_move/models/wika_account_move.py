@@ -238,9 +238,13 @@ class WikaInheritedAccountMove(models.Model):
             record.total_ap_sap = sum(line.amount for line in record.journal_item_sap_ids)
 
     def _compute_name_wdigi(self):
-        for move in self:
+        for rec in self:
             sequence = self.env['ir.sequence'].sudo().next_by_code('invoice_number_sequence') or '/'
-            move.name = sequence
+            seq = sequence.split("/")
+            if rec.invoice_date:
+                bulan = rec.invoice_date.strftime('%m')
+                tahun = rec.invoice_date.strftime('%Y')
+                rec.name = "%s/%s/%s/%s" % (seq[0], str(tahun), str(bulan), seq[3])
 
     def unlink(self):
         for record in self:
@@ -453,6 +457,7 @@ class WikaInheritedAccountMove(models.Model):
 
         if record.name == 'Draft':
             record._compute_name_wdigi()
+            
 
 
         # if isinstance(record, bool):
