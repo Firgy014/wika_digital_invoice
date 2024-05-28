@@ -4,6 +4,10 @@ from datetime import datetime,timedelta
 import math
 from odoo.tools.float_utils import float_compare
 from dateutil.relativedelta import relativedelta
+from odoo.tools import (
+    date_utils,
+    float_compare
+)
 import logging, json
 _logger = logging.getLogger(__name__)
 
@@ -435,6 +439,9 @@ class WikaInheritedAccountMove(models.Model):
     def _compute_highest_name(self):
         _logger.info("# === _compute_highest_name === #")
         return
+    
+    def _get_accounting_date(self, invoice_date, has_tax):
+        return invoice_date
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -452,21 +459,17 @@ class WikaInheritedAccountMove(models.Model):
         #     return record
         # if len(record) != 1:
         #     raise ValidationError("Hanya satu record yang diharapkan diperbarui!")
-
         
-        #document date
-        if record.invoice_date != False and record.invoice_date < record.bap_id.bap_date and record.cut_off!=True:
-            raise ValidationError("Document Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
-        else:
-            pass
-
-        #posting date
-        if record.ap_type == 'ap_po':
-            if record.date != False and record.date < record.bap_id.bap_date and record.cut_off!=True:
-                raise ValidationError("Posting Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
-            else:
-                pass
-
+        if record.bap_id:
+            #document date
+            if record.invoice_date != False and record.invoice_date < record.bap_id.bap_date and record.cut_off != True:
+                raise ValidationError("Document Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
+            
+            #posting date
+            if record.ap_type == 'ap_po':
+                if record.date != False and record.date < record.bap_id.bap_date and record.cut_off!=True:
+                    raise ValidationError("Posting Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
+            
         return record
 
     def write(self, values):
