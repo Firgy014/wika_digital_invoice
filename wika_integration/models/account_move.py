@@ -38,8 +38,11 @@ class AccountMoveInheritWika(models.Model):
     def _compute_payment_state(self):
         self._compute_amount_due();
         for rec in self:
-            if rec.amount_due == 0:
-                rec.payment_state = 'paid'
+            if rec.state != 'draft':
+                if rec.amount_due == 0:
+                    rec.payment_state = 'paid'
+                else:
+                    rec.payment_state = 'not_paid'
             else:
                 rec.payment_state = 'not_paid'
 

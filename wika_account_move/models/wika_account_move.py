@@ -12,7 +12,7 @@ class WikaInheritedAccountMove(models.Model):
 
     name = fields.Char(
         string='Number',
-        compute='_compute_name_wdigi', inverse='_inverse_name', readonly=False, store=True,
+        default='Draft', inverse='_inverse_name', readonly=False,
         copy=False,
         tracking=True,
         index='trigram',
@@ -233,13 +233,10 @@ class WikaInheritedAccountMove(models.Model):
         for record in self:
             record.total_ap_sap = sum(line.amount for line in record.journal_item_sap_ids)
 
-    @api.depends('date')
     def _compute_name_wdigi(self):
-        for record in self:
-            record_has_name = record.name and record.name != '/'
-            if not record_has_name:
-                sequence = self.env['ir.sequence'].sudo().next_by_code('invoice_number_sequence') or '/'
-                record.name = sequence
+        for move in self:
+            sequence = self.env['ir.sequence'].sudo().next_by_code('invoice_number_sequence') or '/'
+            move.name = sequence
 
     def unlink(self):
         for record in self:
@@ -365,7 +362,11 @@ class WikaInheritedAccountMove(models.Model):
         else:
             return {'domain': {'bap_id': [('state', '=', 'approved'), ('is_cut_over', '!=', True)]}}
 
-
+    @api.onchange('name', 'highest_name')
+    def _onchange_name_warning(self):
+        # Disable _onchange_name_warning
+        return
+    
     @api.depends('invoice_line_ids.price_unit','invoice_line_ids.quantity','invoice_line_ids.adjustment','invoice_line_ids.amount_adjustment')
     def _compute_total_line(self):
         for x in self:
@@ -425,6 +426,16 @@ class WikaInheritedAccountMove(models.Model):
                 record.account_id = account_setting_id.account_id.id
                 return {'domain': {'pph_ids': [('id', 'in', account_setting_id.pph_ids.ids)]}}
 
+    @api.depends('posted_before', 'state', 'journal_id', 'date')
+    def _compute_name(self):
+        _logger.info("# === _compute_name === #")
+        return
+    
+    @api.depends('journal_id', 'date')
+    def _compute_highest_name(self):
+        _logger.info("# === _compute_highest_name === #")
+        return
+
     @api.model_create_multi
     def create(self, vals_list):
         record = super(WikaInheritedAccountMove, self).create(vals_list)
@@ -432,6 +443,10 @@ class WikaInheritedAccountMove(models.Model):
             record.assign_todo_first()
         elif record.ap_type == 'ap_nonpo':
             record.assign_todo_first_without_activities()
+
+        if record.name == 'Draft':
+            record._compute_name_wdigi()
+
 
         # if isinstance(record, bool):
         #     return record
