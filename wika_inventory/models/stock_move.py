@@ -83,7 +83,7 @@ class StockMoveLineInherit(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         for vals in vals_list:
-            vals['state'] = 'draft'
+            vals['state'] = 'waits'
 
         # _logger.info('vals_listTTTTTTTTTTTT')
         # _logger.info(vals_list)

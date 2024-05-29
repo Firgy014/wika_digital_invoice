@@ -483,8 +483,7 @@ class wika_get_po(models.Model):
 
 
             # return res_partner_id
-                    
-    
+                     
     def _autocreate_po(self):
         ''' This method is called from a cron job.
         It is used to post entries such as those created by the module
