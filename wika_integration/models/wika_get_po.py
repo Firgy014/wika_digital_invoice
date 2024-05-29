@@ -433,35 +433,56 @@ class wika_get_po(models.Model):
     
             _logger.info(list_txt_data)
             for data in list_txt_data:
-                _logger.info("# === IMPORT DATA === #")
+                _logger.info("# === DATA === #")
                 # _logger.info(data)
+                sap_code = data['LIFNR']
+                name = data['NAME1']
+                street = data['STREET']
+                vat = data['TAXNUM']
+                bill_coa_type = data['KTOKK']
+                bank_name = data['BANK']['BANKL']
+                acc_number = data['BANK']['BANKN']
+                acc_holder_name = data['BANK']['KOINH']
+                
                 res_bank = self.env['res.bank'].search([
-                        ('name', '=', data['BANK']['BANKL']), 
+                        ('name', '=', bank_name), 
                         ('active', '=', True)], limit=1)
+                
+                bank_id = 0
                 if res_bank:
                     bank_id = res_bank.id
                 else:
                     _logger.info("# === CREATE BANK === #")
-                    bank_create = self.env['res.bank'].sudo().create({
-                        'name': data['po_doc'],
-                        'payment_term_id': payment_term.id if payment_term else False,
-                        'partner_id': vendor.id if vendor else False,
-                        'project_id': project_id,
-                        'branch_id': branch_id,
-                        'department_id': department_id,
-                        'order_line': vals,
-                        'price_cut_ids': potongan,
-                        'currency_id': curr.id,
-                        'begin_date': data['po_dcdat'],
-                        'po_type': data['po_jenis'],
-                        'state': state,
-                        'tgl_create_sap': data['po_crdat']
-
+                    bank_create = self.env['res.bank'].create({
+                        'name': bank_name,
+                        'active': True
                     })
-                
-                i += 1
+                    if bank_create:
+                        bank_id = bank_create.id
 
-        _logger.info("# === IMPORT DATA BERHASIL === # %s %s %s" % (str(i), str(tot_i), str(tot_u)))
+                res_partner = self.env['res.partner'].search([('sap_code', '=', sap_code)], limit=1)
+                res_partner_id = 0
+                if res_partner:
+                    res_partner_id = res_partner.id
+                else:
+                    res_partner_create = self.env['res.partner'].create({
+                        'name': name,
+                        'sap_code': sap_code,
+                        'street': street,
+                        'vat': vat,
+                        'bill_coa_type': bill_coa_type,
+                        'bank_ids': {
+                            'bank_id': bank_id,  
+                            'acc_number': acc_number,
+                            'acc_holder_name': acc_holder_name,
+                        },
+                    })
+                    if res_partner_create:
+                        bank_id = res_partner_create.id
+
+
+            return res_partner_id
+                    
     
     def _autocreate_po(self):
         ''' This method is called from a cron job.
