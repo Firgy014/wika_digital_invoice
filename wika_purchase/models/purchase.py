@@ -321,7 +321,6 @@ class PurchaseOrderInherit(models.Model):
                                 picking_create.write({
                                     'state': 'waits',
                                 })
-                            
                             else:    
                                 _logger.info('# === WRITE PICKING BARANG === #')
                                 stock_move = self.env['stock.move'].search([
@@ -376,10 +375,7 @@ class PurchaseOrderInherit(models.Model):
                                     picking.write({
                                         'state': 'waits',
                                     })
-                                    
-
-                            # hapus isi data detail
-                            # del vals          
+                                           
                 else:
                     raise UserError(_("Data GR Tidak Tersedia!"))
             else:
