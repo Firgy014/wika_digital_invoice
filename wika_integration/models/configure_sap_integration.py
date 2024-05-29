@@ -136,7 +136,6 @@ class sap_integration_configure(models.Model):
 
                 if conf_id.sftp_host:
                     self._send_file_to_sftp(conf_id, file_path, filename)
-                self._process_outbound_scf_data(file_path)
             except Exception as e:
                 _logger.error(f"Error occurred while generating and sending data: {str(e)}")
 
@@ -292,9 +291,6 @@ class sap_integration_configure(models.Model):
             # except FileNotFoundError:
             #     pass
                 # raise ValidationError(_("File TXT dari SAP atas invoice yang dituju tidak ditemukan!"))
-
-        
-
 
     def _update_scf_invoice(self):
         invoice_model = self.env['account.move'].sudo()
