@@ -85,8 +85,8 @@ class StockMoveLineInherit(models.Model):
         for vals in vals_list:
             vals['state'] = 'draft'
 
-        _logger.info('vals_listTTTTTTTTTTTT')
-        _logger.info(vals_list)
+        # _logger.info('vals_listTTTTTTTTTTTT')
+        # _logger.info(vals_list)
         
         res = super(StockMoveLineInherit, self).create(vals_list)
         return res
