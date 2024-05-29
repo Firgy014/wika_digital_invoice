@@ -4,14 +4,19 @@ from datetime import datetime,timedelta
 import math
 from odoo.tools.float_utils import float_compare
 from dateutil.relativedelta import relativedelta
+from odoo.tools import (
+    date_utils,
+    float_compare
+)
+import logging, json
+_logger = logging.getLogger(__name__)
 
 class WikaInheritedAccountMove(models.Model):
     _inherit = 'account.move'
 
-
     name = fields.Char(
         string='Number',
-        compute='_compute_name_wdigi', inverse='_inverse_name', readonly=False, store=True,
+        default='Draft', inverse='_inverse_name', readonly=False,
         copy=False,
         tracking=True,
         index='trigram',
@@ -21,7 +26,7 @@ class WikaInheritedAccountMove(models.Model):
         string='BAP',
         domain="[('state', '=', 'approved'), ('is_cut_over', '!=', True)]"
     )
-    branch_id = fields.Many2one('res.branch', string='Divisi', required=True)
+    branch_id = fields.Many2one('res.branch', string='Divisi', required=True, default=122)
     department_id = fields.Many2one('res.branch', string='Department')
     project_id = fields.Many2one('project.project', string='Project')
     document_ids = fields.One2many('wika.invoice.document.line', 'invoice_id', string='Document Line', required=True)
@@ -29,7 +34,7 @@ class WikaInheritedAccountMove(models.Model):
     reject_reason_account = fields.Text(string='Reject Reason')
     step_approve = fields.Integer(string='Step Approve',default=1)
     no_doc_sap = fields.Char(string='No Doc SAP')
-    no_invoice_vendor = fields.Char(string='Nomor Invoice Vendor',required=True)
+    no_invoice_vendor = fields.Char(string='Nomor Invoice Vendor',required=True, default='-')
     invoice_number = fields.Char(string='Invoice Number')
     baseline_date = fields.Date(string='Baseline Date')
     retention_due = fields.Date(string='Retention Due')
@@ -78,6 +83,10 @@ class WikaInheritedAccountMove(models.Model):
     is_approval_checked = fields.Boolean(string="Approval Checked", compute='_compute_is_approval_checked' ,default=False)
     is_wizard_cancel = fields.Boolean(string="Is cancel", default=True)
 
+    _sql_constraints = [
+        ('name_invoice_uniq', 'unique (name, year)', 'The name of the invoice must be unique per year !')
+    ]
+
     @api.depends('history_approval_ids.is_show_wizard', 'history_approval_ids.user_id')
     def _compute_is_approval_checked(self):
         current_user = self.env.user
@@ -97,10 +106,10 @@ class WikaInheritedAccountMove(models.Model):
                 record.total_pph = math.floor(total_pph)
 
             total_pph_cbasis = 0
-            # for line in record.invoice_line_ids:
-            #     total_pph_cbasis += line.pph_cash_basis
-            # record.total_pph += total_pph_cbasis
-
+            for line in record.invoice_line_ids:
+                total_pph_cbasis += line.pph_cash_basis
+            record.total_pph += total_pph_cbasis 
+                
 
 
     @api.depends('history_approval_ids')
@@ -220,12 +229,22 @@ class WikaInheritedAccountMove(models.Model):
     def _compute_ap_type(self):
         for record in self:
             record.ap_type = 'ap_po' if record.po_id else 'ap_nonpo'
+    journal_item_sap_ids = fields.One2many('wika.account.move.journal.sap', 'invoice_id', string='Journal SAP')
+    total_ap_sap = fields.Float(string='Total AP SAP', compute='_compute_total_ap_sap')
 
-    @api.depends('date')
-    def _compute_name_wdigi(self):
+    @api.depends('journal_item_sap_ids.amount')
+    def _compute_total_ap_sap(self):
         for record in self:
+            record.total_ap_sap = sum(line.amount for line in record.journal_item_sap_ids)
+
+    def _compute_name_wdigi(self):
+        for rec in self:
             sequence = self.env['ir.sequence'].sudo().next_by_code('invoice_number_sequence') or '/'
-            record.name = sequence
+            seq = sequence.split("/")
+            if rec.invoice_date:
+                bulan = rec.invoice_date.strftime('%m')
+                tahun = rec.invoice_date.strftime('%Y')
+                rec.name = "%s/%s/%s/%s" % (seq[0], str(tahun), str(bulan), seq[3])
 
     def unlink(self):
         for record in self:
@@ -351,7 +370,11 @@ class WikaInheritedAccountMove(models.Model):
         else:
             return {'domain': {'bap_id': [('state', '=', 'approved'), ('is_cut_over', '!=', True)]}}
 
-
+    @api.onchange('name', 'highest_name')
+    def _onchange_name_warning(self):
+        # Disable _onchange_name_warning
+        return
+    
     @api.depends('invoice_line_ids.price_unit','invoice_line_ids.quantity','invoice_line_ids.adjustment','invoice_line_ids.amount_adjustment')
     def _compute_total_line(self):
         for x in self:
@@ -411,6 +434,19 @@ class WikaInheritedAccountMove(models.Model):
                 record.account_id = account_setting_id.account_id.id
                 return {'domain': {'pph_ids': [('id', 'in', account_setting_id.pph_ids.ids)]}}
 
+    @api.depends('posted_before', 'state', 'journal_id', 'date')
+    def _compute_name(self):
+        _logger.info("# === _compute_name === #")
+        return
+    
+    @api.depends('journal_id', 'date')
+    def _compute_highest_name(self):
+        _logger.info("# === _compute_highest_name === #")
+        return
+    
+    def _get_accounting_date(self, invoice_date, has_tax):
+        return invoice_date
+
     @api.model_create_multi
     def create(self, vals_list):
         record = super(WikaInheritedAccountMove, self).create(vals_list)
@@ -419,25 +455,26 @@ class WikaInheritedAccountMove(models.Model):
         elif record.ap_type == 'ap_nonpo':
             record.assign_todo_first_without_activities()
 
+        if record.name == 'Draft':
+            record._compute_name_wdigi()
+            
+
+
         # if isinstance(record, bool):
         #     return record
         # if len(record) != 1:
         #     raise ValidationError("Hanya satu record yang diharapkan diperbarui!")
-
         
-        #document date
-        if record.invoice_date != False and record.invoice_date < record.bap_id.bap_date and record.cut_off!=True:
-            raise ValidationError("Document Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
-        else:
-            pass
-
-        #posting date
-        if record.ap_type == 'ap_po':
-            if record.date != False and record.date < record.bap_id.bap_date and record.cut_off!=True:
-                raise ValidationError("Posting Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
-            else:
-                pass
-
+        if record.bap_id:
+            #document date
+            if record.invoice_date != False and record.invoice_date < record.bap_id.bap_date and record.cut_off != True:
+                raise ValidationError("Document Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
+            
+            #posting date
+            if record.ap_type == 'ap_po':
+                if record.date != False and record.date < record.bap_id.bap_date and record.cut_off!=True:
+                    raise ValidationError("Posting Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
+            
         return record
 
     def write(self, values):
@@ -958,7 +995,6 @@ class WikaInheritedAccountMove(models.Model):
             return self.env.ref('wika_account_move.report_wika_account_move_keuangan_action').report_action(self)
         else:
             return super(WikaInheritedAccountMove, self).action_print_invoice()
-
 
 class WikaInvoiceDocumentLine(models.Model):
     _name = 'wika.invoice.document.line'

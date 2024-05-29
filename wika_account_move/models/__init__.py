@@ -8,3 +8,5 @@ from . import setting_account_payable
 from . import product
 from . import partner
 from . import account_move_journal_sap
+from . import doc_ap_non_po
+from . import sequence_mixin

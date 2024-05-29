@@ -108,3 +108,22 @@ WHERE
     pricecutline.wbs_project_definition IS NOT NULL
     AND pricecutline.wbs_project_definition != '';
 """
+
+def _get_computed_partial_payment_query():
+    return """
+      SELECT
+        pp.name as NO,
+        am.payment_reference as DOC_NUMBER,
+          TO_CHAR(am.invoice_date, 'yyyy') AS DOC_YEAR,
+          TO_CHAR(pp.posting_date, 'yyyymmdd') AS POSTING_DATE,
+          TO_CHAR(pp.posting_date, 'mm')::int AS PERIOD,
+          ROUND(pp.partial_amount) AS AMOUNT1,
+          ROUND(pp.total_invoice - pp.partial_amount) AS AMOUNT2
+      FROM 
+          wika_partial_payment_request pp
+      LEFT JOIN account_move am ON am.id = pp.invoice_id
+      WHERE 
+          pp.state = 'approved'
+        AND (pp.total_invoice - pp.partial_amount) > 0
+        AND pp.no_doc_sap IS NULL 
+      """

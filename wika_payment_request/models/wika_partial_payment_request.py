@@ -20,7 +20,9 @@ class WikaPartialPaymentRequest(models.Model):
     department_id = fields.Many2one('res.branch', string='Department')
     project_id = fields.Many2one('project.project', string='Project', required=True)
     invoice_id  = fields.Many2one(comodel_name='account.move',domain=[('state','=','approved'), ('sisa_partial', '!=', 0)])
+    invoice_id  = fields.Many2one(comodel_name='account.move',domain=[('state','=','approved'), ('sisa_partial', '!=', 0)])
     partner_id  = fields.Many2one(comodel_name='res.partner')
+    total_invoice = fields.Float(string='Total Invoice')
     total_invoice = fields.Float(string='Total Invoice')
     sisa_partial_amount = fields.Float(string='Sisa Partial Invoice')
     level = fields.Selection([
@@ -52,8 +54,15 @@ class WikaPartialPaymentRequest(models.Model):
     payment_state = fields.Selection([
         ('not request', 'Not Request'),
         ('requested', 'Requested'),
+        ('paid', 'Paid'),
     ], default='not request', string='Payment State')
     payment_request_id = fields.Many2one('wika.payment.request', string='Payment Request')
+    # === Payment fields === #
+    payment_id = fields.Many2one(
+        comodel_name='account.payment',
+        string="Payment",
+        copy=False,
+    )
 
     @api.depends('total_invoice', 'partial_amount')
     def _compute_remaining_amount(self):

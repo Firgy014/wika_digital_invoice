@@ -1180,6 +1180,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
         for record in self:
             record.documents_count = self.env['documents.document'].search_count(
                 [('purchase_id', '=', record.po_id.id)])
+            
     @api.depends('po_id')
     def _compute_invoice_item(self):
         for record in self:
@@ -1347,6 +1348,7 @@ class WikaBapDocumentLine(models.Model):
 
     bap_id = fields.Many2one('wika.berita.acara.pembayaran', string='')
     document_id = fields.Many2one('wika.document.setting', string='Document')
+    picking_id = fields.Many2one('stock.picking', string='Nomor GR')
     document = fields.Binary(string="Upload File", attachment=True, store=True, required=True)
     filename = fields.Char(string="File Name")
     state = fields.Selection([
