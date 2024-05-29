@@ -88,3 +88,23 @@ WHERE
      inv.is_mp_approved = True AND line.display_type = 'product' and inv.cut_off!=True and inv.invoice_number is null 
      AND (line.amount_adjustment > 0 OR line.price_subtotal != 0);
 """
+
+def _get_computed_query_scf():
+    return """
+SELECT
+    inv.name AS NO,
+    inv.payment_reference AS DOC_NUMBER,
+    TO_CHAR(pricecutline.posting_date, 'YYYY') AS DOC_YEAR,
+    TO_CHAR(pricecutline.posting_date, 'DDMMYYYY') AS POSTING_DATE,
+    TO_CHAR(pricecutline.posting_date, 'MM') AS PERIOD,
+    pricecutline.amount AS AMOUNT_SCF,
+    pricecutline.wbs_project_definition AS WBS,
+    'Potongan SCF' AS ITEM_TEXT
+FROM
+    account_move inv
+LEFT JOIN
+    wika_account_move_pricecut_line pricecutline ON pricecutline.move_id = inv.id
+WHERE
+    pricecutline.wbs_project_definition IS NOT NULL
+    AND pricecutline.wbs_project_definition != '';
+"""

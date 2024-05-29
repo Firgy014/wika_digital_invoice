@@ -34,7 +34,7 @@
 			<field name="interval_type">days</field>
 			<field name="numbercall">1</field>
 		</record>
-		 <record id="get_create_update_invoice_non_po" model="ir.cron">
+		 <!-- <record id="get_create_update_invoice_non_po" model="ir.cron">
             <field name="name">Create Invoice non PO from SAP</field>
             <field name="active" eval="False" />
             <field name="model_id" ref="wika_integration.model_wika_get_invoice_non_po" />
@@ -44,6 +44,6 @@
             <field name="interval_number">1</field>
             <field name="interval_type">days</field>
             <field name="numbercall">1</field>
-        </record>
+        </record> -->
 	</data>
 </odoo>
