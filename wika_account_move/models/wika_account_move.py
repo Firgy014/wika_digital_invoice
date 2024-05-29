@@ -213,10 +213,10 @@ class WikaInheritedAccountMove(models.Model):
     total_scf_cut = fields.Float(string='Total Potongan SCF', compute='_compute_total_scf_cut')
     journal_item_sap_ids = fields.One2many('wika.account.move.journal.sap', 'invoice_id', string='Journal SAP')
     total_ap_sap = fields.Float(string='Total AP SAP', compute='_compute_total_ap_sap')
-    is_waba = fields.Boolean(compute='_compute_is_waba', string='Invoice Waba', default=False, store=True)
+    is_waba = fields.Boolean(string='Invoice Waba', store=True)
 
-    @api.depends('no_faktur_pajak', 'total_tax')
-    def _compute_is_waba(self):
+    @api.onchange('no_faktur_pajak', 'total_tax')
+    def _onchange_is_waba(self):
         for record in self:
             if record.no_faktur_pajak:
                 if record.no_faktur_pajak.startswith(('010', '040', '050')):
@@ -226,6 +226,8 @@ class WikaInheritedAccountMove(models.Model):
                     record.is_waba = False
                 else:
                     record.is_waba = False
+            else:
+                record.is_waba = False
 
     @api.depends('journal_item_sap_ids.amount')
     def _compute_total_ap_sap(self):
