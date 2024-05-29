@@ -1050,6 +1050,7 @@ class AccountMovePriceCutList(models.Model):
         compute='_compute_wbs_project_definition',
         store=True
     )
+    posting_date = fields.Date(string='Posting Date')
 
     @api.depends('move_id.project_id.sap_code')
     def _compute_wbs_project_definition(self):

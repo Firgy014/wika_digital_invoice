@@ -8,6 +8,7 @@
                     <group>
                         <field name="invoice_id" readonly="1"/>
                         <field name="amount"/>
+                        <field name="posting_date" readonly="1"/>
                     </group>
                     <footer>
                         <button string="Submit Nilai Potongan" type="object" class="btn-primary" name="action_save"/>
