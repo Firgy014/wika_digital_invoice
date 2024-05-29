@@ -349,9 +349,6 @@ class PurchaseOrderInherit(models.Model):
                                         })],
                                         'active': active
                                     })
-                                    picking.write({
-                                        'state': 'waits',
-                                    })
                                 else:
                                     _logger.info('# === WRITE STOCK MOVE BARANG === #')
                                     # stock_move.sudo().write(vals)
@@ -371,10 +368,6 @@ class PurchaseOrderInherit(models.Model):
                                             'origin': rec.name,
                                         })],
                                         'active': active
-                                    })
-
-                                    picking.write({
-                                        'state': 'waits',
                                     })
                                     
 
@@ -492,9 +485,6 @@ class PurchaseOrderInherit(models.Model):
                                         'active': active
                                     })
 
-                                    picking.write({
-                                        'state': 'waits',
-                                    })
                                 else:
                                     _logger.info('# === WRITE STOCK MOVE JASA === #')
                                     # stock_move.sudo().write(vals)
@@ -514,10 +504,6 @@ class PurchaseOrderInherit(models.Model):
                                             'origin': rec.name,
                                         })],
                                         'active': active
-                                    })
-
-                                    picking.write({
-                                        'state': 'waits',
                                     })
                 else:
                     raise UserError(_("Data GR Tidak Tersedia!"))
