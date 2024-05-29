@@ -71,6 +71,7 @@ class wika_get_po(models.Model):
         # records = self.search([('jenis', '=', 'debug')])
         
         # _logger.info(response)
+        company_id = self.env.company.id
         i = 0
         tot_i = 0
         tot_u = 0 
@@ -219,9 +220,9 @@ class wika_get_po(models.Model):
                             _logger.info("# === VENDOR === #")
                             _logger.info(vendor)
                             if not vendor:
-                                continue
-                                # vendor = self.env['res.partner'].sudo().create({
-                                #     'name': data['vendor'], 'sap_code': data['vendor']})
+                                vendor = self.get_partner(data['vendor'], '', '')
+
+                            
                                 
                             sql = """
                                 SELECT 
@@ -245,7 +246,7 @@ class wika_get_po(models.Model):
                                     'name': hasil['po_uom'], 'category_id': 1})
                                 
                             project = self.env['project.project'].search([
-                                ('sap_code', '=', data['prctr']), ('company_id', '=', 1)], limit=1)
+                                ('sap_code', '=', data['prctr']), ('company_id', '=', company_id)], limit=1)
                             if project:
                                 project_id = project.id
                                 branch_id = project.branch_id.id
@@ -253,7 +254,7 @@ class wika_get_po(models.Model):
                             
                             if not project:
                                 branch = self.env['res.branch'].sudo().search([
-                                    ('sap_code', '=', data['prctr']), ('company_id', '=', 1)], limit=1)
+                                    ('sap_code', '=', data['prctr']), ('company_id', '=', company_id)], limit=1)
                                 if branch and branch.biro == True:
                                     department_id = branch.id
                                     branch_id = branch.parent_id.id
@@ -406,9 +407,8 @@ class wika_get_po(models.Model):
         csrf = {'w-access-token': str(w_key)}
         headers.update(csrf)
         
-        i = 0
-        tot_i = 0
-        tot_u = 0 
+        company_id = self.env.company.id
+        country_id = self.env.company.country_id.id
 
         payload = json.dumps({"kunnr": "%s",
                                 "taxnum": "%s",
@@ -433,36 +433,64 @@ class wika_get_po(models.Model):
     
             _logger.info(list_txt_data)
             for data in list_txt_data:
-                _logger.info("# === IMPORT DATA === #")
+                _logger.info("# === DATA === #")
                 # _logger.info(data)
-                res_bank = self.env['res.bank'].search([
-                        ('name', '=', data['BANK']['BANKL']), 
-                        ('active', '=', True)], limit=1)
-                if res_bank:
-                    bank_id = res_bank.id
-                else:
-                    _logger.info("# === CREATE BANK === #")
-                    bank_create = self.env['res.bank'].sudo().create({
-                        'name': data['po_doc'],
-                        'payment_term_id': payment_term.id if payment_term else False,
-                        'partner_id': vendor.id if vendor else False,
-                        'project_id': project_id,
-                        'branch_id': branch_id,
-                        'department_id': department_id,
-                        'order_line': vals,
-                        'price_cut_ids': potongan,
-                        'currency_id': curr.id,
-                        'begin_date': data['po_dcdat'],
-                        'po_type': data['po_jenis'],
-                        'state': state,
-                        'tgl_create_sap': data['po_crdat']
-
-                    })
+                sap_code = data['LIFNR']
+                name = data['NAME1']
+                street = data['STREET']
+                vat = data['TAXNUM']
+                bill_coa_type = data['KTOKK']
+                bank_id = 0
+                for bank_detail in data['BANK']:
+                    bank_name = bank_detail['BANKA']
+                    bic = bank_detail['BANKL']
+                    acc_number = bank_detail['BANKN']
+                    acc_holder_name = bank_detail['KOINH']
                 
-                i += 1
+                    res_bank = self.env['res.bank'].search([
+                            ('name', '=', bank_name), 
+                            ('active', '=', True)], limit=1)
+                    
+                    if res_bank:
+                        bank_id = res_bank.id
+                    else:
+                        _logger.info("# === CREATE BANK === #")
+                        bank_create = self.env['res.bank'].create({
+                            'name': bank_name,
+                            'bic': bic,
+                            'active': True
+                        })
+                        if bank_create:
+                            bank_id = bank_create.id
 
-        _logger.info("# === IMPORT DATA BERHASIL === # %s %s %s" % (str(i), str(tot_i), str(tot_u)))
-    
+                res_partner = self.env['res.partner'].search([('sap_code', '=', sap_code)], limit=1)
+                res_partner_id = 0
+                if res_partner:
+                    res_partner_id = res_partner.id
+                else:
+                    res_partner_create = self.env['res.partner'].create({
+                        'name': name,
+                        'sap_code': sap_code,
+                        'street': street,
+                        'vat': vat,
+                        'bill_coa_type': bill_coa_type,
+                        'company_id': company_id,
+                        'country_id': country_id,
+                        'is_company': True,
+                    })
+                    if res_partner_create:
+                        res_partner_id = res_partner_create.id
+                        res_partner_bank_create = self.env['res.partner.bank'].create({
+                            'partner_id': res_partner_id,  
+                            'bank_id': bank_id,  
+                            'acc_number': acc_number,
+                            'acc_holder_name': acc_holder_name,
+                            'company_id': company_id
+                        })
+
+
+            return res_partner_id
+                     
     def _autocreate_po(self):
         ''' This method is called from a cron job.
         It is used to post entries such as those created by the module

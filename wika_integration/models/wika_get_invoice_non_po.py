@@ -77,7 +77,7 @@ class wika_get_invoice_non_po(models.Model):
 					v_company_id = trim(inv_rec[16]);
                     v_project_id = trim(inv_rec[17]);
                     v_branch_id = trim(inv_rec[18]);
-                    v_vendor_id = trim(inv_rec[18]);
+                    v_vendor_id = trim(inv_rec[19]);
 										
                     SELECT id FROM res_currency INTO v_currency_id WHERE name = v_currency;
                     -- RAISE NOTICE 'v_currency_id %', v_currency_id;
@@ -90,7 +90,7 @@ class wika_get_invoice_non_po(models.Model):
                         INTO v_invoice_exist, v_payment_state;
                     
                     -- RAISE NOTICE 'v_invoice_exist %', v_invoice_exist;
-                    RAISE NOTICE 'payment_state %', payment_state;
+                    RAISE NOTICE 'payment_state %', v_payment_state;
                     IF v_invoice_exist IS NULL THEN
                         -- insert invoice
                         INSERT INTO account_move (
@@ -204,117 +204,119 @@ class wika_get_invoice_non_po(models.Model):
             COST 100
             """)
 
-    def get_create_update_invoice_non_po(self, date_from, date_to, doc_number):
+    def get_create_update_invoice_non_po(self):
         ''' This method is called from a cron job.
         '''
-        # url_config = self.env['wika.integration'].search([('name', '=', 'URL_INV_NON_PO')], limit=1).url
-        url_config = "https://fioridev.wika.co.id/ywikafi025/listinvoicenonpo?sap-client=110"
+        url_config = self.env['wika.integration'].search([('name', '=', 'URL_INV_NON_PO')], limit=1).url
         headers = {
             'Authorization': 'Basic V0lLQV9JTlQ6SW5pdGlhbDEyMw==',
             'Content-Type': 'application/json'
         }
 
-        payload = json.dumps({
-            "COMPANY_CODE": "A000",
-            "POSTING_DATE": {
-                "LOW": "%s",
-                "HIGH": "%s"
-            },
-            "DOC_NUMBER": "%s"
-        }) % (date_from, date_to, doc_number)
-        payload = payload.replace('\n', '')
-        
-        # _logger.info("DEBUGGGGGGGGGGGGGGGGGGGG CEK PAYLOAD %s" % (url_config))
-        # _logger.info(payload)
+        docs = self.env['doc.ap.non.po'].search([])
+        _logger.info("# === get_create_update_invoice_non_po === #")
+        _logger.info(docs)
 
-        try:
-            response = requests.request("GET", url_config, data=payload, headers=headers)
-            result = json.loads(response.text)
-            # _logger.info(result)
+        for doc in docs:
+            try:
+                payload = json.dumps({
+                    "COMPANY_CODE": "A000",
+                    "POSTING_DATE": {
+                        "LOW": "%s",
+                        "HIGH": "%s"
+                    },
+                    "DOC_NUMBER": "%s"
+                }) % (str(doc.posting_date), str(doc.posting_date), doc.doc_number)
+                payload = payload.replace('\n', '')
+                
+                _logger.info("# === PAYLOAD === #")
+                _logger.info(payload)
+                
+                response = requests.request("GET", url_config, data=payload, headers=headers)
+                result = json.loads(response.text)
 
-            data_final = []
-            if result['DATA']:
-                _logger.info("-----IMPORT DATA-----")
-                company_id = self.env.company.id
-                # diurutkan berdasarakan tahun dan doc number
-                txt_data = sorted(result['DATA'], key=lambda x: (x["YEAR"], x["DOC_NUMBER"]))
-                i = 0
-                sap_codes = []
-                vendors = []
-                for data in txt_data:
-                    # _logger.info(data)
-                    doc_number = data["DOC_NUMBER"]
-                    line_item = data["LINE_ITEM"]
-                    year = data["YEAR"]
-                    currency = data["CURRENCY"]
-                    doc_type = data["DOC_TYPE"]
-                    doc_date = data["DOC_DATE"]
-                    posting_date = data["POSTING_DATE"]
-                    pph_cbasis = data["PPH_CBASIS"]
-                    amount = data["AMOUNT"]
-                    header_text = data["HEADER_TEXT"]
-                    reference = data["REFERENCE"]
-                    vendor = data["VENDOR"]
-                    top = data["TOP"]
-                    item_text = data["ITEM_TEXT"]
-                    profit_center = data["PROFIT_CENTER"]
+                data_final = []
+                if result['DATA']:
+                    _logger.info("# === IMPORT DATA === #")
+                    company_id = self.env.company.id
+                    # diurutkan berdasarakan tahun dan doc number
+                    txt_data = sorted(result['DATA'], key=lambda x: (x["YEAR"], x["DOC_NUMBER"]))
+                    i = 0
+                    sap_codes = []
+                    vendors = []
+                    for data in txt_data:
+                        # _logger.info(data)
+                        doc_number = data["DOC_NUMBER"]
+                        line_item = data["LINE_ITEM"]
+                        year = data["YEAR"]
+                        currency = data["CURRENCY"]
+                        doc_type = data["DOC_TYPE"]
+                        doc_date = data["DOC_DATE"]
+                        posting_date = data["POSTING_DATE"]
+                        pph_cbasis = data["PPH_CBASIS"]
+                        amount = data["AMOUNT"]
+                        header_text = data["HEADER_TEXT"]
+                        reference = data["REFERENCE"]
+                        vendor = data["VENDOR"]
+                        top = data["TOP"]
+                        item_text = data["ITEM_TEXT"]
+                        profit_center = data["PROFIT_CENTER"]
 
-                    _logger.info("# === CEK DOC AP NON PO === #")
-                    # tanggal = datetime.strptime(data['posting_date'], "%Y-%m-%d")
-                    # posting_year = tanggal.year
-                    project = self.env['project.project'].search([('sap_code', '=', profit_center)], limit=1)
-                    partner = self.env['res.partner'].search([('sap_code', '=', vendor)], limit=1)
-                    if project and partner:
-                        doc_ap_non_po = self.env['doc.ap.non.po'].search([('doc_number', '=', doc_number),
-                                                                        ('project_id', '=', project.id),
-                                                                        ('partner_id', '=', partner.id),
-                                                                        ('posting_date', 'like', year)], limit=1)
-                        if doc_ap_non_po and project.branch_id != "":
-                            recs = [
-                                str(doc_number),
-                                str(line_item), 
-                                str(year),
-                                str(currency),
-                                str(doc_type),
-                                str(doc_date),
-                                str(posting_date),
-                                str(pph_cbasis),
-                                str(amount),
-                                str(header_text),
-                                str(reference),
-                                str(vendor),
-                                str(top),
-                                str(item_text),
-                                str(profit_center),
-                                str(company_id),
-                                str(project.id),
-                                str(project.branch_id),
-                                str(partner.id)
-                            ]
+                        _logger.info("# === CEK DOC AP NON PO === #")
+                        # tanggal = datetime.strptime(data['posting_date'], "%Y-%m-%d")
+                        # posting_year = tanggal.year
+                        project = self.env['project.project'].search([('sap_code', '=', profit_center)], limit=1)
+                        _logger.info("# === PROJECT === #")
+                        _logger.info(project)
+                        partner = self.env['res.partner'].search([('sap_code', '=', vendor)], limit=1)
+                        _logger.info("# === PARTNER === #")
+                        _logger.info(partner)
+                        if project and partner:
+                            if project.branch_id != "":
+                                recs = [
+                                    str(doc_number),
+                                    str(line_item), 
+                                    str(year),
+                                    str(currency),
+                                    str(doc_type),
+                                    str(doc_date),
+                                    str(posting_date),
+                                    str(pph_cbasis),
+                                    str(amount),
+                                    str(header_text),
+                                    str(reference),
+                                    str(vendor),
+                                    str(top),
+                                    str(item_text),
+                                    str(profit_center),
+                                    str(company_id),
+                                    str(project.id),
+                                    str(project.branch_id.id),
+                                    str(partner.id)
+                                ]
 
-                            recs = "~~".join(recs)
-                            data_final.append(recs)
-                            # if profit_center:
-                            #     sap_codes.append(str(profit_center))
+                                recs = "~~".join(recs)
+                                data_final.append(recs)
+                                # if profit_center:
+                                #     sap_codes.append(str(profit_center))
 
-                    vendors.append(str(vendor))
-                    i = i+1
+                        vendors.append(str(vendor))
+                        i = i+1
 
-                data_final = "|".join(data_final)
-                # _logger.info("-----Project %s = %s" % (i, sap_codes))
-                # _logger.info("-----Vendor %s = %s" % (i, vendors))
-                _logger.info("# === DATA FINAL %s = %s" % (i, data_final))
+                    data_final = "|".join(data_final)
+                    # _logger.info("-----Project %s = %s" % (i, sap_codes))
+                    # _logger.info("-----Vendor %s = %s" % (i, vendors))
+                    _logger.info("# === DATA FINAL %s = %s" % (i, data_final))
 
-                cr = self.env.cr
-                cr.execute("select wika_cu_inv_non_po(%s)", (data_final,))
-                _logger.info(_("# === Import Data Berhasil === #"))
-            else:
-                raise UserError(_("Data Tidak Tersedia!"))
+                    cr = self.env.cr
+                    cr.execute("select wika_cu_inv_non_po(%s)", (data_final,))
+                    _logger.info(_("# === Import Data Berhasil === #"))
+                else:
+                    raise UserError(_("Data Tidak Tersedia!"))
+            except:
+                continue
             
-        except UserError:
-            _logger.info("ERRORRRRRRR")
-            _logger.info(UserError)
-            self.status='-'
+        
         
         # self.env.ref('wika_integration.get_create_update_invoice_non_po')._trigger()
     

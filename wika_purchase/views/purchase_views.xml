@@ -9,7 +9,7 @@
         <field name="arch" type="xml">
             <form string="Purchase Orders" class="o_purchase_order"  create="0" delete="0">
             <header>
-                <button name="get_gr" type="object" states="po,uploaded,approved" string="Get GR" groups="base.group_no_one"/>
+                <button name="get_gr" type="object" states="po,uploaded,approved" string="Update GR" groups="base.group_no_one"/>
                 <button name="assign_todo_first" type="object" states="po,uploaded,approved" string="Assign Todo First" groups="base.group_no_one"/>
 
                 <button name="action_submit" type="object" states="po,rejected" string="SUBMIT" context="{'validate_analytic': True}" class="oe_highlight" id="bid_submit" data-hotkey="v"/>
@@ -326,6 +326,18 @@
                 <field name="state" optional="show"/>
                 <field name="step_approve" invisible="1"/> 
             </tree>
+        </field>
+    </record>
+
+    <record id="action_purchase_batch_bills" model="ir.actions.server">
+        <field name="name">Update GR</field>
+        <field name="model_id" ref="purchase.model_purchase_order"/>
+        <field name="binding_model_id" ref="purchase.model_purchase_order"/>
+        <field name='groups_id' eval="[(4, ref('base.group_no_one'))]"/>
+        <field name="state">code</field>
+        <field name="code">
+            if records:
+                action = records.get_gr()
         </field>
     </record>
 
