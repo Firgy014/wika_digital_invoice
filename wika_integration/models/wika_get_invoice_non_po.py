@@ -77,7 +77,7 @@ class wika_get_invoice_non_po(models.Model):
 					v_company_id = trim(inv_rec[16]);
                     v_project_id = trim(inv_rec[17]);
                     v_branch_id = trim(inv_rec[18]);
-                    v_vendor_id = trim(inv_rec[18]);
+                    v_vendor_id = trim(inv_rec[19]);
 										
                     SELECT id FROM res_currency INTO v_currency_id WHERE name = v_currency;
                     -- RAISE NOTICE 'v_currency_id %', v_currency_id;
@@ -90,7 +90,7 @@ class wika_get_invoice_non_po(models.Model):
                         INTO v_invoice_exist, v_payment_state;
                     
                     -- RAISE NOTICE 'v_invoice_exist %', v_invoice_exist;
-                    RAISE NOTICE 'payment_state %', payment_state;
+                    RAISE NOTICE 'payment_state %', v_payment_state;
                     IF v_invoice_exist IS NULL THEN
                         -- insert invoice
                         INSERT INTO account_move (
