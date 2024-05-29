@@ -440,48 +440,49 @@ class wika_get_po(models.Model):
                 street = data['STREET']
                 vat = data['TAXNUM']
                 bill_coa_type = data['KTOKK']
-                bank_name = data['BANK']['BANKL']
-                acc_number = data['BANK']['BANKN']
-                acc_holder_name = data['BANK']['KOINH']
-                
-                res_bank = self.env['res.bank'].search([
-                        ('name', '=', bank_name), 
-                        ('active', '=', True)], limit=1)
-                
                 bank_id = 0
-                if res_bank:
-                    bank_id = res_bank.id
-                else:
-                    _logger.info("# === CREATE BANK === #")
-                    bank_create = self.env['res.bank'].create({
-                        'name': bank_name,
-                        'active': True
-                    })
-                    if bank_create:
-                        bank_id = bank_create.id
+                for bank_detail in data['BANK']:
+                    bank_name = bank_detail['BANKL']
+                    acc_number = bank_detail['BANKN']
+                    acc_holder_name = bank_detail['KOINH']
+                
+                    res_bank = self.env['res.bank'].search([
+                            ('name', '=', bank_name), 
+                            ('active', '=', True)], limit=1)
+                    
+                    if res_bank:
+                        bank_id = res_bank.id
+                    else:
+                        _logger.info("# === CREATE BANK === #")
+                        bank_create = self.env['res.bank'].create({
+                            'name': bank_name,
+                            'active': True
+                        })
+                        if bank_create:
+                            bank_id = bank_create.id
 
-                res_partner = self.env['res.partner'].search([('sap_code', '=', sap_code)], limit=1)
-                res_partner_id = 0
-                if res_partner:
-                    res_partner_id = res_partner.id
-                else:
-                    res_partner_create = self.env['res.partner'].create({
-                        'name': name,
-                        'sap_code': sap_code,
-                        'street': street,
-                        'vat': vat,
-                        'bill_coa_type': bill_coa_type,
-                        'bank_ids': {
-                            'bank_id': bank_id,  
-                            'acc_number': acc_number,
-                            'acc_holder_name': acc_holder_name,
-                        },
-                    })
-                    if res_partner_create:
-                        bank_id = res_partner_create.id
+            #     res_partner = self.env['res.partner'].search([('sap_code', '=', sap_code)], limit=1)
+            #     res_partner_id = 0
+            #     if res_partner:
+            #         res_partner_id = res_partner.id
+            #     else:
+            #         res_partner_create = self.env['res.partner'].create({
+            #             'name': name,
+            #             'sap_code': sap_code,
+            #             'street': street,
+            #             'vat': vat,
+            #             'bill_coa_type': bill_coa_type,
+            #             'bank_ids': {
+            #                 'bank_id': bank_id,  
+            #                 'acc_number': acc_number,
+            #                 'acc_holder_name': acc_holder_name,
+            #             },
+            #         })
+            #         if res_partner_create:
+            #             bank_id = res_partner_create.id
 
 
-            return res_partner_id
+            # return res_partner_id
                     
     
     def _autocreate_po(self):
