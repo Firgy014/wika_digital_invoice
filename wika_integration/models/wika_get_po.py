@@ -386,7 +386,7 @@ class wika_get_po(models.Model):
     def get_partner(self, kunnr, taxnum, bp_type):
         url_config = self.env['wika.integration'].search([('name', '=', 'URL PO')], limit=1)
         url = url_config.url + 'services/auth'
-        url_get_po = url_config.url + 'services/getposap'
+        url_get_partner = url_config.url + 'services/getbpsap'
         headers = {
             'Content-Type': 'application/json'
         }
@@ -400,322 +400,66 @@ class wika_get_po(models.Model):
         # 1. Get W-KEY TOKEN
         response = requests.request("POST", url, data=payload, headers=headers)
         w_key = (response.headers['w-key'])
-        # _logger.info("DEBUG: =================================================================================")
+        # _logger.info("# === API GET PARTNER === #")
         # _logger.info(w_key)
+        # _logger.info(response)
         csrf = {'w-access-token': str(w_key)}
         headers.update(csrf)
-
-        records = self.search([])
-        # records = self.search([('jenis', '=', 'debug')])
         
-        # _logger.info(response)
         i = 0
         tot_i = 0
         tot_u = 0 
-        for record in records:
-            tgl_update=fields.Date.today() + timedelta(days=int(max_difference_days)*-1)
-            if record.profit_center:
-                profit_center = record.profit_center
-            else:
-                profit_center = ''
 
-            if record.name:
-                no_po = record.name
-            else:
-                no_po = ''
-            if record.tgl_create_sap:
-                tgl_create_sap = record.tgl_create_sap
-            else:
-                tgl_create_sap =  str(tgl_update)
-
-            if record.tgl_write_sap:
-                tgl_write_sap = record.tgl_write_sap
-            else:
-                tgl_write_sap =  str(tgl_update)
-
-            payload_2 = json.dumps({"profit_center": "%s",
-                                    "po_doc": "%s",
-                                    "po_jenis": "",
-                                    "po_dcdat": "",
-                                    "po_crdate": "",
-                                    "po_plant": "",
-                                    "co_code": "",
-                                    "po_del": "",
-                                    "poitem_del": "",
-                                    "incmp_cat": "",
-                                    "po_lcdat": "%s"
-                                    }) % (profit_center, no_po, tgl_write_sap)
-            payload_2 = payload_2.replace('\n', '')
-            
-            _logger.info(payload_2)
+        payload = json.dumps({"kunnr": "%s",
+                                "taxnum": "%s",
+                                "bp_type": "%s"
+                                }) % (kunnr, taxnum, bp_type)
         
-            response_2 = requests.request("POST", url_get_po, data=payload_2, headers=headers)
-            # _logger.info(response_2.text)
-            if response_2.status_code==200:
-                txt = json.loads(response_2.text)
-                txt_data = txt['data']
-                _logger.info("# === TXT DATA === #")
-                list_txt_data = []
-                if isinstance(txt_data, list):
-                    list_txt_data = txt_data
+        payload = payload.replace('\n', '')
+        
+        _logger.info(payload)
+    
+        response_2 = requests.request("POST", url_get_partner, data=payload, headers=headers)
+        # _logger.info(response_2.text)
+        if response_2.status_code==200:
+            txt = json.loads(response_2.text)
+            txt_data = txt['data']
+            _logger.info("# === TXT DATA === #")
+            list_txt_data = []
+            if isinstance(txt_data, list):
+                list_txt_data = txt_data
+            else:
+                list_txt_data.append(txt_data)
+    
+            _logger.info(list_txt_data)
+            for data in list_txt_data:
+                _logger.info("# === IMPORT DATA === #")
+                # _logger.info(data)
+                res_bank = self.env['res.bank'].search([
+                        ('name', '=', data['BANK']['BANKL']), 
+                        ('active', '=', True)], limit=1)
+                if res_bank:
+                    bank_id = res_bank.id
                 else:
-                    list_txt_data.append(txt_data)
-        
-                _logger.info(list_txt_data)
-                for data in list_txt_data:
-                    _logger.info("# === IMPORT DATA === #")
-                    _logger.info(data)
-                    vals = []
-                    potongan = []
-                    po = self.env['purchase.order'].search([
-                        ('name', '=', data['po_doc']), ('tgl_create_sap', '=', data['po_crdat']),
-                        ('state', '!=', 'cancel')], limit=1)
-                    _logger.info("# === PO === #")
-                    # _logger.info(data)
-                    if not po:
-                        _logger.info("# === CREATE PO === #")
-                        _logger.info(data)
-                        dp = float(data['dp_amt'])
-                        retensi = float(data['ret_pc'])
-                        if 'pay_terms' in data and data['pay_terms'] != '':
-                            payment_term = self.env['account.payment.term'].sudo().search([
-                                ('name', '=', data['pay_terms'])], limit=1)
-                        if dp > 0:
-                            prod = self.env['product.product'].sudo().search([
-                                ('name', '=', 'DP')], limit=1)
-                            if not prod:
-                                prod = self.env['product.product'].sudo().create({
-                                    'name': 'DP'})
-                            potongan.append((0, 0, {
-                                'product_id': prod.id,
-                                'amount': dp,
-                            }))
-                        if retensi > 0:
-                            prod = self.env['product.product'].sudo().search([
-                                ('name', '=', 'RETENSI')], limit=1)
-                            if not prod:
-                                prod = self.env['product.product'].sudo().create({
-                                    'name': 'RETENSI'})
-                            potongan.append((0, 0, {
-                                'product_id': prod.id,
-                                'persentage_amount': retensi
-                            }))
-                        
-                        # Looping pengisian data detail po
-                        for hasil in data['isi']:
-                            _logger.info("# === DEBUG DETAIL === #")
-                            seq = float(hasil['po_no'])
-                            line_active = True
-                            state = 'po'
-                            
-                            qty = float(hasil['po_qty'])
-                            if data['po_jenis'] == 'JASA':
-                                price = float(hasil['po_price']) / qty
-                            else:
-                                price = float(hasil['po_price'])
-                            _logger.info("# === PRICE === #")
-                            _logger.info("price")
+                    _logger.info("# === CREATE BANK === #")
+                    bank_create = self.env['res.bank'].sudo().create({
+                        'name': data['po_doc'],
+                        'payment_term_id': payment_term.id if payment_term else False,
+                        'partner_id': vendor.id if vendor else False,
+                        'project_id': project_id,
+                        'branch_id': branch_id,
+                        'department_id': department_id,
+                        'order_line': vals,
+                        'price_cut_ids': potongan,
+                        'currency_id': curr.id,
+                        'begin_date': data['po_dcdat'],
+                        'po_type': data['po_jenis'],
+                        'state': state,
+                        'tgl_create_sap': data['po_crdat']
 
-                            _logger.info("# === SEARCH PRODUCT === #")
-                            prod = self.env['product.product'].sudo().search([
-                                ('default_code', '=', hasil['prd_no'])], limit=1)
-                            _logger.info(prod)
-                            if prod:
-                                product_id = prod.id
-                            else:
-                                _logger.info("# === CREATE PRODUCT === #")
-                                _logger.info(hasil['prd_no'])
-                                product_id = self.env['product.product'].create({
-                                                'name': hasil['prd_no'],
-                                                'list_price': price,
-                                                'standard_price': price,
-                                                'type': 'consu',
-                                            }).id
-                                # prod = self.env['product.product'].sudo().create({
-                                #     ('name', '=', hasil['prd_no']), ('default_code', '=', hasil['prd_no'])})
-                                _logger.info(product_id)
-
-                            _logger.info(prod)    
-                            
-                            
-                            tax = self.env['account.tax'].sudo().search([
-                                ('name', '=', hasil['tax_code'])], limit=1)
-                            if not tax:
-                                return "Kode Pajak  : %s tidak ditemukan" % hasil['MWSKZ']
-                            
-                            _logger.info("# === TAX === #")
-                            _logger.info(tax)
-                            curr = self.env['res.currency'].sudo().search([
-                                ('name', '=', data['curr'])], limit=1)
-                            _logger.info("# === CURRENCY === #")
-                            _logger.info(curr)
-                            if not curr:
-                                continue
-                            
-                            vendor = self.env['res.partner'].sudo().search([
-                                ('sap_code', '=', data['vendor'])], limit=1)
-                            _logger.info("# === VENDOR === #")
-                            _logger.info(vendor)
-                            if not vendor:
-                                continue
-                                # vendor = self.env['res.partner'].sudo().create({
-                                #     'name': data['vendor'], 'sap_code': data['vendor']})
-                                
-                            sql = """
-                                SELECT 
-                                    id
-                                FROM uom_uom uom
-                                WHERE 
-                                    COALESCE(uom.name->>'en_US', uom.name->>'en_US') = '""" + str(hasil['po_uom']) + """'
-                            """
-                            # _logger.info(sql)
-                            self._cr.execute(sql)
-                            uoms = self._cr.fetchall()
-                            
-                            # _logger.info(uoms[0][0])
-                            uom = self.env['uom.uom'].browse(uoms[0][0])
-                            # uom = self.env['uom.uom'].sudo().search([
-                            #     ('name', '=', hasil['po_uom'])], limit=1)
-                            _logger.info("# === UOM === #")
-                            _logger.info(uom)
-                            if not uom:
-                                uom = self.env['uom.uom'].sudo().create({
-                                    'name': hasil['po_uom'], 'category_id': 1})
-                                
-                            project = self.env['project.project'].search([
-                                ('sap_code', '=', data['prctr']), ('company_id', '=', 1)], limit=1)
-                            if project:
-                                project_id = project.id
-                                branch_id = project.branch_id.id
-                                department_id = None
-                            
-                            if not project:
-                                branch = self.env['res.branch'].sudo().search([
-                                    ('sap_code', '=', data['prctr']), ('company_id', '=', 1)], limit=1)
-                                if branch and branch.biro == True:
-                                    department_id = branch.id
-                                    branch_id = branch.parent_id.id
-                                    project_id = None
-                                if branch and branch.biro == False:
-                                    department_id = None
-                                    branch_id = branch.id
-                                    project_id = None
-                                if not branch:
-                                    _logger.info("Kode Profit Center : %s tidak ditemukan" % data['prctr'])
-                                
-                            if hasil['poitem_del'] == 'L':
-                                line_active = False
-
-                            vals.append((0, 0, {
-                                'sequence': int(seq),
-                                'product_id': product_id,
-                                'product_qty': qty,
-                                'product_uom': uom.id,
-                                'price_unit': price,
-                                'active': line_active,
-                                'taxes_id': [(6, 0, [x.id for x in tax])]
-
-                            }))
-                        
-                        if not vals:
-                            continue
-                        else:
-                            po_create = self.env['purchase.order'].sudo().create({
-                                'name': data['po_doc'],
-                                'payment_term_id': payment_term.id if payment_term else False,
-                                'partner_id': vendor.id if vendor else False,
-                                'project_id': project_id,
-                                'branch_id': branch_id,
-                                'department_id': department_id,
-                                'order_line': vals,
-                                'price_cut_ids': potongan,
-                                'currency_id': curr.id,
-                                'begin_date': data['po_dcdat'],
-                                'po_type': data['po_jenis'],
-                                'state': state,
-                                'tgl_create_sap': data['po_crdat']
-
-                            })
-                            _logger.info("# === PO CREATED === #")
-                            _logger.info(po_create)
-                            # po_create.get_gr()
-                            tot_i += 1
-                    
-                    else: # Update PO
-                        _logger.info("# === UPDATE PO === #")
-                        _logger.info(po)
-                        current_date = fields.Date.today()
-                        po_lcdat = datetime.strptime(data['po_lcdat'], '%Y-%m-%d').date()
-                        difference = current_date - po_lcdat
-                        if difference.days == max_difference_days:
-                            for hasil in data['isi']:
-                                seq = float(hasil['po_no'])
-                                qty = float(hasil['po_qty'])
-                                po_line = self.env['purchase.order.line'].sudo().search([
-                                    ('order_id', '=', po.id),
-                                    ('sequence', '=', int(seq))], limit=1)
-                                _logger.info("# === PO LINE ID === #")
-                                _logger.info(po_line.id)
-                                current_datetime_str = fields.Datetime.now()+ timedelta(hours=7)
-
-                                noted_message = f"updated {current_datetime_str}"
-                                po.write({'notes': noted_message})
-                                
-                                if po_line.id:
-                                    _logger.info("# === WRITE PO === #")
-                                    if data['po_jenis'] == 'JASA':
-                                        price = float(hasil['po_price']) / qty
-                                    else:
-                                        price = float(hasil['po_price'])
-
-                                    tax = self.env['account.tax'].sudo().search([
-                                        ('name', '=', hasil['tax_code'])], limit=1)
-                                    if not tax:
-                                        _logger.info("Kode Pajak  : %s tidak ditemukan" % hasil['MWSKZ'])
-                                    
-                                    if hasil['poitem_del'] == 'L':
-                                        po_line.write({'active': False})
-                                    else:    
-                                        po_line.write({'product_qty': qty,'price_unit':price,'taxes_id': [(6, 0, [x.id for x in tax])]})
-
-                                else:
-                                    if hasil['poitem_del'] == 'L':
-                                        continue
-                                    else:
-                                        if data['po_jenis'] == 'JASA':
-                                            price = float(hasil['po_price']) / qty
-                                        else:
-                                            price = float(hasil['po_price'])
-                                        prod = self.env['product.product'].sudo().search([
-                                            ('default_code', '=', hasil['prd_no'])], limit=1)
-                                        if not prod:
-                                            prod = self.env['product.product'].sudo().create({
-                                                'name': hasil['prd_desc'],'default_code':hasil['prd_no']})
-                                        tax = self.env['account.tax'].sudo().search([
-                                            ('name', '=', hasil['tax_code'])], limit=1)
-                                        if not tax:
-                                            return "Kode Pajak  : %s tidak ditemukan" % hasil['MWSKZ']
-
-                                        uom = self.env['uom.uom'].sudo().search([
-                                            ('name', '=', hasil['po_uom'])], limit=1)
-                                        if not uom:
-                                            uom = self.env['uom.uom'].sudo().create({
-                                                'name': hasil['po_uom'], 'category_id': 1})
-                                        line = self.env['purchase.order.line'].sudo().create({
-                                                'order_id':po.id,
-                                                'sequence': int(seq),
-                                                'product_id': prod.id if prod else False,
-                                                'product_qty': qty,
-                                                'product_uom': uom.id,
-                                                'price_unit': price,
-                                                'taxes_id': [(6, 0, [x.id for x in tax])]})
-
-                                    continue
-
-                            # po.update_gr()
-                            tot_u += 1
-                            
-                    i += 1
+                    })
+                
+                i += 1
 
         _logger.info("# === IMPORT DATA BERHASIL === # %s %s %s" % (str(i), str(tot_i), str(tot_u)))
     

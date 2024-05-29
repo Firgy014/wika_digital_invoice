@@ -272,14 +272,11 @@ class PurchaseOrderInherit(models.Model):
                                  ('order_id', '=' ,self.id),('sequence','=', item['PO_ITEM'])] ,limit=1)
                         
                         docdate = item['DOC_DATE']
-                        docdate_from = item['DOC_DATE'] + " 00:00:00"
-                        docdate_to = item['DOC_DATE'] + " 23:59:59"
 
 
                         picking = self.env['stock.picking'].search([
                             ('name', '=', mat_doc),
-                            ('scheduled_date', '>=', docdate_from),
-                            ('scheduled_date', '<=', docdate_to),
+                            ('po_id.name', '=', item['PO_NUMBER'])
                         ], limit=1)
                         if not picking:
                             _logger.info('# === CREATE PICKING BARANG === #')
@@ -415,14 +412,11 @@ class PurchaseOrderInherit(models.Model):
                             ('order_id', '=', self.id), ('sequence', '=', item['PO_ITEM'])], limit=1)
                         matdoc = item['MAT_DOC']
                         docdate = item['DOC_DATE']
-                        docdate_from = item['DOC_DATE'] + " 00:00:00"
-                        docdate_to = item['DOC_DATE'] + " 23:59:59"
                         
 
                         picking = self.env['stock.picking'].search([
                             ('name', '=', ses_number),
-                            ('scheduled_date', '>=', docdate_from),
-                            ('scheduled_date', '<=', docdate_to),
+                            ('po_id.name', '=', item['PO_NUMBER'])
                         ], limit=1)
                         if not picking:
                             _logger.info('# === CREATE PICKING JASA === #')
