@@ -321,7 +321,6 @@ class PurchaseOrderInherit(models.Model):
                                 picking_create.write({
                                     'state': 'waits',
                                 })
-                            
                             else:    
                                 _logger.info('# === WRITE PICKING BARANG === #')
                                 stock_move = self.env['stock.move'].search([
