@@ -179,7 +179,7 @@ class WikaInheritedAccountMove(models.Model):
         tracking=True,
         default='draft',
     )
-    amount_total_footer = fields.Float(string='Amount Total', compute='_compute_amount_total', store=True)
+    amount_total_footer = fields.Float(string='Net Amount', compute='_compute_amount_total', store=True)
     level = fields.Selection([
         ('Proyek', 'Proyek'),
         ('Divisi Operasi', 'Divisi Operasi'),
