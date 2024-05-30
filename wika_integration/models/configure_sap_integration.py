@@ -199,7 +199,7 @@ class sap_integration_configure(models.Model):
         conf_model = self.env['sap.integration.configure'].sudo()
 
         conf_id = conf_model.search([('sftp_folder_archive', '!=', False)], limit=1)
-        file_path = None  # Initialize file_path to None
+        file_path = None
         if conf_id:
             outbound_dir = conf_id.sftp_folder
             file_name_prefix = 'YFII015A'
@@ -214,20 +214,18 @@ class sap_integration_configure(models.Model):
         updated_invoices = []
         try:
             with open(file_path, 'r') as file:
-                next(file)  # Skip the header line
-                next(file)  # Skip the column titles
+                print('TEST PATTTTHHHH', file_path)
+                next(file)
+                next(file)
                 for line in file:
                     invoice_data = line.strip().split('|')
                     
-                    if len(invoice_data) < 7:  # Ensure there are enough columns
+                    if len(invoice_data) < 7:
                         _logger.error("Invalid invoice data format: %s", invoice_data)
                         continue
                     
-                    no_inv = invoice_data[0]
-                    invoice_id = invoice_model.search([
-                        ('name', '=', no_inv),
-                        # ('is_mp_approved', '=', True)
-                    ], limit=1)
+                    no_inv = invoice_data[3]
+                    invoice_id = invoice_model.search([('name', '=', no_inv)], limit=1)
 
                     if invoice_id:
                         update_vals = {
@@ -237,10 +235,10 @@ class sap_integration_configure(models.Model):
                             'retensi_doc': invoice_data[5],
                         }
                         
-                        if invoice_data[6]:  # If AP_DOC is present
+                        if invoice_data[6]:  # If AP_DOC exist
                             update_vals['payment_reference'] = invoice_data[6]
                             update_vals['no_doc_sap'] = invoice_data[3]
-                        else:  # If AP_DOC is not present
+                        else:  # If AP_DOC not exits
                             update_vals['payment_reference'] = invoice_data[3]
                             update_vals['no_doc_sap'] = ''
                         
@@ -262,7 +260,6 @@ class sap_integration_configure(models.Model):
             _logger.info("Successfully updated invoices: %s", updated_invoices)
         else:
             _logger.info("No invoices were updated.")
-
 
     def _update_payment_partial_request(self):
         partial_payment_request_model = self.env['wika.partial.payment.request'].sudo()
