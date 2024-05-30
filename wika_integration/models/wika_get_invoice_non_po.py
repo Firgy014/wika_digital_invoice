@@ -213,6 +213,7 @@ class wika_get_invoice_non_po(models.Model):
             'Content-Type': 'application/json'
         }
 
+        _logger.info("# === CEK DOC AP NON PO === #")
         docs = self.env['doc.ap.non.po'].search([])
         _logger.info("# === get_create_update_invoice_non_po === #")
         _logger.info(docs)
@@ -262,7 +263,6 @@ class wika_get_invoice_non_po(models.Model):
                         item_text = data["ITEM_TEXT"]
                         profit_center = data["PROFIT_CENTER"]
 
-                        _logger.info("# === CEK DOC AP NON PO === #")
                         # tanggal = datetime.strptime(data['posting_date'], "%Y-%m-%d")
                         # posting_year = tanggal.year
                         project = self.env['project.project'].search([('sap_code', '=', profit_center)], limit=1)
