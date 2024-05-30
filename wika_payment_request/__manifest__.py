@@ -21,7 +21,7 @@
 
     # any module necessary for this one to work correctly
     'depends': ['base', 'branch', 'project', 'purchase', 'stock', 'product', 'account', 'wika_matrix_approval', 
-        'wika_account_move', 'wika_integration', 'mail'],
+        'wika_account_move', 'mail'],
 
     # always loaded
     'data': [

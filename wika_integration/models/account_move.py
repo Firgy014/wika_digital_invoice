@@ -41,10 +41,13 @@ class AccountMoveInheritWika(models.Model):
             if rec.state != 'draft':
                 if rec.amount_due == 0:
                     rec.payment_state = 'paid'
+                    rec.status_payment = 'Not Request'
                 else:
                     rec.payment_state = 'not_paid'
+                    rec.status_payment = 'Not Request'
             else:
                 rec.payment_state = 'not_paid'
+                rec.status_payment = 'Not Request'
 
 class AccountMoveLine(models.Model):
     _inherit = 'account.move.line'
