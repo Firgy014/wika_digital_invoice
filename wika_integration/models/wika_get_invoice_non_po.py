@@ -117,9 +117,9 @@ class wika_get_invoice_non_po(models.Model):
                         returning id INTO v_resource_id;
                         RAISE NOTICE 'v_resource_id %', v_resource_id;
                     ELSE
+                        v_resource_id = v_invoice_exist;
                         IF v_payment_state = 'Not Request' THEN
                             -- update invoice
-                            v_resource_id = v_invoice_exist;
                             UPDATE account_move SET
                                 name = v_doc_number || v_year, 
                                 project_id = v_project_id, 
