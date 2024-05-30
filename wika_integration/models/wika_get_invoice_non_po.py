@@ -117,7 +117,7 @@ class wika_get_invoice_non_po(models.Model):
                         returning id INTO v_resource_id;
                         RAISE NOTICE 'v_resource_id %', v_resource_id;
                     ELSE
-                        IF v_payment_state == 'Not Request' THEN
+                        IF v_payment_state = 'Not Request' THEN
                             -- update invoice
                             v_resource_id = v_invoice_exist;
                             UPDATE account_move SET
@@ -164,7 +164,7 @@ class wika_get_invoice_non_po(models.Model):
                             (now() at time zone 'UTC'), v_uid
                         );
                     ELSE
-                        IF v_payment_state == 'Not Request' THEN
+                        IF v_payment_state = 'Not Request' THEN
                             -- Update invoice detail
                             UPDATE account_move_line SET 
                                 move_name = v_doc_number || v_year, 
