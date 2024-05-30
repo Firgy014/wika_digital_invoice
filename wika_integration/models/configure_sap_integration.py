@@ -272,7 +272,7 @@ class sap_integration_configure(models.Model):
         if conf_id:
             outbound_dir = conf_id.sftp_folder
             file_name_prefix = 'YFII018A'
-            _logger.info(file_name_prefix + ' DEBUGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG')
+            _logger.info("# === UPDATE PARTIAL PAYMENT REQUEST === #" + file_name_prefix)
             _logger.info(outbound_dir)
             
             # try:
@@ -285,7 +285,8 @@ class sap_integration_configure(models.Model):
             sftp = client.open_sftp()
             
             for file_name in sftp.listdir(outbound_dir):
-                # _logger.info(file_name)
+                _logger.info("# === FILE NAME === #")
+                _logger.info(file_name)
                 if file_name.startswith(file_name_prefix):
                     file_path = os.path.join(outbound_dir, file_name)
                     _logger.info(file_path)
@@ -293,17 +294,27 @@ class sap_integration_configure(models.Model):
                         next(file)  # Skip the header line
                         next(file)  # Skip the column titles
                         for line in file:
+                            _logger.info("# === LINE === #" + line)
                             invoice_data = line.strip().split('|')
                             no_ppr = invoice_data[0]
+                            _logger.info("# === SEARCH PARTIAL PAYMENT REQUEST === #")
                             ppr_ids = partial_payment_request_model.search([('no_doc_sap', '=', False), '|',
                                                                            ('name', '=', no_ppr),
                                                                            ('reference', '=', no_ppr)])
+                            
+                            _logger.info(ppr_ids)
                             if ppr_ids:
+                                _logger.info("# === WRITE PARTIAL PAYMENT REQUEST === #")
                                 for ppr_id in ppr_ids:
                                     ppr_id.write({
                                         'no_doc_sap': invoice_data[2],
                                         'year': invoice_data[3]
                                     })
+                                    if ppr_id.invoice_id:
+                                        ppr_id.invoice_id.write({
+                                            'payment_reference': invoice_data[2]
+                                        })
+
                                     updated_ppr.append(no_ppr)
                             
                     
@@ -318,7 +329,7 @@ class sap_integration_configure(models.Model):
             # close the connections
             sftp.close()
             client.close()
-
+            _logger.info("# === UPDATE PARTIAL PAYMENT REQUEST SUCCESS === #")
             # except FileNotFoundError:
             #     pass
                 # raise ValidationError(_("File TXT dari SAP atas invoice yang dituju tidak ditemukan!"))

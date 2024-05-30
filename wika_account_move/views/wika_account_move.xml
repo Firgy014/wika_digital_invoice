@@ -126,7 +126,7 @@
                                             <field name="total_line" string="Untaxed Amount"/>
                                             <field name="total_tax" string="PPN"/>
                                             <field name="total_pph" readonly="1" force_save="1" string="PPH"/>
-                                            <field name="amount_total_footer" string="Net Amount"/>
+                                            <field name="amount_total_footer"/>
                                             <field name="amount_total_payment" string="Total With PPN"/>
                                             <field name="invoice_payments_widget" invisible="1" colspan="2" nolabel="1" widget="payment"/>
                                             <field name="amount_residual" invisible="1" class="oe_subtotal_footer_separator" attrs="{'invisible': [('state', '=', 'draft')]}"/>
@@ -261,7 +261,7 @@
                         <field name="invoice_date" string="Document Date"/>
                         <field name="invoice_date_due"/>
                         <field name="total_line" sum="Total" string="Untaxed Amount"/>
-                        <field name="amount_total_footer" sum="Net Amount" string="Net Amount"/>
+                        <field name="amount_total_footer" sum="Net Amount"/>
                         <field name="state" invisible="1"/>
                         <field name="status_invoice_rel"/>
                         <field name="approval_stage"  widget="badge"  optional="show"/>

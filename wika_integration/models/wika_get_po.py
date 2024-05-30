@@ -247,6 +247,7 @@ class wika_get_po(models.Model):
                                 
                             project = self.env['project.project'].search([
                                 ('sap_code', '=', data['prctr']), ('company_id', '=', company_id)], limit=1)
+                            project_id = 0
                             if project:
                                 project_id = project.id
                                 branch_id = project.branch_id.id
