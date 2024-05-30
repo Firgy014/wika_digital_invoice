@@ -66,8 +66,8 @@ class wika_get_invoice_non_po(models.Model):
                     v_doc_type = inv_rec[5];
                     v_doc_date = inv_rec[6];
                     v_posting_date = inv_rec[7];
-                    v_pph_cbasis = inv_rec[8];
-                    v_amount = inv_rec[9];
+                    v_pph_cbasis = inv_rec[8]::numeric * -1;
+                    v_amount = inv_rec[9]::numeric * -1;
                     v_header_text = inv_rec[10];
                     v_reference = inv_rec[11];
                     v_vendor = trim(inv_rec[12]);
@@ -155,8 +155,8 @@ class wika_get_invoice_non_po(models.Model):
                             create_date, create_uid
                         ) VALUES (
                             v_resource_id, v_doc_number || v_year, v_line_item,
-                            v_item_text, 1, ABS(v_amount::numeric),
-                            ABS(v_amount::numeric), ABS(v_amount::numeric), ABS(v_pph_cbasis::numeric), 
+                            v_item_text, 1, v_amount::numeric,
+                            v_amount::numeric, v_amount::numeric, v_pph_cbasis::numeric, 
                                                                 v_posting_date, 
                             'approved', v_currency_id, 13,
                                                                 'product', 67, 53049,
