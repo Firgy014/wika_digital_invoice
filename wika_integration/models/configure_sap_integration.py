@@ -199,7 +199,7 @@ class sap_integration_configure(models.Model):
         conf_model = self.env['sap.integration.configure'].sudo()
 
         conf_id = conf_model.search([('sftp_folder_archive', '!=', False)], limit=1)
-        file_path = None  # Initialize file_path to None
+        file_path = None
         if conf_id:
             outbound_dir = conf_id.sftp_folder
             file_name_prefix = 'YFII015A'
@@ -208,30 +208,58 @@ class sap_integration_configure(models.Model):
                     file_path = os.path.join(outbound_dir, file_name)
                     break
 
+        if not file_path:
+            raise ValidationError(_("No file found with prefix {} in directory {}".format(file_name_prefix, outbound_dir)))
+
         updated_invoices = []
         try:
             with open(file_path, 'r') as file:
-                next(file)  # Skip the header line
-                next(file)  # Skip the column titles
+                print('TEST PATTTTHHHH', file_path)
+                next(file)
+                next(file)
                 for line in file:
                     invoice_data = line.strip().split('|')
-                    no_inv = invoice_data[0]
-                    invoice_id = invoice_model.search([('name', '=', no_inv),('is_mp_approved', '=', True),('invoice_number', '=', False)], limit=1)
+                    
+                    if len(invoice_data) < 7:
+                        _logger.error("Invalid invoice data format: %s", invoice_data)
+                        continue
+                    
+                    no_inv = invoice_data[3]
+                    invoice_id = invoice_model.search([('name', '=', no_inv)], limit=1)
+
                     if invoice_id:
-                        invoice_id.write({
+                        update_vals = {
                             'invoice_number': invoice_data[1],
                             'year': invoice_data[2],
-                            'payment_reference': invoice_data[3],
                             'dp_doc': invoice_data[4],
-                            'retensi_doc': invoice_data[5]
-                        })
+                            'retensi_doc': invoice_data[5],
+                        }
+                        
+                        if invoice_data[6]:  # If AP_DOC exist
+                            update_vals['payment_reference'] = invoice_data[6]
+                            update_vals['no_doc_sap'] = invoice_data[3]
+                        else:  # If AP_DOC not exits
+                            update_vals['payment_reference'] = invoice_data[3]
+                            update_vals['no_doc_sap'] = ''
+                        
+                        invoice_id.write(update_vals)
                         updated_invoices.append(no_inv)
                     else:
-                        pass
-                shutil.move(file_path, os.path.join(conf_id.sftp_folder_archive, file_name))
+                        _logger.warning("No matching invoice found for no_inv: %s", no_inv)
+
+            shutil.move(file_path, os.path.join(conf_id.sftp_folder_archive, file_name))
+            _logger.info("File moved to archive: %s", file_name)
         except FileNotFoundError:
-            pass
+            _logger.error("File not found: %s", file_path)
             raise ValidationError(_("File TXT dari SAP atas invoice yang dituju tidak ditemukan!"))
+        except Exception as e:
+            _logger.error("An error occurred: %s", str(e))
+            raise ValidationError(_("An error occurred while updating invoices: %s" % str(e)))
+
+        if updated_invoices:
+            _logger.info("Successfully updated invoices: %s", updated_invoices)
+        else:
+            _logger.info("No invoices were updated.")
 
     def _update_payment_partial_request(self):
         partial_payment_request_model = self.env['wika.partial.payment.request'].sudo()
