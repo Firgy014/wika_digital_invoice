@@ -213,10 +213,10 @@ class WikaInheritedAccountMove(models.Model):
     total_scf_cut = fields.Float(string='Total Potongan SCF', compute='_compute_total_scf_cut')
     journal_item_sap_ids = fields.One2many('wika.account.move.journal.sap', 'invoice_id', string='Journal SAP')
     total_ap_sap = fields.Float(string='Total AP SAP', compute='_compute_total_ap_sap')
-    is_waba = fields.Boolean(string='Invoice Waba', store=True)
+    is_waba = fields.Boolean(string='Invoice Waba', compute='_compute_is_waba')
 
-    @api.onchange('no_faktur_pajak', 'total_tax')
-    def _onchange_is_waba(self):
+    @api.depends('no_faktur_pajak', 'total_tax')
+    def _compute_is_waba(self):
         for record in self:
             if record.no_faktur_pajak:
                 if record.no_faktur_pajak.startswith(('010', '040', '050')):
@@ -402,10 +402,13 @@ class WikaInheritedAccountMove(models.Model):
             total_line = total
             x.total_line=round(total_line)
 
-    @api.depends('total_line', 'total_pph','dp_total','retensi_total','total_scf_cut')
+    @api.depends('total_line', 'total_pph','dp_total','retensi_total','total_scf_cut', 'is_waba')
     def _compute_amount_total(self):
         for move in self:
-            move.amount_total_footer = round(move.total_line-move.dp_total-move.retensi_total -move.total_pph-move.total_scf_cut)
+            if move.is_waba:
+                move.amount_total_footer = round(move.total_line-move.dp_total-move.retensi_total-move.total_pph-move.total_scf_cut+move.total_tax)
+            else:
+                move.amount_total_footer = round(move.total_line-move.dp_total-move.retensi_total -move.total_pph-move.total_scf_cut)
 
     @api.depends('partner_id.bill_coa_type', 'valuation_class','retensi_total')
     def compute_account_payable(self):
