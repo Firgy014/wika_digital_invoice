@@ -113,13 +113,7 @@ class WikaInheritedAccountMove(models.Model):
                 for pph in record.pph_ids:
                     total_pph += (total_net* pph.amount) / 100
                 record.total_pph = math.floor(total_pph)
-
-            total_pph_cbasis = 0
-            for line in record.invoice_line_ids:
-                total_pph_cbasis += line.pph_cash_basis
-            record.total_pph += total_pph_cbasis 
                 
-
 
     @api.depends('history_approval_ids')
     def _compute_status_invoice(self):

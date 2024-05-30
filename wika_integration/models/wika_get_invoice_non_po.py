@@ -66,8 +66,8 @@ class wika_get_invoice_non_po(models.Model):
                     v_doc_type = inv_rec[5];
                     v_doc_date = inv_rec[6];
                     v_posting_date = inv_rec[7];
-                    v_pph_cbasis = inv_rec[8] * -1;
-                    v_amount = inv_rec[9] * -1;
+                    v_pph_cbasis = inv_rec[8]::numeric * -1;
+                    v_amount = inv_rec[9]::numeric * -1;
                     v_header_text = inv_rec[10];
                     v_reference = inv_rec[11];
                     v_vendor = trim(inv_rec[12]);
@@ -84,13 +84,13 @@ class wika_get_invoice_non_po(models.Model):
                     SELECT id FROM account_payment_term WHERE name::text LIKE '%v_top%' INTO v_payment_term_id;
                     -- RAISE NOTICE 'v_payment_term_id %', v_payment_term_id;
                     v_payment_state = '';
-                    SELECT id, payment_state FROM account_move
+                    SELECT id, status_payment FROM account_move
                         WHERE payment_reference = v_doc_number AND year = v_year 
                         AND project_id = v_project_id AND partner_id = v_vendor_id
                         INTO v_invoice_exist, v_payment_state;
                     
                     -- RAISE NOTICE 'v_invoice_exist %', v_invoice_exist;
-                    RAISE NOTICE 'payment_state %', v_payment_state;
+                    RAISE NOTICE 'status_payment %', v_payment_state;
                     IF v_invoice_exist IS NULL THEN
                         -- insert invoice
                         INSERT INTO account_move (
@@ -101,7 +101,7 @@ class wika_get_invoice_non_po(models.Model):
                             invoice_payment_term_id, no_faktur_pajak, no_invoice_vendor,
                             state, move_type, journal_id,
                             auto_post, extract_state, company_id, 
-                            payment_state,
+                            payment_state, status_payment,
                             create_date, create_uid
                         ) VALUES (
                             v_doc_number || v_year, v_project_id, v_branch_id,
@@ -111,7 +111,7 @@ class wika_get_invoice_non_po(models.Model):
                             v_payment_term_id, v_header_text, v_reference,
                             'approved', 'in_invoice', 2,
                             'no', 'no_extract_requested', v_company_id,
-                            'Not Request',
+                            'not_paid', 'Not Request',
                             (now() at time zone 'UTC'), v_uid
                         ) 
                         returning id INTO v_resource_id;
@@ -174,7 +174,7 @@ class wika_get_invoice_non_po(models.Model):
                                 price_unit = v_amount::numeric, 
                                 price_subtotal = v_amount::numeric,
                                 amount_sap = v_amount::numeric,
-                                pph_cash_basis = ABS(v_pph_cbasis::numeric), 
+                                pph_cash_basis = v_pph_cbasis::numeric, 
                                 date = v_posting_date,
                                 parent_state = 'draft',
                                 create_date = (now() at time zone 'UTC'), 
@@ -191,7 +191,7 @@ class wika_get_invoice_non_po(models.Model):
                             amount_untaxed_signed = (SELECT SUM(price_subtotal) FROM account_move_line WHERE move_id =v_resource_id),
                             amount_total_signed = (SELECT SUM(price_subtotal)-SUM(pph_cash_basis) FROM account_move_line WHERE move_id =v_resource_id),
                             amount_total_in_currency_signed = (SELECT SUM(price_subtotal)-SUM(pph_cash_basis) FROM account_move_line WHERE move_id =v_resource_id),
-                            pph_amount = SUM(pph_cash_basis) FROM account_move_line WHERE move_id =v_resource_id)
+                            pph_amount = (SELECT SUM(pph_cash_basis) FROM account_move_line WHERE move_id =v_resource_id)
                     WHERE id = v_resource_id;
                         
 
