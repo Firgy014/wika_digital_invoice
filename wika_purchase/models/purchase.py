@@ -263,8 +263,12 @@ class PurchaseOrderInherit(models.Model):
                                 active=False
                             else:
                                 active = True
+
+                            _logger.info("# === SEARCH PRODUCT BARANG === #" + item['MATERIAL'])    
                             prod = self.env['product.product'].search([
                                         ('default_code', '=', item['MATERIAL'])], limit=1)
+                            _logger.info(prod)
+
                             qty = round(item['QUANTITY'], 3)
                             uom = self.env['uom.uom'].search([
                                         ('name', '=', item['ENTRY_UOM'])], limit=1)
@@ -275,7 +279,6 @@ class PurchaseOrderInherit(models.Model):
                                     ('order_id', '=' ,rec.id),('sequence','=', item['PO_ITEM'])] ,limit=1)
                             
                             docdate = item['DOC_DATE']
-
 
                             picking = self.env['stock.picking'].search([
                                 ('name', '=', mat_doc),
