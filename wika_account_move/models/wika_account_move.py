@@ -87,6 +87,15 @@ class WikaInheritedAccountMove(models.Model):
         ('name_invoice_uniq', 'unique (name, year)', 'The name of the invoice must be unique per year !')
     ]
 
+    def _must_check_constrains_date_sequence(self):
+        # OVERRIDES sequence.mixin
+        return False
+
+    @api.onchange('journal_id')
+    def _onchange_journal_id(self):
+        # bypass _onchange_journal_id
+        return
+
     @api.depends('history_approval_ids.is_show_wizard', 'history_approval_ids.user_id')
     def _compute_is_approval_checked(self):
         current_user = self.env.user
@@ -319,15 +328,21 @@ class WikaInheritedAccountMove(models.Model):
 
     def _compute_documents_count(self):
         for record in self:
-            domain = [
-                ('folder_id', 'in', ['PO', 'GR/SES', 'BAP', 'Invoicing']),
-                '|', ('bap_id', '=', record.bap_id.id), ('purchase_id', '=', record.po_id.id),
-            ]
+            if record.po_id:
+                domain = [
+                    ('folder_id', 'in', ['PO', 'GR/SES', 'BAP', 'Invoicing']),
+                    '|', ('bap_id', '=', record.bap_id.id), ('purchase_id', '=', record.po_id.id),
+                ]
 
-            po_number = record.po_id.name if record.po_id else None
+                po_number = record.po_id.name if record.po_id else None
 
-            if po_number:
-                domain.append(('purchase_id.name', '=', po_number))
+                if po_number:
+                    domain.append(('purchase_id.name', '=', po_number))
+            else:
+                domain = [
+                    ('folder_id', 'in', ['Invoicing']),
+                    ('invoice_id', '=', record.id),
+                ]
 
             record.documents_count = self.env['documents.document'].search_count(domain)
 

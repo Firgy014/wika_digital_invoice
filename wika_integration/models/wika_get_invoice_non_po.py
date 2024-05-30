@@ -66,8 +66,8 @@ class wika_get_invoice_non_po(models.Model):
                     v_doc_type = inv_rec[5];
                     v_doc_date = inv_rec[6];
                     v_posting_date = inv_rec[7];
-                    v_pph_cbasis = inv_rec[8]::numeric * -1;
-                    v_amount = inv_rec[9]::numeric * -1;
+                    v_pph_cbasis = inv_rec[8] * -1;
+                    v_amount = inv_rec[9] * -1;
                     v_header_text = inv_rec[10];
                     v_reference = inv_rec[11];
                     v_vendor = trim(inv_rec[12]);
@@ -190,7 +190,8 @@ class wika_get_invoice_non_po(models.Model):
                             amount_invoice = (SELECT SUM(price_subtotal) FROM account_move_line WHERE move_id =v_resource_id),
                             amount_untaxed_signed = (SELECT SUM(price_subtotal) FROM account_move_line WHERE move_id =v_resource_id),
                             amount_total_signed = (SELECT SUM(price_subtotal)-SUM(pph_cash_basis) FROM account_move_line WHERE move_id =v_resource_id),
-                            amount_total_in_currency_signed = (SELECT SUM(price_subtotal)-SUM(pph_cash_basis) FROM account_move_line WHERE move_id =v_resource_id)
+                            amount_total_in_currency_signed = (SELECT SUM(price_subtotal)-SUM(pph_cash_basis) FROM account_move_line WHERE move_id =v_resource_id),
+                            pph_amount = SUM(pph_cash_basis) FROM account_move_line WHERE move_id =v_resource_id)
                     WHERE id = v_resource_id;
                         
 
