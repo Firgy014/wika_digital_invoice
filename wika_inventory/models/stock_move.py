@@ -237,7 +237,8 @@ class StockMoveInherit(models.Model):
 
     def _get_relevant_state_among_moves(self):
         _logger.info("# === _get_relevant_state_among_moves === #" + str(self.state))
-        res = super(StockMoveInherit, self)._get_relevant_state_among_moves()
+        for rec in self:
+            res = super(StockMoveInherit, rec)._get_relevant_state_among_moves()
 
         return res
 
