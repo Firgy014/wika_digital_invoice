@@ -236,8 +236,8 @@ class StockMoveInherit(models.Model):
         # StockMove.browse(moves_to_redirect).move_line_ids._apply_putaway_strategy()
 
     def _get_relevant_state_among_moves(self):
-        _logger.info("# === _get_relevant_state_among_moves === #" + str(self.state))
         for rec in self:
+            _logger.info("# === _get_relevant_state_among_moves === #" + str(rec.state))
             res = super(StockMoveInherit, rec)._get_relevant_state_among_moves()
 
         return res
