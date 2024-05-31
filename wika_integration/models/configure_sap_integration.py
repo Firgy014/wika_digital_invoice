@@ -224,7 +224,7 @@ class sap_integration_configure(models.Model):
                         _logger.error("Invalid invoice data format: %s", invoice_data)
                         continue
                     
-                    no_inv = invoice_data[3]
+                    no_inv = invoice_data[0]
                     invoice_id = invoice_model.search([('name', '=', no_inv)], limit=1)
 
                     if invoice_id:
@@ -238,6 +238,8 @@ class sap_integration_configure(models.Model):
                         if invoice_data[6]:  # If AP_DOC exist
                             update_vals['payment_reference'] = invoice_data[6]
                             update_vals['no_doc_sap'] = invoice_data[3]
+                            update_vals['dp_doc'] = invoice_data[4]
+                            update_vals['retensi_doc'] = invoice_data[5]
                         else:  # If AP_DOC not exits
                             update_vals['payment_reference'] = invoice_data[3]
                             update_vals['no_doc_sap'] = ''
