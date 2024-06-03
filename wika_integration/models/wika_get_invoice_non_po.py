@@ -263,6 +263,7 @@ class wika_get_invoice_non_po(models.Model):
                         top = data["TOP"]
                         item_text = data["ITEM_TEXT"]
                         profit_center = data["PROFIT_CENTER"]
+                        name = str(doc_number)+str(year)
 
                         # tanggal = datetime.strptime(data['posting_date'], "%Y-%m-%d")
                         # posting_year = tanggal.year
@@ -274,30 +275,127 @@ class wika_get_invoice_non_po(models.Model):
                         _logger.info(partner)
                         if project and partner:
                             if project.branch_id != "":
-                                recs = [
-                                    str(doc_number),
-                                    str(line_item), 
-                                    str(year),
-                                    str(currency),
-                                    str(doc_type),
-                                    str(doc_date),
-                                    str(posting_date),
-                                    str(pph_cbasis),
-                                    str(amount),
-                                    str(header_text),
-                                    str(reference),
-                                    str(vendor),
-                                    str(top),
-                                    str(item_text),
-                                    str(profit_center),
-                                    str(company_id),
-                                    str(project.id),
-                                    str(project.branch_id.id),
-                                    str(partner.id)
-                                ]
+                                res_currency = self.env['res.currency'].search([('name', '=', currency)], limit=1)
+                                if res_currency:
+                                    currency_id = res_currency.id
 
-                                recs = "~~".join(recs)
-                                data_final.append(recs)
+                                account_payment_term = self.env['account.payment.term'].search([('name::text', '=', top)], limit=1)
+                                if account_payment_term:
+                                    payment_term_id = account_payment_term.id
+
+                                status_payment = ''
+                                account_move = self.env['account.move'].search([('payment_reference', '=', doc_number),
+                                                ('year', '=', year),
+                                                ('project_id', '=', project.id),
+                                                ('partner_id', '=', partner.id)], limit=1)
+                                if not account_move:
+                                    _logger.info('# === CREATE ACCOUNT MOVE === #')
+                                    account_move_created = self.env['account.move'].create({
+                                        ('name', '=', name),
+                                        ('project_id', '=', project.id),
+                                        ('branch_id', '=', project.branch_id.id),
+                                        ('payment_reference', '=', doc_number),
+                                        ('year', '=', year),
+                                        ('currency_id', '=', currency_id),
+                                        ('date', '=', posting_date),
+                                        ('invoice_date', '=', posting_date),
+                                        ('invoice_date_due', '=', posting_date),
+                                        ('partner_id', '=', partner.id),
+                                        ('invoice_payment_term_id', '=', payment_term_id),
+                                        ('no_faktur_pajak', '=', header_text),
+                                        ('no_invoice_vendor', '=', reference),
+                                        ('state', '=', 'approved'),
+                                        ('move_type', '=', 'in_invoice'),
+                                        ('auto_post', '=', 'no'),
+                                        ('extract_state', '=', 'no_extract_requested'),
+                                        ('company_id', '=', company_id),
+                                        ('payment_state', '=', 'not_paid'),
+                                        ('status_payment', '=', 'Not Request'),
+                                    })
+                                    account_move_id = account_move_created.id
+                                    status_payment = account_move_created.status_payment
+                                else:
+                                    _logger.info('# === UPDATE ACCOUNT MOVE === #')
+                                    account_move_id = account_move.id
+                                    status_payment = account_move.status_payment
+                                    if status_payment == 'Not Request':
+                                        account_move.write({
+                                            'name' : name,
+                                            'project_id' : project.id,
+                                            'branch_id' : project.branch.id,
+                                            'payment_reference' : doc_number,
+                                            'currency_id' : currency_id,
+                                            'invoice_date' : posting_date,
+                                            'invoice_date_due' : posting_date,
+                                            'partner_id' : partner.id,
+                                            'invoice_payment_term_id' : payment_term_id,
+                                            'no_faktur_pajak' : header_text,
+                                            'no_invoice_vendor' : reference,
+                                        })
+
+                                _logger.info('# === Upsert invoice detail === #')
+                                account_move_line = self.env['account.move.line'].search([('move_id', '=', account_move_id),
+                                                ('sequence', '=', line_item),
+                                                ('project_id', '=', project.id),
+                                                ('partner_id', '=', partner.id)], limit=1)
+                                if account_move_line:
+                                    _logger.info('# === Update invoice detail === #')
+                                    if status_payment == 'Not Request':
+                                        account_move_line.write({
+                                            'move_name': name, 
+                                            'sequence': line_item,        
+                                            'name': item_text, 
+                                            'quantity': 1, 
+                                            'price_unit': amount, 
+                                            'price_subtotal': amount,
+                                            'amount_sap': amount,
+                                            'pph_cash_basis': pph_cbasis, 
+                                            'date': posting_date,
+                                        })
+                                else:
+                                    _logger.info('# === Insert invoice detail === #')
+                                    account_move_line_created = self.env['account.move.line'].create({
+                                        'move_id': account_move_id, 
+                                        'move_name': name, 
+                                        'sequence': line_item,
+                                        'name': item_text, 
+                                        'quantity': 1, 
+                                        'price_unit': amount, 
+                                        'price_subtotal': amount, 
+                                        'amount_sap': amount, 
+                                        'pph_cash_basis': pph_cbasis, 
+                                        'date': posting_date,
+                                        'parent_state': 'approved', 
+                                        'currency_id': currency_id, 
+                                        'company_currency_id': currency_id,
+                                        'display_type': 'product', 
+                                        'company_id': company_id, 
+                                    })
+
+                                # recs = [
+                                #     str(doc_number),
+                                #     str(line_item), 
+                                #     str(year),
+                                #     str(currency),
+                                #     str(doc_type),
+                                #     str(doc_date),
+                                #     str(posting_date),
+                                #     str(pph_cbasis),
+                                #     str(amount),
+                                #     str(header_text),
+                                #     str(reference),
+                                #     str(vendor),
+                                #     str(top),
+                                #     str(item_text),
+                                #     str(profit_center),
+                                #     str(company_id),
+                                #     str(project.id),
+                                #     str(project.branch_id.id),
+                                #     str(partner.id)
+                                # ]
+
+                                # recs = "~~".join(recs)
+                                # data_final.append(recs)
                                 # if profit_center:
                                 #     sap_codes.append(str(profit_center))
 
@@ -307,10 +405,10 @@ class wika_get_invoice_non_po(models.Model):
                     data_final = "|".join(data_final)
                     # _logger.info("-----Project %s = %s" % (i, sap_codes))
                     # _logger.info("-----Vendor %s = %s" % (i, vendors))
-                    _logger.info("# === DATA FINAL %s = %s" % (i, data_final))
+                    # _logger.info("# === DATA FINAL %s = %s" % (i, data_final))
 
                     cr = self.env.cr
-                    cr.execute("select wika_cu_inv_non_po(%s)", (data_final,))
+                    # cr.execute("select wika_cu_inv_non_po(%s)", (data_final,))
                     _logger.info(_("# === Import Data Berhasil === #"))
                 else:
                     raise UserError(_("Data Tidak Tersedia!"))
