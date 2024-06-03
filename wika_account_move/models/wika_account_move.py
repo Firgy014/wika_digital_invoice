@@ -505,12 +505,13 @@ class WikaInheritedAccountMove(models.Model):
         return record
 
     def write(self, values):
-        record = super(WikaInheritedAccountMove, self).write(values)
+        for rec in self:
+            record = super(WikaInheritedAccountMove, rec).write(values)
 
-        if isinstance(record, bool):
-            return record
-        if len(record) != 1:
-            raise ValidationError("Hanya satu record yang diharapkan diperbarui!")
+            if isinstance(record, bool):
+                return record
+            if len(record) != 1:
+                raise ValidationError("Hanya satu record yang diharapkan diperbarui!")
 
 
         
