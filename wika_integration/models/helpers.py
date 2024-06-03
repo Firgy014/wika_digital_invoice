@@ -127,3 +127,36 @@ def _get_computed_partial_payment_query():
         AND (pp.total_invoice - pp.partial_amount) > 0
         AND pp.no_doc_sap IS NULL 
       """
+
+def _get_computed_query_dp():
+    return """
+SELECT
+    inv.name AS NO,
+    inv.invoice_date AS DOC_DATE,
+    inv.date AS POSTING_DATE,
+    TO_CHAR(inv.date, 'MM') AS PERIOD,
+    inv.no_invoice_vendor AS REFERENCE,
+    inv.no_faktur_pajak AS HEADER_TXT,
+    inv.payment_reference AS ACC_VENDOR,
+    inv.special_gl_id AS SPECIAL_GL,
+    inv.payment_reference AS AMOUNT,
+    inv.payment_reference AS TAX_CODE,
+    inv.invoice_date_due AS DUE_ON,
+    inv.payment_reference AS PO_NUMBER,
+    inv.payment_reference AS PO_ITEM,
+    inv.payment_reference AS PROFIT_CTR,
+    inv.payment_reference AS TEXT,
+    TO_CHAR(pricecutline.posting_date, 'YYYY') AS DOC_YEAR,
+    TO_CHAR(pricecutline.posting_date, 'DDMMYYYY') AS POSTING_DATE,
+    TO_CHAR(pricecutline.posting_date, 'MM') AS PERIOD,
+    pricecutline.amount AS AMOUNT_SCF,
+    pricecutline.wbs_project_definition AS WBS,
+    'Potongan SCF' AS ITEM_TEXT
+FROM
+    account_move inv
+LEFT JOIN
+    wika_account_move_pricecut_line pricecutline ON pricecutline.move_id = inv.id
+WHERE
+    pricecutline.wbs_project_definition IS NOT NULL
+    AND pricecutline.wbs_project_definition != '';
+"""
