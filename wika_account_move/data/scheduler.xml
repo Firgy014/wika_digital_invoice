@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <record id="refresh_invoice_data" model="ir.cron">
+            <field name="name">Refresh Invoice Waba Data</field>
+            <field name="active" eval="True"/>
+            <field name="model_id" ref="account.model_account_move" />
+            <field name="state">code</field>
+            <field name="code">model._cron_refresh_record_values()</field>
+            <field name="interval_number">1</field>
+            <field name="interval_type">days</field>
+            <field name="numbercall">1</field>
+        </record>
+    </data>
+</odoo>
