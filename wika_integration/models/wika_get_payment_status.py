@@ -96,10 +96,10 @@ class wika_get_payment_status(models.Model):
                         })
 
                         if account_payment_created:
-                            _logger.info("# === ACCOUNT MOVE CREATED === #")
-                            payment_id = account_payment_created.id
-                            _logger.info("# === PAYMENT ID === #" + str(payment_id))
-                            account_move.write({'payment_id': payment_id})
+                            # _logger.info("# === ACCOUNT MOVE CREATED === #")
+                            # payment_id = account_payment_created.id
+                            # _logger.info("# === PAYMENT ID === #" + str(payment_id))
+                            account_move.write({'payment_id': account_payment_created.id})
                             account_move._compute_amount_due()
                             account_move.action_post()
                 else:
