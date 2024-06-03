@@ -513,20 +513,18 @@ class WikaInheritedAccountMove(models.Model):
             if len(record) != 1:
                 raise ValidationError("Hanya satu record yang diharapkan diperbarui!")
 
+            # document date
+            if record.invoice_date != False and record.invoice_date < record.bap_id.bap_date and record.cut_off!=True:
+                raise ValidationError("Document Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
+            else:
+                pass
 
-        
-        # document date
-        if record.invoice_date != False and record.invoice_date < record.bap_id.bap_date and record.cut_off!=True:
-            raise ValidationError("Document Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
-        else:
-            pass
-
-        # # posting date
-        if record.date != False and record.date < record.bap_id.bap_date and record.cut_off!=True:
-            raise ValidationError("Posting Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
-        else:
-            pass
-        return record
+            # # posting date
+            if record.date != False and record.date < record.bap_id.bap_date and record.cut_off!=True:
+                raise ValidationError("Posting Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
+            else:
+                pass
+            return record
 
 
     @api.constrains('amount_invoice', 'cut_off')
