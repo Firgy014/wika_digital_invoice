@@ -77,6 +77,9 @@ class wika_get_payment_status(models.Model):
                 else:
                     account_move = account_move1
 
+                if len(account_move) != 1:
+                    raise ValidationError("Hanya satu record yang diharapkan diperbarui!")
+                
                 if account_move:
                     account_payment = self.env['account.payment'].search([('ref', '=', doc_number),
                                                                             ('date', '=', clear_date)])
@@ -96,7 +99,7 @@ class wika_get_payment_status(models.Model):
                         })
 
                         if account_payment_created:
-                            _logger.info("# === ACCOUNT MOVE CREATED === #")
+                            _logger.info("# === UPDATE ACCOUNT MOVE === #")
                             payment_id = account_payment_created.id
                             _logger.info("# === PAYMENT ID === #" + str(payment_id))
                             account_move.write({'payment_id': payment_id})
