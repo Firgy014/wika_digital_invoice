@@ -77,6 +77,8 @@ class wika_get_payment_status(models.Model):
                 else:
                     account_move = account_move1
 
+                if isinstance(account_move, bool):
+                    return account_move
                 if len(account_move) != 1:
                     raise ValidationError("Hanya satu record yang diharapkan diperbarui!")
                 
