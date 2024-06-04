@@ -515,27 +515,26 @@ class WikaInheritedAccountMove(models.Model):
         return record
 
     def write(self, values):
-        record = super(WikaInheritedAccountMove, self).write(values)
+        for rec in self:
+            record = super(WikaInheritedAccountMove, rec).write(values)
 
-        if isinstance(record, bool):
+            if isinstance(record, bool):
+                return record
+            if len(record) != 1:
+                raise ValidationError("Hanya satu record yang diharapkan diperbarui!")
+
+            # document date
+            if record.invoice_date != False and record.invoice_date < record.bap_id.bap_date and record.cut_off!=True:
+                raise ValidationError("Document Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
+            else:
+                pass
+
+            # # posting date
+            if record.date != False and record.date < record.bap_id.bap_date and record.cut_off!=True:
+                raise ValidationError("Posting Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
+            else:
+                pass
             return record
-        if len(record) != 1:
-            raise ValidationError("Hanya satu record yang diharapkan diperbarui!")
-
-
-        
-        # document date
-        if record.invoice_date != False and record.invoice_date < record.bap_id.bap_date and record.cut_off!=True:
-            raise ValidationError("Document Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
-        else:
-            pass
-
-        # # posting date
-        if record.date != False and record.date < record.bap_id.bap_date and record.cut_off!=True:
-            raise ValidationError("Posting Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
-        else:
-            pass
-        return record
 
     # Refresh all records to ensure is_waba and amount total is successfully computed
     def _cron_refresh_record_values(self):

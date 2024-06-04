@@ -61,9 +61,27 @@ class wika_get_payment_status(models.Model):
                 status = data["STATUS"]
                 new_name = doc_number+str(year)
 
+                date_format = '%Y-%m-%d'
+                date_from = datetime.strptime(year + '-01-01', date_format)
+                date_to = datetime.strptime(year + '-12-31', date_format)
+
                 _logger.info("# === CEK ACCOUNT MOVE === #" + year + doc_number )
-                account_move = self.env['account.move'].search([('payment_reference', '=', doc_number),
+                account_move = False
+                account_move1 = self.env['account.move'].search([('payment_reference', '=', doc_number),
                                                     ('year', '=', year)], limit=1)
+                if not account_move1:
+                    account_move2 = self.env['account.move'].search([('payment_reference', '=', doc_number),
+                                    ('date', '>=', date_from), ('date', '<=', date_to)], limit=1)
+                    if account_move2:
+                        account_move = account_move2
+                else:
+                    account_move = account_move1
+
+                if isinstance(account_move, bool):
+                    return account_move
+                if len(account_move) != 1:
+                    raise ValidationError("Hanya satu record yang diharapkan diperbarui!")
+                
                 if account_move:
                     account_payment = self.env['account.payment'].search([('ref', '=', doc_number),
                                                                             ('date', '=', clear_date)])
@@ -83,7 +101,9 @@ class wika_get_payment_status(models.Model):
                         })
 
                         if account_payment_created:
+                            _logger.info("# === UPDATE ACCOUNT MOVE === #")
                             payment_id = account_payment_created.id
+                            _logger.info("# === PAYMENT ID === #" + str(payment_id))
                             account_move.write({'payment_id': payment_id})
                             account_move._compute_amount_due()
                             account_move.action_post()
