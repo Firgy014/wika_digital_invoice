@@ -134,29 +134,34 @@ SELECT
     inv.name AS NO,
     inv.invoice_date AS DOC_DATE,
     inv.date AS POSTING_DATE,
-    TO_CHAR(inv.date, 'MM') AS PERIOD,
+    TO_CHAR(inv.date, 'FMmm') AS PERIOD,
     inv.no_invoice_vendor AS REFERENCE,
     inv.no_faktur_pajak AS HEADER_TXT,
     inv.payment_reference AS ACC_VENDOR,
-    inv.special_gl_id AS SPECIAL_GL,
-    inv.payment_reference AS AMOUNT,
-    inv.payment_reference AS TAX_CODE,
+    TO_CHAR(inv.special_gl_id, '') AS SPECIAL_GL,
+    inv.amount_invoice AS AMOUNT,
+    tax.pph_code AS TAX_CODE,
     inv.invoice_date_due AS DUE_ON,
-    inv.payment_reference AS PO_NUMBER,
-    inv.payment_reference AS PO_ITEM,
-    inv.payment_reference AS PROFIT_CTR,
-    inv.payment_reference AS TEXT,
-    TO_CHAR(pricecutline.posting_date, 'YYYY') AS DOC_YEAR,
-    TO_CHAR(pricecutline.posting_date, 'DDMMYYYY') AS POSTING_DATE,
-    TO_CHAR(pricecutline.posting_date, 'MM') AS PERIOD,
-    pricecutline.amount AS AMOUNT_SCF,
-    pricecutline.wbs_project_definition AS WBS,
-    'Potongan SCF' AS ITEM_TEXT
+    po.name AS PO_NUMBER,
+    pol.sequence AS PO_ITEM,
+    proj.sap_code AS PROFIT_CTR,
+    line.name AS TEXT
 FROM
     account_move inv
 LEFT JOIN
-    wika_account_move_pricecut_line pricecutline ON pricecutline.move_id = inv.id
+    account_move_line line ON line.move_id = inv.id
+LEFT JOIN
+    account_move_account_tax_rel pph ON pph.account_move_id = inv.id
+LEFT JOIN
+    account_tax tax ON tax.id = pph.account_tax_id
+LEFT JOIN
+    purchase_order po ON po.id = inv.po_id
+LEFT JOIN
+    project_project proj ON proj.id = inv.project_id
+LEFT JOIN
+    purchase_order_line pol ON pol.id = line.purchase_line_id
 WHERE
-    pricecutline.wbs_project_definition IS NOT NULL
-    AND pricecutline.wbs_project_definition != '';
+    inv.is_mp_approved = true AND
+    inv.bap_type = 'uang muka' AND
+    inv.payment_reference IS NULL;
 """

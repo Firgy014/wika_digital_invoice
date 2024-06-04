@@ -96,7 +96,7 @@ class sap_integration_configure(models.Model):
             raise Warning(messageTitle + '\n\n' + messageContent)
 
     def _generate_data(self):
-        _logger.warning("<<================== GENERATE AND BACKUP TXT DATA OF WDIGI TO DIRECTORY ==================>>")
+        _logger.warning("<<================== GENERATE AND BACKUP TXT DATA OF WDIGI TO REMOTE DIRECTORY ==================>>")
         conf_ids = self.search([])
         for conf_id in conf_ids:
             try:
@@ -140,7 +140,7 @@ class sap_integration_configure(models.Model):
                 _logger.error(f"Error occurred while generating and sending data: {str(e)}")
 
     def _generate_data_scf_cut(self):
-        _logger.warning("<<================== GENERATE SCF TXT DATA OF WDIGI TO DIRECTORY ==================>>")
+        _logger.warning("<<================== GENERATE SCF TXT DATA OF WDIGI TO REMOTE DIRECTORY ==================>>")
         conf_ids = self.search([])
         for conf_id in conf_ids:
             try:
@@ -164,6 +164,42 @@ class sap_integration_configure(models.Model):
 
                 out2 = buffer.getvalue().encode('utf-8')
                 filename = ('YFII019_' + today + '.txt')
+
+                file_path = os.path.join(conf_id.sftp_path, filename)
+                with open(file_path, 'wb') as fp:
+                    fp.write(out2)
+
+                if conf_id.sftp_host:
+                    self._send_file_to_sftp(conf_id, file_path, filename)
+
+            except Exception as e:
+                _logger.error(f"Error occurred while generating and sending data: {str(e)}")
+
+    def _generate_data_dp(self):
+        _logger.warning("<<================== GENERATE INVOICE DP TXT DATA OF WDIGI TO REMOTE DIRECTORY ==================>>")
+        conf_ids = self.search([])
+        for conf_id in conf_ids:
+            try:
+                N = 32
+                today = datetime.now().strftime("%Y%m%d%H%M%S")
+                res = ''.join(random.sample(string.ascii_uppercase + string.digits, k=N))
+                dev_keys = ['YFII020', res, 'A000', 'AF00219I03', today]
+                keys = ['NO','DOC_DATE','POSTING_DATE','PERIOD','REFERENCE','HEADER_TXT','ACC_VENDOR','SPECIAL_GL','AMOUNT','TAX_CODE','DUE_ON','PO_NUMBER','PO_ITEM','PROFIT_CTR','TEXT']
+                query = helpers._get_computed_query_dp()
+
+                self._cr.execute(query)
+                vals = self.env.cr.fetchall()
+
+                buffer = StringIO()
+                writer = csv.writer(buffer, delimiter='|')
+                writer.writerow(dev_keys)
+                writer.writerow(keys)
+
+                for res in vals:
+                    writer.writerow(res)
+
+                out2 = buffer.getvalue().encode('utf-8')
+                filename = ('YFII020_' + today + '.txt')
 
                 file_path = os.path.join(conf_id.sftp_path, filename)
                 with open(file_path, 'wb') as fp:

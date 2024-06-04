@@ -224,6 +224,12 @@ class WikaInheritedAccountMove(models.Model):
     journal_item_sap_ids = fields.One2many('wika.account.move.journal.sap', 'invoice_id', string='Journal SAP')
     total_ap_sap = fields.Float(string='Total AP SAP', compute='_compute_total_ap_sap')
     is_waba = fields.Boolean(string='Invoice Waba', compute='_compute_is_waba')
+    bap_type = fields.Char(string='Jenis BAP', compute='_compute_bap_type', store=True)
+
+    @api.depends('bap_id.bap_type')
+    def _compute_bap_type(self):
+        for record in self:
+            record.bap_type = record.bap_id.bap_type
 
     @api.depends('no_faktur_pajak', 'total_tax')
     def _compute_is_waba(self):
