@@ -60,7 +60,6 @@ class WikaInheritedAccountMove(models.Model):
     date = fields.Date(string='Posting Date', default=lambda self: fields.Date.today())
     status_invoice = fields.Char(string='Status Invoice',compute='_compute_status_invoice')
     status_invoice_rel = fields.Char(string='Status Invoice',related='status_invoice',store=True)
-
     approval_stage = fields.Selection([
         ('Proyek', 'Proyek'),
         ('Divisi Operasi', 'Divisi Operasi'),
@@ -78,6 +77,14 @@ class WikaInheritedAccountMove(models.Model):
         ('transfer tunai', 'Transfer Tunai (TT)'),
         ('fasilitas', 'Fasilitas'),
     ], string='Payment Method')
+    status_payment = fields.Selection([
+        ('Not Request', 'Not Request'),
+        ('Request Proyek', 'Request Proyek'),
+        ('Request Divisi', 'Request Divisi'),
+        ('Request Pusat', 'Request Pusat'),
+        ('Ready To Pay', 'Ready To Pay'),
+        ('Paid', 'Paid')
+    ], string='Payment State',default='Not Request')   
     payment_request_date= fields.Date(string='Payment Request Date')
     nomor_payment_request= fields.Char(string='Nomor Payment Request')
     is_approval_checked = fields.Boolean(string="Approval Checked", compute='_compute_is_approval_checked' ,default=False)
@@ -217,6 +224,12 @@ class WikaInheritedAccountMove(models.Model):
     journal_item_sap_ids = fields.One2many('wika.account.move.journal.sap', 'invoice_id', string='Journal SAP')
     total_ap_sap = fields.Float(string='Total AP SAP', compute='_compute_total_ap_sap')
     is_waba = fields.Boolean(string='Invoice Waba', compute='_compute_is_waba')
+    bap_type = fields.Char(string='Jenis BAP', compute='_compute_bap_type', store=True)
+
+    @api.depends('bap_id.bap_type')
+    def _compute_bap_type(self):
+        for record in self:
+            record.bap_type = record.bap_id.bap_type
 
     @api.depends('no_faktur_pajak', 'total_tax')
     def _compute_is_waba(self):
@@ -224,7 +237,6 @@ class WikaInheritedAccountMove(models.Model):
             if record.no_faktur_pajak:
                 if record.no_faktur_pajak.startswith(('010', '040', '050')):
                     record.is_waba = True
-                    record.amount_total_footer += record.total_tax
                 elif record.no_faktur_pajak.startswith('030'):
                     record.is_waba = False
                 else:
@@ -358,7 +370,6 @@ class WikaInheritedAccountMove(models.Model):
             ('folder_id', 'in', ['PO', 'GR/SES', 'BAP', 'Invoicing']),
             '|', ('bap_id', '=', self.bap_id.id), ('purchase_id', '=', self.po_id.id)
         ]
-
         po_number = self.po_id.name if self.po_id else None
 
         if po_number:
@@ -407,7 +418,7 @@ class WikaInheritedAccountMove(models.Model):
                 if z.adjustment==True:
                     total +=z.amount_adjustment
                 else:
-                    total += z.price_unit *z.quantity
+                    total += z.price_unit * z.quantity
             total_line = total
             x.total_line=round(total_line)
 
@@ -415,7 +426,8 @@ class WikaInheritedAccountMove(models.Model):
     def _compute_amount_total(self):
         for move in self:
             if move.is_waba:
-                move.amount_total_footer = round(move.total_line-move.dp_total-move.retensi_total-move.total_pph-move.total_scf_cut+move.total_tax)
+                move.amount_total_footer = round(move.total_line - move.dp_total - move.retensi_total - move.total_pph - move.total_scf_cut)
+                move.amount_total_footer += move.total_tax
             else:
                 move.amount_total_footer = round(move.total_line-move.dp_total-move.retensi_total -move.total_pph-move.total_scf_cut)
 
@@ -484,8 +496,6 @@ class WikaInheritedAccountMove(models.Model):
 
         if record.name == 'Draft':
             record._compute_name_wdigi()
-            
-
 
         # if isinstance(record, bool):
         #     return record
@@ -526,6 +536,14 @@ class WikaInheritedAccountMove(models.Model):
                 pass
             return record
 
+    # Refresh all records to ensure is_waba and amount total is successfully computed
+    def _cron_refresh_record_values(self):
+        invoices = self.env['account.move'].search([])
+        if invoices:
+            for invoice in invoices:
+                if invoice.is_waba:
+                    invoice.refresh()
+                    _logger.info('Successfully refreshing all values for Invoice: %s', invoice.name)
 
     @api.constrains('amount_invoice', 'cut_off')
     def check_amount_equal(self):
@@ -534,8 +552,6 @@ class WikaInheritedAccountMove(models.Model):
             precision_rounding = 0.01
         if not float_compare(record.amount_invoice, round(record.total_line),precision_digits=precision_digits) == 0 and record.cut_off !=True:
             raise UserError("Amount Invoice Harus sama dengan Total !")
-
-
 
     @api.onchange('bap_id')
     def _onchange_bap_id(self):
