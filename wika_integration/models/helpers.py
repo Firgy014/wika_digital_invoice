@@ -127,3 +127,41 @@ def _get_computed_partial_payment_query():
         AND (pp.total_invoice - pp.partial_amount) > 0
         AND pp.no_doc_sap IS NULL 
       """
+
+def _get_computed_query_dp():
+    return """
+SELECT
+    inv.name AS NO,
+    inv.invoice_date AS DOC_DATE,
+    inv.date AS POSTING_DATE,
+    TO_CHAR(inv.date, 'FMmm') AS PERIOD,
+    inv.no_invoice_vendor AS REFERENCE,
+    inv.no_faktur_pajak AS HEADER_TXT,
+    inv.payment_reference AS ACC_VENDOR,
+    TO_CHAR(inv.special_gl_id, '') AS SPECIAL_GL,
+    inv.amount_invoice AS AMOUNT,
+    tax.pph_code AS TAX_CODE,
+    inv.invoice_date_due AS DUE_ON,
+    po.name AS PO_NUMBER,
+    pol.sequence AS PO_ITEM,
+    proj.sap_code AS PROFIT_CTR,
+    line.name AS TEXT
+FROM
+    account_move inv
+LEFT JOIN
+    account_move_line line ON line.move_id = inv.id
+LEFT JOIN
+    account_move_account_tax_rel pph ON pph.account_move_id = inv.id
+LEFT JOIN
+    account_tax tax ON tax.id = pph.account_tax_id
+LEFT JOIN
+    purchase_order po ON po.id = inv.po_id
+LEFT JOIN
+    project_project proj ON proj.id = inv.project_id
+LEFT JOIN
+    purchase_order_line pol ON pol.id = line.purchase_line_id
+WHERE
+    inv.is_mp_approved = true AND
+    inv.bap_type = 'uang muka' AND
+    inv.payment_reference IS NULL;
+"""
