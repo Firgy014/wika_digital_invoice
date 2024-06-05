@@ -1038,6 +1038,15 @@ class WikaInheritedAccountMove(models.Model):
             return self.env.ref('wika_account_move.report_wika_account_move_keuangan_action').report_action(self)
         else:
             return super(WikaInheritedAccountMove, self).action_print_invoice()
+        
+    def compute_pph_amount(self):
+        for rec in self:
+            total_pph_cbasis = 0
+            for line in rec.invoice_line_ids:
+                total_pph_cbasis += line.pph_cash_basis
+                
+            rec.pph_amount += total_pph_cbasis
+
 
 class WikaInvoiceDocumentLine(models.Model):
     _name = 'wika.invoice.document.line'

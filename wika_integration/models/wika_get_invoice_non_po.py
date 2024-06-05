@@ -247,7 +247,7 @@ class wika_get_invoice_non_po(models.Model):
                     sap_codes = []
                     vendors = []
                     for data in txt_data:
-                        # _logger.info(data)
+                        _logger.info(data)
                         doc_number = data["DOC_NUMBER"]
                         line_item = data["LINE_ITEM"]
                         year = data["YEAR"]
@@ -360,6 +360,7 @@ class wika_get_invoice_non_po(models.Model):
                                             'pph_cash_basis': pph_cbasis, 
                                             'date': posting_date,
                                         })
+                                        account_move_line.move_id.compute_pph_amount()
                                 else:
                                     _logger.info('# === Insert invoice detail === #')
                                     account_move_line_created = self.env['account.move.line'].create({
@@ -379,6 +380,7 @@ class wika_get_invoice_non_po(models.Model):
                                         'display_type': 'product', 
                                         'company_id': company_id, 
                                     })
+                                    account_move_line_created.move_id.compute_pph_amount()
 
                                 # recs = [
                                 #     str(doc_number),
