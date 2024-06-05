@@ -225,11 +225,13 @@ class WikaInheritedAccountMove(models.Model):
     total_ap_sap = fields.Float(string='Total AP SAP', compute='_compute_total_ap_sap')
     is_waba = fields.Boolean(string='Invoice Waba', compute='_compute_is_waba')
     bap_type = fields.Char(string='Jenis BAP', compute='_compute_bap_type', store=True)
+    activity_user_id = fields.Many2one('res.users', string='ToDo User', store=True)
 
     @api.depends('bap_id.bap_type')
     def _compute_bap_type(self):
         for record in self:
-            record.bap_type = record.bap_id.bap_type
+            if record.bap_id:
+                record.bap_type = record.bap_id.bap_type
 
     @api.depends('no_faktur_pajak', 'total_tax')
     def _compute_is_waba(self):
@@ -1037,6 +1039,15 @@ class WikaInheritedAccountMove(models.Model):
             return self.env.ref('wika_account_move.report_wika_account_move_keuangan_action').report_action(self)
         else:
             return super(WikaInheritedAccountMove, self).action_print_invoice()
+        
+    def compute_pph_amount(self):
+        for rec in self:
+            total_pph_cbasis = 0
+            for line in rec.invoice_line_ids:
+                total_pph_cbasis += line.pph_cash_basis
+                
+            rec.pph_amount += total_pph_cbasis
+
 
 class WikaInvoiceDocumentLine(models.Model):
     _name = 'wika.invoice.document.line'
