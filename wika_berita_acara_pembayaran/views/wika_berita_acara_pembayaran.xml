@@ -142,6 +142,7 @@
                                 <field name="address"  readonly="1" force_save="1"/>
                                 <field name="job"  readonly="1" force_save="1"/>
                                 <field name="fee_management"/>
+
                                 <field name="step_approve" invisible="1"/>
                                  <field name="is_fully_invoiced" groups="base.group_no_one"/>
                                 <field name="is_cut_over"  groups="base.group_no_one"/>
@@ -208,11 +209,19 @@
                                 <field name="terbilang" groups="base.group_no_one"/>
                                 <field name="total_pembayaran_um" groups="base.group_no_one"/>
                                 <field name="terbilang_um" groups="base.group_no_one"/>
-                                <field name="total_pembayaran_retensi" groups="base.group_no_one"/>
                                 <field name="terbilang_retensi" groups="base.group_no_one"/>
+<!--
                                 <field name="total_pembayaran_co" groups="base.group_no_one"/>
+-->
+<!--
                                 <field name="terbilang_co" groups="base.group_no_one"/>
-                                
+-->
+                                <!-- Constrains  Adjustment-->
+                                 <field name="value_to_date" groups="base.group_no_one"/>
+                                <field name="total_adjustment" groups="base.group_no_one"/>
+                                <field name="total_po" groups="base.group_no_one"/>
+                                <field name="remain_val_po" groups="base.group_no_one"/>
+                                <field name="currency_id"/>
                             </group>
                         </group>
                         <notebook>
@@ -220,7 +229,7 @@
                                 <group>
                                     <field name="bap_ids" mode="tree,kanban" nolabel="1" colspan="2" force_save="1"
                                         attrs="{'invisible': [('bap_type', 'not in', ['progress', 'cut over'])],'readonly': [('state', 'in', ['approved', 'uploaded'])]}">
-                                        <tree string="List BAP" editable="top" create="1">
+                                        <tree string="List BAP" editable="top" create="0">
                                            <field name="invoice_line_id" groups="base.group_no_one"/>
                                             <field name="picking_id" options="{'no_create': True, 'no_create_edit':True}" domain="[('po_id', '=', parent.po_id)]"/>
                                             <field name="stock_move_id" options="{'no_create': True, 'no_create_edit':True}" domain="[('picking_id', '=', picking_id)]" string="Item GR/SES"/>
@@ -228,12 +237,12 @@
                                             <field name="unit_price_po" invisible="1"/>
                                             <field name="sisa_qty_bap_grses" invisible="1"/>
                                             <field name="qty_invoiced" invisible="1"/>
-                                            <field name="product_id" readonly="0" force_save="1"/>
+                                            <field name="product_id" readonly="1" force_save="1"/>
                                             <field name="product_uom" readonly="1" force_save="1"/>
                                             <field name="qty"/>
                                             <field name="tax_ids" widget="many2many_tags" string=""/>
-                                            <field name="currency_id" readonly="1" force_save="1"/>
-                                            <field name="unit_price" readonly="0" force_save="1"/>
+                                            <field name="currency_id" readonly="0" force_save="1"/>
+                                            <field name="unit_price" readonly="1" force_save="1"/>
 
                                             <field name="sub_total" sum="Total"/>
                                             <field name="adjustment" />
@@ -254,15 +263,16 @@
 
                                     </group>
                                     <group class="oe_subtotal_footer oe_right">
-                                        <field name="retensi_total" groups="base.group_no_one"/>
+                                        <field name="retensi_total" attrs="{'invisible': [('bap_type', '!=', 'retensi')]}"/>
                                         <field name="dp_total" groups="base.group_no_one"/>
                                         <field name="dp_qty_total" groups="base.group_no_one"/>
                                         <field name="retensi_qty_total" groups="base.group_no_one"/>
-                                        <field name="total_amount"/>
+                                        <field name="total_amount" attrs="{'invisible': [('bap_type', 'not in', ('progress', 'cut over'))]}" />
                                         <field name="total_tax" string="Total PPN"/>
                                         <field name="amount_pph"  />
                                         <field name="total_pph"/>
-                                        <field name="total_pembayaran"/>
+                                        <field name="total_pembayaran" attrs="{'invisible': [('bap_type', 'not in', ('progress', 'cut over'))]}"/>
+                                        <field name="total_pembayaran_retensi" attrs="{'invisible': [('bap_type', '!=', 'retensi')]}"/>
 
                                         <field name="grand_total" invisible="1"/>
                                         <field name="total_current_value" groups="base.group_no_one"/>
@@ -294,7 +304,6 @@
                                     <field name="document_ids" mode="tree,kanban" nolabel="1" colspan="2">
                                         <tree string="List Document" delete="0" create="0">
                                             <field name="document_id"/>
-                                            <field name="picking_id" groups="base.group_no_one"/>
 <!--
                                             <button name="buttonClickEvent" string="Upload Disini" type="object" attrs="{'invisible': [('state', '=', 'uploaded')]}"  class="fa fa-hand-o-right"/>
 -->

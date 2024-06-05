@@ -81,6 +81,17 @@ class WikaInheritedAccountMove(models.Model):
         ('retensi', 'Retensi'),
         ('cut over', 'Cut Over'),
         ], string='Jenis BAP', related='bap_id.bap_type', store=True)
+
+    @api.constrains('posting_date')
+    def _check_posting_date(self):
+        for record in self:
+            today = fields.Date.today()
+            first_day_of_current_month = today.replace(day=1)
+            first_day_of_previous_month = (first_day_of_current_month - timedelta(days=1)).replace(day=1)
+
+            if record.posting_date < first_day_of_previous_month:
+                raise ValidationError("Tanggal posting tidak boleh lebih awal dari bulan sebelumnya.")
+
     @api.depends('history_approval_ids.is_show_wizard', 'history_approval_ids.user_id')
     def _compute_is_approval_checked(self):
         current_user = self.env.user
@@ -337,51 +348,58 @@ class WikaInheritedAccountMove(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
-        record = super(WikaInheritedAccountMove, self).create(vals_list)
-        record.assign_todo_first()
+        records = super(WikaInheritedAccountMove, self).create(vals_list)
+        for record in records:
+            record.assign_todo_first()
 
-        if isinstance(record, bool):
-            return record
-        if len(record) != 1:
-            raise ValidationError("Hanya satu record yang diharapkan diperbarui!")
+            if isinstance(record, bool):
+                return record
+            if len(record) != 1:
+                raise ValidationError("Hanya satu record yang diharapkan diperbarui!")
 
+            # Document date validation
+            if record.invoice_date and record.ivnoice_date < record.bap_id.bap_date and not record.cut_off:
+                raise ValidationError("Document Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
+
+            # Posting date validation
+            if record.date and record.date < record.bap_id.bap_date and not record.cut_off:
+                raise ValidationError("Posting Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
+
+            # New validation for posting date
+            today = fields.Date.today()
+            first_day_of_current_month = today.replace(day=1)
+            first_day_of_previous_month = (first_day_of_current_month - timedelta(days=1)).replace(day=1)
+
+            if record.date and record.date < first_day_of_previous_month:
+                raise ValidationError("Posting Date tidak boleh lebih awal dari bulan sebelumnya.")
         
-        #document date
-        if record.invoice_date != False and record.invoice_date < record.bap_id.bap_date and record.cut_off!=True:
-            raise ValidationError("Document Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
-        else:
-            pass
-
-        #posting date
-        if record.date != False and record.date < record.bap_id.bap_date and record.cut_off!=True:
-            raise ValidationError("Posting Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
-        else:
-            pass
-
-        return record
+        return records
 
     def write(self, values):
-        record = super(WikaInheritedAccountMove, self).write(values)
+        result = super(WikaInheritedAccountMove, self).write(values)
+        for record in self:
+            if isinstance(result, bool):
+                return result
+            if len(record) != 1:
+                raise ValidationError("Hanya satu record yang diharapkan diperbarui!")
 
-        if isinstance(record, bool):
-            return record
-        if len(record) != 1:
-            raise ValidationError("Hanya satu record yang diharapkan diperbarui!")
+            # Document date validation
+            if record.invoice_date and record.invoice_date < record.bap_id.bap_date and not record.cut_off:
+                raise ValidationError("Document Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
 
+            # Posting date validation
+            if record.date and record.date < record.bap_id.bap_date and not record.cut_off:
+                raise ValidationError("Posting Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
 
+            # New validation for posting date
+            today = fields.Date.today()
+            first_day_of_current_month = today.replace(day=1)
+            first_day_of_previous_month = (first_day_of_current_month - timedelta(days=1)).replace(day=1)
+
+            if record.date and record.date < first_day_of_previous_month:
+                raise ValidationError("Posting Date tidak boleh lebih awal dari bulan sebelumnya.")
         
-        # document date
-        if record.invoice_date != False and record.invoice_date < record.bap_id.bap_date and record.cut_off!=True:
-            raise ValidationError("Document Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
-        else:
-            pass
-
-        # # posting date
-        if record.date != False and record.date < record.bap_id.bap_date and record.cut_off!=True:
-            raise ValidationError("Posting Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
-        else:
-            pass
-        return record
+        return result
 
     def _replace_document_object(self, folder_name, document_ids, po_id):
         documents_model = self.env['documents.document'].sudo()
