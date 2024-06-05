@@ -215,7 +215,7 @@ class wika_get_invoice_non_po(models.Model):
         }
 
         _logger.info("# === CEK DOK AP NON PO === #") 
-        docs = self.env['doc.ap.non.po'].search([])
+        docs = self.env['doc.ap.non.po'].search([('state', '!=' , 'done')])
         _logger.info("# === get_create_update_invoice_non_po === #")
         _logger.info(docs)
 
@@ -419,7 +419,9 @@ class wika_get_invoice_non_po(models.Model):
 
                     cr = self.env.cr
                     # cr.execute("select wika_cu_inv_non_po(%s)", (data_final,))
+                    doc.state = "done"
                     _logger.info(_("# === Import Data Berhasil === #"))
+                    
                 else:
                     raise UserError(_("Data Tidak Tersedia!"))
             except Exception as e:

@@ -9,3 +9,7 @@ class DocApNonPO(models.Model):
     project_id = fields.Many2one('project.project', string='Proyek')
     posting_date = fields.Date('Posting Date')
     partner_id = fields.Many2one('res.partner', string='Partner')
+    state = fields.Selection([
+        ('not_done', 'Not Done'),
+        ('done', 'Done')
+    ], string='State')
