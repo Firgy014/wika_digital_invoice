@@ -144,6 +144,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
     total_po = fields.Float(string='Total PO', compute='_compute_total_po')
     remain_val_po = fields.Float(string='Sisa BAP')
     fee_management = fields.Boolean('Rincian Fee Management?')
+    is_fully_invoiced_temp = fields.Boolean(string='Fully Invoiced Temp', compute='_compute_fully_invoiced_temp', store=False)
 
     # @api.onchange('bap_date')
     # def _onchange_bap_date(self):
@@ -300,13 +301,39 @@ class WikaBeritaAcaraPembayaran(models.Model):
 
     @api.depends('bap_ids')
     def _compute_fully_invoiced(self):
-        tots = 0.0
-        for bap_line in self.bap_ids:
-            tots += bap_line.qty
-        if tots == 0.0:
-            self.is_fully_invoiced = True
-        else:
-            self.is_fully_invoiced = False
+        for bap in self:
+            invoices = self.env['account.move'].search([('bap_id', '=', bap.id)])
+
+            tots = 0.0
+            for bap_line in bap.bap_ids:
+                tots += bap_line.qty
+            if invoices and tots == 0.0:
+                bap.is_fully_invoiced = True
+            else:
+                bap.is_fully_invoiced = False
+
+    @api.depends('bap_ids')
+    def _compute_fully_invoiced_temp(self):
+        for bap in self:
+            invoices = self.env['account.move'].search([('bap_id', '=', bap.id)])
+
+            tots = 0.0
+            for bap_line in bap.bap_ids:
+                tots += bap_line.qty
+            if invoices and tots == 0.0:
+                bap.is_fully_invoiced_temp = True
+            else:
+                bap.is_fully_invoiced_temp = False
+
+    def read(self, fields=None, load='_classic_read'):
+        res = super(WikaBeritaAcaraPembayaran, self).read(fields, load)
+        for record in res:
+            # print('1',record['is_fully_invoiced'])
+            # print('2',record['is_fully_invoiced_temp'])
+            print('RECCCCC',record)
+            temp_record = self.browse(record['id'])
+            record['is_fully_invoiced'] = temp_record.is_fully_invoiced_temp
+        return res
 
     @api.depends('project_id', 'branch_id', 'department_id')
     def _compute_level(self):
@@ -566,9 +593,9 @@ class WikaBeritaAcaraPembayaran(models.Model):
     def _compute_retensi_total_percentage(self):
         for bap in self:
             if bap.amount_pecentage_retensi > 0:
-                bap.retensi_total = (bap.total_amount / 100 ) * bap.amount_pecentage_retensi
+                bap.retensi_total = math.floor((bap.total_amount / 100 ) * bap.amount_pecentage_retensi)
             elif bap.bap_type == 'retensi' and bap.total_retensi_saatini > 0:
-                bap.retensi_total = bap.total_retensi_saatini
+                bap.retensi_total = math.floor(bap.total_retensi_saatini)
             else :
                 bap.retensi_total = 0
 

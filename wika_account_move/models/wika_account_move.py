@@ -320,14 +320,14 @@ class WikaInheritedAccountMove(models.Model):
     @api.depends('total_line', 'price_cut_ids.percentage_amount','price_cut_ids.product_id')
     def _compute_potongan_total(self):
         for x in self:
-            persentage_dp=sum(line.percentage_amount for line in x.price_cut_ids  if line.product_id.name == 'DP')
-            persentage_retensi=sum(line.percentage_amount for line in x.price_cut_ids  if line.product_id.name == 'RETENSI')
+            persentage_dp = sum(line.percentage_amount for line in x.price_cut_ids if line.product_id.name == 'DP')
+            persentage_retensi = sum(line.percentage_amount for line in x.price_cut_ids if line.product_id.name == 'RETENSI')
             x.dp_total = 0.0
-            x.retensi_total=0.0
+            x.retensi_total = 0.0
             if persentage_dp > 0:
-                x.dp_total = (x.total_line / 100 ) * persentage_dp
-            if persentage_retensi >0:
-                x.retensi_total = (x.total_line / 100 ) * persentage_retensi
+                x.dp_total = math.floor((x.total_line / 100 ) * persentage_dp)
+            if persentage_retensi > 0:
+                x.retensi_total = math.floor((x.total_line / 100 ) * persentage_retensi)
 
     @api.depends('total_line', 'dp_total', 'retensi_total','total_tax','total_scf_cut')
     def _compute_amount_total_payment(self):
