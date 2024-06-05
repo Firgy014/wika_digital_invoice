@@ -255,8 +255,8 @@ class wika_get_invoice_non_po(models.Model):
                         doc_type = data["DOC_TYPE"]
                         doc_date = data["DOC_DATE"]
                         posting_date = data["POSTING_DATE"]
-                        pph_cbasis = data["PPH_CBASIS"]
-                        amount = data["AMOUNT"]
+                        pph_cbasis = data["PPH_CBASIS"] * -1
+                        amount = data["AMOUNT"] * -1
                         header_text = data["HEADER_TEXT"]
                         reference = data["REFERENCE"]
                         vendor = data["VENDOR"]
