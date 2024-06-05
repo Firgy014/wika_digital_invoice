@@ -99,6 +99,7 @@
                     <field name="divisi_id" />
                     <field name="project_id" />
                     <field name="partner_id" />
+                    <field name="state" />
                 </search>
             </field>
         </record>
