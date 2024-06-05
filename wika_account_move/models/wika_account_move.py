@@ -229,7 +229,8 @@ class WikaInheritedAccountMove(models.Model):
     @api.depends('bap_id.bap_type')
     def _compute_bap_type(self):
         for record in self:
-            record.bap_type = record.bap_id.bap_type
+            if record.bap_id:
+                record.bap_type = record.bap_id.bap_type
 
     @api.depends('no_faktur_pajak', 'total_tax')
     def _compute_is_waba(self):

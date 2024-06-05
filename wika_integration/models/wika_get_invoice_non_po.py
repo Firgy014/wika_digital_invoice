@@ -214,7 +214,7 @@ class wika_get_invoice_non_po(models.Model):
             'Content-Type': 'application/json'
         }
 
-        _logger.info("# === CEK DOC AP NON PO === #")
+        _logger.info("# === CEK DOK AP NON PO === #") 
         docs = self.env['doc.ap.non.po'].search([])
         _logger.info("# === get_create_update_invoice_non_po === #")
         _logger.info(docs)
@@ -275,54 +275,62 @@ class wika_get_invoice_non_po(models.Model):
                         _logger.info(partner)
                         if project and partner:
                             if project.branch_id != "":
+                                _logger.info("# === SEARCH CURRENCY === #")
                                 res_currency = self.env['res.currency'].search([('name', '=', currency)], limit=1)
+                                _logger.info(res_currency)
                                 if res_currency:
                                     currency_id = res_currency.id
 
-                                account_payment_term = self.env['account.payment.term'].search([('name::text', '=', top)], limit=1)
+                                _logger.info("# === SEARCH account.payment.term === #")
+                                account_payment_term = self.env['account.payment.term'].search([('name', '=', top)], limit=1)
+                                _logger.info(account_payment_term)
                                 if account_payment_term:
                                     payment_term_id = account_payment_term.id
 
                                 status_payment = ''
+                                _logger.info("# === SEARCH account.move === #")
                                 account_move = self.env['account.move'].search([('payment_reference', '=', doc_number),
                                                 ('year', '=', year),
                                                 ('project_id', '=', project.id),
                                                 ('partner_id', '=', partner.id)], limit=1)
+                                _logger.info(account_move)
                                 if not account_move:
                                     _logger.info('# === CREATE ACCOUNT MOVE === #')
                                     account_move_created = self.env['account.move'].create({
-                                        ('name', '=', name),
-                                        ('project_id', '=', project.id),
-                                        ('branch_id', '=', project.branch_id.id),
-                                        ('payment_reference', '=', doc_number),
-                                        ('year', '=', year),
-                                        ('currency_id', '=', currency_id),
-                                        ('date', '=', posting_date),
-                                        ('invoice_date', '=', posting_date),
-                                        ('invoice_date_due', '=', posting_date),
-                                        ('partner_id', '=', partner.id),
-                                        ('invoice_payment_term_id', '=', payment_term_id),
-                                        ('no_faktur_pajak', '=', header_text),
-                                        ('no_invoice_vendor', '=', reference),
-                                        ('state', '=', 'approved'),
-                                        ('move_type', '=', 'in_invoice'),
-                                        ('auto_post', '=', 'no'),
-                                        ('extract_state', '=', 'no_extract_requested'),
-                                        ('company_id', '=', company_id),
-                                        ('payment_state', '=', 'not_paid'),
-                                        ('status_payment', '=', 'Not Request'),
+                                        'name': name,
+                                        'project_id': project.id,
+                                        'branch_id': project.branch_id.id,
+                                        'payment_reference': doc_number,
+                                        'year': year,
+                                        'currency_id': currency_id,
+                                        'date': posting_date,
+                                        'invoice_date': posting_date,
+                                        'invoice_date_due': posting_date,
+                                        'partner_id': partner.id,
+                                        'invoice_payment_term_id': payment_term_id,
+                                        'no_faktur_pajak': header_text,
+                                        'no_invoice_vendor': reference,
+                                        'state': 'approved',
+                                        'move_type': 'in_invoice',
+                                        'auto_post': 'no',
+                                        'extract_state': 'no_extract_requested',
+                                        'company_id': company_id,
+                                        'payment_state': 'not_paid',
+                                        'status_payment': 'Not Request',
                                     })
+                                    _logger.info(account_move_created)
                                     account_move_id = account_move_created.id
                                     status_payment = account_move_created.status_payment
                                 else:
-                                    _logger.info('# === UPDATE ACCOUNT MOVE === #')
                                     account_move_id = account_move.id
                                     status_payment = account_move.status_payment
+                                    _logger.info('# === STATUS PAYMENT === #' + status_payment)
                                     if status_payment == 'Not Request':
+                                        _logger.info('# === UPDATE ACCOUNT MOVE === #')
                                         account_move.write({
                                             'name' : name,
                                             'project_id' : project.id,
-                                            'branch_id' : project.branch.id,
+                                            'branch_id' : project.branch_id.id,
                                             'payment_reference' : doc_number,
                                             'currency_id' : currency_id,
                                             'invoice_date' : posting_date,
@@ -399,7 +407,7 @@ class wika_get_invoice_non_po(models.Model):
                                 # if profit_center:
                                 #     sap_codes.append(str(profit_center))
 
-                        vendors.append(str(vendor))
+                        # vendors.append(str(vendor))
                         i = i+1
 
                     data_final = "|".join(data_final)
@@ -412,7 +420,9 @@ class wika_get_invoice_non_po(models.Model):
                     _logger.info(_("# === Import Data Berhasil === #"))
                 else:
                     raise UserError(_("Data Tidak Tersedia!"))
-            except:
+            except Exception as e:
+                _logger.info("# === EXCEPTION === #")
+                _logger.info(e)
                 continue
             
         
