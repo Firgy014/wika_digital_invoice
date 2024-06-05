@@ -51,6 +51,9 @@
                         <filter string="Due Date" name="duedate"
                             context="{'group_by': 'invoice_date_due'}" />
 
+                        <separator/>
+                        <filter string="ToDo User" name="todouser" context="{'group_by': 'activity_user_id'}"/>
+
                     </group>
                 </search>
             </field>
