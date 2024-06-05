@@ -328,9 +328,6 @@ class WikaBeritaAcaraPembayaran(models.Model):
     def read(self, fields=None, load='_classic_read'):
         res = super(WikaBeritaAcaraPembayaran, self).read(fields, load)
         for record in res:
-            # print('1',record['is_fully_invoiced'])
-            # print('2',record['is_fully_invoiced_temp'])
-            print('RECCCCC',record)
             temp_record = self.browse(record['id'])
             record['is_fully_invoiced'] = temp_record.is_fully_invoiced_temp
         return res
