@@ -6,7 +6,9 @@
             <field name="arch" type="xml">
                 <form>
                     <group>
+                        <field name="is_reject_doc"/>
                         <field name="reject_reason"/>
+                        <field name="related_document_ids" widget="many2many_tags" attrs="{'invisible': [('is_reject_doc', '=', False)]}" />
                     </group>
                     <footer>
                         <button name="ok" type="object" string="Simpan" class="oe_highlight"/>
