@@ -83,10 +83,10 @@ class wika_get_payment_status(models.Model):
                     account_move = account_move1
                     
                 _logger.info(account_move)
-                # if isinstance(account_move, bool):
-                #     return account_move
-                # if len(account_move) != 1:
-                #     raise ValidationError("Hanya satu record yang diharapkan diperbarui!")
+                if isinstance(account_move, bool):
+                    return account_move
+                if len(account_move) != 1:
+                    raise ValidationError("Hanya satu record yang diharapkan diperbarui!")
                 
                 if account_move:
                     _logger.info("# === SEARCH ACCOUNT PAYMENT === #")
@@ -130,7 +130,7 @@ class wika_get_payment_status(models.Model):
                         _logger.info("# === INSERT PAYMENT === #")
                         _logger.info(partial_payment_request)
                         account_payment = self.env['account.payment'].search([('ref', '=', doc_number),
-                                                                            ('date', '=', clear_date)])
+                                                                            ('date', '=', clear_date)], limit=1)
                         if not account_payment:
                             account_payment_created = self.env['account.payment'].create({
                                 'name': new_name,
