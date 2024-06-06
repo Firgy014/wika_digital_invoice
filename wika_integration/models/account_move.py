@@ -23,7 +23,7 @@ class AccountMoveInheritWika(models.Model):
         _logger.info("# === _compute_amount_due === #")
         for rec in self:
             total_paid = 0
-            if self.partial_request_ids:
+            if rec.partial_request_ids:
                 tot_partial_amount = sum(rec.partial_request_ids.filtered(lambda x : x.payment_state == 'paid').mapped('partial_amount'))
                 residual_amount = rec.amount_invoice - tot_partial_amount
                 # residual_amount = rec.sisa_partial
