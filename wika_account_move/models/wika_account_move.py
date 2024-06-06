@@ -1092,10 +1092,7 @@ class WikaInvoiceDocumentLine(models.Model):
     @api.onchange('document')
     def onchange_document(self):
         if self.document:
-            if convertToMbSize(self.with_context(bin_size=True).document) > 1024:
-                raise UserError('Tidak dapat mengunggah file lebih dari 1 MB!')
-            else:
-                self.state = 'uploaded'
+            self.state = 'uploaded'
 
     @api.constrains('document', 'filename')
     def _check_attachment_format(self):
@@ -1106,9 +1103,9 @@ class WikaInvoiceDocumentLine(models.Model):
     def write(self, values):
         _logger.info("# === WRITE DOCUMENT === #")
         record = super(WikaInvoiceDocumentLine, self).write(values)
-        # _logger.info(self.with_context(bin_size=True).document)
-        # if self.document and convertToMbSize(self.with_context(bin_size=True).document) > 1024:
-        #     raise UserError('Tidak dapat mengunggah file lebih dari 1 MB!')
+        _logger.info(self.with_context(bin_size=True).document)
+        if self.document and convertToMbSize(self.with_context(bin_size=True).document) > (1024*20):
+            raise UserError('Tidak dapat mengunggah file lebih dari 20 MB!')
 
         return record
             
