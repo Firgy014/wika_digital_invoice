@@ -83,11 +83,6 @@ class wika_get_payment_status(models.Model):
                     account_move = account_move1
                     
                 _logger.info(account_move)
-                if isinstance(account_move, bool):
-                    return account_move
-                if len(account_move) != 1:
-                    raise ValidationError("Hanya satu record yang diharapkan diperbarui!")
-                
                 if account_move:
                     _logger.info("# === SEARCH ACCOUNT PAYMENT === #")
                     account_payment = self.env['account.payment'].search([
