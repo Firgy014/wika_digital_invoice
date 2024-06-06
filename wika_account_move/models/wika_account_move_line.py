@@ -29,6 +29,25 @@ class WikaAccountMoveLine(models.Model):
     )
     adjustment = fields.Boolean(string='Adjustment', default=False)
     amount_adjustment = fields.Monetary(string='Amount Adjustment')
+
+    pph_cash_basis = fields.Float(
+        string='PPh Cash Basis',
+        readonly=False,
+        digits='Product Price',
+    )
+
+    @api.constrains('account_id', 'display_type')
+    def _check_payable_receivable(self):
+        return
+        # override
+        # for line in self:
+        # account_type = line.account_id.account_type
+        # if line.move_id.is_sale_document(include_receipts=True):
+        #     if (line.display_type == 'payment_term') ^ (account_type == 'asset_receivable'):
+        #         raise UserError(_("Any journal item on a receivable account must have a due date and vice versa."))
+        # if line.move_id.is_purchase_document(include_receipts=True):
+        #     if (line.display_type == 'payment_term') ^ (account_type == 'liability_payable'):
+        #         raise UserError(_("Any journal item on a payable account must have a due date and vice versa."))
     @api.depends('display_type','bap_line_id')
     def _compute_quantity(self):
         for line in self:

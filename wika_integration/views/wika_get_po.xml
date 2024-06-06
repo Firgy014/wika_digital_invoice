@@ -6,35 +6,36 @@
             <field name="model">wika.get.po</field>
             <field name="arch" type="xml">
                 <tree>
-                    <field name="profit_center"/>
-                    <field name="name"/>
-                     <field name="jenis"/>
-                    <field name="po_plant"/>
-                    <field name="co_code"/>
-                     <field name="status"/>
-                     <field name="tgl_create_sap"/>
-                      <field name="tgl_write_sap"/>
+                    <field name="profit_center" />
+                    <field name="name" />
+                    <field name="jenis" />
+                    <field name="po_plant" />
+                    <field name="co_code" />
+                    <field name="status" />
+                    <field name="tgl_create_sap" />
+                    <field name="tgl_write_sap" />
                 </tree>
             </field>
         </record>
+
         <record model="ir.ui.view" id="wika_get_po_form">
             <field name="name">wika_get_po form</field>
             <field name="model">wika.get.po</field>
             <field name="arch" type="xml">
                 <form>
                     <header>
-                        <button name="get_po" type="object" string="Get PO" class="oe_highlight"/>
+                        <button name="get_po" type="object" string="Get PO" class="oe_highlight" />
                     </header>
                     <sheet>
                         <group>
-                            <field name="profit_center"/>
-                            <field name="name"/>
-                             <field name="jenis"/>
-                            <field name="po_plant"/>
-                            <field name="co_code"/>
-                             <field name="status"/>
-                            <field name="tgl_create_sap"/>
-                             <field name="tgl_write_sap"/>
+                            <field name="profit_center" />
+                            <field name="name" />
+                            <field name="jenis" />
+                            <field name="po_plant" />
+                            <field name="co_code" />
+                            <field name="status" />
+                            <field name="tgl_create_sap" />
+                            <field name="tgl_write_sap" />
                         </group>
 
                     </sheet>
@@ -42,6 +43,18 @@
                 </form>
             </field>
         </record>
+        
+        <record id="view_wika_get_po_filter" model="ir.ui.view">
+            <field name="name">wika.get.po.filter</field>
+            <field name="model">wika.get.po</field>
+            <field name="arch" type="xml">
+                <search string="Search">
+                    <field name="profit_center" />
+                    <field name="name" />
+                </search>
+            </field>
+        </record>
+
         <!-- actions opening views on models -->
         <record model="ir.actions.act_window" id="wika_get_po_action_window">
             <field name="name">Wika Get PO</field>
@@ -54,10 +67,9 @@
 
 
         <menuitem name="Get PO Integration" id="wika_get_po_menu"
-                  action="wika_get_po_action_window"
-                  parent="wika_integration.wika_app_setting_menu"
-                  sequence="1"/>
-
+            action="wika_get_po_action_window"
+            parent="wika_integration.wika_app_setting_menu"
+            sequence="1" />
 
 
         <record id="get_po_allform_view" model="ir.ui.view">
@@ -66,21 +78,22 @@
             <field name="arch" type="xml">
                 <form string="Get PO">
                     <p class="oe_black">
-Get PO yang dipilih                    </p>
+                        Get PO yang dipilih </p>
                     <footer>
-                        <button string="Get PO" name="get_po_all" type="object" default_focus="1" class="btn-primary"/>
-                        <button string="Cancel"  class="btn-default" special="cancel"/>
+                        <button string="Get PO" name="get_po_all" type="object" default_focus="1"
+                            class="btn-primary" />
+                        <button string="Cancel" class="btn-default" special="cancel" />
                     </footer>
                 </form>
             </field>
         </record>
 
 
-         <record id="action_get_po_all" model="ir.actions.act_window">
+        <record id="action_get_po_all" model="ir.actions.act_window">
             <field name="name">Get PO Selected</field>
             <field name="res_model">wika.get.po.all</field>
             <field name="view_mode">tree,form</field>
-            <field name="view_id" ref="get_po_allform_view"/>
+            <field name="view_id" ref="get_po_allform_view" />
             <field name="target">new</field>
             <field name="binding_model_id" ref="model_wika_get_po" />
             <field name="binding_view_types">list</field>

@@ -143,6 +143,8 @@
                                 <field name="job"  readonly="1" force_save="1"/>
                                 <field name="fee_management"/>
 
+                                <field name="fee_management"/>
+
                                 <field name="step_approve" invisible="1"/>
                                  <field name="is_fully_invoiced" groups="base.group_no_one"/>
                                 <field name="is_cut_over"  groups="base.group_no_one"/>
@@ -211,10 +213,19 @@
                                 <field name="terbilang_um" groups="base.group_no_one"/>
                                 <field name="terbilang_retensi" groups="base.group_no_one"/>
 <!--
+<!--
                                 <field name="total_pembayaran_co" groups="base.group_no_one"/>
 -->
 <!--
+-->
+<!--
                                 <field name="terbilang_co" groups="base.group_no_one"/>
+-->
+                                <!-- Constrains  Adjustment-->
+                                 <field name="value_to_date" groups="base.group_no_one"/>
+                                <field name="total_adjustment" groups="base.group_no_one"/>
+                                <field name="total_po" groups="base.group_no_one"/>
+                                <field name="remain_val_po" groups="base.group_no_one"/>
 -->
                                 <!-- Constrains  Adjustment-->
                                  <field name="value_to_date" groups="base.group_no_one"/>

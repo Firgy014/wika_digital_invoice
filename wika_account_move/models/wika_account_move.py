@@ -3,13 +3,20 @@ from odoo.exceptions import UserError, ValidationError, Warning, AccessError
 from datetime import datetime,timedelta
 import math
 from odoo.tools.float_utils import float_compare
+from dateutil.relativedelta import relativedelta
+from odoo.tools import (
+    date_utils,
+    float_compare
+)
+import logging, json
+_logger = logging.getLogger(__name__)
+
 class WikaInheritedAccountMove(models.Model):
     _inherit = 'account.move'
 
-
     name = fields.Char(
         string='Number',
-        compute='_compute_name_wdigi', inverse='_inverse_name', readonly=False, store=True,
+        default='Draft', inverse='_inverse_name', readonly=False,
         copy=False,
         tracking=True,
         index='trigram',
@@ -19,7 +26,7 @@ class WikaInheritedAccountMove(models.Model):
         string='BAP',
         domain="[('state', '=', 'approved'), ('is_cut_over', '!=', True)]"
     )
-    branch_id = fields.Many2one('res.branch', string='Divisi', required=True)
+    branch_id = fields.Many2one('res.branch', string='Divisi', required=True, default=122)
     department_id = fields.Many2one('res.branch', string='Department')
     project_id = fields.Many2one('project.project', string='Project')
     document_ids = fields.One2many('wika.invoice.document.line', 'invoice_id', string='Document Line', required=True)
@@ -27,7 +34,7 @@ class WikaInheritedAccountMove(models.Model):
     reject_reason_account = fields.Text(string='Reject Reason')
     step_approve = fields.Integer(string='Step Approve',default=1)
     no_doc_sap = fields.Char(string='No Doc SAP')
-    no_invoice_vendor = fields.Char(string='Nomor Invoice Vendor',required=True)
+    no_invoice_vendor = fields.Char(string='Nomor Invoice Vendor',required=True, default='-')
     invoice_number = fields.Char(string='Invoice Number')
     baseline_date = fields.Date(string='Baseline Date')
     retention_due = fields.Date(string='Retention Due')
@@ -53,7 +60,6 @@ class WikaInheritedAccountMove(models.Model):
     date = fields.Date(string='Posting Date', default=lambda self: fields.Date.today())
     status_invoice = fields.Char(string='Status Invoice',compute='_compute_status_invoice')
     status_invoice_rel = fields.Char(string='Status Invoice',related='status_invoice',store=True)
-
     approval_stage = fields.Selection([
         ('Proyek', 'Proyek'),
         ('Divisi Operasi', 'Divisi Operasi'),
@@ -71,6 +77,14 @@ class WikaInheritedAccountMove(models.Model):
         ('transfer tunai', 'Transfer Tunai (TT)'),
         ('fasilitas', 'Fasilitas'),
     ], string='Payment Method')
+    status_payment = fields.Selection([
+        ('Not Request', 'Not Request'),
+        ('Request Proyek', 'Request Proyek'),
+        ('Request Divisi', 'Request Divisi'),
+        ('Request Pusat', 'Request Pusat'),
+        ('Ready To Pay', 'Ready To Pay'),
+        ('Paid', 'Paid')
+    ], string='Payment State',default='Not Request')   
     payment_request_date= fields.Date(string='Payment Request Date')
     nomor_payment_request= fields.Char(string='Nomor Payment Request')
     is_approval_checked = fields.Boolean(string="Approval Checked", compute='_compute_is_approval_checked' ,default=False)
@@ -92,23 +106,50 @@ class WikaInheritedAccountMove(models.Model):
             if record.posting_date < first_day_of_previous_month:
                 raise ValidationError("Tanggal posting tidak boleh lebih awal dari bulan sebelumnya.")
 
+    _sql_constraints = [
+        ('name_invoice_uniq', 'unique (name, year)', 'The name of the invoice must be unique per year !')
+    ]
+
+    def _must_check_constrains_date_sequence(self):
+        # OVERRIDES sequence.mixin
+        return False
+
+    @api.onchange('journal_id')
+    def _onchange_journal_id(self):
+        # bypass _onchange_journal_id
+        return
+
+    _sql_constraints = [
+        ('name_invoice_uniq', 'unique (name, year)', 'The name of the invoice must be unique per year !')
+    ]
+
+    def _must_check_constrains_date_sequence(self):
+        # OVERRIDES sequence.mixin
+        return False
+
+    @api.onchange('journal_id')
+    def _onchange_journal_id(self):
+        # bypass _onchange_journal_id
+        return
+
     @api.depends('history_approval_ids.is_show_wizard', 'history_approval_ids.user_id')
     def _compute_is_approval_checked(self):
         current_user = self.env.user
         for move in self:
             move.is_approval_checked = any(line.is_show_wizard for line in move.history_approval_ids if line.user_id == current_user)
 
-    @api.depends('total_line', 'pph_ids.amount','pph_amount','retensi_total')
+    @api.depends('total_line', 'pph_ids.amount','pph_amount','retensi_total','dp_total')
     def _compute_total_pph(self):
         for record in self:
             total_pph = 0.0
-            total_net = record.total_line - record.retensi_total
+            total_net = record.total_line - record.retensi_total - record.dp_total
             if record.pph_amount>0:
                 record.total_pph = math.floor(record.pph_amount)
             else:
                 for pph in record.pph_ids:
                     total_pph += (total_net* pph.amount) / 100
                 record.total_pph = math.floor(total_pph)
+                
 
     @api.depends('history_approval_ids')
     def _compute_status_invoice(self):
@@ -133,28 +174,32 @@ class WikaInheritedAccountMove(models.Model):
             else:
                 x.check_biro = False
 
-    # @api.onchange('invoice_date')
-    # def _onchange_invoice_date(self):
-    #     if isinstance(self, bool):
-    #         return self
-    #     if len(self) != 1:
-    #         raise ValidationError("Hanya satu record yang diharapkan diperbarui!")
-    #
-    #     if self.invoice_date != False and self.invoice_date < self.bap_id.bap_date:
-    #         raise ValidationError("Document Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
-    #     else:
-    #         pass
+    @api.onchange('invoice_date')
+    def _onchange_invoice_date(self):
+        if isinstance(self, bool):
+            return self
+        if len(self) != 1:
+            raise ValidationError("Hanya satu record yang diharapkan diperbarui!")
 
-    # @api.onchange('date')
-    # def _onchange_posting_date(self):
-    #     if not self.date or not self.bap_id or not self.bap_id.bap_date:
-    #         return
-    #     if isinstance(self, bool):
-    #         return self
-    #     if len(self) != 1:
-    #         raise ValidationError("Hanya satu record yang diharapkan diperbarui!")
-    #     if self.date < self.bap_id.bap_date:
-    #         raise ValidationError("Posting Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
+        if self.invoice_date != False and self.bap_id:
+            if self.invoice_date < self.bap_id.bap_date:
+                raise ValidationError("Document Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
+            else:
+                pass
+        else:
+            pass
+
+    @api.onchange('date')
+    def _onchange_posting_date(self):
+        if not self.date or not self.bap_id or not self.bap_id.bap_date:
+            return
+        if isinstance(self, bool):
+            return self
+        if len(self) != 1:
+            raise ValidationError("Hanya satu record yang diharapkan diperbarui!")
+        if self.bap_id:
+            if self.date < self.bap_id.bap_date:
+                raise ValidationError("Posting Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
 
     state = fields.Selection(
         selection=[
@@ -173,7 +218,7 @@ class WikaInheritedAccountMove(models.Model):
         tracking=True,
         default='draft',
     )
-    amount_total_footer = fields.Float(string='Amount Total', compute='_compute_amount_total', store=True)
+    amount_total_footer = fields.Float(string='Net Amount', compute='_compute_amount_total', store=True)
     level = fields.Selection([
         ('Proyek', 'Proyek'),
         ('Divisi Operasi', 'Divisi Operasi'),
@@ -194,18 +239,103 @@ class WikaInheritedAccountMove(models.Model):
     retensi_total = fields.Float(string='Total Retensi', compute='_compute_potongan_total', store= True)
     total_tax = fields.Monetary(string='Total Tax', compute='compute_total_tax')
 
-    amount_total_payment = fields.Float(string='Total Invoice', compute='_compute_amount_total_payment', store=True)
+    amount_total_payment = fields.Float(string='Amount Invoice', compute='_compute_amount_total_payment', store=True)
     total_line = fields.Float(string='Total Line', compute='_compute_total_line')
     is_approval_checked = fields.Boolean(string="Approval Checked", compute='_compute_is_approval_checked')
     is_mp_approved = fields.Boolean(string='Approved by MP', default=False, store=True)
     cut_off = fields.Boolean(string='Cut Off',default=False,copy=False)
+    ap_type = fields.Selection([
+        ('ap_po', 'AP PO'),
+        ('ap_nonpo', 'AP NON PO')
+    ], string='Invoice AP Type', compute='_compute_ap_type', store=True)
+    amount_scf = fields.Float(string='Amount SCF')
+    total_scf_cut = fields.Float(string='Total Potongan SCF', compute='_compute_total_scf_cut')
+    journal_item_sap_ids = fields.One2many('wika.account.move.journal.sap', 'invoice_id', string='Journal SAP')
+    total_ap_sap = fields.Float(string='Total AP SAP', compute='_compute_total_ap_sap')
+    is_waba = fields.Boolean(string='Invoice Waba', compute='_compute_is_waba')
+    bap_type = fields.Char(string='Jenis BAP', compute='_compute_bap_type', store=True)
+    activity_user_id = fields.Many2one('res.users', string='ToDo User', store=True)
 
-    @api.depends('date')
-    def _compute_name_wdigi(self):
+    @api.depends('bap_id.bap_type')
+    def _compute_bap_type(self):
         for record in self:
             if record._origin.id:
-                sequence = self.env['ir.sequence'].sudo().next_by_code('invoice_number_sequence') or '/'
-                record.name = sequence
+                if record.bap_id:
+                record.bap_type = record.bap_id.bap_type
+
+    @api.depends('no_faktur_pajak', 'total_tax')
+    def _compute_is_waba(self):
+        for record in self:
+            if record.no_faktur_pajak:
+                if record.no_faktur_pajak.startswith(('010', '040', '050')):
+                    record.is_waba = True
+                elif record.no_faktur_pajak.startswith('030'):
+                    record.is_waba = False
+                else:
+                    record.is_waba = False
+            else:
+                record.is_waba = False
+
+    @api.depends('journal_item_sap_ids.amount')
+    def _compute_total_ap_sap(self):
+        for record in self:
+            record.total_ap_sap = sum(line.amount for line in record.journal_item_sap_ids)
+
+    @api.depends('price_cut_ids.amount', 'amount_scf')
+    def _compute_total_scf_cut(self):
+        for record in self:
+            total_price_cut = sum(line.amount for line in record.price_cut_ids if line.product_id.name == 'Potongan SCF')
+            record.total_scf_cut = total_price_cut + record.amount_scf
+
+    @api.depends('po_id')
+    def _compute_ap_type(self):
+        for record in self:
+            record.ap_type = 'ap_po' if record.po_id else 'ap_nonpo'
+    journal_item_sap_ids = fields.One2many('wika.account.move.journal.sap', 'invoice_id', string='Journal SAP')
+    total_ap_sap = fields.Float(string='Total AP SAP', compute='_compute_total_ap_sap')
+
+    @api.depends('journal_item_sap_ids.amount')
+    def _compute_total_ap_sap(self):
+        for record in self:
+            record.total_ap_sap = sum(line.amount for line in record.journal_item_sap_ids)
+
+    def _compute_name_wdigi(self):
+        for rec in self:
+            sequence = self.env['ir.sequence'].sudo().next_by_code('invoice_number_sequence') or '/'
+                seq = sequence.split("/")
+            if rec.invoice_date:
+                bulan = rec.invoice_date.strftime('%m')
+                tahun = rec.invoice_date.strftime('%Y')
+                rec.name = "%s/%s/%s/%s" % (seq[0], str(tahun), str(bulan), seq[3])
+
+    def unlink(self):
+        for record in self:
+            if record.state=='draft':
+                record.activity_ids.unlink()
+                record.document_ids.unlink()
+                record.history_approval_ids.unlink()
+                record.price_cut_ids.unlink()
+            else:
+                raise ValidationError('Tidak dapat menghapus ketika status Invoice dalam keadaan Upload atau Approve')
+        return super(WikaInheritedAccountMove, self).unlink()
+
+    # @api.depends('date')
+    # def _compute_name_wika(self):
+    #     for record in self:
+    #         if record.date:
+    #             year = str(record.date.year)
+    #             month = str(record.date.month).zfill(2)
+    #             next_number = 1
+    #             while True:
+    #                 name = f"INV/{year}/{month}/{str(next_number).zfill(5)}"
+    #                 existing_record = self.env['account.move'].search([('name', '=', name)], limit=1)
+    #                 if not existing_record:
+    #                     record.name = name
+    #                     break
+    #                 next_number += 1
+    #                 if next_number > 99999:
+    #                     raise ValidationError("Naming sequence limit exceeded.")
+
             else:
                 record.name = False
 
@@ -217,7 +347,7 @@ class WikaInheritedAccountMove(models.Model):
             retensi_total = record.retensi_total or 0.0
             tax_percentage = sum(record.invoice_line_ids.tax_ids.mapped('amount')) / 100.0
             total_tax = (total_line - dp_total - retensi_total) * tax_percentage
-            record.total_tax = total_tax
+            record.total_tax = math.floor(total_tax)
 
     @api.depends('total_line', 'price_cut_ids.percentage_amount','price_cut_ids.product_id')
     def _compute_potongan_total(self):
@@ -231,21 +361,27 @@ class WikaInheritedAccountMove(models.Model):
             if persentage_retensi >0:
                 x.retensi_total = (x.total_line / 100 ) * persentage_retensi
 
-    @api.depends('total_line', 'dp_total', 'retensi_total','total_pph','total_tax')
+    @api.depends('total_line', 'dp_total', 'retensi_total','total_tax','total_scf_cut')
     def _compute_amount_total_payment(self):
         for x in self:
-            x.amount_total_payment= x.total_line-x.dp_total-x.retensi_total + x.total_tax -x.total_pph
+            x.amount_total_payment= round(x.total_line-x.dp_total-x.retensi_total -x.total_scf_cut + x.total_tax)
 
     def _compute_documents_count(self):
         for record in self:
-            domain = [
-                ('folder_id', 'in', ['PO', 'GR/SES', 'BAP', 'Invoicing']),
-                '|', ('bap_id', '=', record.bap_id.id), ('purchase_id', '=', record.po_id.id),
-            ]
-            po_number = record.po_id.name if record.po_id else None
+            if record.po_id:
+                domain = [
+                    ('folder_id', 'in', ['PO', 'GR/SES', 'BAP', 'Invoicing']),
+                    '|', ('bap_id', '=', record.bap_id.id), ('purchase_id', '=', record.po_id.id),
+                ]
+                po_number = record.po_id.name if record.po_id else None
 
-            if po_number:
-                domain.append(('purchase_id.name', '=', po_number))
+                if po_number:
+                    domain.append(('purchase_id.name', '=', po_number))
+            else:
+                domain = [
+                    ('folder_id', 'in', ['Invoicing']),
+                    ('invoice_id', '=', record.id),
+                ]
 
             record.documents_count = self.env['documents.document'].search_count(domain)
 
@@ -272,7 +408,6 @@ class WikaInheritedAccountMove(models.Model):
             ('folder_id', 'in', ['PO', 'GR/SES', 'BAP', 'Invoicing']),
             '|', ('bap_id', '=', self.bap_id.id), ('bap_id', '=', False), ('purchase_id', '=', self.po_id.id)
         ]
-
         po_number = self.po_id.name if self.po_id else None
 
         if po_number:
@@ -308,7 +443,11 @@ class WikaInheritedAccountMove(models.Model):
         else:
             return {'domain': {'bap_id': [('state', '=', 'approved'), ('is_cut_over', '!=', True)]}}
 
-
+    @api.onchange('name', 'highest_name')
+    def _onchange_name_warning(self):
+        # Disable _onchange_name_warning
+        return
+    
     @api.depends('invoice_line_ids.price_unit','invoice_line_ids.quantity','invoice_line_ids.adjustment','invoice_line_ids.amount_adjustment')
     def _compute_total_line(self):
         for x in self:
@@ -317,20 +456,44 @@ class WikaInheritedAccountMove(models.Model):
                 if z.adjustment==True:
                     total +=z.amount_adjustment
                 else:
-                    total += z.price_unit *z.quantity
+                    total += z.price_unit * z.quantity
             total_line = total
             x.total_line=round(total_line)
 
-    @api.depends('total_line', 'total_pph','dp_total','retensi_total')
+    @api.depends('total_line', 'total_pph','dp_total','retensi_total','total_scf_cut', 'is_waba')
     def _compute_amount_total(self):
         for move in self:
-            move.amount_total_footer = move.total_line-move.dp_total-move.retensi_total -move.total_pph
+            if move.is_waba:
+                move.amount_total_footer = round(move.total_line - move.dp_total - move.retensi_total - move.total_pph - move.total_scf_cut)
+                move.amount_total_footer += move.total_tax
+            else:
+                move.amount_total_footer = round(move.total_line-move.dp_total-move.retensi_total -move.total_pph-move.total_scf_cut)
+
+    @api.depends('partner_id.bill_coa_type', 'valuation_class','retensi_total')
+    def compute_account_payable(self):
+        for record in self:
+            record.account_id = False
+            if record.level == 'Proyek':
+                level=record.level.lower()
+            else:
+                level='nonproyek'
+            account_setting_model = self.env['wika.setting.account.payable'].sudo().search([
+                    ('valuation_class', '=', record.valuation_class),
+                    ('assignment', '=', level),
+                    ('bill_coa_type', '=', record.partner_id.bill_coa_type)
+                ], limit=1)
+            if account_setting_model:
+                record.account_id = account_setting_model.account_id.id
+            if record.retensi_total>0:
+                record.retention_due=record.invoice_date_due+ relativedelta(months=+6)
+
 
     @api.onchange('partner_id', 'valuation_class')
     def onchange_account_payable(self):
         for record in self:
             record.account_id = False
             account_setting_model = self.env['wika.setting.account.payable'].sudo()
+
             if record.level == 'Proyek' and record.valuation_class:
                 account_setting_id = account_setting_model.search([
                     ('valuation_class', '=', record.valuation_class),
@@ -338,6 +501,7 @@ class WikaInheritedAccountMove(models.Model):
                     ('bill_coa_type', '=', record.partner_id.bill_coa_type)
                 ], limit=1)
                 record.account_id = account_setting_id.account_id.id
+                return {'domain': {'pph_ids': [('id', 'in', account_setting_id.pph_ids.ids)]}}
             elif record.level != 'Proyek' and record.valuation_class:
                 account_setting_id = account_setting_model.search([
                     ('valuation_class', '=', record.valuation_class),
@@ -345,9 +509,48 @@ class WikaInheritedAccountMove(models.Model):
                     ('bill_coa_type', '=',  record.partner_id.bill_coa_type)
                 ], limit=1)
                 record.account_id = account_setting_id.account_id.id
+                return {'domain': {'pph_ids': [('id', 'in', account_setting_id.pph_ids.ids)]}}
+
+    @api.depends('posted_before', 'state', 'journal_id', 'date')
+    def _compute_name(self):
+        _logger.info("# === _compute_name === #")
+        return
+    
+    @api.depends('journal_id', 'date')
+    def _compute_highest_name(self):
+        _logger.info("# === _compute_highest_name === #")
+        return
+    
+    def _get_accounting_date(self, invoice_date, has_tax):
+        return invoice_date
 
     @api.model_create_multi
     def create(self, vals_list):
+        record = super(WikaInheritedAccountMove, self).create(vals_list)
+        if record.ap_type == 'ap_po':
+            record.assign_todo_first()
+        elif record.ap_type == 'ap_nonpo':
+            record.assign_todo_first_without_activities()
+
+        if record.name == 'Draft':
+            record._compute_name_wdigi()
+
+        # if isinstance(record, bool):
+        #     return record
+        # if len(record) != 1:
+        #     raise ValidationError("Hanya satu record yang diharapkan diperbarui!")
+        
+        if record.bap_id:
+            #document date
+            if record.invoice_date != False and record.invoice_date < record.bap_id.bap_date and record.cut_off != True:
+                raise ValidationError("Document Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
+            
+            #posting date
+            if record.ap_type == 'ap_po':
+                if record.date != False and record.date < record.bap_id.bap_date and record.cut_off!=True:
+                    raise ValidationError("Posting Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
+            
+        return record
         records = super(WikaInheritedAccountMove, self).create(vals_list)
         for record in records:
             record.assign_todo_first()
@@ -376,6 +579,19 @@ class WikaInheritedAccountMove(models.Model):
         return records
 
     def write(self, values):
+        for rec in self:
+            record = super(WikaInheritedAccountMove, rec).write(values)
+
+            if isinstance(record, bool):
+                return record
+            if len(record) != 1:
+                raise ValidationError("Hanya satu record yang diharapkan diperbarui!")
+
+            # document date
+            if record.invoice_date != False and record.invoice_date < record.bap_id.bap_date and record.cut_off!=True:
+                raise ValidationError("Document Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
+            else:
+                pass
         result = super(WikaInheritedAccountMove, self).write(values)
         for record in self:
             if isinstance(result, bool):
@@ -387,6 +603,21 @@ class WikaInheritedAccountMove(models.Model):
             if record.invoice_date and record.invoice_date < record.bap_id.bap_date and not record.cut_off:
                 raise ValidationError("Document Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
 
+            # # posting date
+            if record.date != False and record.date < record.bap_id.bap_date and record.cut_off!=True:
+                raise ValidationError("Posting Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
+            else:
+                pass
+            return record
+
+    # Refresh all records to ensure is_waba and amount total is successfully computed
+    def _cron_refresh_record_values(self):
+        invoices = self.env['account.move'].search([])
+        if invoices:
+            for invoice in invoices:
+                if invoice.is_waba:
+                    invoice.refresh()
+                    _logger.info('Successfully refreshing all values for Invoice: %s', invoice.name)
             # Posting date validation
             if record.date and record.date < record.bap_id.bap_date and not record.cut_off:
                 raise ValidationError("Posting Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
@@ -541,6 +772,27 @@ class WikaInheritedAccountMove(models.Model):
                 else:
                     raise AccessError("Data dokumen tidak ada!")
 
+    def assign_todo_first_without_activities(self):
+        model_model = self.env['ir.model'].sudo()
+        model_id = model_model.search([('model', '=', 'account.move')], limit=1)
+        document_setting_model = self.env['wika.document.setting'].sudo()
+        doc_setting_id = document_setting_model.search([
+            ('model_id', '=', model_id.id),
+            ('name', '=', 'Lain-lain')
+        ], limit=1)
+        # for res in self:
+        if doc_setting_id:
+            document_list = []
+            for document_line in doc_setting_id:
+                document_list.append((0, 0, {
+                    'invoice_id': self.id,
+                    'document_id': document_line.id,
+                    'state': 'waiting'
+                }))
+            self.document_ids = document_list
+        else:
+            raise AccessError("Data dokumen tidak ada!")
+    
     def action_submit(self):
         for record in self:
             if any(not line.document for line in record.document_ids):
@@ -552,6 +804,7 @@ class WikaInheritedAccountMove(models.Model):
         level=self.level
         documents_model = self.env['documents.document'].sudo()
         if level:
+            self.sudo().compute_account_payable()
             model_id = self.env['ir.model'].search([('model', '=', 'account.move')], limit=1)
             approval_id = self.env['wika.approval.setting'].sudo().search(
                 [('model_id', '=', model_id.id), ('level', '=', level)], limit=1)
@@ -838,7 +1091,6 @@ class WikaInheritedAccountMove(models.Model):
                     ('approval_id', '=', approval_id.id)
                 ], limit=1)
                 groups_id_next = groups_line_next.groups_id
-                print(groups_id_next)
                 if groups_id_next:
                     for x in groups_id_next.users:
                         if level == 'Proyek' :
@@ -851,41 +1103,34 @@ class WikaInheritedAccountMove(models.Model):
                     if first_user:
                         self.step_approve += 1
                         self.approval_stage = groups_line_next.level_role
-                        existing_activity = self.env['mail.activity'].sudo().search([
-                            ('res_model_id', '=', self.env['ir.model'].sudo().search([('model', '=', 'account.move')], limit=1).id),
-                            ('res_id', '=', self.id),
-                            ('user_id', '=', first_user)
-                        ])
-                        if not existing_activity:
-                            self.env['mail.activity'].sudo().create({
-                                'activity_type_id': 4,
-                                'res_model_id': self.env['ir.model'].sudo().search(
-                                    [('model', '=', 'account.move')], limit=1).id,
-                                'res_id': self.id,
-                                'user_id': first_user,
-                                'nomor_po': self.po_id.name,
-                                'date_deadline': fields.Date.today() + timedelta(days=2),
-                                'state': 'planned',
-                                'status': 'to_approve',
-                                'summary': """Need Approval Document Invoicing"""
-                            })
+                        self.env['mail.activity'].sudo().create({
+                            'activity_type_id': 4,
+                            'res_model_id': self.env['ir.model'].sudo().search(
+                                [('model', '=', 'account.move')], limit=1).id,
+                            'res_id': self.id,
+                            'user_id': first_user,
+                            'nomor_po': self.po_id.name,
+                            'date_deadline': fields.Date.today() + timedelta(days=2),
+                            'state': 'planned',
+                            'status': 'to_approve',
+                            'summary': """Need Approval Document Invoicing"""
+                        })
 
                         if self.activity_ids:
                             for x in self.activity_ids.filtered(lambda x: x.status != 'approved'):
                                 if x.user_id.id == self._uid:
                                     x.status = 'approved'
                                     x.action_done()
-                        if not self.is_wizard_cancel:
-                            self.env['wika.invoice.approval.line'].create({
-                                'user_id': self._uid,
-                                'groups_id': groups_id.id,
-                                'date': datetime.now(),
-                                'note': 'Verified',
-                                'invoice_id': self.id,
-                                'information': keterangan if approval_line_id.check_approval else False,
-                                'is_show_wizard': True if approval_line_id.check_approval else False,                            
+                        self.env['wika.invoice.approval.line'].create({
+                            'user_id': self._uid,
+                            'groups_id': groups_id.id,
+                            'date': datetime.now(),
+                            'note': 'Verified',
+                            'invoice_id': self.id,
+                            'information': keterangan if approval_line_id.check_approval else False,
+                            'is_show_wizard': True if approval_line_id.check_approval else False,
 
-                            })
+                        })
                         if approval_line_id.check_approval:
                             self.baseline_date = fields.Date.today()
                             action = {
@@ -1299,6 +1544,18 @@ class WikaInheritedAccountMove(models.Model):
         else:
             raise ValidationError('User Akses Anda tidak berhak Reject!')
 
+    def add_pricecut_scf(self):
+        action = {
+            'name': ('Masukkan Nilai Amount Potongan SCF'),
+            'type': "ir.actions.act_window",
+            'res_model': "wika.amount.scf.wizard",
+            'view_type': "form",
+            'target': 'new',
+            'view_mode': "form",
+            # 'context': {'groups_id': groups_id.id},
+            'view_id': self.env.ref('wika_account_move.view_amount_scf_price_cut_form').id,
+        }
+        return action
 
     def unlink(self):
         for record in self:
@@ -1318,6 +1575,14 @@ class WikaInheritedAccountMove(models.Model):
             return self.env.ref('wika_account_move.report_wika_account_move_keuangan_action').report_action(self)
         else:
             return super(WikaInheritedAccountMove, self).action_print_invoice()
+        
+    def compute_pph_amount(self):
+        for rec in self:
+            total_pph_cbasis = 0
+            for line in rec.invoice_line_ids:
+                total_pph_cbasis += line.pph_cash_basis
+                
+            rec.pph_amount += total_pph_cbasis
 
 
 class WikaInvoiceDocumentLine(models.Model):
@@ -1369,7 +1634,22 @@ class AccountMovePriceCutList(models.Model):
     account_id = fields.Many2one('account.account', string='Account')
     percentage_amount = fields.Float(string='Percentage Amount')
     amount = fields.Float(string='Amount')
-    
+    wbs_project_definition = fields.Char(
+        string='WBS Project Definition',
+        compute='_compute_wbs_project_definition',
+        store=True
+    )
+    posting_date = fields.Date(string='Posting Date')
+
+    @api.depends('move_id.project_id.sap_code')
+    def _compute_wbs_project_definition(self):
+        for record in self:
+            if record.move_id.project_id.sap_code:
+                sap_code = record.move_id.project_id.sap_code
+                record.wbs_project_definition = sap_code[:-1] + '-3-50-99'
+            else:
+                record.wbs_project_definition = False
+                
     # def _compute_account_pricecut(self):
     #     move_id = self.env['account.move'].browse([self.move_id.id])
     #     if move_id:

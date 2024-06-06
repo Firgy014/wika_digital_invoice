@@ -6,6 +6,45 @@
             <field name="model">account.move</field>
             <field name="priority" eval="1"/>
             <field name="arch" type="xml">
+            <form string="Invoice Form">
+                <header>
+                    <button name="action_print_invoice"   attrs="{'invisible': [('is_approval_checked', '=', False)]}" string="Print" type="object" class="oe_highlight"/>
+                    <button name="action_submit" string="SUBMIT" type="object" class="oe_highlight" states="draft,rejected"/>
+                    <button name="action_approve" string="APPROVE" type="object" class="btn-success" states="uploaded"/>
+                    <button name="action_reject" string="REJECT" type="object" class="btn-danger" states="uploaded"/>
+                    <button name="compute_account_payable" string="GET COA" type="object"  groups="base.group_no_one"/>
+                    <button name="add_pricecut_scf" string="ADD POTONGAN SCF" type="object" attrs="{'invisible': [('state', 'not in', ['draft', 'rejected'])]}"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,uploaded,approved"/>
+                </header>
+                <sheet>
+                    <div name="button_box" position="inside">
+                       <button class="oe_stat_button" type="object" name="get_documents" icon="fa-file-text-o">
+                            <field string="Documents" name="documents_count" widget="statinfo"/>
+                        </button>
+                    </div>
+                    <!-- Payment status for invoices / receipts -->
+                    <widget name="web_ribbon" title="Paid"
+                    attrs="{'invisible': ['|', ('status_payment', '!=', 'paid'), ('move_type', 'not in', ('out_invoice', 'out_refund', 'in_invoice', 'in_refund', 'out_receipt', 'in_receipt'))]}"/>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name"  readonly="1" force_save="1"/>
+                        </h1>
+                    </div>
+                    <group>
+                      <group id="header_left_group">
+                           <field name="partner_id" options="{'no_create': True, 'no_create_edit':True}" widget="res_partner_many2one" string="Vendor" />
+                            <field name="bap_id" options="{'no_create': True, 'no_create_edit':True}" domain="[('is_fully_invoiced', '=', False), ('state', '=', 'approved'),('bap_type', '!=', 'cut over')]" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
+                           <field name="po_id" options="{'no_create': True, 'no_create_edit':True}" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
+                           <field name="no_invoice_vendor" style="background-color: #dddded;" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
+                           <field name="valuation_class" groups="base.group_no_one" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
+                           <field name="amount_invoice" style="background-color: #dddded;" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
+                           <field name="no_faktur_pajak" style="background-color: #dddded;" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
+                           <field name="currency_id" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
+                           <field name="status_payment" invisible="1"/>
+
+                      </group>
+                      <group id="header_right_group">
+                            <field name="branch_id" domain="[('biro', '=', False)]"
                 <form string="Invoice Form">
                     <header>
                         <button name="action_print_invoice"   attrs="{'invisible': [('is_approval_checked', '=', False)]}" string="Print" type="object" class="oe_highlight"/>
@@ -123,6 +162,7 @@
                                             <field name="total_line" string="Untaxed Amount"/>
                                             <field name="total_tax" string="PPN"/>
                                             <field name="total_pph" readonly="1" force_save="1" string="PPH"/>
+                                            <field name="amount_total_footer"/>
                                             <field name="amount_total_footer" string="Total Without PPN"/>
                                             <field name="amount_total_payment" string="Total With PPN"/>
                                             <field name="invoice_payments_widget" invisible="1" colspan="2" nolabel="1" widget="payment"/>
@@ -136,6 +176,110 @@
                                     </group>
                                 </group>
                             </page>
+                          <page id="other_tab" string="Other Info" name="other_info">
+
+                            <group id="other_tab_group">
+                                 <field name="payment_reference"  groups="base.group_no_one"/>
+                                <field name="payment_method" groups="base.group_no_one"/>
+                                <field name="approval_stage" readonly="1" force_save="1"/>
+                                <field name="baseline_date" groups="base.group_no_one"/>
+
+                                <field name="invoice_number" groups="base.group_no_one"/>
+                                <field name="partner_bank_id" string="Bank Account"/>
+                                <field name="account_id" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
+                                <field name="retention_due" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
+                                <field name="cut_off" readonly="1" force_save="1"/>
+                                <field name="pph_amount"/>
+                                <field name="is_waba" readonly="0" widget="toggle_boolean"/>
+
+                            </group>
+                          </page>
+                        <page string="List Document">
+                        <field name="document_ids" attrs="{'readonly': [('state', 'not in', ['draft','rejected'])]}">
+                            <tree create="0" delete="0">
+                                <field name="document_id"/>
+                                <field name="document" force_save="1" attrs="{'readonly': [('state', 'not in', ['waiting','rejected'])]}" widget="binary_button" filename="filename"/>
+                                <field name="filename" invisible="1"/>
+                                <field name="state"/>
+                            </tree>
+                            <form>
+                                <group>
+                                    <field name="document"  force_save="1" attrs="{'readonly': [('state', 'not in', ['waiting','rejected'])]}" widget="pdf_viewer" filename="filename"/>
+                                    <field name="filename" invisible="1"/>
+                                    <field name="state" invisible="1"/>
+                                </group>
+                            </form>
+                        </field>
+                    </page>
+                    <page string="Journal SAP">
+                        <field name="journal_item_sap_ids" nolable="1" attrs="{'readonly': [('state', 'in', ('uploaded', 'approved'))]}">
+                           <tree editable="top">
+                               <field name="invoice_id" invisible="1"/>
+                               <field name="doc_number"/>
+                               <field name="amount"/>
+                               <field name="line"/>
+                               <field name="project_id"/>
+                               <field name="branch_id"/>
+                               <field name="partner_id"/>
+                               <field name="po_id"/>
+                               <field name="status"/>
+                           </tree>
+                       </field>
+                       <group string="Total AP SAP">
+                           <field name="total_ap_sap" readonly="1"/>
+                       </group>
+                   </page>
+                    <page string="Potongan Lain-lain dan PPH">
+                        <group string="PPH">
+                            <field name="pph_ids" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}" domain="[('tax_group_id', '!=', 'PPN')]"/>
+                        </group>
+
+                        <group string="Potongan Lain Lain">
+                         <field name="price_cut_ids" nolable="1" attrs="{'readonly': [('state', 'in', ('uploaded', 'approved'))]}">
+                            <tree editable="top">
+                                <field name="move_id" invisible="1"/>
+                                <field name="product_id"/>
+                                <field name="special_gl_id"/>
+                                <field name="account_id"/>
+                                <field name="wbs_project_definition"/>
+                                <field name="percentage_amount"/>
+                                <field name="amount"/>
+                                <field name="posting_date"/>
+                            </tree>
+                        </field>
+
+                        </group>
+                        <group string="Total Potongan">
+                            <field name="dp_total"/>
+                            <field name="retensi_total"/>
+                            <field name="total_scf_cut" readonly="1"/>
+                        </group>
+                    </page>
+                    <page string="List Approval" name="approval_page">
+                        <field name="history_approval_ids" readonly="1" force_save="1">
+                            <tree string="List Approval">
+                                    <field name="user_id"/>
+                                    <field name="groups_id"/>
+                                    <field name="date"/>
+                                    <field name="note"/>
+                                    <field name="information" widget="html"/>
+                                    <field name="is_show_wizard" invisible="1"/>
+                                </tree>
+                                <form>
+                                    <group>
+                                        <field name="user_id"/>
+                                        <field name="groups_id"/>
+                                        <field name="date"/>
+                                        <field name="note"/>
+                                        <field name="information" widget="html"/>
+                                        <field name="is_show_wizard"/>
+                                    </group>
+                                </form>
+                        </field>
+                    </page>
+                    </notebook>
+                </sheet>
+            </form>
                             <page id="other_tab" string="Other Info" name="other_info">
                                 <group id="other_tab_group">
                                     <field name="payment_reference"  groups="base.group_no_one"/>
@@ -231,7 +375,8 @@
                     <field name="bap_type"/>
                     <field name="invoice_date" string="Document Date"/>
                     <field name="invoice_date_due"/>
-                    <field name="amount_invoice" sum="Total" string="Untaxed Amount"/>
+                    <field name="total_line" sum="Total" string="Untaxed Amount"/>
+                        <field name="amount_total_footer" sum="Net Amount"/>
                     <field name="state" invisible="1"/>
                     <field name="status_invoice_rel"/>
                     <field name="approval_stage"  widget="badge"  optional="show"/>

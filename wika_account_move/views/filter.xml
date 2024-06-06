@@ -10,25 +10,51 @@
             <field name="arch" type="xml">
                 <search string="Search Invoice">
                     <field name="name" string="Invoice"/>
+                    <field name="ap_type"/>
                     <field name="partner_id" />
                     <field name="po_id" />
                     <field name="bap_id" />
                     <field name="bap_type" />
                     <field name="branch_id" />
                     <field name="project_id" />
-                    <field name="line_ids" string="Invoice Item"/>
-                    <filter domain="[('invoice_user_id', '=', uid)]" name="myinvoices" help="My Invoices"/>
-                    <separator/>
-                    <filter name="draft" string="Draft" domain="[('state','=','draft')]"/>
-                    <filter name="upload" string="Uploaded" domain="[('state', '=', 'uploaded')]"/>
-                    <filter name="approved" string="Approved" domain="[('state', '=', 'approved')]"/>
+                    <field name="line_ids" string="Invoice Item" />
+                    <filter domain="[('invoice_user_id', '=', uid)]" name="myinvoices"
+                        help="My Invoices" />
+                    <separator />
+                    <filter name="draft" string="Draft" domain="[('state','=','draft')]" />
+                    <filter name="upload" string="Uploaded" domain="[('state', '=', 'uploaded')]" />
+                    <filter name="approved" string="Approved" domain="[('state', '=', 'approved')]" />
 
                     <group expand="0" string="Group By">
-                        <filter string="Divisi" name="branch_id" domain="[]" context="{'group_by': 'branch_id'}"/>
-                        <filter string="Department" name="department_id" domain="[]" context="{'group_by': 'department_id'}"/>
-                        <filter string="Project" name="project_id" domain="[]" context="{'group_by': 'project_id'}"/>
+                        <filter string="Divisi" name="branch_id" domain="[]"
+                            context="{'group_by': 'branch_id'}" />
+                        <filter string="Department" name="department_id" domain="[]"
+                            context="{'group_by': 'department_id'}" />
+                        <filter string="Project" name="project_id" domain="[]"
+                            context="{'group_by': 'project_id'}" />
+
+                        <separator />
+                        <filter string="Nomor PO" name="po_id" domain="[]"
+                            context="{'group_by': 'po_id'}" />
+                        <filter string="BAP" name="bap_id" domain="[]"
+                            context="{'group_by': 'bap_id'}" />
+                        <filter string="Vendor" name="partner_id" domain="[]"
+                            context="{'group_by': 'partner_id'}" />
+
+                        <separator />
+                        <filter string="Status Invoice" name="status_invoice_rel" domain="[]"
+                            context="{'group_by': 'status_invoice_rel'}" />
+                        <filter string="Position" name="approval_stage" domain="[]"
+                            context="{'group_by': 'approval_stage'}" />
+
+                        <filter string="Document Date" name="invoicedate"
+                            context="{'group_by': 'invoice_date'}" />
+                        <filter string="Due Date" name="duedate"
+                            context="{'group_by': 'invoice_date_due'}" />
 
                         <separator/>
+                        <filter string="ToDo User" name="todouser" context="{'group_by': 'activity_user_id'}"/>
+
                         <filter string="Nomor PO" name="po_id" domain="[]" context="{'group_by': 'po_id'}"/>
                         <filter string="BAP" name="bap_id" domain="[]" context="{'group_by': 'bap_id'}"/>
                         <filter string="Vendor" name="partner_id" domain="[]" context="{'group_by': 'partner_id'}"/>
@@ -41,23 +67,36 @@
                         <filter string="Document Date" name="invoicedate" context="{'group_by': 'invoice_date'}"/>
                         <filter string="Due Date" name="duedate" context="{'group_by': 'invoice_date_due'}"/>
                     </group>
-               </search>
+                </search>
             </field>
         </record>
 
-       <record id="view_wika_account_move_line_filter" model="ir.ui.view">
+        <record id="view_wika_account_move_line_filter" model="ir.ui.view">
             <field name="name">model.name.view.filter</field>
             <field name="model">account.move.line</field>
             <field name="arch" type="xml">
                 <search string="Search Invoice">
-                    <field name="move_id" string="Invoice"/>
+                    <field name="move_id" string="Invoice" />
                     <field name="partner_id" />
                     <field name="purchase_id" />
                     <field name="picking_id" />
                     <field name="project_id" />
                     <field name="branch_id" />
-                    <separator/>
+                     <separator />
                     <group expand="0" string="Group By">
+                        <filter string="Divisi" name="branch_id" domain="[]"
+                            context="{'group_by': 'branch_id'}" />
+                        <filter string="Department" name="department_id" domain="[]"
+                            context="{'group_by': 'department_id'}" />
+                        <filter string="Project" name="project_id" domain="[]"
+                            context="{'group_by': 'project_id'}" />
+
+                        <separator />
+                        <filter string="GR/SES" name="picking_id" domain="[]"
+                            context="{'group_by': 'picking_id'}" />
+                        <filter string="Vendor" name="partner_id" domain="[]"
+                            context="{'group_by': 'partner_id'}" />
+
                         <filter string="Divisi" name="branch_id" domain="[]" context="{'group_by': 'branch_id'}"/>
                         <filter string="Department" name="department_id" domain="[]" context="{'group_by': 'department_id'}"/>
                         <filter string="Project" name="project_id" domain="[]" context="{'group_by': 'project_id'}"/>
@@ -65,11 +104,24 @@
                         <filter string="GR/SES" name="picking_id" domain="[]" context="{'group_by': 'picking_id'}"/>
                         <filter string="Vendor" name="partner_id" domain="[]" context="{'group_by': 'partner_id'}"/>
                     </group>
-               </search>
+                </search>
+            </field>
+        </record>
+
+        <record id="view_doc_ap_non_po_filter" model="ir.ui.view">
+            <field name="name">model.name.view.filter</field>
+            <field name="model">doc.ap.non.po</field>
+            <field name="arch" type="xml">
+                <search string="Search Doc">
+                    <field name="doc_number" />
+                    <field name="divisi_id" />
+                    <field name="project_id" />
+                    <field name="partner_id" />
+                </search>
             </field>
         </record>
 
     </data>
-    
+
 
 </odoo>

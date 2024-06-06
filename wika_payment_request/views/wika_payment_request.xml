@@ -37,15 +37,14 @@
             <field name="model">wika.payment.request</field>
             <field name="arch" type="xml">
                 <tree string="Payment Request">
+                    <field name="name"/>
                     <field name="branch_id"/>
                     <field name="project_id"/>
-                    <field name="name"/>
                     <field name="date"/>
                      <field name="total"/>
                      <field name="state"/>
                     <field name="activity_summary"/>
                     <field name="approval_stage"/>
-
                 </tree>
             </field>
         </record>
@@ -94,18 +93,18 @@
                                 <field name="check_biro" invisible="1"/>
                                 <field name="level" invisible="1"/>
                                  <field name="approval_line_id" invisible="1"/>
-                                <field name="branch_id" domain="[('biro', '=', False)]"
+                                <field name="branch_id" options="{'no_create': True, 'no_create_edit':True}" domain="[('biro', '=', False)]"
                                     attrs="{'readonly': [('state', 'in', [ 'request', 'verified', 'approve'])]}"/>
                                 <field name="department_id" domain="[('biro', '=', True), ('parent_id', '=', branch_id)]" 
                                     attrs="{'readonly': [('state', 'in', [ 'request', 'verified', 'approve'])], 'invisible': [('check_biro', '=', False)]}"/>
-                                <field name="project_id" 
+                                <field name="project_id"  options="{'no_create': True, 'no_create_edit':True}"
                                     attrs="{'readonly': [('state', 'in', [ 'request', 'verified', 'approve'])]}"/>
                             </group>
                         </group>
                         <notebook>
-                            <page string="List Invoice Full Payment">
+                            <!-- <page string="List Invoice Full Payment Full Payment Full Payment">
                                 <group>   
-                                    <field name="invoice_ids" mode="tree" nolabel="1"  colspan="2" attrs="{'readonly': [('state', '=', 'verified')]}">
+                                    <field name="invoice_ids" mode="tree" nolabel="1"  colspan="2" context="{'tree_view_ref': 'wika_account_move.view_wika_account_move_tree','search_view_ref':'wika_account_move.view_wika_account_move_filter'}" attrs="{'readonly': [('state', '=', 'verified')]}">
                                         <tree>
                                             <field name="name"/>
                                             <field name="branch_id"/>
@@ -115,6 +114,7 @@
                                             <field name="invoice_date" string="Document Date"/>
                                             <field name="invoice_date_due"/>
                                             <field name="total_partial_pr" string="Amount Request"/>
+                                            <field name="sisa_partial"/>
                                             <field name="sisa_partial"/>
                                             <field name="is_partial_pr"/>
                                             <field name="status_payment"/>
@@ -137,17 +137,67 @@
                                     </field>
                                 </group>
                             </page>
-                            <page string="List Invoice 2" groups="base.group_no_one">
+                            <page string="List Invoice Partial Payment">
                                 <group>
-                                    <field name="move_ids" mode="tree" nolabel="1"  colspan="2" >
+                                    <field name="partial_payment_ids" mode="tree" nolabel="1"  colspan="2" attrs="{'readonly': [('state', '=', 'verified')]}">
                                         <tree>
+                                            <field name="name"/>
                                             <field name="invoice_id"/>
-                                            <field name="partial_id"/>
                                             <field name="branch_id"/>
                                             <field name="project_id"/>
                                             <field name="partner_id"/>
-                                            <field name="amount" string="Amount Request"/>
-                                            <field name="is_partial_pr"/>
+                                            <field name="payment_state"/>
+                                        </tree>
+
+                                    </field>
+                                </group>
+                            </page> -->
+                            <page string="List Invoice SAP Full Payment">
+                                <group>   
+                                    <field name="journal_item_sap_ids" mode="tree" nolabel="1"  colspan="2" attrs="{'readonly': [('state', '=', 'verified')]}">
+                                        <tree>
+                                            <field name="doc_number"/>
+                                            <field name="amount"/>
+                                            <field name="line"/>
+                                            <field name="project_id"/>
+                                            <field name="branch_id"/>
+                                            <field name="partner_id"/>
+                                            <field name="po_id"/>
+                                            <field name="status"/>
+                                        </tree>
+                                    </field>
+                                </group>
+                            </page>
+                            <page string="List Invoice Partial Payment" groups="base.group_no_one">
+                            <page string="List Invoice 2" groups="base.group_no_one">
+                                <group>
+                                    <field name="partial_payment_ids" mode="tree" nolabel="1"  colspan="2" attrs="{'readonly': [('state', '=', 'verified')]}">
+                                        <tree>
+                                            <field name="invoice_id"/>
+                                            <field name="partial_id"/>
+                                            <field name="name"/>
+                                            <field name="invoice_id"/>
+                                            <field name="branch_id"/>
+                                            <field name="project_id"/>
+                                            <field name="partner_id"/>
+                                            <field name="payment_state"/>
+                                        </tree>
+
+                                    </field>
+                                </group>
+                            </page>
+                            <page string="PR Item">
+                                <group>
+                                    <field name="move_ids" mode="tree" nolabel="1"  colspan="2" >
+                                        <tree readonly="1">
+                                              <field name="pr_id"/>
+                                                <field name="invoice_id"/>
+                                                <field name="project_id"/>
+                                                <field name="partner_id"/>
+                                                <field name="payment_method"/>
+                                                <field name="amount" sum="Total Amount"/>
+                                                <field name="is_partial_pr"/>
+                                                <field name="next_user_id"/>
                                         </tree>
                                     </field>
                                 </group>

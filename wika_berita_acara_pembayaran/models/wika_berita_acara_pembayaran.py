@@ -64,7 +64,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
     begin_date = fields.Date(string='Tgl Mulai Kontrak', required=True, related="po_id.begin_date")
     sap_doc_number = fields.Char(string='Nomor Kontrak', required=True, related="po_id.sap_doc_number")
     amount_total = fields.Monetary(string='Total', related="po_id.amount_total")
-    currency_id = fields.Many2one('res.currency', string='Currency')
+    currency_id = fields.Many2one('res.currency', string='Currency', related="po_id.currency_id")
     notes = fields.Html(string='Terms and Conditions', store=True, readonly=False,)
     total_amount = fields.Monetary(string='Total Amount', compute='compute_total_amount')
     total_tax = fields.Monetary(string='Total Tax', compute='compute_total_tax')
@@ -145,18 +145,18 @@ class WikaBeritaAcaraPembayaran(models.Model):
     remain_val_po = fields.Float(string='Sisa BAP')
     fee_management = fields.Boolean('Rincian Fee Management?')
 
-    @api.constrains('po_id', 'bap_type', 'total_current_value', 'total_po')
-    def _check_total_amount(self):
-        for record in self:
-            if record.bap_type == 'retensi':
-                total_amount_sum = sum(self.search([
-                    ('po_id', '=', record.po_id.id),
-                    # ('bap_type', '=', 'progress'),
-                    ('id', '!=', record.id)
-                ]).mapped('total_current_value')) + record.total_current_value
+    # @api.constrains('po_id', 'bap_type', 'total_current_value', 'total_po')
+    # def _check_total_amount(self):
+    #     for record in self:
+    #         if record.bap_type == 'retensi':
+    #             total_amount_sum = sum(self.search([
+    #                 ('po_id', '=', record.po_id.id),
+    #                 # ('bap_type', '=', 'progress'),
+    #                 ('id', '!=', record.id)
+    #             ]).mapped('total_current_value')) + record.total_current_value
 
-                if record.total_po != 0 and total_amount_sum < record.total_po:
-                    raise ValidationError("Anda tidak dapat membuat BAP Retensi karena progress belum mencapai 100% dari Total PO.")
+    #             if record.total_po != 0 and total_amount_sum < record.total_po:
+    #                 raise ValidationError("Anda tidak dapat membuat BAP Retensi karena progress belum mencapai 100% dari Total PO.")
 
     # _sql_constraints = [
     #     ('unique_po_id_bap_type_progress',
@@ -164,37 +164,18 @@ class WikaBeritaAcaraPembayaran(models.Model):
     #      'The PO ID must be unique for BAP Type Progress!')
     # ]
 
-    @api.constrains('po_id', 'bap_type')
-    def _check_po_id_unique(self):
-        for record in self:
-            if record.bap_type == 'progress':
-                # Search for any records with the same po_id
-                existing_bap = self.search([
-                    ('po_id', '=', record.po_id.id),
-                    ('id', '!=', record.id),
-                ])
-                if existing_bap:
-                    raise ValidationError('Cannot create BAP because a BAP with this PO ID already exists with BAP Type Progress.')
-
     # @api.constrains('po_id', 'bap_type')
-    # def _check_po_bap_type(self):
+    # def _check_po_id_unique(self):
     #     for record in self:
-    #         # Cari record lain dengan po_id yang sama dan bap_type yang berbeda
-    #         bap_records = self.search([
-    #             ('po_id', '=', record.po_id.id),
-    #             ('bap_type', 'in', ['progress', 'uang muka']),
-    #             ('bap_type', '!=', record.bap_type),
-    #             ('id', '!=', record.id)
-    #         ])
-            
-    #         total_current_value_sum = sum(bap_records.mapped('total_current_value')) + record.total_current_value
+    #         if record.bap_type == 'progress':
+    #             # Search for any records with the same po_id
+    #             existing_bap = self.search([
+    #                 ('po_id', '=', record.po_id.id),
+    #                 ('id', '!=', record.id),
+    #             ])
+    #             if existing_bap:
+    #                 raise ValidationError('Cannot create BAP because a BAP with this PO ID already exists with BAP Type Progress.')
 
-    #         if record.bap_type == 'retensi' and total_current_value_sum == record.total_po:
-    #             continue
-            
-    #         conflicting_bap = bap_records.filtered(lambda r: r.bap_type != record.bap_type)
-    #         if conflicting_bap:
-    #             raise ValidationError("Anda tidak bisa membuat BAP karena nomor PO tersebut sudah ada BAP dengan tipe lain.")
 
     # @api.onchange('bap_date')
     # def _onchange_bap_date(self):
@@ -295,14 +276,91 @@ class WikaBeritaAcaraPembayaran(models.Model):
         for record in self:
             record.value_to_date = record.total_po - record.total_adjustment
 
-    # # onchange validation
-    # @api.onchange('total_adjustment', 'remain_val_po', 'last_value', 'total_po')
-    # def _check_validation_adjustment(self):
-    #     for record in self:
-    #         if record.last_value != 0 and record.total_adjustment > record.remain_val_po:
-    #             raise ValidationError("Total Amount Adjustment tidak boleh melebihi nilai sisa BAP")
-    #         if record.total_adjustment > record.total_po:
-    #             raise ValidationError("Nilai Amount Adjustment tidak boleh melebihi nilai kontrak PO")
+    @api.onchange('partner_id', 'bap_ids.product_id')
+    def _onchange_partner_id_product_id(self):
+        if self.partner_id and self.bap_ids:
+            bill_coa_type = self.partner_id.bill_coa_type
+            product_valuation_classes = self.bap_ids.mapped('product_id.valuation_class')
+            if bill_coa_type and product_valuation_classes:
+                payable_setting = self.env['wika.setting.account.payable'].sudo().search([
+                    ('bill_coa_type', '=', bill_coa_type),
+                    ('valuation_class', 'in', product_valuation_classes)
+                ], limit=1)
+                if payable_setting:
+                    return {'domain': {'pph_ids': [('id', 'in', payable_setting.pph_ids.ids)]}}
+                else:
+                    return {'domain': {'pph_ids': [('id', '=', False)]}}
+        return {'domain': {'pph_ids': [('id', '=', False)]}}
+
+    @api.onchange('po_id')
+    def _onchange_po_id(self):
+        if self.po_id:
+            prev_bap = self.env['wika.berita.acara.pembayaran'].search([
+                ('po_id', '=', self.po_id.id),
+                ('name', '<', self.id)], order='name desc', limit=1)
+
+            if prev_bap:
+                self.remain_val_po = prev_bap.remain_val_po - prev_bap.total_adjustment
+            else:
+                self.remain_val_po = self.total_po
+
+    @api.model
+    def create(self, vals):
+        new_bap = super(WikaBeritaAcaraPembayaran, self).create(vals)
+
+        if vals.get('po_id'):
+            prev_bap = self.search([
+                ('po_id', '=', vals['po_id']),
+                ('name', '<', new_bap.name)], order='name desc', limit=1)
+
+            if prev_bap:
+                new_bap.remain_val_po = prev_bap.remain_val_po - prev_bap.total_adjustment
+            else:
+                new_bap.remain_val_po = new_bap.total_po
+        return new_bap
+
+    def write(self, vals):
+        res = super(WikaBeritaAcaraPembayaran, self).write(vals)
+
+        if 'po_id' in vals:
+            for bap in self:
+                if bap.po_id:
+                    prev_bap = self.search([
+                        ('po_id', '=', bap.po_id.id),
+                        ('name', '<', bap.name)], order='name desc', limit=1)
+
+                    if prev_bap:
+                        bap.remain_val_po = prev_bap.remain_val_po - prev_bap.total_adjustment
+                    else:
+                        bap.remain_val_po = bap.total_po
+        return res
+
+    @api.depends('po_id.amount_untaxed')
+    def _compute_total_po(self):
+        for record in self:
+            total_po = sum(record.po_id.mapped('amount_untaxed'))
+            record.total_po = total_po
+
+    @api.depends('bap_ids.amount_adjustment')
+    def _compute_total_adjustment(self):
+        for record in self:
+            total_adjustment = sum(record.bap_ids.mapped('amount_adjustment'))
+            record.total_adjustment = total_adjustment
+
+    # compute nilai sisa po
+    @api.constrains('total_po', 'total_adjustment', 'value_to_date')
+    def _check_amount_adjustment(self):
+        for record in self:
+            record.value_to_date = record.total_po - record.total_adjustment
+
+    # onchange validation
+    @api.onchange('total_adjustment', 'remain_val_po', 'last_value', 'total_po')
+    def _check_validation_adjustment(self):
+        for record in self:
+            if record.last_value != 0 and record.total_adjustment > record.remain_val_po:
+                raise ValidationError("Total Amount Adjustment tidak boleh melebihi nilai sisa BAP")
+            if record.total_adjustment > record.total_po:
+                raise ValidationError("Nilai Amount Adjustment tidak boleh melebihi nilai kontrak PO")
 
     @api.constrains('total_adjustment', 'remain_val_po', 'total_po')
     def _check_adjustment_constraints(self):
@@ -385,8 +443,6 @@ class WikaBeritaAcaraPembayaran(models.Model):
             total_po = sum(record.bap_ids.mapped('unit_price_po'))
             record.price_sd_saatini = record.last_value + total_po
 
-
-
     # Potongan uang muka computed
     @api.depends('price_cut_ids', 'price_cut_ids.qty', 'price_cut_ids.product_id')
     def _compute_qty_dp_saat_ini(self):
@@ -427,7 +483,6 @@ class WikaBeritaAcaraPembayaran(models.Model):
     def _compute_total_sd_saatini(self):
         for record in self:
             record.total_sd_saatini = record.qty_sd_saatini * record.price_sd_saatini
-
 
     @api.depends('price_cut_ids', 'price_cut_ids.percentage_amount', 'price_cut_ids.product_id')
     def _compute_amount_pecentage_tmp(self):
@@ -477,7 +532,6 @@ class WikaBeritaAcaraPembayaran(models.Model):
             total_pembayaran_retensi = retensi_total - total_pph
             record.total_pembayaran_retensi = total_pembayaran_retensi
 
-
     # # funct terbilang
     @api.depends('total_pembayaran')
     def _compute_rupiah_terbilang(self):
@@ -526,8 +580,6 @@ class WikaBeritaAcaraPembayaran(models.Model):
                 record.terbilang_retensi = rupiah_terbilang
             else:
                 record.terbilang_retensi = ""
-
-
 
     # @api.depends('bap_date')
     def _compute_last_value(self):
@@ -741,7 +793,6 @@ class WikaBeritaAcaraPembayaran(models.Model):
                                 x.write({'stock_move_id': data.stock_move_id.id})
 
 
-
     @api.onchange('po_id','bap_type')
     def onchange_po_id(self):
 
@@ -831,6 +882,8 @@ class WikaBeritaAcaraPembayaran(models.Model):
             elif record.bap_type == 'retensi':
                 total_amount_tax = record.retensi_total
                 record.total_tax = math.floor(total_amount_tax) * 0.11
+                total_amount_tax = record.retensi_total
+                record.total_tax = math.floor(total_amount_tax) * 0.11
                 # print("TESSSSSSBORRRRRRRETENSIII", record.total_tax)
             else:
                 total_amount = record.total_amount or 0.0
@@ -840,8 +893,6 @@ class WikaBeritaAcaraPembayaran(models.Model):
                 total_tax = (total_amount - dp_total - retensi_total) * tax_percentage
                 record.total_tax = math.floor(total_tax)
     
-
-
     @api.depends('grand_total', 'total_tax')
     def compute_grand_total(self):
         for record in self:
@@ -877,10 +928,10 @@ class WikaBeritaAcaraPembayaran(models.Model):
             model_id = self.env['ir.model'].search([('model', '=', 'wika.berita.acara.pembayaran')], limit=1)
             approval_id = self.env['wika.approval.setting'].sudo().search(
                 [('model_id', '=', model_id.id), ('level', '=', level),
-                 ('transaction_type', '=', self.po_id.transaction_type)], limit=1)
+                ('transaction_type', '=', self.po_id.transaction_type)], limit=1)
             if not approval_id:
                 raise ValidationError(
-                    'Approval Setting untuk menu BAP tidak ditemukan. Silakan hubungi Administrator!')
+                'Approval Setting untuk menu BAP tidak ditemukan. Silakan hubungi Administrator!')
             approval_line_id = self.env['wika.approval.setting.line'].search([
                 ('sequence', '=', self.step_approve),
                 ('approval_id', '=', approval_id.id)
@@ -1021,7 +1072,6 @@ class WikaBeritaAcaraPembayaran(models.Model):
                 raise ValidationError('Document belum di unggah, mohon unggah file terlebih dahulu!')
             if record.bap_type =='cut over' and any(not line.stock_move_id for line in record.bap_ids):
                 raise ValidationError('Data Invoice cut over belum di mapping!')
-
             if any(line.state == 'rejected' for line in record.document_ids):
                 raise ValidationError('Document belum di ubah setelah reject, silahkan cek terlebih dahulu!')
 
@@ -1029,7 +1079,9 @@ class WikaBeritaAcaraPembayaran(models.Model):
                 raise ValidationError('Document belum di ubah setelah reject, silahkan cek terlebih dahulu!')
 
         cek = False
-        level=self.level
+        level = self.level
+        documents_model = self.env['documents.document'].sudo()
+
         if level:
             model_id = self.env['ir.model'].search([('model', '=', 'wika.berita.acara.pembayaran')], limit=1)
             approval_id = self.env['wika.approval.setting'].sudo().search(
@@ -1068,6 +1120,90 @@ class WikaBeritaAcaraPembayaran(models.Model):
                     'note': 'Submit Document',
                     'bap_id': self.id
                 })
+                folder_id = self.env['documents.folder'].sudo().search([('name', '=', 'BAP')], limit=1)
+                if folder_id:
+                    facet_id = self.env['documents.facet'].sudo().search([
+                        ('name', '=', 'Documents'),
+                        ('folder_id', '=', folder_id.id)
+                    ], limit=1)
+                    for doc in self.document_ids.filtered(lambda x: x.state in ('uploaded','rejected')):
+                        if doc.document_id.name == 'BAP':
+                            # doc.state = 'verified'
+                            attachment_id = self.env['ir.attachment'].sudo().create({
+                                'name': doc.filename,
+                                'datas': doc.document,
+                                'res_model': 'documents.document',
+                            })
+                            if attachment_id:
+                                tag = self.env['documents.tag'].sudo().search([
+                                    ('facet_id', '=', facet_id.id),
+                                    ('name', '=', doc.document_id.name)
+                                ], limit=1)
+                                documents_model.create({
+                                    'attachment_id': attachment_id.id,
+                                    'folder_id': folder_id.id,
+                                    'tag_ids': tag.ids,
+                                    'partner_id': doc.bap_id.partner_id.id,
+                                    'purchase_id': self.po_id.id,
+                                    'bap_id': self.id,
+                                })
+                
+                        elif doc.document_id.name in ['GR', 'Surat Jalan', 'SES']:
+                            folder_id = self.env['documents.folder'].sudo().search([('name', '=', 'GR/SES')], limit=1)
+                            if folder_id:
+                                facet_id = self.env['documents.facet'].sudo().search([
+                                    ('name', '=', 'Documents'),
+                                    ('folder_id', '=', folder_id.id)
+                                ], limit=1)
+                                attachment_id = self.env['ir.attachment'].sudo().create({
+                                    'name': doc.filename,
+                                    'datas': doc.document,
+                                    'res_model': 'documents.document',
+                                })
+                                if attachment_id:
+                                    tag = self.env['documents.tag'].sudo().search([
+                                        ('facet_id', '=', facet_id.id),
+                                        ('name', '=', doc.document_id.name)
+                                    ], limit=1)
+                                    documents_model.create({
+                                        'attachment_id': attachment_id.id,
+                                        'folder_id': folder_id.id,
+                                        'tag_ids': tag.ids,
+                                        'partner_id': doc.bap_id.partner_id.id,
+                                        'purchase_id': self.po_id.id,
+                                        'bap_id': self.id,
+                                        'picking_id': doc.picking_id.id
+                                    })
+
+                        elif doc.document_id.name == 'Kontrak':
+                            folder_id = self.env['documents.folder'].sudo().search([('name', '=', 'PO')], limit=1)
+                            if folder_id:
+                                facet_id = self.env['documents.facet'].sudo().search([
+                                    ('name', '=', 'Documents'),
+                                    ('folder_id', '=', folder_id.id)
+                                ], limit=1)
+                                attachment_id = self.env['ir.attachment'].sudo().create({
+                                    'name': doc.filename,
+                                    'datas': doc.document,
+                                    'res_model': 'documents.document',
+                                })
+                                if attachment_id:
+                                    tag = self.env['documents.tag'].sudo().search([
+                                        ('facet_id', '=', facet_id.id),
+                                        ('name', '=', doc.document_id.name)
+                                    ], limit=1)
+                                    documents_model.create({
+                                        'attachment_id': attachment_id.id,
+                                        'folder_id': folder_id.id,
+                                        'tag_ids': tag.ids,
+                                        'partner_id': doc.bap_id.partner_id.id,
+                                        'purchase_id': self.po_id.id,
+                                        'bap_id': self.id,
+                                        'is_po_doc': True
+                                    })
+
+
+
                 groups_line = self.env['wika.approval.setting.line'].search([
                     ('level', '=', level),
                     ('sequence', '=', self.step_approve),
@@ -1095,6 +1231,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
                             'status': 'to_approve',
                             'summary': """Need Approval Document BAP"""
                         })
+
                     self.sudo().push_bap()
         else:
             raise ValidationError('User Akses Anda tidak berhak Submit!')
@@ -1105,7 +1242,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
                 if any(x.picking_id.state!='approved' for x in record.bap_ids):
                     raise ValidationError('Document GR/SES belum Lengkap silahkan lengkapi terlebih dahulu')
 
-        documents_model = self.env['documents.document'].sudo()
+        # documents_model = self.env['documents.document'].sudo()
         cek = False
         model_id = self.env['ir.model'].search([('model','=', 'wika.berita.acara.pembayaran')], limit=1)
         level=self.level
@@ -1143,32 +1280,37 @@ class WikaBeritaAcaraPembayaran(models.Model):
                     'note': 'Approved',
                     'bap_id': self.id
                 })
-                folder_id = self.env['documents.folder'].sudo().search([('name', '=', 'BAP')], limit=1)
-                if folder_id:
-                    facet_id = self.env['documents.facet'].sudo().search([
-                        ('name', '=', 'Documents'),
-                        ('folder_id', '=', folder_id.id)
-                    ], limit=1)
-                    for doc in self.document_ids.filtered(lambda x: x.state in ('uploaded','rejected')):
-                        doc.state = 'verified'
-                        attachment_id = self.env['ir.attachment'].sudo().create({
-                            'name': doc.filename,
-                            'datas': doc.document,
-                            'res_model': 'documents.document',
-                        })
-                        if attachment_id:
-                            tag = self.env['documents.tag'].sudo().search([
-                                ('facet_id', '=', facet_id.id),
-                                ('name', '=', doc.document_id.name)
-                            ], limit=1)
-                            documents_model.create({
-                                'attachment_id': attachment_id.id,
-                                'folder_id': folder_id.id,
-                                'tag_ids': tag.ids,
-                                'partner_id': doc.bap_id.partner_id.id,
-                                'purchase_id': self.po_id.id,
-                                'bap_id': self.id,
-                            })
+                # replace docsss
+                for doc in self.document_ids:
+                    if doc.document_id.name == 'Kontrak' and doc.document:
+                        for doc_po in self.po_id.document_ids:
+                            bap_fname = doc.filename
+                            if doc_po.document_id.name == 'Kontrak':
+                                po_fname = doc_po.filename
+                                if bap_fname != po_fname:
+                                    doc_po.update({
+                                        'document': doc.document,
+                                        'filename': f'[Revised by {self.env.user.name}]' + ' ' + doc.filename,
+                                        'state': 'verified'
+                                    })
+
+                    elif doc.document_id.name in ['GR', 'Surat Jalan', 'SES'] and doc.document:
+                        for grses_id in self.bap_ids:
+                            for doc_grses in grses_id.picking_id.document_ids:
+                                if doc_grses.state == 'rejected':
+                                    if doc.picking_id.name == doc_grses.picking_id.name and doc.document_id.name == doc_grses.document_id.name:
+                                        bap_fname = doc.filename
+                                        grses_fname = doc_grses.filename
+                                        if bap_fname != grses_fname:
+                                            doc_grses.update({
+                                                'document': doc.document,
+                                                'filename': f'[Revised by {self.env.user.name}]' + ' ' + doc.filename,
+                                                'state': 'verified'
+                                            })
+
+                for doc in self.document_ids.filtered(lambda x: x.state in ('uploaded','rejected')):
+                    doc.state = 'verified'
+                    
                 if self.activity_ids:
                     for x in self.activity_ids.filtered(lambda x: x.status  != 'approved'):
                         if x.user_id.id == self._uid:
@@ -1229,8 +1371,10 @@ class WikaBeritaAcaraPembayaran(models.Model):
 
     def _compute_documents_count(self):
         for record in self:
-            record.documents_count = self.env['documents.document'].search_count(
-                [('purchase_id', '=', record.po_id.id)])
+            record.documents_count = self.env['documents.document'].search_count([
+                ('purchase_id', '=', record.po_id.id),
+                ('folder_id', 'in', ('PO','GR/SES','BAP'))
+            ])
             
     @api.depends('po_id')
     def _compute_invoice_item(self):
@@ -1255,8 +1399,6 @@ class WikaBeritaAcaraPembayaran(models.Model):
     def get_documents(self):
         self.ensure_one()
         view_kanban_id = self.env.ref("documents.document_view_kanban", raise_if_not_found=False)
-        view_kanban_id = self.env.ref("documents.document_view_kanban", raise_if_not_found=False)
-
         view_tree_id = self.env.ref("documents.documents_view_list", raise_if_not_found=False)
 
         return {
@@ -1266,7 +1408,10 @@ class WikaBeritaAcaraPembayaran(models.Model):
             'res_model': 'documents.document',
             'view_ids': [(view_kanban_id, 'kanban'),(view_tree_id, 'tree')],
             'res_id': self.id,
-            'domain': [('purchase_id', '=', self.po_id.id),('folder_id','in',('PO','GR/SES','BAP'))],
+            'domain': [
+                ('purchase_id', '=', self.po_id.id),
+                ('folder_id','in',('PO','GR/SES','BAP'))
+            ],
             'context': {'default_purchase_id': self.po_id.id},
         }
 
@@ -1312,8 +1457,6 @@ class WikaBeritaAcaraPembayaran(models.Model):
     #
 
     #
-
-
 class WikaBeritaAcaraPembayaranLine(models.Model):
     _name = 'wika.berita.acara.pembayaran.line'
 

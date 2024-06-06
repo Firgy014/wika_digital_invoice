@@ -23,6 +23,9 @@
                         <filter name="dept" string="Department" context="{'group_by': 'department_id'}"/>
                         <filter name="project" string="Project" context="{'group_by': 'project_id'}"/>
                         <filter name="date" string="Date" context="{'group_by': 'date'}"/>
+                        <filter name="posting_date" string="Posting Date" context="{'group_by': 'posting_date'}"/>
+                        <filter name="posting_date" string="Posting Date" context="{'group_by': 'posting_date'}"/>
+
                         <filter name="invoice_id" string="Invoice" context="{'group_by': 'invoice_id'}"/>
 
                         <filter name="vendor" string="Vendor" context="{'group_by': 'partner_id'}"/>
@@ -42,8 +45,15 @@
                     <field name="branch_id"/>
                     <field name="project_id"/>
                     <field name="date"/>
+                    <field name="posting_date"/>
+                     <field name="posting_date"/>
                     <field name="partial_amount" sum="Total Partial"/>
                     <field name="state"/>
+                    <field name="is_already_pr"/>
+                    <field name="reference"/>
+                    <field name="is_already_pr"/>
+                    <field name="reference"/>
+                    <field name="payment_state"/>
                     <field name="is_already_pr"/>
                     <field name="reference"/>
                 </tree>
@@ -69,6 +79,8 @@
                                 <field string="Documents" name="documents_count" widget="statinfo"/>
                             </button>
                         </div>-->
+                        <widget name="web_ribbon" title="Paid"
+                            attrs="{'invisible': [('payment_state', '!=', 'paid')]}"/>
                         <div>
                             <div class="oe_title">
                                 <h1>
@@ -89,6 +101,7 @@
                             <group>
                                 <field name="check_biro" invisible="1"/>
                                 <field name="level" invisible="1"/>
+                                <field name="payment_state" invisible="1"/>
                                 <field name="branch_id" domain="[('biro', '=', False)]"
                                     attrs="{'readonly': [('state', 'in', [ 'requested', 'approved'])]}"/>
                                 <field name="department_id" domain="[('biro', '=', True), ('parent_id', '=', branch_id)]" 
@@ -102,6 +115,14 @@
                                 <field name="line_item_char" attrs="{'readonly': [('state', 'in', ['requested', 'approved'])]}"/>
                                 <field name="remaining_amount" invisible="1" attrs="{'readonly': [('state', 'in', [ 'draft', 'requested', 'approved'])]}"/>
                                 <field name="payment_state" attrs="{'readonly': [('state', 'in', ['requested', 'approved'])]}"/>
+                                <field name="posting_date" 
+                                attrs="{'readonly': [('state', 'in', [ 'request', 'approve'])]}"/>
+                                <field name="is_already_pr" invisible="1"/>
+                                <field name="reference"/>
+                                <field name="no_doc_sap"/>
+                                <field name="year"/>
+                                <field name="line_item_char"/>
+                                <field name="remaining_amount" invisible="1"/>
                             </group>
                         </group>
                         <notebook>

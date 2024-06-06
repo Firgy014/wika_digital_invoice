@@ -1,42 +1,62 @@
 <odoo>
-    <record id="url_gr_ses" model="wika.integration">
-        <field name="name">URL GR</field>
-        <field name="app">SAP</field>
-        <field name="url">https://fiori.wika.co.id/ywikamm009/goods-movement-outb?sap-client=300</field>
-    </record>
+    <data noupdate="1">
+        <record id="url_gr_ses" model="wika.integration">
+            <field name="name">URL GR</field>
+            <field name="app">SAP</field>
+            <field name="url">
+                https://fioridev.wika.co.id/ywikamm009/goods-movement-outb?sap-client=300</field>
+        </record>
 
-    <record id="url_po" model="wika.integration">
-        <field name="name">URL PO</field>
-        <field name="app">SAP</field>
-        <field name="url">https://api.wika.co.id/</field>
-    </record>
+        <record id="url_po" model="wika.integration">
+            <field name="name">URL PO</field>
+            <field name="app">SAP</field>
+            <field name="url">https://api.wika.co.id/</field>
+        </record>
 
-    <record id="url_get_token" model="wika.integration">
-        <field name="name">URL_GET_TOKEN</field>
-        <field name="app">SAP</field>
-        <field name="url">https://fioridev.wika.co.id/ywikafi017/update-table?sap-client=110</field>
-    </record>
+        <record id="url_get_token" model="wika.integration">
+            <field name="name">URL_GET_TOKEN</field>
+            <field name="app">SAP</field>
+            <field name="url">https://fioridev.wika.co.id/ywikafi017/update-table?sap-client=300</field>
+        </record>
 
-    <record id="url_send_bap" model="wika.integration">
-        <field name="name">URL_SEND_BAP</field>
-        <field name="app">SAP</field>
-        <field name="url">https://fioridev.wika.co.id/ywikafi017/update-table?sap-client=110</field>
-    </record>
-     <record id="url_pr_proyek" model="wika.integration">
-        <field name="name">URL Payment Request Proyek</field>
-        <field name="app">SAP</field>
-        <field name="url">https://fioridev.wika.co.id/ywikafi016/update-refkey3?sap-client=110</field>
-    </record>
-    <record id="url_pr_divisi" model="wika.integration">
-        <field name="name">URL Payment Request Divisi</field>
-        <field name="app">SAP</field>
-        <field name="url">https://fioridev.wika.co.id/ywikafi016a/update-assignment?sap-client=110</field>
-    </record>
-     <record id="url_pr_pusat" model="wika.integration">
-        <field name="name">URL Payment Request Pusat</field>
-        <field name="app">SAP</field>
-        <field name="url">https://fioridev.wika.co.id/ywikafi016b/update-paymntmethod?sap-client=110</field>
-    </record>
+        <record id="url_send_bap" model="wika.integration">
+            <field name="name">URL_SEND_BAP</field>
+            <field name="app">SAP</field>
+            <field name="url">https://fioridev.wika.co.id/ywikafi017/update-table?sap-client=300</field>
+        </record>
+        <record id="url_pr_proyek" model="wika.integration">
+            <field name="name">URL Payment Request Proyek</field>
+            <field name="app">SAP</field>
+            <field name="url">https://fioridev.wika.co.id/ywikafi016/update-refkey3?sap-client=300</field>
+        </record>
+        <record id="url_pr_divisi" model="wika.integration">
+            <field name="name">URL Payment Request Divisi</field>
+            <field name="app">SAP</field>
+            <field name="url">
+                https://fioridev.wika.co.id/ywikafi016a/update-assignment?sap-client=300</field>
+        </record>
+        <record id="url_pr_pusat" model="wika.integration">
+            <field name="name">URL Payment Request Pusat</field>
+            <field name="app">SAP</field>
+            <field name="url">
+                https://fioridev.wika.co.id/ywikafi016b/update-paymntmethod?sap-client=300</field>
+        </record>
+        <record id="url_invoice_non_po" model="wika.integration">
+            <field name="name">URL_INV_NON_PO</field>
+            <field name="app">SAP</field>
+            <field name="url">https://fiori.wika.co.id/ywikafi025/listinvoicenonpo?sap-client=300</field>
+        </record>
+        <record id="url_payment_status" model="wika.integration">
+            <field name="name">URL_PAYMENT_STATUS</field>
+            <field name="app">SAP</field>
+            <field name="url">https://fioridev.wika.co.id/ywikafi023/paymentstatus?sap-client=110</field>
+        </record>
+        <record id="url_invoice_non_po_qas" model="wika.integration">
+            <field name="name">URL_INV_NON_PO_QAS</field>
+            <field name="app">SAP</field>
+            <field name="url">https://fioriqas.wika.co.id/ywikafi025/listinvoicenonpo?sap-client=230</field>
+        </record>
+    </data>
     <record id="url_pr_login_sso" model="wika.integration">
         <field name="name">Login WZONE</field>
         <field name="app">WZONE</field>
