@@ -51,6 +51,8 @@
                     <field name="state"/>
                     <field name="is_already_pr"/>
                     <field name="reference"/>
+                    <field name="is_already_pr"/>
+                    <field name="reference"/>
                     <field name="payment_state"/>
                     <field name="is_already_pr"/>
                     <field name="reference"/>
@@ -72,7 +74,7 @@
                         <field name="state" widget="statusbar" statusbar_visible="draft,requested,approved"/>
                     </header>
                     <sheet>
-<!--                        <div name="button_box" position="inside">
+                        <!--<div name="button_box" position="inside">
                             <button class="oe_stat_button" type="object" name="get_documents" icon="fa-file-text-o">
                                 <field string="Documents" name="documents_count" widget="statinfo"/>
                             </button>
@@ -101,11 +103,18 @@
                                 <field name="level" invisible="1"/>
                                 <field name="payment_state" invisible="1"/>
                                 <field name="branch_id" domain="[('biro', '=', False)]"
-                                    attrs="{'readonly': [('state', 'in', [ 'request', 'approve'])]}"/>
+                                    attrs="{'readonly': [('state', 'in', [ 'requested', 'approved'])]}"/>
                                 <field name="department_id" domain="[('biro', '=', True), ('parent_id', '=', branch_id)]" 
-                                    attrs="{'readonly': [('state', 'in', [ 'request', 'approve'])], 'invisible': [('check_biro', '=', False)]}"/>
+                                    attrs="{'readonly': [('state', 'in', [ 'requested', 'approved'])], 'invisible': [('check_biro', '=', False)]}"/>
                                 <field name="project_id" 
-                                    attrs="{'readonly': [('state', 'in', [ 'request', 'approve'])]}"/>
+                                    attrs="{'readonly': [('state', 'in', [ 'requested', 'approved'])]}"/>
+                                <field name="is_already_pr" invisible="1"/>
+                                <field name="reference" attrs="{'readonly': [('state', 'in', ['requested', 'approved'])]}"/>
+                                <field name="no_doc_sap" attrs="{'readonly': [('state', 'in', ['requested', 'approved'])]}"/>
+                                <field name="year" attrs="{'readonly': [('state', 'in', ['requested', 'approved'])]}"/>
+                                <field name="line_item_char" attrs="{'readonly': [('state', 'in', ['requested', 'approved'])]}"/>
+                                <field name="remaining_amount" invisible="1" attrs="{'readonly': [('state', 'in', [ 'draft', 'requested', 'approved'])]}"/>
+                                <field name="payment_state" attrs="{'readonly': [('state', 'in', ['requested', 'approved'])]}"/>
                                 <field name="posting_date" 
                                 attrs="{'readonly': [('state', 'in', [ 'request', 'approve'])]}"/>
                                 <field name="is_already_pr" invisible="1"/>
@@ -117,8 +126,7 @@
                             </group>
                         </group>
                         <notebook>
-
-                             <page string="List Document">
+                            <page string="List Document">
                                 <field name="document_ids" attrs="{'readonly': [('state', 'not in', ['draft','rejected'])]}">
                                     <tree string="List Document" delete="0" create="0">
                                         <field name="document_id"/>
@@ -176,6 +184,4 @@
         </record>
     
     </data>
-    
-
 </odoo>

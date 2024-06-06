@@ -109,6 +109,30 @@ class WikaInheritedAccountMove(models.Model):
     is_approval_checked = fields.Boolean(string="Approval Checked", compute='_compute_is_approval_checked' ,default=False)
     is_wizard_cancel = fields.Boolean(string="Is cancel", default=True)
 
+    # validasi posting date jika -1 bulan
+    @api.constrains('posting_date')
+    def _check_posting_date(self):
+        for record in self:
+            today = fields.Date.today()
+            first_day_of_current_month = today.replace(day=1)
+            first_day_of_previous_month = (first_day_of_current_month - timedelta(days=1)).replace(day=1)
+
+            if record.posting_date < first_day_of_previous_month:
+                raise ValidationError("Tanggal posting tidak boleh lebih awal dari bulan sebelumnya.")
+
+    _sql_constraints = [
+        ('name_invoice_uniq', 'unique (name, year)', 'The name of the invoice must be unique per year !')
+    ]
+
+    def _must_check_constrains_date_sequence(self):
+        # OVERRIDES sequence.mixin
+        return False
+
+    @api.onchange('journal_id')
+    def _onchange_journal_id(self):
+        # bypass _onchange_journal_id
+        return
+
     _sql_constraints = [
         ('name_invoice_uniq', 'unique (name, year)', 'The name of the invoice must be unique per year !')
     ]
@@ -325,7 +349,6 @@ class WikaInheritedAccountMove(models.Model):
     #                 if next_number > 99999:
     #                     raise ValidationError("Naming sequence limit exceeded.")
 
-
     @api.depends('total_line', 'invoice_line_ids', 'dp_total','retensi_total', 'invoice_line_ids.tax_ids')
     def compute_total_tax(self):
         for record in self:
@@ -360,7 +383,6 @@ class WikaInheritedAccountMove(models.Model):
                     ('folder_id', 'in', ['PO', 'GR/SES', 'BAP', 'Invoicing']),
                     '|', ('bap_id', '=', record.bap_id.id), ('purchase_id', '=', record.po_id.id),
                 ]
-
                 po_number = record.po_id.name if record.po_id else None
 
                 if po_number:
@@ -390,6 +412,11 @@ class WikaInheritedAccountMove(models.Model):
         domain = [
             ('folder_id', 'in', ['PO', 'GR/SES', 'BAP', 'Invoicing']),
             '|', ('bap_id', '=', self.bap_id.id), ('purchase_id', '=', self.po_id.id)
+        ]
+
+        domain = [
+            ('folder_id', 'in', ['PO', 'GR/SES', 'BAP', 'Invoicing']),
+            '|', ('bap_id', '=', self.bap_id.id), ('bap_id', '=', False), ('purchase_id', '=', self.po_id.id)
         ]
         po_number = self.po_id.name if self.po_id else None
 
@@ -565,6 +592,47 @@ class WikaInheritedAccountMove(models.Model):
                 if invoice.is_waba:
                     invoice.refresh()
                     _logger.info('Successfully refreshing all values for Invoice: %s', invoice.name)
+            # Posting date validation
+            if record.date and record.date < record.bap_id.bap_date and not record.cut_off:
+                raise ValidationError("Posting Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
+
+            # New validation for posting date
+            today = fields.Date.today()
+            first_day_of_current_month = today.replace(day=1)
+            first_day_of_previous_month = (first_day_of_current_month - timedelta(days=1)).replace(day=1)
+
+            if record.date and record.date < first_day_of_previous_month:
+                raise ValidationError("Posting Date tidak boleh lebih awal dari bulan sebelumnya.")
+        
+        return result
+
+    def _replace_document_object(self, folder_name, document_ids, po_id):
+        documents_model = self.env['documents.document'].sudo()
+        folder_id = self.env['documents.folder'].sudo().search([('name', '=', folder_name)], limit=1)
+        if folder_id:
+            facet_id = self.env['documents.facet'].sudo().search([
+                ('name', '=', 'Documents'),
+                ('folder_id', '=', folder_id.id)
+            ], limit=1)
+            for doc in document_ids:
+                attachment_id = self.env['ir.attachment'].sudo().create({
+                    'name': doc.filename,
+                    'datas': doc.document,
+                    'res_model': 'documents.document',
+                })
+                if attachment_id:
+                    tag = self.env['documents.tag'].sudo().search([
+                            ('facet_id', '=', facet_id.id),
+                            ('name', '=', doc.document_id.name)
+                        ], limit=1)
+                    documents_model.create({
+                        'attachment_id': attachment_id.id,
+                        'folder_id': folder_id.id,
+                        'tag_ids': tag.ids,
+                        'partner_id': po_id.partner_id.id,
+                        'purchase_id': po_id.id,
+                        'is_po_doc': True
+                    })
 
     @api.constrains('amount_invoice', 'cut_off')
     def check_amount_equal(self):
@@ -579,7 +647,6 @@ class WikaInheritedAccountMove(models.Model):
         self.po_id = False
         if self.bap_id:
             invoice_lines = []
-            price_cut_lines = []
 
             self.po_id = self.bap_id.po_id.id
             self.partner_id = self.bap_id.po_id.partner_id.id
@@ -590,34 +657,41 @@ class WikaInheritedAccountMove(models.Model):
             self.pph_ids = self.bap_id.pph_ids.ids
             self.total_pph = self.bap_id.total_pph
             self.pph_amount = self.bap_id.amount_pph
-            for bap_line in self.bap_id.bap_ids:
-                invoice_lines.append((0, 0, {
-                    'display_type':'product',
-                    'product_id': bap_line.product_id.id,
-                    'purchase_line_id': bap_line.purchase_line_id.id,
-                    'bap_line_id': bap_line.id,
-                    'picking_id': bap_line.picking_id.id,
-                    'stock_move_id': bap_line.stock_move_id.id,
-                    'quantity': bap_line.qty,
-                    'price_unit': bap_line.unit_price,
-                    'currency_id': self.currency_id.id,
-                    'tax_ids': bap_line.purchase_line_id.taxes_id.ids,
-                    'product_uom_id': bap_line.product_uom.id,
-                    'adjustment':bap_line.adjustment,
-                    'amount_adjustment':bap_line.amount_adjustment,
-                }))
 
-            for cut_line in self.bap_id.price_cut_ids:
-                price_cut_lines.append((0, 0, {
-                    'move_id': self.id,
-                    'product_id': cut_line.product_id.id,
-                    # 'account_id': cut_line.account_id.id,
-                    'percentage_amount': cut_line.percentage_amount,
-                    'amount': cut_line.amount,
-                }))
-
+            if self.bap_type == 'uang muka':
+                for cut_line in self.bap_id.price_cut_ids:
+                    invoice_lines.append((0, 0, {
+                        'product_id': cut_line.product_id.id,
+                        'quantity': 1,
+                        'price_unit': cut_line.amount,
+                        'currency_id': self.currency_id.id,
+                    }))
+            elif self.bap_type == 'retensi':
+                for cut_line in self.bap_id.price_cut_ids:
+                    invoice_lines.append((0, 0, {
+                        'display_type':'product',
+                        'product_id': cut_line.product_id.id,
+                        'quantity': cut_line.qty,
+                        'price_unit': cut_line.amount,
+                    }))
+            else:
+                for bap_line in self.bap_id.bap_ids:
+                    invoice_lines.append((0, 0, {
+                        'display_type':'product',
+                        'product_id': bap_line.product_id.id,
+                        'purchase_line_id': bap_line.purchase_line_id.id,
+                        'bap_line_id': bap_line.id,
+                        'picking_id': bap_line.picking_id.id,
+                        'stock_move_id': bap_line.stock_move_id.id,
+                        'quantity': bap_line.qty,
+                        'price_unit': bap_line.unit_price,
+                        'currency_id': self.currency_id.id,
+                        'tax_ids': bap_line.purchase_line_id.taxes_id.ids,
+                        'product_uom_id': bap_line.product_uom.id,
+                        'adjustment':bap_line.adjustment,
+                        'amount_adjustment':bap_line.amount_adjustment,
+                    }))
             self.invoice_line_ids = invoice_lines
-            self.price_cut_ids = price_cut_lines
 
     def assign_todo_first(self):
         model_model = self.env['ir.model'].sudo()
@@ -699,9 +773,10 @@ class WikaInheritedAccountMove(models.Model):
                 raise ValidationError('Document belum di unggah, mohon unggah file terlebih dahulu!')
         for record in self:
             if any(line.state =='rejected' for line in record.document_ids):
-                raise ValidationError('Document belum di ubah setelah reject, silahkan cek terlebih dahulu!')
+                raise ValidationError('Document belum di ubah setelah di-reject, silahkan cek terlebih dahulu!')
         cek = False
         level=self.level
+        documents_model = self.env['documents.document'].sudo()
         if level:
             self.sudo().compute_account_payable()
             model_id = self.env['ir.model'].search([('model', '=', 'account.move')], limit=1)
@@ -736,6 +811,33 @@ class WikaInheritedAccountMove(models.Model):
                     'note': 'Submit Document',
                     'invoice_id': self.id
                 })
+                folder_id = self.env['documents.folder'].sudo().search([('name', '=', 'Invoicing')], limit=1)
+                if folder_id:
+                    facet_id = self.env['documents.facet'].sudo().search([
+                        ('name', '=', 'Documents'),
+                        ('folder_id', '=', folder_id.id)
+                    ], limit=1)
+                    for doc in self.document_ids.filtered(lambda x: x.state in ('uploaded', 'rejected')):
+                        # doc.state = 'verified'
+                        attachment_id = self.env['ir.attachment'].sudo().create({
+                            'name': doc.filename,
+                            'datas': doc.document,
+                            'res_model': 'documents.document',
+                        })
+                        if attachment_id:
+                            tag = self.env['documents.tag'].sudo().search([
+                                ('facet_id', '=', facet_id.id),
+                                ('name', '=', doc.document_id.name)
+                            ], limit=1)
+                            documents_model.create({
+                                'attachment_id': attachment_id.id,
+                                'folder_id': folder_id.id,
+                                'tag_ids': tag.ids,
+                                'partner_id': self.partner_id.id,
+                                'purchase_id': self.bap_id.po_id.id,
+                                'invoice_id': self.id,
+
+                            })
                 groups_line = self.env['wika.approval.setting.line'].search([
                     ('level', '=', level),
                     ('sequence', '=', self.step_approve),
@@ -767,6 +869,7 @@ class WikaInheritedAccountMove(models.Model):
             raise ValidationError('User Akses Anda tidak berhak Submit!')
 
     def action_approve(self):
+        # self.write({'is_wizard_cancel': False})
         user = self.env['res.users'].search([('id', '=', self._uid)], limit=1)
         documents_model = self.env['documents.document'].sudo()
         cek = False
@@ -843,44 +946,85 @@ class WikaInheritedAccountMove(models.Model):
                         cek = True
 
         if cek == True:
-            
             if is_mp == True:
                 self.is_mp_approved = True
-
             if approval_id.total_approve == self.step_approve:
                 self.state = 'approved'
                 self.approval_stage = 'Pusat'
+                # folder_id = self.env['documents.folder'].sudo().search([('name', '=', 'Invoicing')], limit=1)
+                # if folder_id:
+                #     facet_id = self.env['documents.facet'].sudo().search([
+                #         ('name', '=', 'Documents'),
+                #         ('folder_id', '=', folder_id.id)
+                #     ], limit=1)
+                #     for doc in self.document_ids.filtered(lambda x: x.state in ('uploaded', 'rejected')):
+                #         doc.state = 'verified'
+                #         attachment_id = self.env['ir.attachment'].sudo().create({
+                #             'name': doc.filename,
+                #             'datas': doc.document,
+                #             'res_model': 'documents.document',
+                #         })
+                #         if attachment_id:
+                #             tag = self.env['documents.tag'].sudo().search([
+                #                 ('facet_id', '=', facet_id.id),
+                #                 ('name', '=', doc.document_id.name)
+                #             ], limit=1)
+                #             documents_model.create({
+                #                 'attachment_id': attachment_id.id,
+                #                 'folder_id': folder_id.id,
+                #                 'tag_ids': tag.ids,
+                #                 'partner_id': self.partner_id.id,
+                #                 'purchase_id': self.bap_id.po_id.id,
+                #                 'invoice_id': self.id,
+                #             })
+                # replace docsss
+                for doc in self.document_ids:
+                    if doc.document_id.name == 'Kontrak' and doc.document:
+                        for doc_po in self.po_id.document_ids:
+                            bap_fname = doc.filename
+                            if doc_po.document_id.name == 'Kontrak':
+                                po_fname = doc_po.filename
+                                if bap_fname != po_fname:
+                                    doc_po.update({
+                                        'document': doc.document,
+                                        'filename': f'[Revised by {self.env.user.name}]' + ' ' + doc.filename,
+                                        'state': 'verified'
+                                    })
+                                    self._replace_document_object(folder_name='PO', document_ids=self.document_ids, po_id=self.po_id)
+                
+                    elif doc.document_id.name in ['GR', 'Surat Jalan', 'SES'] and doc.document:
+                        for doc_grses in self.bap_id.bap_ids.picking_id.document_ids:
+                            if doc_grses.state == 'rejected':
+                                # for docbap in self.bap_id.document_ids:
+                                #     if docbap.picking_id.name == doc_grses.picking_id.name and doc.document_id.name == doc_grses.document_id.name:
+                                bap_fname = doc.filename
+                                grses_fname = doc_grses.filename
+                                if bap_fname != grses_fname:
+                                    doc_grses.update({
+                                        'document': doc.document,
+                                        'filename': f'[Revised by {self.env.user.name}]' + ' ' + doc.filename,
+                                        'state': 'verified'
+                                    })
+                                    self._replace_document_object(folder_name='GR/SES', document_ids=self.document_ids, po_id=self.po_id)
 
-                folder_id = self.env['documents.folder'].sudo().search([('name', '=', 'Invoicing')], limit=1)
-                # print("TESTTTTTTTTTTTTTTTTTTTTT", folder_id)
-                if folder_id:
-                    facet_id = self.env['documents.facet'].sudo().search([
-                        ('name', '=', 'Documents'),
-                        ('folder_id', '=', folder_id.id)
-                    ], limit=1)
-                    # print("TESTTTTTTTTTERRRRRRR", facet_id)
-                    for doc in self.document_ids.filtered(lambda x: x.state in ('uploaded', 'rejected')):
-                        doc.state = 'verified'
-                        attachment_id = self.env['ir.attachment'].sudo().create({
-                            'name': doc.filename,
-                            'datas': doc.document,
-                            'res_model': 'documents.document',
-                        })
-                        # print("SSSIIIIUUUUUUUUUUUUUUUUUU", attachment_id)
-                        if attachment_id:
-                            tag = self.env['documents.tag'].sudo().search([
-                                ('facet_id', '=', facet_id.id),
-                                ('name', '=', doc.document_id.name)
-                            ], limit=1)
-                            documents_model.create({
-                                'attachment_id': attachment_id.id,
-                                'folder_id': folder_id.id,
-                                'tag_ids': tag.ids,
-                                'partner_id': self.partner_id.id,
-                                'purchase_id': self.bap_id.po_id.id,
-                                'invoice_id': self.id,
 
-                            })
+                    if doc.document_id.name == 'BAP' and doc.document:
+                        for doc_bap in self.bap_id.document_ids:
+                            inv_fname = doc.filename
+                            if doc_bap.document_id.name == 'BAP':
+                                bap_fname = doc_bap.filename
+                                if inv_fname != bap_fname:
+                                    doc_bap.update({
+                                        'document': doc.document,
+                                        'filename': f'[Revised by {self.env.user.name}]' + ' ' + doc.filename,
+                                        'state': 'verified'
+                                    })
+                                    self._replace_document_object(folder_name='BAP', document_ids=self.document_ids, po_id=self.po_id)
+       
+                
+                for doc in self.document_ids.filtered(lambda x: x.state in ('uploaded','rejected')):
+                    doc.state = 'verified'
+                    
                 if self.activity_ids:
                     for x in self.activity_ids.filtered(lambda x: x.status != 'approved'):
                         if x.user_id.id == self._uid:
@@ -933,42 +1077,34 @@ class WikaInheritedAccountMove(models.Model):
                     if first_user:
                         self.step_approve += 1
                         self.approval_stage = groups_line_next.level_role
-                        existing_activity = self.env['mail.activity'].sudo().search([
-                            ('res_model_id', '=',
-                             self.env['ir.model'].sudo().search([('model', '=', 'account.move')], limit=1).id),
-                            ('res_id', '=', self.id),
-                            ('user_id', '=', first_user)
-                        ])
-                        if not existing_activity:
-                            self.env['mail.activity'].sudo().create({
-                                'activity_type_id': 4,
-                                'res_model_id': self.env['ir.model'].sudo().search(
-                                    [('model', '=', 'account.move')], limit=1).id,
-                                'res_id': self.id,
-                                'user_id': first_user,
-                                'nomor_po': self.po_id.name,
-                                'date_deadline': fields.Date.today() + timedelta(days=2),
-                                'state': 'planned',
-                                'status': 'to_approve',
-                                'summary': """Need Approval Document Invoice"""
-                            })
+                        self.env['mail.activity'].sudo().create({
+                            'activity_type_id': 4,
+                            'res_model_id': self.env['ir.model'].sudo().search(
+                                [('model', '=', 'account.move')], limit=1).id,
+                            'res_id': self.id,
+                            'user_id': first_user,
+                            'nomor_po': self.po_id.name,
+                            'date_deadline': fields.Date.today() + timedelta(days=2),
+                            'state': 'planned',
+                            'status': 'to_approve',
+                            'summary': """Need Approval Document Invoicing"""
+                        })
 
                         if self.activity_ids:
                             for x in self.activity_ids.filtered(lambda x: x.status != 'approved'):
                                 if x.user_id.id == self._uid:
                                     x.status = 'approved'
                                     x.action_done()
-                        if self.is_wizard_cancel:
-                            self.env['wika.invoice.approval.line'].create({
-                                'user_id': self._uid,
-                                'groups_id': groups_id.id,
-                                'date': datetime.now(),
-                                'note': 'Verified',
-                                'invoice_id': self.id,
-                                'information': keterangan if approval_line_id.check_approval else False,
-                                'is_show_wizard': True if approval_line_id.check_approval else False,
-                            })
+                        self.env['wika.invoice.approval.line'].create({
+                            'user_id': self._uid,
+                            'groups_id': groups_id.id,
+                            'date': datetime.now(),
+                            'note': 'Verified',
+                            'invoice_id': self.id,
+                            'information': keterangan if approval_line_id.check_approval else False,
+                            'is_show_wizard': True if approval_line_id.check_approval else False,
 
+                        })
                         if approval_line_id.check_approval:
                             self.baseline_date = fields.Date.today()
                             action = {
@@ -990,6 +1126,362 @@ class WikaInheritedAccountMove(models.Model):
 
         else:
             raise ValidationError('User Akses Anda tidak berhak Approve!')
+
+    # def action_approve(self):
+    #     user = self.env['res.users'].search([('id', '=', self._uid)], limit=1)
+    #     documents_model = self.env['documents.document'].sudo()
+    #     cek = False
+    #     model_id = self.env['ir.model'].search([('model', '=', 'account.move')], limit=1)
+    #     level = self.level
+    #     if level:
+    #         keterangan = ''
+    #         if level == 'Proyek':
+    #             keterangan = '''<p><strong>Dengan ini Kami Menyatakan:</strong></p>
+    #                             <ol>
+    #                                 <li>Bahwa Menjamin dan Bertanggung Jawab Atas Kebenaran, Keabsahan
+    #                                 Bukti Transaksi Beserta Bukti Pendukungnya, Dan Dokumen Yang Telah Di
+    #                                 Upload Sesuai Dengan Aslinya.</li>
+    #                                 <li>Bahwa Mitra Kerja Tersebut telah melaksanakan pekerjaan Sebagaimana
+    #                                 Yang Telah Dipersyaratkan di Dalam Kontrak, Sehingga Memenuhi Syarat
+    #                                 Untuk Dibayar.</li>
+    #                             </ol>
+    #                             <p>Copy Dokumen Bukti Transaksi :</p>
+    #                             <ul>
+    #                                 <li>PO SAP</li>
+    #                                 <li>Dokumen Kontrak Lengkap</li>
+    #                                 <li>GR/SES</li>
+    #                                 <li>Surat Jalan (untuk material)</li>
+    #                                 <li>BAP</li>
+    #                                 <li>Invoice</li>
+    #                                 <li>Faktur Pajak</li>
+    #                             </ul>'''
+    #         elif level == 'Divisi Operasi':
+    #             keterangan = '''<p>Kami Telah Melakukan Verifikasi Kelengkapan, Keabsahan Bukti Transaksi Dan Setuju Untuk Dibayarkan</p>
+    #                             <p>Copy Dokumen Bukti Transaksi :</p>
+    #                             <ul>
+    #                                 <li>PO SAP</li>
+    #                                 <li>Dokumen Kontrak Lengkap</li>
+    #                                 <li>GR/SES</li>
+    #                                 <li>Surat Jalan (untuk material)</li>
+    #                                 <li>BAP</li>
+    #                                 <li>Invoice</li>
+    #                                 <li>Faktur Pajak</li>
+    #                             </ul>'''
+    #         elif level == 'Divisi Fungsi':
+    #             keterangan = '''<p>Kami Telah Melakukan Verifikasi Kelengkapan Dokumen Dan Menyetujui Pembayaran Transaksi ini.</p>
+    #                             <p>Copy Dokumen Bukti Transaksi :</p>
+    #                             <ul>
+    #                                 <li>PO SAP</li>
+    #                                 <li>Dokumen Kontrak Lengkap</li>
+    #                                 <li>GR/SES</li>
+    #                                 <li>Surat Jalan (untuk material)</li>
+    #                                 <li>BAP</li>
+    #                                 <li>Invoice</li>
+    #                                 <li>Faktur Pajak</li>
+    #                             </ul>'''
+    #         approval_id = self.env['wika.approval.setting'].sudo().search(
+    #             [('model_id', '=', model_id.id), ('level', '=', level)], limit=1)
+    #         if not approval_id:
+    #             raise ValidationError(
+    #                 'Approval Setting untuk menu Invoice tidak ditemukan. Silakan hubungi Administrator!')
+
+    #         approval_line_id = self.env['wika.approval.setting.line'].search([
+    #             ('sequence', '=', self.step_approve),
+    #             ('approval_id', '=', approval_id.id)
+    #             # ('check_approval', '=', True)
+    #         ], limit=1)
+    #         print(approval_line_id)
+    #         groups_id = approval_line_id.groups_id
+    #         if groups_id:
+    #             print(groups_id.name)
+    #             for x in groups_id.users:
+    #                 if level == 'Proyek':
+    #                     if x.project_id == self.project_id or x.branch_id == self.branch_id or x.branch_id.parent_id.code=='Pusat':
+    #                         if x.id == self._uid:
+    #                             cek = True
+    #                 if level == 'Divisi Operasi' and x.branch_id == self.branch_id and x.id == self._uid:
+    #                     cek = True
+    #                 if level == 'Divisi Fungsi' and x.department_id == self.department_id and x.id == self._uid:
+    #                     cek = True
+
+    #     if cek:
+    #         if approval_id.total_approve == self.step_approve:
+    #             self.state = 'approved'
+    #             self.approval_stage = approval_line_id.level_role
+
+    #             keterangan = ''
+    #             if level == 'Proyek':
+    #                 keterangan = '''<p><strong>Dengan ini Kami Menyatakan:</strong></p>
+    #                                 <ol>
+    #                                     <li>Bahwa Menjamin dan Bertanggung Jawab Atas Kebenaran, Keabsahan
+    #                                     Bukti Transaksi Beserta Bukti Pendukungnya, Dan Dokumen Yang Telah Di
+    #                                     Upload Sesuai Dengan Aslinya.</li>
+    #                                     <li>Bahwa Mitra Kerja Tersebut telah melaksanakan pekerjaan Sebagaimana
+    #                                     Yang Telah Dipersyaratkan di Dalam Kontrak, Sehingga Memenuhi Syarat
+    #                                     Untuk Dibayar.</li>
+    #                                 </ol>
+    #                                 <p>Copy Dokumen Bukti Transaksi :</p>
+    #                                 <ul>
+    #                                     <li>PO SAP</li>
+    #                                     <li>Dokumen Kontrak Lengkap</li>
+    #                                     <li>GR/SES</li>
+    #                                     <li>Surat Jalan (untuk material)</li>
+    #                                     <li>BAP</li>
+    #                                     <li>Invoice</li>
+    #                                     <li>Faktur Pajak</li>
+    #                                 </ul>'''
+    #             elif level == 'Divisi Operasi':
+    #                 keterangan = '''<p>Kami Telah Melakukan Verifikasi Kelengkapan, Keabsahan Bukti Transaksi Dan Setuju Untuk Dibayarkan</p>
+    #                                 <p>Copy Dokumen Bukti Transaksi :</p>
+    #                                 <ul>
+    #                                     <li>PO SAP</li>
+    #                                     <li>Dokumen Kontrak Lengkap</li>
+    #                                     <li>GR/SES</li>
+    #                                     <li>Surat Jalan (untuk material)</li>
+    #                                     <li>BAP</li>
+    #                                     <li>Invoice</li>
+    #                                     <li>Faktur Pajak</li>
+    #                                 </ul>'''
+    #             elif level == 'Divisi Fungsi':
+    #                 keterangan = '''<p>Kami Telah Melakukan Verifikasi Kelengkapan Dokumen Dan Menyetujui Pembayaran Transaksi ini.</p>
+    #                                 <p>Copy Dokumen Bukti Transaksi :</p>
+    #                                 <ul>
+    #                                     <li>PO SAP</li>
+    #                                     <li>Dokumen Kontrak Lengkap</li>
+    #                                     <li>GR/SES</li>
+    #                                     <li>Surat Jalan (untuk material)</li>
+    #                                     <li>BAP</li>
+    #                                     <li>Invoice</li>
+    #                                     <li>Faktur Pajak</li>
+    #                                 </ul>'''
+    #             self.env['wika.invoice.approval.line'].create({
+    #                 'user_id': self._uid,
+    #                 'groups_id': groups_id.id,
+    #                 'date': datetime.now(),
+    #                 'note': 'Approved',
+    #                 'information': keterangan if approval_line_id.check_approval else False,
+    #                 'invoice_id': self.id,
+    #                 'is_show_wizard': True if approval_line_id.check_approval else False,
+    #             })
+    #             folder_id = self.env['documents.folder'].sudo().search([('name', '=', 'Invoicing')], limit=1)
+    #             if folder_id:
+    #                 facet_id = self.env['documents.facet'].sudo().search([
+    #                     ('name', '=', 'Documents'),
+    #                     ('folder_id', '=', folder_id.id)
+    #                 ], limit=1)
+    #                 for doc in self.document_ids.filtered(lambda x: x.state in ('uploaded', 'rejected')):
+    #                     doc.state = 'verified'
+    #                     attachment_id = self.env['ir.attachment'].sudo().create({
+    #                         'name': doc.filename,
+    #                         'datas': doc.document,
+    #                         'res_model': 'documents.document',
+    #                     })
+    #                     if attachment_id:
+    #                         tag = self.env['documents.tag'].sudo().search([
+    #                             ('facet_id', '=', facet_id.id),
+    #                             ('name', '=', doc.document_id.name)
+    #                         ], limit=1)
+    #                         documents_model.create({
+    #                             'attachment_id': attachment_id.id,
+    #                             'folder_id': folder_id.id,
+    #                             'tag_ids': tag.ids,
+    #                             'partner_id': self.partner_id.id,
+    #                             'purchase_id': self.bap_id.po_id.id,
+    #                             'invoice_id': self.id,
+    #                         })
+    #             if self.activity_ids:
+    #                 for x in self.activity_ids.filtered(lambda x: x.status != 'approved'):
+    #                     if x.user_id.id == self._uid:
+    #                         x.status = 'approved'
+    #                         x.action_done()
+    #             self.env['wika.invoice.approval.line'].create({
+    #                 'user_id': self._uid,
+    #                 'groups_id': groups_id.id,
+    #                 'date': datetime.now(),
+    #                 'note': 'Approved',
+    #                 'invoice_id': self.id,
+    #                 'information': keterangan if approval_line_id.check_approval else False,
+    #             })
+    #             if approval_line_id.check_approval:
+    #                 print("Approval Line ID :", approval_line_id.check_approval)
+    #                 action = {
+    #                     'type': 'ir.actions.act_window',
+    #                     'name': 'Approval Wizard',
+    #                     'res_model': 'approval.wizard.account.move',
+    #                     'view_type': "form",
+    #                     'view_mode': 'form',
+    #                     'target': 'new',
+    #                     'context': {
+    #                         'default_keterangan': keterangan
+    #                     },
+    #                     'view_id': self.env.ref('wika_account_move.approval_wizard_form').id,
+    #                 }
+    #                 return action
+
+    #             if approval_line_id:
+    #                 print("Approval Line ID :", approval_line_id.check_approval)
+    #                 if approval_line_id.check_approval:
+    #                     print("Approval Line ID :", approval_line_id.check_approval)
+    #                     groups_id = approval_line_id.groups_id
+    #                     if self.env.user in groups_id.mapped('users'):
+    #                         action = {
+    #                             'type': 'ir.actions.act_window',
+    #                             'name': 'Approval Wizard',
+    #                             'res_model': 'approval.wizard.account.move',
+    #                             'view_type': "form",
+    #                             'view_mode': 'form',
+    #                             'target': 'new',
+    #                             'context': {
+    #                                 'default_keterangan': keterangan
+    #                             },
+    #                             'view_id': self.env.ref('wika_account_move.approval_wizard_form').id,
+    #                         } 
+    #                         return action
+    #                     else:
+    #                         return
+    #         else:
+    #             first_user = False
+    #             groups_line_next = self.env['wika.approval.setting.line'].search([
+    #                 ('level', '=', level),
+    #                 ('sequence', '=', self.step_approve + 1),
+    #                 ('approval_id', '=', approval_id.id)
+    #             ], limit=1)
+    #             groups_id_next = groups_line_next.groups_id
+    #             if groups_id_next:
+    #                 for x in groups_id_next.users:
+    #                     print("ssssssssssssssssssss")
+    #                     if level == 'Proyek':
+    #                         if x.project_id == self.project_id or x.branch_id == self.branch_id or x.branch_id.parent_id.code == 'Pusat':
+    #                             first_user = x.id
+    #                     if level == 'Divisi Operasi' and x.branch_id == self.branch_id:
+    #                         first_user = x.id
+    #                     if level == 'Divisi Fungsi' and x.department_id == self.department_id:
+    #                         first_user = x.id
+
+    #                 if first_user:
+    #                     self.step_approve += 1
+    #                     self.approval_stage = groups_line_next.level_role
+    #                     self.env['mail.activity'].sudo().create({
+    #                         'activity_type_id': 4,
+    #                         'res_model_id': self.env['ir.model'].sudo().search(
+    #                             [('model', '=', 'account.move')], limit=1).id,
+    #                         'res_id': self.id,
+    #                         'user_id': first_user,
+    #                         'nomor_po': self.po_id.name,
+    #                         'date_deadline': fields.Date.today() + timedelta(days=2),
+    #                         'state': 'planned',
+    #                         'status': 'to_approve',
+    #                         'summary': """Need Approval Document Invoicing"""
+    #                     })
+    #                     keterangan = ''
+    #                     if level == 'Proyek':
+    #                         keterangan = '''<p><strong>Dengan ini Kami Menyatakan:</strong></p>
+    #                                         <ol>
+    #                                             <li>Bahwa Menjamin dan Bertanggung Jawab Atas Kebenaran, Keabsahan
+    #                                             Bukti Transaksi Beserta Bukti Pendukungnya, Dan Dokumen Yang Telah Di
+    #                                             Upload Sesuai Dengan Aslinya.</li>
+    #                                             <li>Bahwa Mitra Kerja Tersebut telah melaksanakan pekerjaan Sebagaimana
+    #                                             Yang Telah Dipersyaratkan di Dalam Kontrak, Sehingga Memenuhi Syarat
+    #                                             Untuk Dibayar.</li>
+    #                                         </ol>
+    #                                         <p>Copy Dokumen Bukti Transaksi :</p>
+    #                                         <ul>
+    #                                             <li>PO SAP</li>
+    #                                             <li>Dokumen Kontrak Lengkap</li>
+    #                                             <li>GR/SES</li>
+    #                                             <li>Surat Jalan (untuk material)</li>
+    #                                             <li>BAP</li>
+    #                                             <li>Invoice</li>
+    #                                             <li>Faktur Pajak</li>
+    #                                         </ul>'''
+    #                     elif level == 'Divisi Operasi':
+    #                         keterangan = '''<p>Kami Telah Melakukan Verifikasi Kelengkapan, Keabsahan Bukti Transaksi Dan Setuju Untuk Dibayarkan</p>
+    #                                         <p>Copy Dokumen Bukti Transaksi :</p>
+    #                                         <ul>
+    #                                             <li>PO SAP</li>
+    #                                             <li>Dokumen Kontrak Lengkap</li>
+    #                                             <li>GR/SES</li>
+    #                                             <li>Surat Jalan (untuk material)</li>
+    #                                             <li>BAP</li>
+    #                                             <li>Invoice</li>
+    #                                             <li>Faktur Pajak</li>
+    #                                         </ul>'''
+    #                     elif level == 'Divisi Fungsi':
+    #                         keterangan = '''<p>Kami Telah Melakukan Verifikasi Kelengkapan Dokumen Dan Menyetujui Pembayaran Transaksi ini.</p>
+    #                                         <p>Copy Dokumen Bukti Transaksi :</p>
+    #                                         <ul>
+    #                                             <li>PO SAP</li>
+    #                                             <li>Dokumen Kontrak Lengkap</li>
+    #                                             <li>GR/SES</li>
+    #                                             <li>Surat Jalan (untuk material)</li>
+    #                                             <li>BAP</li>
+    #                                             <li>Invoice</li>
+    #                                             <li>Faktur Pajak</li>
+    #                                         </ul>'''
+    #                     self.env['wika.invoice.approval.line'].create({
+    #                         'user_id': self._uid,
+    #                         'groups_id': groups_id.id,
+    #                         'date': datetime.now(),
+    #                         'note': 'verified',
+    #                         'information': keterangan if approval_line_id.check_approval else False,
+    #                         'invoice_id': self.id,
+    #                         'is_show_wizard': True if approval_line_id.check_approval else False,
+    #                     })
+    #                     if self.activity_ids:
+    #                         for x in self.activity_ids.filtered(lambda x: x.status != 'approved'):
+    #                             if x.user_id.id == self._uid:
+    #                                 x.status = 'approved'
+    #                                 x.action_done()
+    #                     self.env['wika.invoice.approval.line'].create({
+    #                         'user_id': self._uid,
+    #                         'groups_id': groups_id.id,
+    #                         'date': datetime.now(),
+    #                         'note': 'Verified',
+    #                         'invoice_id': self.id,
+    #                         'information': keterangan if approval_line_id.check_approval else False,
+
+    #                     })
+    #                     if approval_line_id.check_approval:
+    #                         print("Approval Line ID:", approval_line_id.check_approval)
+    #                         action = {
+    #                             'type': 'ir.actions.act_window',
+    #                             'name': 'Approval Wizard',
+    #                             'res_model': 'approval.wizard.account.move',
+    #                             'view_type': "form",
+    #                             'view_mode': 'form',
+    #                             'target': 'new',
+    #                             'context': {
+    #                                 'default_keterangan': keterangan
+    #                             },
+    #                             'view_id': self.env.ref('wika_account_move.approval_wizard_form').id,
+    #                         }
+    #                         return action
+
+    #                     if approval_line_id:
+    #                         print("Approval Line ID:", approval_line_id.check_approval)
+    #                         if approval_line_id.check_approval:
+    #                             print("Approval Line ID:", approval_line_id.check_approval)
+    #                             groups_id = approval_line_id.groups_id
+    #                             if self.env.user in groups_id.mapped('users'):
+    #                                 action = {
+    #                                     'type': 'ir.actions.act_window',
+    #                                     'name': 'Approval Wizard',
+    #                                     'res_model': 'approval.wizard.account.move',
+    #                                     'view_type': "form",
+    #                                     'view_mode': 'form',
+    #                                     'target': 'new',
+    #                                     'context': {
+    #                                         'default_keterangan': keterangan
+    #                                     },
+    #                                     'view_id': self.env.ref('wika_account_move.approval_wizard_form').id,
+    #                                 } 
+    #                                 return action
+    #                             else:
+    #                                 return
+    #                 else:
+    #                     raise ValidationError('User Role Next Approval Belum di Setting!')
+    #     else:
+    #         raise ValidationError('User Akses Anda tidak berhak Approve!')
 
     def action_reject(self):
         user = self.env['res.users'].search([('id', '=', self._uid)], limit=1)
@@ -1044,7 +1536,6 @@ class WikaInheritedAccountMove(models.Model):
             if record.state in ('upload', 'approve'):
                 raise ValidationError('Tidak dapat menghapus ketika status Vendor Bils dalam keadaan Upload atau Approve')
         return super(WikaInheritedAccountMove, self).unlink()
-
 
 
     def action_print_invoice(self):

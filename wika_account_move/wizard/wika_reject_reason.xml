@@ -6,8 +6,14 @@
             <field name="arch" type="xml">
                 <form>
                     <group>
-                        <field name="document_id" options="{'no_create': True, 'no_create_edit':True}" domain="[('name','in',['Invoice','Faktur Pajak'])]"/>
+                        <!-- <field name="document_id" options="{'no_create': True, 'no_create_edit':True}" domain="[('name','in',['Invoice','Faktur Pajak'])]"/> -->
+                        <field name="is_reject_doc"/>
                         <field name="reject_reason"/>
+                        <field name="related_document_ids" widget="many2many_tags" attrs="{'invisible': [('is_reject_doc', '=', False)]}" options="{'no_create_edit': True, 'no_create': True}">
+                            <tree>
+                                <field name="folder_id"/>
+                            </tree>
+                        </field>
                     </group>
                     <footer>
                         <button name="ok" type="object" string="Simpan" class="oe_highlight"/>

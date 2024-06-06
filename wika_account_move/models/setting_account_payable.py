@@ -30,3 +30,4 @@ class SettingAccountPayable(models.Model):
         ('ZV11', 'ZV11 Vendor Fasilitas Bank'),
     ], string='Bill Chart of Accounts Type')
     pph_ids = fields.Many2many('account.tax', string='PPh')
+    pph_ids = fields.Many2many('account.tax', string='PPh')

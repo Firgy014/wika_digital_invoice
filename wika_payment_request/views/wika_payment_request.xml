@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-
     <data>
 
         <!-- filter -->
@@ -14,7 +13,6 @@
                     <field name="project_id"/>
                     <field name="date"/>
                     <field name="name"/>
-                    
                     <filter name="filter_divisi" string="Divisi" domain="[('branch_id', '=', uid)]"/>
                     <filter name="filter_department" string="Department" domain="[('department_id', '=', uid)]"/>
                     <!-- <filter string="Project" name="project_id" domain="[('branch_id', '=', uid)]"/>
@@ -60,8 +58,8 @@
                     <header>
                         <button name="action_submit" type="object" string="Request" states="draft" class="btn-primary"/>
                         <button name="action_approve" type="object" string="APPROVE" states="request" class="btn-success"/>
-                      <!--  <button name="%(wika_payment_request.action_reject_pr_wizard)d" type="action" string="REJECT" states="request" class="btn-danger"/>
-                  -->      <field name="state" widget="statusbar" statusbar_visible="draft,request,verified"/>
+                      <!--  <button name="%(wika_payment_request.action_reject_pr_wizard)d" type="action" string="REJECT" states="request" class="btn-danger"/> -->   
+                        <field name="state" widget="statusbar" statusbar_visible="draft,request,verified"/>
                     </header>
                     <header>
                         <button name="send_proyek_approved_pr_to_sap" type="object" string="TEST API PROYEK" class="btn-info" groups="base.group_no_one"/>
@@ -83,29 +81,28 @@
                         </div>
                         <group>
                             <group>
-
                                 <field name="date" attrs="{'readonly': [('state', 'in', [ 'request', 'approve'])]}"/>
-                                <field name="assignment"  groups="base.group_no_one" attrs="{'readonly': [('state', 'in', [ 'request', 'approve'])]}"/>
-                                <field name="reference"  groups="base.group_no_one" attrs="{'readonly': [('state', 'in', [ 'request', 'approve'])]}"/>
-                                <field name="payment_block" required="1" attrs="{'readonly': [('state', 'in', [ 'request', 'approve'])],'invisible': [('state', '!=', 'approve')]}"/>
-                                <field name="payment_method" attrs="{'readonly': [('state', 'in', [ 'request', 'approve'])]}"/>
-                                <field name="total" readonly="1" force_save="1" attrs="{'readonly': [('state', 'in', [ 'request', 'approve'])]}"/>
-                                <field name="step_approve" invisible="1" attrs="{'readonly': [('state', 'in', [ 'request', 'approve'])]}"/>
+                                <field name="assignment"  groups="base.group_no_one" attrs="{'readonly': [('state', 'in', [ 'request', 'verified', 'approve'])]}"/>
+                                <field name="reference"  groups="base.group_no_one" attrs="{'readonly': [('state', 'in', [ 'request', 'verified', 'approve'])]}"/>
+                                <field name="payment_block" required="1" attrs="{'readonly': [('state', 'in', [ 'request', 'verified', 'approve'])],'invisible': [('state', '!=', 'approve')]}"/>
+                                <field name="payment_method" attrs="{'readonly': [('state', 'in', [ 'request', 'verified', 'approve'])]}"/>
+                                <field name="total" readonly="1" force_save="1" attrs="{'readonly': [('state', 'in', [ 'request', 'verified', 'approve'])]}"/>
+                                <field name="step_approve" invisible="1" attrs="{'readonly': [('state', 'in', [ 'request', 'verified', 'approve'])]}"/>
                             </group>
                             <group>
                                 <field name="check_biro" invisible="1"/>
                                 <field name="level" invisible="1"/>
                                  <field name="approval_line_id" invisible="1"/>
                                 <field name="branch_id" options="{'no_create': True, 'no_create_edit':True}" domain="[('biro', '=', False)]"
-                                    attrs="{'readonly': [('state', 'in', [ 'request', 'approve'])]}"/>
+                                    attrs="{'readonly': [('state', 'in', [ 'request', 'verified', 'approve'])]}"/>
                                 <field name="department_id" domain="[('biro', '=', True), ('parent_id', '=', branch_id)]" 
-                                    attrs="{'readonly': [('state', 'in', [ 'request', 'approve'])], 'invisible': [('check_biro', '=', False)]}"/>
+                                    attrs="{'readonly': [('state', 'in', [ 'request', 'verified', 'approve'])], 'invisible': [('check_biro', '=', False)]}"/>
                                 <field name="project_id"  options="{'no_create': True, 'no_create_edit':True}"
-                                    attrs="{'readonly': [('state', 'in', [ 'request', 'approve'])]}"/>
+                                    attrs="{'readonly': [('state', 'in', [ 'request', 'verified', 'approve'])]}"/>
                             </group>
                         </group>
                         <notebook>
-                            <!-- <page string="List Invoice Full Payment Full Payment">
+                            <page string="List Invoice Full Payment">
                                 <group>   
                                     <field name="invoice_ids" mode="tree" nolabel="1"  colspan="2" context="{'tree_view_ref': 'wika_account_move.view_wika_account_move_tree','search_view_ref':'wika_account_move.view_wika_account_move_filter'}" attrs="{'readonly': [('state', '=', 'verified')]}">
                                         <tree>
@@ -118,15 +115,15 @@
                                             <field name="invoice_date_due"/>
                                             <field name="total_partial_pr" string="Amount Request"/>
                                             <field name="sisa_partial"/>
+                                            <field name="sisa_partial"/>
                                             <field name="is_partial_pr"/>
                                             <field name="status_payment"/>
                                         </tree>
-
                                     </field>
                                 </group>
                             </page>
                             <page string="List Invoice Partial Payment">
-                                <group>
+                                <group>   
                                     <field name="partial_payment_ids" mode="tree" nolabel="1"  colspan="2" attrs="{'readonly': [('state', '=', 'verified')]}">
                                         <tree>
                                             <field name="name"/>
@@ -139,7 +136,7 @@
 
                                     </field>
                                 </group>
-                            </page> -->
+                            </page>
                             <page string="List Invoice SAP Full Payment">
                                 <group>   
                                     <field name="journal_item_sap_ids" mode="tree" nolabel="1"  colspan="2" attrs="{'readonly': [('state', '=', 'verified')]}">
@@ -156,10 +153,13 @@
                                     </field>
                                 </group>
                             </page>
-                            <page string="List Invoice Partial Payment" groups="base.group_no_one">
+                            <!-- <page string="List Invoice Partial Payment" groups="base.group_no_one">
+                            <page string="List Invoice 2" groups="base.group_no_one">
                                 <group>
                                     <field name="partial_payment_ids" mode="tree" nolabel="1"  colspan="2" attrs="{'readonly': [('state', '=', 'verified')]}">
                                         <tree>
+                                            <field name="invoice_id"/>
+                                            <field name="partial_id"/>
                                             <field name="name"/>
                                             <field name="invoice_id"/>
                                             <field name="branch_id"/>
@@ -170,21 +170,20 @@
 
                                     </field>
                                 </group>
-                            </page>
+                            </page> -->
                             <page string="PR Item">
                                 <group>
                                     <field name="move_ids" mode="tree" nolabel="1"  colspan="2" >
                                         <tree readonly="1">
-                                              <field name="pr_id"/>
-                                                <field name="invoice_id"/>
-                                                <field name="project_id"/>
-                                                <field name="partner_id"/>
-                                                <field name="payment_method"/>
-                                                <field name="amount" sum="Total Amount"/>
-                                                <field name="is_partial_pr"/>
-                                                <field name="next_user_id"/>
+                                            <field name="pr_id"/>
+                                            <field name="invoice_id"/>
+                                            <field name="project_id"/>
+                                            <field name="partner_id"/>
+                                            <field name="payment_method"/>
+                                            <field name="amount" sum="Total Amount"/>
+                                            <field name="is_partial_pr"/>
+                                            <field name="next_user_id"/>
                                         </tree>
-
                                     </field>
                                 </group>
                             </page>
@@ -227,8 +226,7 @@
             <field name="view_mode">tree,form</field>
         </record>
 
-
-             <!-- filter -->
+        <!-- filter -->
         <record id="wika_payment_request_line_view_search" model="ir.ui.view">
             <field name="name">wika.payment.request.line.search</field>
             <field name="model">wika.payment.request.line</field>
@@ -249,6 +247,11 @@
                         <filter name="name" string="Payment Request" context="{'group_by': 'pr_id'}"/>
                         <filter name="name" string="vendor" context="{'group_by': 'partner_id'}"/>
                     </group>
+
+                    <searchpanel>
+                        <field name="branch_id" icon="fa-signal" enable_counters="1"/>
+                        <field name="project_id" icon="fa-signal" enable_counters="1"/>
+                    </searchpanel>
                 </search>
             </field>
         </record>
@@ -267,20 +270,19 @@
                     <field name="amount" sum="Total Amount"/>
                     <field name="is_partial_pr"/>
                     <field name="next_user_id"/>
-
                 </tree>
             </field>
         </record>
 
-                <!-- form -->
+        <!-- form -->
         <record id="wika_payment_request_form_view_form" model="ir.ui.view">
             <field name="name">wika.payment.request.view.form</field>
             <field name="model">wika.payment.request.line</field>
             <field name="arch" type="xml">
-                <form string="Payment Request" create="0" delete="0" edit="0">
+                <form string="Payment Request" create="0" delete="0" edit="1">
                     <header>
-                         <button type="object" groups="base.group_no_one" string="API DIV" name="send_divisi_approved_pr_to_sap"/>
-                         <button type="object" groups="base.group_no_one" string="API PUSAT" name="send_pusat_approved_pr_to_sap"/>
+                        <!-- <button type="object" groups="base.group_no_one" string="API DIV" name="send_divisi_approved_pr_to_sap"/> -->
+                        <button type="object" groups="base.group_no_one" string="API PUSAT" name="send_pusat_approved_pr_to_sap"/>
                     </header>
                     <sheet>
                        <!-- <div name="button_box" position="inside">
@@ -297,7 +299,6 @@
                         </div>
                         <group>
                             <group>
-
                                 <field name="pr_id"/>
                                 <field name="partner_id"/>
                                 <field name="payment_request_date" />
@@ -306,23 +307,22 @@
                                 <field name="amount" readonly="1" force_save="1" />
                                 <field name="step_approve" invisible="1" />
                                 <field name="approval_line_id" invisible="1" />
-
                             </group>
                             <group>
                                 <field name="check_biro" invisible="1"/>
                                 <field name="level" invisible="1"/>
-                                <field name="branch_id" domain="[('biro', '=', False)]"
-                                    />
+                                <field name="branch_id" domain="[('biro', '=', False)]"/>
                                 <field name="department_id" domain="[('biro', '=', True), ('parent_id', '=', branch_id)]"
                                     attrs="{'invisible': [('check_biro', '=', False)]}"/>
                                 <field name="project_id"/>
+                                <field name="next_user_id" readonly="1"/>
+                                <field name="approval_stage" invisible="1"/>
                             </group>
                         </group>
-                       <!-- <notebook>
+                        <notebook>
                             <page string="List Approval">
                                 <group>
-                                    <field name="history_approval_ids" mode="tree" nolabel="1"  colspan="2"
-                                        attrs="{'readonly': [('state', 'in', [ 'request', 'approve'])]}" readonly="1">
+                                    <field name="history_approval_pr_item_ids" mode="tree" nolabel="1"  colspan="2" readonly="1">
                                         <tree string="List Approval">
                                             <field name="user_id"/>
                                             <field name="groups_id"/>
@@ -340,7 +340,7 @@
                                     </field>
                                 </group>
                             </page>
-                        </notebook>-->
+                        </notebook>
                     </sheet>
                     <div class="oe_chatter">
                         <field name="message_follower_ids"/>
@@ -350,14 +350,14 @@
                 </form>
             </field>
         </record>
-          <!-- action -->
+
+        <!-- action -->
         <record id="wika_payment_request_line_action_window" model="ir.actions.act_window">
             <field name="name">Payment Request Line</field>
             <field name="res_model">wika.payment.request.line</field>
             <field name="view_mode">tree,form</field>
             <field name="domain">[('next_user_id', '=', uid)]</field>
         </record>
-    </data>
-    
 
+    </data>
 </odoo>

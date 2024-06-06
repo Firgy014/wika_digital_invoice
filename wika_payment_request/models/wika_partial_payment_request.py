@@ -19,7 +19,7 @@ class WikaPartialPaymentRequest(models.Model):
     branch_id = fields.Many2one('res.branch', string='Divisi', required=True)
     department_id = fields.Many2one('res.branch', string='Department')
     project_id = fields.Many2one('project.project', string='Project', required=True)
-    invoice_id  = fields.Many2one(comodel_name='account.move', domain=[('state','=','approved'), ('sisa_partial', '!=', 0)])
+    invoice_id  = fields.Many2one(comodel_name='account.move', domain=[('state','=','approved'), ('sisa_partial', '!=', 0), ('sisa_partial', '!=', 0)])
     partner_id  = fields.Many2one(comodel_name='res.partner')
     total_invoice = fields.Float(string='Total Invoice')
     sisa_partial_amount = fields.Float(string='Sisa Partial Invoice')
@@ -33,7 +33,7 @@ class WikaPartialPaymentRequest(models.Model):
     step_approve = fields.Integer(string='Step Approve',default=1)
     accounting_doc = fields.Char(string='Accounting Doc SAP')
     history_approval_ids = fields.One2many('wika.partial.approval.line', 'pr_id',
-                                           string='Partial Payment Request  Approval')
+        string='Partial Payment Request  Approval')
     document_ids = fields.One2many('wika.partial.document.line', 'pr_id', string='Document Lines')
     approval_stage = fields.Selection([
         ('Proyek', 'Proyek'),
@@ -41,6 +41,51 @@ class WikaPartialPaymentRequest(models.Model):
         ('Divisi Fungsi', 'Divisi Fungsi'),
         ('Pusat', 'Pusat'),
     ], string='Status Invoice')
+    is_already_pr = fields.Boolean('is_already_pr')
+    reference = fields.Char('Reference')
+    no_doc_sap = fields.Char('No Doc SAP')
+    year = fields.Char('Tahun')
+    line_item_char = fields.Char('Line Item Char')
+    partial_amount = fields.Float(string='Partial Amount')
+    remaining_amount = fields.Float(string='Remaining Amount', compute='_compute_remaining_amount')
+    payment_state = fields.Selection([
+        ('not request', 'Not Request'),
+        ('requested', 'Requested'),
+    ], string='Payment State', default ='not request')
+    payment_request_id = fields.Many2one('wika.payment.request', string='field_name')
+
+    @api.constrains('partial_amount')
+    def _constrains_partial_amount(self):
+        if self.partial_amount == 0:
+            raise ValidationError('Nilai amount partial harus lebih besar dari 0. Mohon masukkan nilai yang valid.')
+
+    @api.depends('total_invoice', 'partial_amount')
+    def _compute_remaining_amount(self):
+        for record in self:
+            record.remaining_amount = record.total_invoice - record.partial_amount
+
+    @api.model
+    def create(self, vals):
+        if vals.get('name', '/') == '/':
+            latest_partial = self.search([], order='id desc', limit=1)
+            if latest_partial:
+                latest_sequence_number = int(latest_partial.name.split('/')[-1])
+                new_sequence_number = latest_sequence_number + 1
+                if new_sequence_number - latest_sequence_number > 1:
+                    new_sequence_number = latest_sequence_number + 1
+            else:
+                new_sequence_number = 1
+
+            current_year = fields.Date.today().year
+            current_month = fields.Date.today().month
+
+            new_name = f"Partial/{current_year}/{current_month:02d}/{new_sequence_number:05d}"
+            vals['name'] = new_name
+
+        res = super(WikaPartialPaymentRequest, self).create(vals)
+        res.assign_todo_first()
+        return res
+
     posting_date = fields.Date('Posting Date')
     is_already_pr = fields.Boolean('is_already_pr')
     reference = fields.Char('Reference')
@@ -259,7 +304,7 @@ class WikaPartialPaymentRequest(models.Model):
         level = self.level
         model_model = self.env['ir.model'].sudo()
         model_id = model_model.search([('model', '=', 'wika.partial.payment.request')], limit=1)
-
+        
         if level:
             approval_id = self.env['wika.approval.setting'].sudo().search(
                 [('level', '=', level),
@@ -322,7 +367,7 @@ class WikaPartialPaymentRequest(models.Model):
         else:
             raise ValidationError('User Akses Anda tidak berhak Submit!')
 
-
+        
     def action_approve(self):
         user = self.env['res.users'].search([('id','=',self._uid)], limit=1)
         cek = False
@@ -350,6 +395,39 @@ class WikaPartialPaymentRequest(models.Model):
             if approval_id.total_approve == self.step_approve:
                 self.state = 'approved'
                 self.approval_stage = approval_line_id.level_role
+                self.remaining_amount = self.total_invoice - self.partial_amount
+        
+                if self.remaining_amount > 0:
+                    # Dapatkan tahun dan bulan saat ini
+                    current_year = datetime.now().year
+                    current_month = datetime.now().month
+                    
+                    # Cari nomor urut terbaru untuk bulan dan tahun yang sama
+                    last_partial = self.env['wika.partial.payment.request'].search([
+                        ('name', 'like', f'Partial/{current_year}/{current_month:02d}/%')
+                    ], order="name desc", limit=1)
+
+                    if last_partial:
+                        last_sequence_number = int(last_partial.name.split('/')[-1])
+                        new_sequence_number = last_sequence_number + 1
+                    else:
+                        new_sequence_number = 1
+
+                    # Bangun nama baru untuk partial payment request
+                    new_name = f"Partial/{current_year}/{current_month:02d}/{new_sequence_number:05d}"
+
+                    remaining_total = self.remaining_amount
+                    new_partial = self.env['wika.partial.payment.request'].create({
+                        'invoice_id': self.invoice_id.id,
+                        'partner_id': self.partner_id.id,
+                        'partial_amount': remaining_total,
+                        'total_invoice': self.remaining_amount,
+                        'name': new_name,
+                        'date': fields.Date.today(),
+                        'branch_id': self.branch_id.id,
+                        'project_id': self.project_id.id,
+                        'reference': last_partial.name if last_partial else False
+                    })
                 self.remaining_amount = self.total_invoice - self.partial_amount
 
                 if self.remaining_amount > 0:

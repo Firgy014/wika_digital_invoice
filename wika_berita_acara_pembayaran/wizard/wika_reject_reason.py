@@ -137,7 +137,7 @@ class RejectWizard(models.TransientModel):
                         x.write({
                             'state': 'rejected'
                         })
-                                             
+            
             for y in min(bap_id_model.history_approval_ids, key=lambda x: x.id):
                 self.env['mail.activity'].sudo().create({
                     'activity_type_id': 4,
@@ -151,6 +151,7 @@ class RejectWizard(models.TransientModel):
                     'status': 'todo',
                     'summary': """Document has been rejected, Please Re-upload Document!"""
                 })
+            
             for z in bap_id_model.activity_ids.filtered(lambda z: z.status == 'to_approve'):
                 if z.user_id.id == self._uid:
                     z.status = 'approved'

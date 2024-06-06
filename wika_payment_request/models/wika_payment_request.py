@@ -7,15 +7,14 @@ import requests
 import json
 import logging
 _logger = logging.getLogger(__name__)
-import logging
-_logger = logging.getLogger(__name__)
+
 class WikaPaymentRequest(models.Model):
     _name = 'wika.payment.request'
     _description = 'Wika Payment Request'
     _inherit = ['mail.thread']
 
     wika_pr_lines = fields.One2many('wika.payment.request.line', 'pr_id', string='Payment Request Lines')
-
+    
     @api.onchange('type_payment')
     def _onchange_type_payment(self):
         self.invoice_ids = False
@@ -47,50 +46,6 @@ class WikaPaymentRequest(models.Model):
             # Remove existing move lines that are not in the current invoice_ids
             move_lines_ids = [move_id.id for move_id in rec.move_ids if move_id.invoice_id.id in existing_invoices]
             rec.move_ids = [(3, move_id_id) for move_id_id in move_lines_ids] + move_lines
-
-
-    def write(self, vals):
-        res = super(WikaPaymentRequest, self).write(vals)
-        if 'invoice_ids' in vals:
-            for record in self:
-                lines_to_delete = record.move_ids.filtered(lambda x: x.invoice_id.id not in record.invoice_ids.ids)
-                lines_to_delete.unlink()
-        return res
-
-    wika_pr_lines = fields.One2many('wika.payment.request.line', 'pr_id', string='Payment Request Lines')
-
-    @api.onchange('type_payment')
-    def _onchange_type_payment(self):
-        self.invoice_ids = False
-
-    @api.model
-    def default_get(self, fields):
-        res = super(WikaPaymentRequest, self).default_get(fields)
-        res['invoice_ids'] = False
-        return res
-
-    @api.onchange('invoice_ids')
-    def _onchange_invoice_ids(self):
-        for rec in self:
-            used_partial_ids = self.env['wika.payment.request.line'].search([('pr_id', '!=', self.id)]).mapped('partial_id.id')
-            existing_invoices = rec.move_ids.mapped('invoice_id.id')
-            move_lines = []
-            for invoice in rec.invoice_ids:
-                if invoice.id not in existing_invoices:
-                    for partial in invoice.partial_request_ids.filtered(lambda p: not p.is_already_pr):
-                        if partial.id not in used_partial_ids:
-                            move_lines.append((0, 0, {
-                                'invoice_id': invoice.id,
-                                'partial_id': partial.id,
-                                'partner_id': invoice.partner_id.id,
-                                'branch_id': invoice.branch_id.id,
-                                'project_id': invoice.project_id.id,
-                                'amount': partial.partial_amount,
-                            }))
-            # Remove existing move lines that are not in the current invoice_ids
-            move_lines_ids = [move_id.id for move_id in rec.move_ids if move_id.invoice_id.id in existing_invoices]
-            rec.move_ids = [(3, move_id_id) for move_id_id in move_lines_ids] + move_lines
-
 
     def write(self, vals):
         res = super(WikaPaymentRequest, self).write(vals)
@@ -122,6 +77,7 @@ class WikaPaymentRequest(models.Model):
         if project_ids:
             project_id= [('id', 'in', project_ids)]
         return project_id
+
     name = fields.Char(string='Nomor Payment Request', readonly=True ,default='/')
     date = fields.Date(string='Tanggal Payment Request', required=True, default=fields.Date.today)
     state = fields.Selection([
@@ -146,6 +102,7 @@ class WikaPaymentRequest(models.Model):
         inverse_name='pr_id',
     )
     history_approval_ids = fields.One2many('wika.pr.approval.line', 'pr_id', string='Approval Line')
+    # history_approval_divisi_ids = fields.One2many('wika.pr.approval.line.divisi', 'pr_id', string='Approval Line')
     total = fields.Integer(string='Total', compute='compute_total')
     step_approve = fields.Integer(string='Step Approve',default=1)
     reject_reason_pr = fields.Text(string='Reject Reason')
@@ -189,19 +146,21 @@ class WikaPaymentRequest(models.Model):
     is_posted_to_sap = fields.Boolean(string='Posted to SAP', default=False)
     partial_payment_ids = fields.Many2many('wika.partial.payment.request', string='Partial',
         domain="[('state', '=', 'approved'), ('payment_state', '=', 'not request')]")
-
-    @api.onchange('partial_payment_ids')
-    def _check_partial_payment_ids(self):
-        if len(self.partial_payment_ids) > 1:
-            raise UserError("Anda hanya boleh memilih satu baris partial payment.")
-    partial_payment_ids = fields.Many2many('wika.partial.payment.request', string='Partial',
-        domain="[('state', '=', 'approved'), ('payment_state', '=', 'not request')]")
     journal_item_sap_ids = fields.Many2many(
         'wika.account.move.journal.sap',
         string='Invoice SAP'
         # required=True,
         # domain="[('state', '=', 'approved'), ('status_payment', '=', 'Not Request'), '|', ('partial_request_ids', '=', False), ('partial_request_ids', '=', None)]"
     )
+
+    @api.onchange('partial_payment_ids')
+    def _check_partial_payment_ids(self):
+        selected_invoice_ids = set()
+        for partial_payment in self.partial_payment_ids:
+            if partial_payment.invoice_id:
+                if partial_payment.invoice_id.id in selected_invoice_ids:
+                    raise UserError("Anda tidak dapat memilih lebih dari satu partial payment dengan nomor invoice yang sama.")
+                selected_invoice_ids.add(partial_payment.invoice_id.id)
 
     @api.onchange('partial_payment_ids')
     def _check_partial_payment_ids(self):
@@ -286,6 +245,43 @@ class WikaPaymentRequest(models.Model):
             else:
                 x.check_biro = False
 
+    def assign_todo_first(self):
+        model_model = self.env['ir.model'].sudo()
+        model_id = model_model.search([('model', '=', 'wika.payment.request')], limit=1)
+        for res in self:
+            level=res.level
+            first_user = False
+            if level:
+                approval_id = self.env['wika.approval.setting'].sudo().search(
+                    [('model_id', '=', model_id.id), ('level', '=', level),('transaction_type', '=', 'pr'),('level', '=', level)], limit=1)
+                approval_line_id = self.env['wika.approval.setting.line'].search([
+                    ('sequence', '=', 1),
+                    ('approval_id', '=', approval_id.id)
+                ], limit=1)
+                groups_id = approval_line_id.groups_id
+                if groups_id:
+                    for x in groups_id.users:
+                        if level == 'Proyek' and res.project_id in x.project_ids:
+                            first_user = x.id
+                        if level == 'Divisi Operasi' and x.branch_id == res.branch_id:
+                            first_user = x.id
+                        if level == 'Divisi Fungsi' and x.department_id == res.department_id:
+                            first_user = x.id
+                print(first_user)
+                #     # Createtodoactivity
+                if first_user:
+                    activity = self.env['mail.activity'].sudo().create({
+                        'activity_type_id': 4,
+                        'res_model_id': model_id.id,
+                        'res_id': res.id,
+                        'user_id': first_user,
+                        # 'nomor_po': res.po_id.name,
+                        'date_deadline': fields.Date.today() + timedelta(days=2),
+                        'state': 'planned',
+                        'summary': f"Need Request {model_id.name}!"
+                    })
+                    activity.write({'status': 'to_approve'})
+
     def assign_requested(self):
         model_model = self.env['ir.model'].sudo()
         model_id = model_model.search([('model', '=', 'wika.payment.request')], limit=1)
@@ -310,6 +306,12 @@ class WikaPaymentRequest(models.Model):
                         if level == 'Divisi Fungsi' and x.department_id == res.department_id:
                             first_user = x.id
                 if first_user:
+                    if self.activity_ids:
+                        for x in self.activity_ids.filtered(lambda x: x.status != 'approved'):
+                            if x.user_id.id == self._uid:
+                                x.status = 'approved'
+                                x.action_done()
+                                
                     activity=self.env['mail.activity'].sudo().create({
                         'activity_type_id': 4,
                         'res_model_id': model_id.id,
@@ -318,30 +320,39 @@ class WikaPaymentRequest(models.Model):
                         # 'nomor_po': res.po_id.name,
                         'date_deadline': fields.Date.today() + timedelta(days=2),
                         'state': 'planned',
-                        'summary': f"Need Verified Doc"
+                        'summary': f"Need Approve Payment"
                     })
+                    activity.write({'status': 'to_approve'})
                     res.approval_stage=level
                     res.activity_user_id=activity.user_id.id
                     res.activity_summary=activity.summary
                     res.approval_line_id=approval_line_id.id
                     self.env['wika.pr.approval.line'].create({'user_id': self._uid,
-                                                              # 'groups_id': groups_id.id,
-                                                              'date': datetime.now(),
-                                                              'note': 'Request Payment',
-                                                              'pr_id': self.id
-                                                              })
+                        'groups_id': groups_id.id,
+                        'date': datetime.now(),
+                        'note': 'Request Payment',
+                        'pr_id': self.id
+                    })
+
+    # @api.model
+    # def create(self, vals):
+    #     vals['name'] = self.env['ir.sequence'].next_by_code('wika.payment.request')
+    #     #res.assign_todo_first()
+    #     return super(WikaPaymentRequest, self).create(vals)
 
     @api.model
     def create(self, vals):
-        vals['name'] = self.env['ir.sequence'].next_by_code('wika.payment.request')
-        #res.assign_todo_first()
-        return super(WikaPaymentRequest, self).create(vals)
+        res = super(WikaPaymentRequest, self).create(vals)
+        res.name= self.env['ir.sequence'].next_by_code('wika.payment.request')
+        res.assign_todo_first()
+        return res
 
-    @api.depends('invoice_ids.amount_total_footer')
+    @api.depends('invoice_ids.amount_total_footer','partial_payment_ids')
     def compute_total(self):
         for record in self:
             total_amount = sum(record.invoice_ids.mapped('amount_total_footer'))
-            record.total = total_amount
+            total_amount_partial = sum(record.partial_payment_ids.mapped('partial_amount'))
+            record.total = total_amount+total_amount_partial
 
     def action_submit(self):
         for record in self:
@@ -352,6 +363,8 @@ class WikaPaymentRequest(models.Model):
         self.write({'state': 'request'})
         # for invoice in self.invoice_ids:
         #     invoice.write({'status_payment': 'Request Proyek'})
+        for partial_payment in self.partial_payment_ids:
+            partial_payment.write({'payment_state': 'requested'})
         for invoice in self.journal_item_sap_ids:
             invoice.write({'status': 'req_proyek'})
         for partial_payment in self.partial_payment_ids:
@@ -362,6 +375,17 @@ class WikaPaymentRequest(models.Model):
     def action_approve(self):
         if self.activity_user_id.id ==self._uid:
             move_lines = []
+            for partial in self.partial_payment_ids:
+                move_lines.append((0, 0, {
+                    'invoice_id': partial.invoice_id.id,
+                    'partial_id': partial.id,
+                    'partner_id': partial.invoice_id.partner_id.id,
+                    'branch_id': partial.invoice_id.branch_id.id,
+                    'project_id': partial.invoice_id.project_id.id,
+                    'amount': partial.partial_amount,
+                }))
+
+            self.move_ids = move_lines
             for partial in self.partial_payment_ids:
                 move_lines.append((0, 0, {
                     'invoice_id': partial.invoice_id.id,
@@ -410,6 +434,26 @@ class WikaPaymentRequest(models.Model):
                     #     })
                     for invoice in self.journal_item_sap_ids:
                         invoice.write({'status': 'req_divisi'})
+                    self.env['mail.activity'].sudo().create({
+                        'activity_type_id': 4,
+                        'res_model_id': self.env['ir.model'].sudo().search(
+                            [('model', '=', 'wika.payment.request.line')], limit=1).id,
+                        'res_id': self.id,
+                        'user_id': first_user,
+                        # 'nomor_po': self.po_id.name,
+                        'date_deadline': fields.Date.today() + timedelta(days=2),
+                        'state': 'planned',
+                        'status': 'to_approve',
+                        'summary': """Need Approval Payment Item"""
+                    })
+                    if self.activity_ids:
+                        for x in self.activity_ids.filtered(lambda x: x.status != 'approved'):
+                            if x.user_id.id == self._uid:
+                                x.status = 'approved'
+                                x.action_done()
+                    for invoice in self.invoice_ids:
+                        print (invoice)
+                        invoice.write({'status_payment': 'Request Divisi', 'payment_block':'C'})
                         self.env['wika.payment.request.line'].sudo().create({
                             'pr_id':self.id,
                             'invoice_id': invoice.id,
@@ -431,7 +475,7 @@ class WikaPaymentRequest(models.Model):
                         'pr_id': self.id
                         })
                     self.write({'state': 'verified','activity_summary':'Request Divisi','approval_stage':'Divisi Operasi'})
-                    self.sudo().send_proyek_approved_pr_to_sap()
+                    # self.sudo().send_proyek_approved_pr_to_sap()
                 else:
                     raise ValidationError('User Next Approval tidak ditemukan!')
 
@@ -486,11 +530,11 @@ class WikaPaymentRequest(models.Model):
         action = self.env.ref('wika_payment_request.action_reject_pr_wizard').read()[0]
         return action
 
-    def unlink(self):
-        for record in self:
-            if record.state in ('request', 'approve'):
-                raise ValidationError('Tidak dapat menghapus ketika status Payment Request dalam keadaan Request atau Approve')
-        return super(WikaPaymentRequest, self).unlink()
+    # def unlink(self):
+    #     for record in self:
+    #         if record.state in ('request', 'approve'):
+    #             raise ValidationError('Tidak dapat menghapus ketika status Payment Request dalam keadaan Request atau Approve')
+    #     return super(WikaPaymentRequest, self).unlink()
     
     def _generate_random_string(self):
         length = 32
@@ -569,8 +613,18 @@ class WikaPaymentRequest(models.Model):
 class WikaPrApprovalLine(models.Model):
     _name = 'wika.pr.approval.line'
     _description = 'Wika Approval Line'
-
+    
     pr_id = fields.Many2one('wika.payment.request', string='pr id')
+    user_id = fields.Many2one('res.users', string='User')
+    groups_id = fields.Many2one('res.groups', string='Groups')
+    date = fields.Datetime(string='Date')
+    note = fields.Char(string='Note')
+
+class WikaPrApprovalPaymentItem(models.Model):
+    _name = 'wika.pr.approval.payment.item'
+    _description = 'Wika Approval Line Divisi / Pusat'
+    
+    pr_id = fields.Many2one('wika.payment.request.line', string='pr id')
     user_id = fields.Many2one('res.users', string='User')
     groups_id = fields.Many2one('res.groups', string='Groups')
     date = fields.Datetime(string='Date')
@@ -580,7 +634,8 @@ class WikaPrLine(models.Model):
     _name = 'wika.payment.request.line'
     _inherit = ['mail.thread','mail.activity.mixin']
     _description = 'Wika Payment Request Line'
-
+    
+    history_approval_pr_item_ids = fields.One2many('wika.pr.approval.payment.item', 'pr_id', string='Approval Payment Item')
     pr_id = fields.Many2one('wika.payment.request', string='No Payment Request')
     partial_id = fields.Many2one('wika.partial.payment.request', string='No Partial')
     invoice_id = fields.Many2one('account.move', string='Invoice')
@@ -640,6 +695,33 @@ class WikaPrLine(models.Model):
                     line.partial_id.write({'is_already_pr': True})
         return result
 
+    # def unlink(self):
+    #     partial_ids = self.mapped('partial_id')
+    #     result = super(WikaPrLine, self).unlink()
+    #     # Update is_already_pr in partial.payment.request
+    #     for partial in partial_ids:
+    #         if not self.search([('partial_id', '=', partial.id)]):
+    #             partial.write({'is_already_pr': False})
+    #     return result
+        is_already_pr = fields.Boolean(string='Already PR', default=False)
+
+    @api.model
+    def create(self, values):
+        line = super(WikaPrLine, self).create(values)
+        # Update is_already_pr in partial.payment.request
+        if line.partial_id:
+            line.partial_id.write({'is_already_pr': True})
+        return line
+
+    def write(self, values):
+        result = super(WikaPrLine, self).write(values)
+        # Update is_already_pr in partial.payment.request
+        if 'partial_id' in values:
+            for line in self:
+                if line.partial_id:
+                    line.partial_id.write({'is_already_pr': True})
+        return result
+
     def unlink(self):
         partial_ids = self.mapped('partial_id')
         result = super(WikaPrLine, self).unlink()
@@ -655,7 +737,7 @@ class WikaPrLine(models.Model):
             approval_id=self.approval_line_id.approval_id
             step_approve=self.approval_line_id.sequence+1
             apploval_line_next_id=self.env['wika.approval.setting.line'].sudo().search(
-                        [('approval_id', '=', approval_id.id),('sequence','=',step_approve)], limit=1)
+                [('approval_id', '=', approval_id.id),('sequence','=',step_approve)], limit=1)
             groups_id_next = apploval_line_next_id.groups_id
             first_user=False
             if groups_id_next:
@@ -668,6 +750,24 @@ class WikaPrLine(models.Model):
                         first_user = x.id
                     print (first_user)
                 if first_user:
+                    # self.env['mail.activity'].sudo().create({
+                    #     'activity_type_id': 4,
+                    #     'res_model_id': self.env['ir.model'].sudo().search(
+                    #         [('model', '=', 'wika.payment.request.line')], limit=1).id,
+                    #     'res_id': self.id,
+                    #     'user_id': first_user,
+                    #     # 'nomor_po': self.po_id.name,
+                    #     'date_deadline': fields.Date.today() + timedelta(days=2),
+                    #     'state': 'planned',
+                    #     'status': 'to_approve',
+                    #     'summary': """Need Approval Payment Item"""
+                    # })
+                    # if self.activity_ids:
+                    #     for x in self.activity_ids.filtered(lambda x: x.status != 'approved'):
+                    #         if x.user_id.id == self._uid:
+                    #             x.status = 'approved'
+                    #             x.action_done()
+
                     self.write({'next_user_id': first_user, 'approval_line_id': apploval_line_next_id})
                     if apploval_line_next_id.level_role=='Divisi Operasi':
                         self.pr_id.write({'activity_summary': 'Request Divisi','approval_stage':'Divisi Operasi'})
@@ -685,7 +785,7 @@ class WikaPrLine(models.Model):
                 else:
                     raise ValidationError('User Next Approval tidak ditemukan!')
             else:
-                self.sudo().send_pusat_approved_pr_to_sap()
+                # self.sudo().send_pusat_approved_pr_to_sap()
                 self.pr_id.write({'state': 'approve'})
                 self.write({'next_user_id': False})
         else:
@@ -698,30 +798,30 @@ class WikaPrLine(models.Model):
 
         return random_string
 
-    def send_divisi_approved_pr_to_sap(self):
-        package_id = self._generate_random_string()
-        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+    # def send_divisi_approved_pr_to_sap(self):
+    #     package_id = self._generate_random_string()
+    #     timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
 
-        auth = ('WIKA_INT', 'Initial123')
-        url_config = self.env['wika.integration'].search([('name', '=', 'URL Payment Request Divisi')], limit=1)
+    #     auth = ('WIKA_INT', 'Initial123')
+    #     url_config = self.env['wika.integration'].search([('name', '=', 'URL Payment Request Divisi')], limit=1)
 
-        url = url_config.url
-        headers = {'x-csrf-token': 'fetch'}
+    #     url = url_config.url
+    #     headers = {'x-csrf-token': 'fetch'}
 
-        # GET Req
-        response = requests.get(url, headers=headers, auth=auth)
-        fetched_token = response.headers.get('x-csrf-token')
-        fetched_cookies = response.cookies.get_dict()
+    #     # GET Req
+    #     response = requests.get(url, headers=headers, auth=auth)
+    #     fetched_token = response.headers.get('x-csrf-token')
+    #     fetched_cookies = response.cookies.get_dict()
 
-        invoice_list = []
-        data_ref = {}
-        data_ref = {
-            'BELNR': self.invoice_id.payment_reference,
-            'GJAHR': str(self.invoice_id.date)[:4],
-            'ZLSPR': 'D',
-            'ZUONR': self.invoice_id.project_id.sap_code
-        }
-        invoice_list.append(data_ref)
+    #     invoice_list = []
+    #     data_ref = {}
+    #     data_ref = {
+    #         'BELNR': self.invoice_id.payment_reference,
+    #         'GJAHR': str(self.invoice_id.date)[:4],
+    #         'ZLSPR': 'D',
+    #         'ZUONR': self.invoice_id.project_id.sap_code
+    #     }
+    #     invoice_list.append(data_ref)
         if self.invoice_id.retensi_doc:
             data_ref = {
                 'BELNR': self.invoice_id.retensi_doc,
@@ -740,24 +840,24 @@ class WikaPrLine(models.Model):
             invoice_list.append(data_ref)
         _logger.info(invoice_list)
 
-        payload = json.dumps({
-            "DEVID": "YFII016A",
-            "PACKAGEID": package_id,
-            "COCODE": "A000",
-            "PRCTR": "",
-            "TIMESTAMP": timestamp,
-            "DATA": invoice_list
-        })
-        # POST Req
-        post_headers = {
-            'x-csrf-token': fetched_token,
-            'Authorization': 'Basic V0lLQV9JTlQ6SW5pdGlhbDEyMw=='
-        }
-        response_post = requests.request("POST", url, headers=post_headers, data=payload, cookies=fetched_cookies)
-        #parsed_response = json.loads(response_post.text)
-        #message = parsed_response[0]["MESSAGE"]
-        #self.invoice_id.msg_sap=message
-        _logger.info(response_post.text)
+    #     payload = json.dumps({
+    #         "DEVID": "YFII016A",
+    #         "PACKAGEID": package_id,
+    #         "COCODE": "A000",
+    #         "PRCTR": "",
+    #         "TIMESTAMP": timestamp,
+    #         "DATA": invoice_list
+    #     })
+    #     # POST Req
+    #     post_headers = {
+    #         'x-csrf-token': fetched_token,
+    #         'Authorization': 'Basic V0lLQV9JTlQ6SW5pdGlhbDEyMw=='
+    #     }
+    #     response_post = requests.request("POST", url, headers=post_headers, data=payload, cookies=fetched_cookies)
+    #     #parsed_response = json.loads(response_post.text)
+    #     #message = parsed_response[0]["MESSAGE"]
+    #     #self.invoice_id.msg_sap=message
+    #     _logger.info(response_post.text)
         #_logger.info(response_post.text)
         #self.pr_id.is_posted_to_sap = True
 

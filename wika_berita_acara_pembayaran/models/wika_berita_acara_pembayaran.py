@@ -64,7 +64,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
     begin_date = fields.Date(string='Tgl Mulai Kontrak', required=True, related="po_id.begin_date")
     sap_doc_number = fields.Char(string='Nomor Kontrak', required=True, related="po_id.sap_doc_number")
     amount_total = fields.Monetary(string='Total', related="po_id.amount_total")
-    currency_id = fields.Many2one('res.currency', string='Currency')
+    currency_id = fields.Many2one('res.currency', string='Currency', related="po_id.currency_id")
     notes = fields.Html(string='Terms and Conditions', store=True, readonly=False,)
     total_amount = fields.Monetary(string='Total Amount', compute='compute_total_amount')
     total_tax = fields.Monetary(string='Total Tax', compute='compute_total_tax')
@@ -146,6 +146,38 @@ class WikaBeritaAcaraPembayaran(models.Model):
     fee_management = fields.Boolean('Rincian Fee Management?')
     is_fully_invoiced_temp = fields.Boolean(string='Fully Invoiced Temp', compute='_compute_fully_invoiced_temp', store=False)
 
+    # @api.constrains('po_id', 'bap_type', 'total_current_value', 'total_po')
+    # def _check_total_amount(self):
+    #     for record in self:
+    #         if record.bap_type == 'retensi':
+    #             total_amount_sum = sum(self.search([
+    #                 ('po_id', '=', record.po_id.id),
+    #                 # ('bap_type', '=', 'progress'),
+    #                 ('id', '!=', record.id)
+    #             ]).mapped('total_current_value')) + record.total_current_value
+
+    #             if record.total_po != 0 and total_amount_sum < record.total_po:
+    #                 raise ValidationError("Anda tidak dapat membuat BAP Retensi karena progress belum mencapai 100% dari Total PO.")
+
+    # _sql_constraints = [
+    #     ('unique_po_id_bap_type_progress',
+    #      'UNIQUE(po_id, bap_type)',
+    #      'The PO ID must be unique for BAP Type Progress!')
+    # ]
+
+    # @api.constrains('po_id', 'bap_type')
+    # def _check_po_id_unique(self):
+    #     for record in self:
+    #         if record.bap_type == 'progress':
+    #             # Search for any records with the same po_id
+    #             existing_bap = self.search([
+    #                 ('po_id', '=', record.po_id.id),
+    #                 ('id', '!=', record.id),
+    #             ])
+    #             if existing_bap:
+    #                 raise ValidationError('Cannot create BAP because a BAP with this PO ID already exists with BAP Type Progress.')
+
+
     # @api.onchange('bap_date')
     # def _onchange_bap_date(self):
     #     if self.bap_date:
@@ -167,6 +199,83 @@ class WikaBeritaAcaraPembayaran(models.Model):
     #             current_date = datetime.now().date()
     #             if chosen_date.year != current_date.year or chosen_date.month != current_date.month:
     #                 raise ValidationError("Anda hanya dapat memilih tanggal BAP pada bulan dan tahun ini.")
+
+    @api.onchange('partner_id', 'bap_ids.product_id')
+    def _onchange_partner_id_product_id(self):
+        if self.partner_id and self.bap_ids:
+            bill_coa_type = self.partner_id.bill_coa_type
+            product_valuation_classes = self.bap_ids.mapped('product_id.valuation_class')
+            if bill_coa_type and product_valuation_classes:
+                payable_setting = self.env['wika.setting.account.payable'].sudo().search([
+                    ('bill_coa_type', '=', bill_coa_type),
+                    ('valuation_class', 'in', product_valuation_classes)
+                ], limit=1)
+                if payable_setting:
+                    return {'domain': {'pph_ids': [('id', 'in', payable_setting.pph_ids.ids)]}}
+                else:
+                    return {'domain': {'pph_ids': [('id', '=', False)]}}
+        return {'domain': {'pph_ids': [('id', '=', False)]}}
+
+    @api.onchange('po_id')
+    def _onchange_po_id(self):
+        if self.po_id:
+            prev_bap = self.env['wika.berita.acara.pembayaran'].search([
+                ('po_id', '=', self.po_id.id),
+                ('name', '<', self.id)], order='name desc', limit=1)
+
+            if prev_bap:
+                self.remain_val_po = prev_bap.remain_val_po - prev_bap.total_adjustment
+            else:
+                self.remain_val_po = self.total_po
+
+    @api.model
+    def create(self, vals):
+        new_bap = super(WikaBeritaAcaraPembayaran, self).create(vals)
+
+        if vals.get('po_id'):
+            prev_bap = self.search([
+                ('po_id', '=', vals['po_id']),
+                ('name', '<', new_bap.name)], order='name desc', limit=1)
+
+            if prev_bap:
+                new_bap.remain_val_po = prev_bap.remain_val_po - prev_bap.total_adjustment
+            else:
+                new_bap.remain_val_po = new_bap.total_po
+        return new_bap
+
+    def write(self, vals):
+        res = super(WikaBeritaAcaraPembayaran, self).write(vals)
+
+        if 'po_id' in vals:
+            for bap in self:
+                if bap.po_id:
+                    prev_bap = self.search([
+                        ('po_id', '=', bap.po_id.id),
+                        ('name', '<', bap.name)], order='name desc', limit=1)
+
+                    if prev_bap:
+                        bap.remain_val_po = prev_bap.remain_val_po - prev_bap.total_adjustment
+                    else:
+                        bap.remain_val_po = bap.total_po
+        return res
+
+    @api.depends('po_id.amount_untaxed')
+    def _compute_total_po(self):
+        for record in self:
+            total_po = sum(record.po_id.mapped('amount_untaxed'))
+            record.total_po = total_po
+
+    @api.depends('bap_ids.amount_adjustment')
+    def _compute_total_adjustment(self):
+        for record in self:
+            total_adjustment = sum(record.bap_ids.mapped('amount_adjustment'))
+            record.total_adjustment = total_adjustment
+
+    # compute nilai sisa po
+    @api.constrains('total_po', 'total_adjustment', 'value_to_date')
+    def _check_amount_adjustment(self):
+        for record in self:
+            record.value_to_date = record.total_po - record.total_adjustment
 
     @api.onchange('partner_id', 'bap_ids.product_id')
     def _onchange_partner_id_product_id(self):
@@ -358,8 +467,6 @@ class WikaBeritaAcaraPembayaran(models.Model):
             total_po = sum(record.bap_ids.mapped('unit_price_po'))
             record.price_sd_saatini = record.last_value + total_po
 
-
-
     # Potongan uang muka computed
     @api.depends('price_cut_ids', 'price_cut_ids.qty', 'price_cut_ids.product_id')
     def _compute_qty_dp_saat_ini(self):
@@ -400,7 +507,6 @@ class WikaBeritaAcaraPembayaran(models.Model):
     def _compute_total_sd_saatini(self):
         for record in self:
             record.total_sd_saatini = record.qty_sd_saatini * record.price_sd_saatini
-
 
     @api.depends('price_cut_ids', 'price_cut_ids.percentage_amount', 'price_cut_ids.product_id')
     def _compute_amount_pecentage_tmp(self):
@@ -450,7 +556,6 @@ class WikaBeritaAcaraPembayaran(models.Model):
             total_pembayaran_retensi = retensi_total - total_pph
             record.total_pembayaran_retensi = total_pembayaran_retensi
 
-
     # # funct terbilang
     @api.depends('total_pembayaran')
     def _compute_rupiah_terbilang(self):
@@ -499,8 +604,6 @@ class WikaBeritaAcaraPembayaran(models.Model):
                 record.terbilang_retensi = rupiah_terbilang
             else:
                 record.terbilang_retensi = ""
-
-
 
     # @api.depends('bap_date')
     def _compute_last_value(self):
@@ -714,7 +817,6 @@ class WikaBeritaAcaraPembayaran(models.Model):
                                 x.write({'stock_move_id': data.stock_move_id.id})
 
 
-
     @api.onchange('po_id','bap_type')
     def onchange_po_id(self):
 
@@ -804,6 +906,8 @@ class WikaBeritaAcaraPembayaran(models.Model):
             elif record.bap_type == 'retensi':
                 total_amount_tax = record.retensi_total
                 record.total_tax = math.floor(total_amount_tax) * 0.11
+                total_amount_tax = record.retensi_total
+                record.total_tax = math.floor(total_amount_tax) * 0.11
                 # print("TESSSSSSBORRRRRRRETENSIII", record.total_tax)
             else:
                 total_amount = record.total_amount or 0.0
@@ -813,8 +917,6 @@ class WikaBeritaAcaraPembayaran(models.Model):
                 total_tax = (total_amount - dp_total - retensi_total) * tax_percentage
                 record.total_tax = math.floor(total_tax)
     
-
-
     @api.depends('grand_total', 'total_tax')
     def compute_grand_total(self):
         for record in self:
@@ -850,10 +952,10 @@ class WikaBeritaAcaraPembayaran(models.Model):
             model_id = self.env['ir.model'].search([('model', '=', 'wika.berita.acara.pembayaran')], limit=1)
             approval_id = self.env['wika.approval.setting'].sudo().search(
                 [('model_id', '=', model_id.id), ('level', '=', level),
-                 ('transaction_type', '=', self.po_id.transaction_type)], limit=1)
+                ('transaction_type', '=', self.po_id.transaction_type)], limit=1)
             if not approval_id:
                 raise ValidationError(
-                    'Approval Setting untuk menu BAP tidak ditemukan. Silakan hubungi Administrator!')
+                'Approval Setting untuk menu BAP tidak ditemukan. Silakan hubungi Administrator!')
             approval_line_id = self.env['wika.approval.setting.line'].search([
                 ('sequence', '=', self.step_approve),
                 ('approval_id', '=', approval_id.id)
@@ -986,7 +1088,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
         self.notes= (response_post.text)
 
     def action_submit(self):
-        if not self.bap_ids:
+        if not self.bap_ids and self.bap_type  in ('cut over','progress'):
             raise ValidationError('List BAP tidak boleh kosong. Mohon isi List BAP terlebih dahulu!')
 
         for record in self:
@@ -1154,6 +1256,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
                             'summary': """Need Approval Document BAP"""
                         })
 
+                    self.sudo().push_bap()
         else:
             raise ValidationError('User Akses Anda tidak berhak Submit!')
 
@@ -1378,8 +1481,6 @@ class WikaBeritaAcaraPembayaran(models.Model):
     #
 
     #
-
-
 class WikaBeritaAcaraPembayaranLine(models.Model):
     _name = 'wika.berita.acara.pembayaran.line'
 

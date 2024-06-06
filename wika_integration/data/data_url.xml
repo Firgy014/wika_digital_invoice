@@ -57,4 +57,10 @@
             <field name="url">https://fioriqas.wika.co.id/ywikafi025/listinvoicenonpo?sap-client=230</field>
         </record>
     </data>
+    <record id="url_pr_login_sso" model="wika.integration">
+        <field name="name">Login WZONE</field>
+        <field name="app">WZONE</field>
+        <field name="url">https://new-portal.wika.co.id/app/sso/valid</field>
+        <field name="app_secret">bbcdac3c884ba59a188cd3aa18553152</field>
+    </record>
 </odoo>
