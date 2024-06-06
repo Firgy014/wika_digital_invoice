@@ -109,7 +109,9 @@ class wika_get_payment_status(models.Model):
                             _logger.info("# === UPDATE ACCOUNT MOVE === #")
                             payment_id = account_payment_created.id
                             _logger.info("# === PAYMENT ID === #" + str(payment_id))
-                            account_move.write({'payment_id': payment_id})
+                            for am in account_move:
+                                am.write({'payment_id': payment_id})
+
                             account_payment_created.action_post()
                             
                     else:
