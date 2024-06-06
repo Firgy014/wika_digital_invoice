@@ -20,6 +20,7 @@ class AccountMoveInheritWika(models.Model):
     amount_due = fields.Float('Amount Due')
 
     def _compute_amount_due(self):
+        _logger.info("# === _compute_amount_due === #")
         for rec in self:
             total_paid = 0
             if self.partial_request_ids:
