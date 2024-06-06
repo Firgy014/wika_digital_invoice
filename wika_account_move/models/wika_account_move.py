@@ -1068,6 +1068,7 @@ class WikaInheritedAccountMove(models.Model):
             rec.pph_amount += total_pph_cbasis
 
     def compute_amount_invoice(self):
+        _logger.info("# === compute_amount_invoice === #")
         for rec in self:
             rec.amount_invoice = sum(rec.invoice_line_ids.mapped('price_subtotal'))
 

@@ -25,6 +25,7 @@
                                     options="{'no_create': True, 'no_create_edit':True}"/>
                                 <field name="posting_date"/>
                                 <field name="partner_id"/>
+                                <field name="state" invisible="0"/>
                             </group>
                             <group id="header_right_group">
 

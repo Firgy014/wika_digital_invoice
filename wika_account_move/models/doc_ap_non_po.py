@@ -171,6 +171,7 @@ class DocApNonPO(models.Model):
                                                 'date': posting_date,
                                             })
                                             account_move_line.move_id.compute_pph_amount()
+                                            account_move_line.move_id.compute_amount_invoice()
                                     else:
                                         _logger.info('# === Insert invoice detail === #')
                                         account_move_line_created = self.env['account.move.line'].create({
@@ -191,6 +192,7 @@ class DocApNonPO(models.Model):
                                             'company_id': company_id, 
                                         })
                                         account_move_line_created.move_id.compute_pph_amount()
+                                        account_move_line_created.move_id.compute_amount_invoice()
 
                                 
                             i = i+1
