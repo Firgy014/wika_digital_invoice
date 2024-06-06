@@ -68,11 +68,14 @@ class wika_get_payment_status(models.Model):
                 _logger.info("# === CEK ACCOUNT MOVE === #" + year + doc_number )
                 account_move = False
                 account_move1 = self.env['account.move'].search([
+                    ('move_type', '=', 'in_invoice'),
                     ('payment_reference', '=', doc_number),
                     ('year', '=', year)], limit=1)
                 if not account_move1:
-                    account_move2 = self.env['account.move'].search([('payment_reference', '=', doc_number),
-                                    '|', ('date', '>=', date_from), ('date', '<=', date_to)], limit=1)
+                    account_move2 = self.env['account.move'].search([
+                        ('move_type', '=', 'in_invoice'),
+                        ('payment_reference', '=', doc_number),
+                        '|', ('date', '>=', date_from), ('date', '<=', date_to)], limit=1)
                     _logger.info("# === ACCOUNT MOVE 2 === #")
                     if account_move2:
                         account_move = account_move2
@@ -90,7 +93,7 @@ class wika_get_payment_status(models.Model):
                     account_payment = self.env['account.payment'].search([
                         ('ref', '=', doc_number),
                         ('date', '=', clear_date)
-                    ])
+                    ], limit=1)
                     _logger.info(account_payment)
                     if not account_payment:
                         _logger.info("# === INSERT PAYMENT === #")
@@ -112,12 +115,11 @@ class wika_get_payment_status(models.Model):
                             payment_id = account_payment_created.id
                             _logger.info("# === PAYMENT ID === #" + str(payment_id))
                             account_move.write({'payment_id': payment_id})
+                            account_payment_created.action_post()
                             
                     else:
                         _logger.info("# === _compute_amount_due === #")
                         account_move._compute_amount_due()
-                        # if account_move.state != 'posted':
-                        #     account_move.action_post()
 
                 else:
                     _logger.info("# === CEK PARTIAL PAYMENT REQUEST === #" + year + doc_number )
@@ -147,15 +149,12 @@ class wika_get_payment_status(models.Model):
                                 # _logger.info("ADA")
                                 payment_id = account_payment_created.id
                                 partial_payment_request.invoice_id.write({'payment_id': payment_id})
-                                partial_payment_request.invoice_id._compute_amount_due()
-
-                                # if partial_payment_request.invoice_id.state != 'posted':
-                                #     partial_payment_request.invoice_id.action_post()
-                                
+                                partial_payment_request.invoice_id._compute_amount_due()                                
                                 partial_payment_request.write({'payment_state': 'paid',
                                                                 'payment_id': payment_id,
                                                                 'no_doc_sap': clear_doc
                                                                 })
+                                account_payment_created.action_post()
 
             _logger.info("# === IMPORT DATA SUKSES === #")
         else:
