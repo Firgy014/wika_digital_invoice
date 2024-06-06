@@ -109,9 +109,7 @@ class wika_get_payment_status(models.Model):
                             _logger.info("# === POST ACCOUNT PAYMENT === #")
                             account_payment_created.action_post()
                             
-                    else:
-                        _logger.info("# === _compute_amount_due === #")
-                        account_move._compute_amount_due()
+                    account_move._compute_amount_due()
 
                 else:
                     _logger.info("# === CEK PARTIAL PAYMENT REQUEST === #" + year + doc_number )
