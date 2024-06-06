@@ -129,99 +129,15 @@ class RejectWizard(models.TransientModel):
                         break
 
             # reject without docs
-            project_id = self.env['project.project'].sudo().browse(bap_id_model.project_id.id)
-            doc_setting_gr_id = False
-            doc_setting_do_id = False
-            doc_setting_ses_id = False
-
-            # reject with selected docs
-            if self.is_reject_doc == True:
-                document_list = []
-                len_current_doc = len(bap_id_model.document_ids)
-                len_selected_doc = len(self.related_document_ids)
-                len_total_doc = len_current_doc + len_selected_doc
-
-                added_gr_documents = {}
-                added_sj_documents = {}
-                
-                for f, doc in enumerate(self.related_document_ids):
-                    if doc.folder_id.name == 'PO':
-                        if bap_id_model.po_id.transaction_type == 'BTL':
-                            first_user = self._get_first_user(groups_name='Kasie KA', project_id=project_id)
-                        elif bap_id_model.po_id.transaction_type == 'BL':
-                            first_user = self._get_first_user(groups_name='Kasie Kom', project_id=project_id)
-
-                        for i, x in enumerate(bap_id_model.po_id.document_ids):
-                            x.state = 'rejected'
-                            purchase_model_id = self.env['ir.model'].sudo().search([('model', '=', 'purchase.order')], limit=1)
-                            doc_setting_id = self.env['wika.document.setting'].sudo().search([('model_id', '=', purchase_model_id.id)])
-
-                            if doc_setting_id:
-                                for document_line in doc_setting_id:
-                                    document_list.append((0, 0, {
-                                        'bap_id': bap_id_model.id,
-                                        'document_id': document_line.id,
-                                        'state': 'rejected'
-                                    }))
-                                bap_id.document_ids = document_list
-
-                        doc.active = False
-                        is_doc_rejection = True
-                        
-                    if doc.folder_id.name == 'GR/SES' and doc.picking_id:
-                        picking_id = doc.picking_id.id
-                        if picking_id not in added_gr_documents:
-                            doc_setting_gr_id = self.env['wika.document.setting'].sudo().search([('name', '=', 'GR')], limit=1)
-                            if doc_setting_gr_id:
-                                document_list.append((0, 0, {
-                                    'bap_id': bap_id_model.id,
-                                    'document_id': doc_setting_gr_id.id,
-                                    'state': 'rejected',
-                                    'picking_id': picking_id
-                                }))
-                                added_gr_documents[picking_id] = True
-
-                        if picking_id not in added_sj_documents:
-                            doc_setting_sj_id = self.env['wika.document.setting'].sudo().search([('name', '=', 'Surat Jalan')], limit=1)
-                            if doc_setting_sj_id:
-                                document_list.append((0, 0, {
-                                    'bap_id': bap_id_model.id,
-                                    'document_id': doc_setting_sj_id.id,
-                                    'state': 'rejected',
-                                    'picking_id': picking_id
-                                }))
-                                added_sj_documents[picking_id] = True
-
-                        elif doc.picking_id.pick_type == 'ses':
-                            first_user = self._get_first_user(groups_name='Kasie Kom', project_id=project_id)
-                            doc_setting_ses_id = self.env['wika.document.setting'].sudo().search([('name', '=', 'SES')], limit=1)
-                            document_list.append((0, 0, {
-                                'bap_id': bap_id_model.id,
-                                'document_id': document_line_ses.id,
-                                'state': 'rejected',
-                                'picking_id': doc.picking_id.id
-                            }))                            
-                            x.state = 'rejected'
-                    
-                    doc.active = False
-                    is_doc_rejection = True
-                    if len(bap_id.document_ids) == len_total_doc:
-                        break
-
-            # logical matrix to handle the reject without docs (x-z-z-x)
-            for i, x in enumerate(bap_id.document_ids):
-                if len(self.related_document_ids) != len(bap_id.document_ids):
-                    for g, z in enumerate(self.related_document_ids):
-                        if z.folder_id.name == 'BAP':
+            for x in bap_id.document_ids:
                 if len(self.related_document_ids) != len(bap_id.document_ids):
                     # for z in self.related_document_ids:
                     # if z.folder_id.name == 'BAP':
                     if x.document_id.name == 'BAP':
-                                    x.write({
-                                        'state': 'rejected'
-                                    })
-                                             
-                                             
+                        x.write({
+                            'state': 'rejected'
+                        })
+            
             for y in min(bap_id_model.history_approval_ids, key=lambda x: x.id):
                 self.env['mail.activity'].sudo().create({
                     'activity_type_id': 4,
@@ -235,6 +151,7 @@ class RejectWizard(models.TransientModel):
                     'status': 'todo',
                     'summary': """Document has been rejected, Please Re-upload Document!"""
                 })
+            
             for z in bap_id_model.activity_ids.filtered(lambda z: z.status == 'to_approve'):
                 if z.user_id.id == self._uid:
                     z.status = 'approved'

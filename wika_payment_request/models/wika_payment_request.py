@@ -7,8 +7,7 @@ import requests
 import json
 import logging
 _logger = logging.getLogger(__name__)
-import logging
-_logger = logging.getLogger(__name__)
+
 class WikaPaymentRequest(models.Model):
     _name = 'wika.payment.request'
     _description = 'Wika Payment Request'
@@ -19,12 +18,6 @@ class WikaPaymentRequest(models.Model):
     @api.onchange('type_payment')
     def _onchange_type_payment(self):
         self.invoice_ids = False
-    
-    wika_pr_lines = fields.One2many('wika.payment.request.line', 'pr_id', string='Payment Request Lines')
-
-    @api.onchange('type_payment')
-    def _onchange_type_payment(self):
-        self.invoice_ids = False
 
     @api.model
     def default_get(self, fields):
@@ -53,50 +46,6 @@ class WikaPaymentRequest(models.Model):
             # Remove existing move lines that are not in the current invoice_ids
             move_lines_ids = [move_id.id for move_id in rec.move_ids if move_id.invoice_id.id in existing_invoices]
             rec.move_ids = [(3, move_id_id) for move_id_id in move_lines_ids] + move_lines
-
-
-    def write(self, vals):
-        res = super(WikaPaymentRequest, self).write(vals)
-        if 'invoice_ids' in vals:
-            for record in self:
-                lines_to_delete = record.move_ids.filtered(lambda x: x.invoice_id.id not in record.invoice_ids.ids)
-                lines_to_delete.unlink()
-        return res
-
-    wika_pr_lines = fields.One2many('wika.payment.request.line', 'pr_id', string='Payment Request Lines')
-
-    @api.onchange('type_payment')
-    def _onchange_type_payment(self):
-        self.invoice_ids = False
-
-    @api.model
-    def default_get(self, fields):
-        res = super(WikaPaymentRequest, self).default_get(fields)
-        res['invoice_ids'] = False
-        return res
-
-    @api.onchange('invoice_ids')
-    def _onchange_invoice_ids(self):
-        for rec in self:
-            used_partial_ids = self.env['wika.payment.request.line'].search([('pr_id', '!=', self.id)]).mapped('partial_id.id')
-            existing_invoices = rec.move_ids.mapped('invoice_id.id')
-            move_lines = []
-            for invoice in rec.invoice_ids:
-                if invoice.id not in existing_invoices:
-                    for partial in invoice.partial_request_ids.filtered(lambda p: not p.is_already_pr):
-                        if partial.id not in used_partial_ids:
-                            move_lines.append((0, 0, {
-                                'invoice_id': invoice.id,
-                                'partial_id': partial.id,
-                                'partner_id': invoice.partner_id.id,
-                                'branch_id': invoice.branch_id.id,
-                                'project_id': invoice.project_id.id,
-                                'amount': partial.partial_amount,
-                            }))
-            # Remove existing move lines that are not in the current invoice_ids
-            move_lines_ids = [move_id.id for move_id in rec.move_ids if move_id.invoice_id.id in existing_invoices]
-            rec.move_ids = [(3, move_id_id) for move_id_id in move_lines_ids] + move_lines
-
 
     def write(self, vals):
         res = super(WikaPaymentRequest, self).write(vals)
@@ -128,6 +77,7 @@ class WikaPaymentRequest(models.Model):
         if project_ids:
             project_id= [('id', 'in', project_ids)]
         return project_id
+
     name = fields.Char(string='Nomor Payment Request', readonly=True ,default='/')
     date = fields.Date(string='Tanggal Payment Request', required=True, default=fields.Date.today)
     state = fields.Selection([
@@ -194,8 +144,14 @@ class WikaPaymentRequest(models.Model):
     ], string='Status Position')
     approval_line_id= fields.Many2one(comodel_name='wika.approval.setting.line')
     is_posted_to_sap = fields.Boolean(string='Posted to SAP', default=False)
-    partial_payment_ids = fields.Many2many('wika.partial.payment.request', string='Partial', 
+    partial_payment_ids = fields.Many2many('wika.partial.payment.request', string='Partial',
         domain="[('state', '=', 'approved'), ('payment_state', '=', 'not request')]")
+    journal_item_sap_ids = fields.Many2many(
+        'wika.account.move.journal.sap',
+        string='Invoice SAP'
+        # required=True,
+        # domain="[('state', '=', 'approved'), ('status_payment', '=', 'Not Request'), '|', ('partial_request_ids', '=', False), ('partial_request_ids', '=', None)]"
+    )
 
     @api.onchange('partial_payment_ids')
     def _check_partial_payment_ids(self):
@@ -205,21 +161,6 @@ class WikaPaymentRequest(models.Model):
                 if partial_payment.invoice_id.id in selected_invoice_ids:
                     raise UserError("Anda tidak dapat memilih lebih dari satu partial payment dengan nomor invoice yang sama.")
                 selected_invoice_ids.add(partial_payment.invoice_id.id)
-    partial_payment_ids = fields.Many2many('wika.partial.payment.request', string='Partial',
-        domain="[('state', '=', 'approved'), ('payment_state', '=', 'not request')]")
-
-    @api.onchange('partial_payment_ids')
-    def _check_partial_payment_ids(self):
-        if len(self.partial_payment_ids) > 1:
-            raise UserError("Anda hanya boleh memilih satu baris partial payment.")
-    partial_payment_ids = fields.Many2many('wika.partial.payment.request', string='Partial',
-        domain="[('state', '=', 'approved'), ('payment_state', '=', 'not request')]")
-    journal_item_sap_ids = fields.Many2many(
-        'wika.account.move.journal.sap',
-        string='Invoice SAP'
-        # required=True,
-        # domain="[('state', '=', 'approved'), ('status_payment', '=', 'Not Request'), '|', ('partial_request_ids', '=', False), ('partial_request_ids', '=', None)]"
-    )
 
     @api.onchange('partial_payment_ids')
     def _check_partial_payment_ids(self):
@@ -406,12 +347,12 @@ class WikaPaymentRequest(models.Model):
         res.assign_todo_first()
         return res
 
-    @api.depends('move_ids.amount_total_footer')
+    @api.depends('invoice_ids.amount_total_footer','partial_payment_ids')
     def compute_total(self):
         for record in self:
             total_amount = sum(record.invoice_ids.mapped('amount_total_footer'))
-            total_amount = sum(record.move_ids.mapped('amount'))
-            record.total = total_amount
+            total_amount_partial = sum(record.partial_payment_ids.mapped('partial_amount'))
+            record.total = total_amount+total_amount_partial
 
     def action_submit(self):
         for record in self:

@@ -89,13 +89,8 @@ class WikaInheritedAccountMove(models.Model):
     nomor_payment_request= fields.Char(string='Nomor Payment Request')
     is_approval_checked = fields.Boolean(string="Approval Checked", compute='_compute_is_approval_checked' ,default=False)
     is_wizard_cancel = fields.Boolean(string="Is cancel", default=True)
-    bap_type = fields.Selection([
-        ('progress', 'Progress'),
-        ('uang muka', 'Uang Muka'),
-        ('retensi', 'Retensi'),
-        ('cut over', 'Cut Over'),
-        ], string='Jenis BAP', related='bap_id.bap_type', store=True)
 
+    # validasi posting date jika -1 bulan
     @api.constrains('posting_date')
     def _check_posting_date(self):
         for record in self:
@@ -259,8 +254,7 @@ class WikaInheritedAccountMove(models.Model):
     @api.depends('bap_id.bap_type')
     def _compute_bap_type(self):
         for record in self:
-            if record._origin.id:
-                if record.bap_id:
+            if record.bap_id:
                 record.bap_type = record.bap_id.bap_type
 
     @api.depends('no_faktur_pajak', 'total_tax')
@@ -302,7 +296,7 @@ class WikaInheritedAccountMove(models.Model):
     def _compute_name_wdigi(self):
         for rec in self:
             sequence = self.env['ir.sequence'].sudo().next_by_code('invoice_number_sequence') or '/'
-                seq = sequence.split("/")
+            seq = sequence.split("/")
             if rec.invoice_date:
                 bulan = rec.invoice_date.strftime('%m')
                 tahun = rec.invoice_date.strftime('%Y')
@@ -335,9 +329,6 @@ class WikaInheritedAccountMove(models.Model):
     #                 next_number += 1
     #                 if next_number > 99999:
     #                     raise ValidationError("Naming sequence limit exceeded.")
-
-            else:
-                record.name = False
 
     @api.depends('total_line', 'invoice_line_ids', 'dp_total','retensi_total', 'invoice_line_ids.tax_ids')
     def compute_total_tax(self):
@@ -551,32 +542,6 @@ class WikaInheritedAccountMove(models.Model):
                     raise ValidationError("Posting Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
             
         return record
-        records = super(WikaInheritedAccountMove, self).create(vals_list)
-        for record in records:
-            record.assign_todo_first()
-
-            if isinstance(record, bool):
-                return record
-            if len(record) != 1:
-                raise ValidationError("Hanya satu record yang diharapkan diperbarui!")
-
-            # Document date validation
-            if record.invoice_date and record.ivnoice_date < record.bap_id.bap_date and not record.cut_off:
-                raise ValidationError("Document Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
-
-            # Posting date validation
-            if record.date and record.date < record.bap_id.bap_date and not record.cut_off:
-                raise ValidationError("Posting Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
-
-            # New validation for posting date
-            today = fields.Date.today()
-            first_day_of_current_month = today.replace(day=1)
-            first_day_of_previous_month = (first_day_of_current_month - timedelta(days=1)).replace(day=1)
-
-            if record.date and record.date < first_day_of_previous_month:
-                raise ValidationError("Posting Date tidak boleh lebih awal dari bulan sebelumnya.")
-        
-        return records
 
     def write(self, values):
         for rec in self:
@@ -592,16 +557,6 @@ class WikaInheritedAccountMove(models.Model):
                 raise ValidationError("Document Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
             else:
                 pass
-        result = super(WikaInheritedAccountMove, self).write(values)
-        for record in self:
-            if isinstance(result, bool):
-                return result
-            if len(record) != 1:
-                raise ValidationError("Hanya satu record yang diharapkan diperbarui!")
-
-            # Document date validation
-            if record.invoice_date and record.invoice_date < record.bap_id.bap_date and not record.cut_off:
-                raise ValidationError("Document Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
 
             # # posting date
             if record.date != False and record.date < record.bap_id.bap_date and record.cut_off!=True:
