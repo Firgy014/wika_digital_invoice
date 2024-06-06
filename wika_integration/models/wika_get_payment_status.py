@@ -106,12 +106,7 @@ class wika_get_payment_status(models.Model):
                         })
 
                         if account_payment_created:
-                            _logger.info("# === UPDATE ACCOUNT MOVE === #")
-                            payment_id = account_payment_created.id
-                            _logger.info("# === PAYMENT ID === #" + str(payment_id))
-                            for am in account_move:
-                                am.write({'payment_id': payment_id})
-
+                            _logger.info("# === POST ACCOUNT PAYMENT === #")
                             account_payment_created.action_post()
                             
                     else:
@@ -143,15 +138,16 @@ class wika_get_payment_status(models.Model):
                             })
 
                             if account_payment_created:
-                                # _logger.info("ADA")
+                                _logger.info("# === POST ACCOUNT PAYMENT === #")
                                 payment_id = account_payment_created.id
-                                partial_payment_request.invoice_id.write({'payment_id': payment_id})
                                 partial_payment_request.invoice_id._compute_amount_due()                                
-                                partial_payment_request.write({'payment_state': 'paid',
-                                                                'payment_id': payment_id,
-                                                                'no_doc_sap': clear_doc
-                                                                })
+                                partial_payment_request.write({
+                                    'payment_state': 'paid',
+                                    'payment_id': payment_id,
+                                    'no_doc_sap': clear_doc
+                                })
                                 account_payment_created.action_post()
+                                
 
             _logger.info("# === IMPORT DATA SUKSES === #")
         else:
