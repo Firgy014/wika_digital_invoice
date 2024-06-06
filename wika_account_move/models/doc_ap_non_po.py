@@ -125,6 +125,7 @@ class DocApNonPO(models.Model):
                                             'company_id': company_id,
                                             'payment_state': 'not_paid',
                                             'status_payment': 'Not Request',
+                                            'cut_off': True,
                                         })
                                         _logger.info(account_move_created)
                                         account_move_id = account_move_created.id
@@ -147,6 +148,7 @@ class DocApNonPO(models.Model):
                                                 'invoice_payment_term_id' : payment_term_id,
                                                 'no_faktur_pajak' : header_text,
                                                 'no_invoice_vendor' : reference,
+                                                'cut_off': True,
                                             })
 
                                     _logger.info('# === Upsert invoice detail === #')

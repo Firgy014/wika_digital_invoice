@@ -317,6 +317,7 @@ class wika_get_invoice_non_po(models.Model):
                                         'company_id': company_id,
                                         'payment_state': 'not_paid',
                                         'status_payment': 'Not Request',
+                                        'cut_off': True,
                                     })
                                     _logger.info(account_move_created)
                                     account_move_id = account_move_created.id
@@ -339,13 +340,16 @@ class wika_get_invoice_non_po(models.Model):
                                             'invoice_payment_term_id' : payment_term_id,
                                             'no_faktur_pajak' : header_text,
                                             'no_invoice_vendor' : reference,
+                                            'cut_off': True,
                                         })
 
                                 _logger.info('# === Upsert invoice detail === #')
-                                account_move_line = self.env['account.move.line'].search([('move_id', '=', account_move_id),
-                                                ('sequence', '=', line_item),
-                                                ('project_id', '=', project.id),
-                                                ('partner_id', '=', partner.id)], limit=1)
+                                account_move_line = self.env['account.move.line'].search([
+                                    ('move_id', '=', account_move_id),
+                                    ('sequence', '=', line_item),
+                                    ('project_id', '=', project.id),
+                                    ('partner_id', '=', partner.id)], limit=1)
+                                
                                 if account_move_line:
                                     _logger.info('# === Update invoice detail === #')
                                     if status_payment == 'Not Request':
@@ -361,6 +365,7 @@ class wika_get_invoice_non_po(models.Model):
                                             'date': posting_date,
                                         })
                                         account_move_line.move_id.compute_pph_amount()
+                                        account_move_line.move_id.compute_amount_invoice()
                                 else:
                                     _logger.info('# === Insert invoice detail === #')
                                     account_move_line_created = self.env['account.move.line'].create({
@@ -381,6 +386,7 @@ class wika_get_invoice_non_po(models.Model):
                                         'company_id': company_id, 
                                     })
                                     account_move_line_created.move_id.compute_pph_amount()
+                                    account_move_line_created.move_id.compute_amount_invoice()
 
                                 # recs = [
                                 #     str(doc_number),
