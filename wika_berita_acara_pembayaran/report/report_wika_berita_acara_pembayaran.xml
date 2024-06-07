@@ -357,7 +357,7 @@
                                     <td style="padding: 1px;">x</td>
                                     <td style="padding: 1px;">
                                         <t t-if="o.currency_id.name == 'EUR'">
-                                            Rp. <t t-esc="'{:,.0f}'.format(o.total_amount) if o.total_amount else ''"/>
+                                            Rp. <t t-esc="'{:,.2f}'.format(o.total_amount) if o.total_amount else ''"/>
                                         </t>
                                         <t t-if="o.currency_id.name != 'EUR'">
                                             Rp. <t t-esc="'{:,.0f}'.format(o.total_amount) if o.total_amount else ''"/>
