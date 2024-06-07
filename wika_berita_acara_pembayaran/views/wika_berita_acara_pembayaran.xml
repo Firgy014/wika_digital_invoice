@@ -13,7 +13,7 @@
                     <field name="bap_date"/>
                     <field name="partner_id"/>
                     <field name="po_id"/>
-                     <field name="name"/>
+                    <field name="name"/>
                     <filter name="filter_divisi" string="Divisi" domain="[('branch_id', '=', uid)]"/>
                     <filter name="filter_department" string="Department" domain="[('department_id', '=', uid)]"/>
                     <!-- <filter string="Project" name="project_id" domain="[('branch_id', '=', uid)]"/>
@@ -143,6 +143,8 @@
                                 <field name="job"  readonly="1" force_save="1"/>
                                 <field name="fee_management"/>
 
+                                <field name="fee_management"/>
+
                                 <field name="step_approve" invisible="1"/>
                                  <field name="is_fully_invoiced" groups="base.group_no_one"/>
                                 <field name="is_cut_over"  groups="base.group_no_one"/>
@@ -210,17 +212,15 @@
                                 <field name="total_pembayaran_um" groups="base.group_no_one"/>
                                 <field name="terbilang_um" groups="base.group_no_one"/>
                                 <field name="terbilang_retensi" groups="base.group_no_one"/>
-<!--
-                                <field name="total_pembayaran_co" groups="base.group_no_one"/>
--->
-<!--
-                                <field name="terbilang_co" groups="base.group_no_one"/>
--->
+                                <!-- <field name="total_pembayaran_co" groups="base.group_no_one"/> -->
+
+                                <!-- <field name="terbilang_co" groups="base.group_no_one"/> -->
                                 <!-- Constrains  Adjustment-->
-                                 <field name="value_to_date" groups="base.group_no_one"/>
+                                <field name="value_to_date" groups="base.group_no_one"/>
                                 <field name="total_adjustment" groups="base.group_no_one"/>
                                 <field name="total_po" groups="base.group_no_one"/>
                                 <field name="remain_val_po" groups="base.group_no_one"/>
+                                <field name="currency_id" groups="base.group_no_one"/>
                             </group>
                         </group>
                         <notebook>
@@ -240,7 +240,7 @@
                                             <field name="product_uom" readonly="1" force_save="1"/>
                                             <field name="qty"/>
                                             <field name="tax_ids" widget="many2many_tags" string=""/>
-                                            <field name="currency_id" readonly="1" force_save="1"/>
+                                            <field name="currency_id" readonly="0" force_save="1"/>
                                             <field name="unit_price" readonly="1" force_save="1"/>
 
                                             <field name="sub_total" sum="Total"/>
@@ -303,9 +303,7 @@
                                     <field name="document_ids" mode="tree,kanban" nolabel="1" colspan="2">
                                         <tree string="List Document" delete="0" create="0">
                                             <field name="document_id"/>
-<!--
-                                            <button name="buttonClickEvent" string="Upload Disini" type="object" attrs="{'invisible': [('state', '=', 'uploaded')]}"  class="fa fa-hand-o-right"/>
--->
+                                            <!--<button name="buttonClickEvent" string="Upload Disini" type="object" attrs="{'invisible': [('state', '=', 'uploaded')]}"  class="fa fa-hand-o-right"/>-->
                                             <field name="document" widget="binary_button" filename="filename"/>
                                             <field name="filename" invisible="1"/>
                                             <field name="state"/>

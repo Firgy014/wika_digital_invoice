@@ -1,7 +1,7 @@
 from odoo import fields, models, api, _
 from odoo.exceptions import UserError, ValidationError, Warning, AccessError
 from datetime import datetime,timedelta
-import math
+import math, re
 from odoo.tools.float_utils import float_compare
 from dateutil.relativedelta import relativedelta
 from odoo.tools import (
@@ -10,6 +10,25 @@ from odoo.tools import (
 )
 import logging, json
 _logger = logging.getLogger(__name__)
+
+def convertToMbSize(binary_file_size):
+    match_file = re.match(r'^(\d+(?:\.\d+)?)\s*([KMG]?)B?$', binary_file_size.decode("utf-8"), re.IGNORECASE)
+    if not match_file:
+        match_file = re.match(r'^(?\d+(?:\.\d+)?\s*([bytes]?)B?$', binary_file_size.decode("utf-8"), re.IGNORECASE)
+
+    file_size = float(match_file.group(1))
+    file_extention = match_file.group(2)
+
+    if file_extention == "K":
+        file_size /= 1024
+    elif file_extention == "M":
+        file_size *= 1024
+    elif file_extention == "G":
+        file_size *= 1024
+    else:
+        file_size /= 1024**2
+
+    return file_size
 
 class WikaInheritedAccountMove(models.Model):
     _inherit = 'account.move'
@@ -1347,6 +1366,11 @@ class WikaInheritedAccountMove(models.Model):
                 
             rec.pph_amount += total_pph_cbasis
 
+    def compute_amount_invoice(self):
+        _logger.info("# === compute_amount_invoice === #")
+        for rec in self:
+            rec.amount_invoice = sum(rec.invoice_line_ids.mapped('price_subtotal'))
+
 
 class WikaInvoiceDocumentLine(models.Model):
     _name = 'wika.invoice.document.line'
@@ -1375,6 +1399,15 @@ class WikaInvoiceDocumentLine(models.Model):
         for record in self:
             if record.filename and not record.filename.lower().endswith('.pdf'):
                 raise ValidationError('Tidak dapat mengunggah file selain berformat PDF!')
+
+    def write(self, values):
+        _logger.info("# === WRITE DOCUMENT === #")
+        record = super(WikaInvoiceDocumentLine, self).write(values)
+        _logger.info(self.with_context(bin_size=True).document)
+        if self.document and convertToMbSize(self.with_context(bin_size=True).document) > (1024*20):
+            raise UserError('Tidak dapat mengunggah file lebih dari 20 MB!')
+
+        return record
             
 class WikaInvoiceApprovalLine(models.Model):
     _name = 'wika.invoice.approval.line'
