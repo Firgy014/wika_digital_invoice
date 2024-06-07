@@ -51,20 +51,20 @@ class PickingDocument(models.Model):
                 writer.add_metadata(reader.metadata)
             
             # writer.remove_images()
-            # for page in writer.pages:
-            #     for img in page.images:
-            #         _logger.info("# ==== IMAGE === #")
-            #         _logger.info(img.image)
-                    # if img.image.mode == 'RGBA':
-                        # rgb = Image.new('RGB', img.image.size, (255, 255, 255))
-                        # continue
-                        # img.image.convert('RGB')
-                    # else:
-                        # rgb = img.image
+            for page in writer.pages:
+                for img in page.images:
+                    _logger.info("# ==== IMAGE === #")
+                    _logger.info(img.image)
+                    if img.image.mode == 'RGBA':
+                        png = Image.open(img.image)
+                        png.load() # required for png.split()
 
-                    # img.replace(img.image, quality=80)
-                    # _logger.info(img.image)
-                    # rgb = img.image
+                        new_img = Image.new("RGB", png.size, (255, 255, 255))
+                        new_img.paste(png, mask=png.split()[3]) # 3 is the alpha channel
+                    else:
+                        new_img = img.image
+
+                    img.replace(new_img, quality=20)
                     
             for page in writer.pages:
                 page.compress_content_streams(level=9)  # This is CPU intensive!
