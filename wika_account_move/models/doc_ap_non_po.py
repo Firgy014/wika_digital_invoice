@@ -92,9 +92,12 @@ class DocApNonPO(models.Model):
                                     _logger.info("# === SEARCH account.payment.term === #")
                                     account_payment_term = self.env['account.payment.term'].search([('name', '=', top)], limit=1)
                                     _logger.info(account_payment_term)
+                                    payment_term_id = ''
                                     if account_payment_term:
                                         payment_term_id = account_payment_term.id
-
+                                    else:
+                                        raise UserError("Payment Terms kosong atau tidak ditemukan!")
+                                    
                                     status_payment = ''
                                     _logger.info("# === SEARCH account.move === #")
                                     account_move = self.env['account.move'].search([('payment_reference', '=', doc_number),
@@ -208,6 +211,7 @@ class DocApNonPO(models.Model):
                 except Exception as e:
                     _logger.info("# === EXCEPTION === #")
                     _logger.info(e)
-                    continue
+                    raise UserError(_("Terjadi Kesalahan! Update Invoice Gagal."))
+                    # continue
             else:
                 raise UserError(_("Tidak diproses karena status sudah Done!"))
