@@ -218,9 +218,15 @@ class RejectWizard(models.TransientModel):
                 for j in i.picking_id.document_ids:
                     j.state = 'rejected'
 
-        bap_docsets = [docset for docset in invoice_id.document_ids if docset.document_id.name == 'BAP']
-        if len(bap_docsets) > 1:
-            for docset in bap_docsets[1:]:
-                invoice_id.document_ids -= docset
+        # Ensure singleton before updating records
+        #bap_docsets = invoice_id.document_ids.filtered(lambda d: d.document_id.name == 'BAP')
+        #if len(bap_docsets) > 1:
+        #    for docset in bap_docsets[1:]:
+         #       invoice_id.document_ids -= docset
+
+        #bap_docsets = [docset for docset in invoice_id.document_ids if docset.document_id.name == 'BAP']
+        #if len(bap_docsets) > 1:
+         #   for docset in bap_docsets[1:]:
+          #      invoice_id.document_ids -= docset
 
             return {'type': 'ir.actions.act_window_close'}
