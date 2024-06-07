@@ -334,6 +334,7 @@ class WikaInheritedAccountMove(models.Model):
         for x in self:
             x.amount_total_payment= round(x.total_line-x.dp_total-x.retensi_total -x.total_scf_cut + x.total_tax)
 
+
     def _compute_documents_count(self):
         for record in self:
             if record.po_id:
@@ -341,7 +342,6 @@ class WikaInheritedAccountMove(models.Model):
                     ('folder_id', 'in', ['PO', 'GR/SES', 'BAP', 'Invoicing']),
                     '|', ('bap_id', '=', record.bap_id.id), ('purchase_id', '=', record.po_id.id),
                 ]
-
                 po_number = record.po_id.name if record.po_id else None
 
                 if po_number:
@@ -353,6 +353,90 @@ class WikaInheritedAccountMove(models.Model):
                 ]
 
             record.documents_count = self.env['documents.document'].search_count(domain)
+
+
+    # Compute document count with unique names 
+    # def _compute_documents_count(self):
+    #     for record in self:
+    #         if record.po_id:
+    #             domain = [
+    #                 ('folder_id', 'in', ['PO', 'GR/SES', 'BAP', 'Invoicing']),
+    #                 ('tag_ids', '!=', False),
+    #                 ('purchase_id', '=', record.po_id.id),
+    #             ]
+    #             po_number = record.po_id.name if record.po_id else None
+
+    #             if po_number:
+    #                 domain.append(('purchase_id.name', '=', po_number))
+                
+    #             # Fetch all documents matching the domain
+    #             documents = self.env['documents.document'].search(domain)
+                
+    #             # Extract unique document names
+    #             unique_names = list(set(documents.mapped('name')))
+                
+    #             # Update the domain to filter by unique names
+    #             domain.append(('name', 'in', unique_names))
+                
+    #             # Fetch documents with unique names
+    #             filtered_documents = self.env['documents.document'].search(domain)
+                
+    #             # Group documents by owner_id and count the records for each owner
+    #             owner_counts = {}
+    #             for doc in filtered_documents:
+    #                 owner_id = doc.owner_id.id
+    #                 if owner_id in owner_counts:
+    #                     owner_counts[owner_id] += 1
+    #                 else:
+    #                     owner_counts[owner_id] = 1
+
+    #             # Identify the owner_id with the highest number of records
+    #             if owner_counts:
+    #                 max_owner_id = max(owner_counts, key=owner_counts.get)
+
+    #                 # Update the domain to filter by the identified owner_id
+    #                 domain.append(('owner_id', '=', max_owner_id))
+
+    #             # Count documents with the updated domain
+    #             record.documents_count = self.env['documents.document'].search_count(domain)
+    #         else:
+    #             domain = [
+    #                 ('folder_id', 'in', ['Invoicing']),
+    #                 ('invoice_id', '=', record.id),
+    #                 ('tag_ids', '!=', False)
+    #             ]
+                
+    #             # Fetch all documents matching the domain
+    #             documents = self.env['documents.document'].search(domain)
+                
+    #             # Extract unique document names
+    #             unique_names = list(set(documents.mapped('name')))
+                
+    #             # Update the domain to filter by unique names
+    #             domain.append(('name', 'in', unique_names))
+                
+    #             # Fetch documents with unique names
+    #             filtered_documents = self.env['documents.document'].search(domain)
+                
+    #             # Group documents by owner_id and count the records for each owner
+    #             owner_counts = {}
+    #             for doc in filtered_documents:
+    #                 owner_id = doc.owner_id.id
+    #                 if owner_id in owner_counts:
+    #                     owner_counts[owner_id] += 1
+    #                 else:
+    #                     owner_counts[owner_id] = 1
+
+    #             # Identify the owner_id with the highest number of records
+    #             if owner_counts:
+    #                 max_owner_id = max(owner_counts, key=owner_counts.get)
+
+    #                 # Update the domain to filter by the identified owner_id
+    #                 domain.append(('owner_id', '=', max_owner_id))
+
+    #             # Count documents with the updated domain
+    #             record.documents_count = self.env['documents.document'].search_count(domain)
+
 
     @api.depends('invoice_line_ids')
     def _compute_get_lowest_valuation_class(self):
@@ -372,6 +456,7 @@ class WikaInheritedAccountMove(models.Model):
             ('folder_id', 'in', ['PO', 'GR/SES', 'BAP', 'Invoicing']),
             '|', ('bap_id', '=', self.bap_id.id), ('purchase_id', '=', self.po_id.id)
         ]
+
         po_number = self.po_id.name if self.po_id else None
 
         if po_number:
@@ -387,6 +472,65 @@ class WikaInheritedAccountMove(models.Model):
             'domain': domain,
             'context': {'default_purchase_id': self.po_id.id},
         }
+
+    # # get documents action with unique names 
+    # def get_documents(self):
+    #     self.ensure_one()
+    #     view_kanban_id = self.env.ref("documents.document_view_kanban", raise_if_not_found=False)
+    #     view_tree_id = self.env.ref("documents.documents_view_list", raise_if_not_found=False)
+
+    #     # Initial domain construction
+    #     domain = [
+    #         ('folder_id', 'in', ['PO', 'GR/SES', 'BAP', 'Invoicing']),
+    #         ('purchase_id', '=', self.po_id.id),
+    #         ('tag_ids', '!=', False),
+    #     ]
+        
+    #     po_number = self.po_id.name if self.po_id else None
+
+    #     if po_number:
+    #         domain.append(('purchase_id.name', '=', po_number))
+        
+    #     # Fetch all documents matching the domain
+    #     documents = self.env['documents.document'].search(domain)
+        
+    #     # Extract unique document names
+    #     unique_names = list(set(documents.mapped('name')))
+        
+    #     # Update the domain to filter by unique names
+    #     domain.append(('name', 'in', unique_names))
+        
+    #     # Fetch documents with unique names
+    #     filtered_documents = self.env['documents.document'].search(domain)
+        
+    #     # Group documents by owner_id and count the records for each owner
+    #     owner_counts = {}
+    #     for doc in filtered_documents:
+    #         owner_id = doc.owner_id.id
+    #         if owner_id in owner_counts:
+    #             owner_counts[owner_id] += 1
+    #         else:
+    #             owner_counts[owner_id] = 1
+
+    #     # Identify the owner_id with the highest number of records
+    #     if owner_counts:
+    #         max_owner_id = max(owner_counts, key=owner_counts.get)
+
+    #         # Update the domain to filter by the identified owner_id
+    #         domain.append(('owner_id', '=', max_owner_id))
+
+    #     return {
+    #         'name': _('Documents'),
+    #         'type': 'ir.actions.act_window',
+    #         'view_mode': 'kanban,tree',
+    #         'res_model': 'documents.document',
+    #         'view_ids': [(view_kanban_id.id, 'kanban'), (view_tree_id.id, 'tree')],
+    #         'res_id': self.id,
+    #         'domain': domain,
+    #         'context': {'default_purchase_id': self.po_id.id},
+    #     }
+
+
 
     @api.depends('project_id', 'branch_id', 'department_id')
     def _compute_level(self):
@@ -717,6 +861,117 @@ class WikaInheritedAccountMove(models.Model):
                     'note': 'Submit Document',
                     'invoice_id': self.id
                 })
+
+                documents_model = self.env['documents.document'].sudo()
+                folder_id = self.env['documents.folder'].sudo().search([('name', '=', 'Invoicing')], limit=1)
+                if folder_id:
+                    facet_id = self.env['documents.facet'].sudo().search([
+                        ('name', '=', 'Documents'),
+                        ('folder_id', '=', folder_id.id)
+                    ], limit=1)
+                    for doc in self.document_ids.filtered(lambda x: x.state in ('uploaded','rejected')):
+                        if doc.document_id.name in ['Invoice', 'Faktur Pajak']:
+                            attachment_id = self.env['ir.attachment'].sudo().create({
+                                'name': doc.filename,
+                                'datas': doc.document,
+                                'res_model': 'documents.document',
+                            })
+                            if attachment_id:
+                                tag = self.env['documents.tag'].sudo().search([
+                                    ('facet_id', '=', facet_id.id),
+                                    ('name', '=', doc.document_id.name)
+                                ], limit=1)
+                                documents_model.create({
+                                    'attachment_id': attachment_id.id,
+                                    'folder_id': folder_id.id,
+                                    'tag_ids': tag.ids,
+                                    'partner_id': doc.invoice_id.partner_id.id,
+                                    'purchase_id': self.po_id.id,
+                                    'invoice_id': self.id,
+                                })
+
+                        elif doc.document_id.name == 'BAP':
+                            folder_id = self.env['documents.folder'].sudo().search([('name', '=', 'BAP')], limit=1)
+                            if folder_id:
+                                facet_id = self.env['documents.facet'].sudo().search([
+                                    ('name', '=', 'Documents'),
+                                    ('folder_id', '=', folder_id.id)
+                                ], limit=1)
+                                attachment_id = self.env['ir.attachment'].sudo().create({
+                                    'name': doc.filename,
+                                    'datas': doc.document,
+                                    'res_model': 'documents.document',
+                                })
+                                if attachment_id:
+                                    tag = self.env['documents.tag'].sudo().search([
+                                        ('facet_id', '=', facet_id.id),
+                                        ('name', '=', doc.document_id.name)
+                                    ], limit=1)
+                                    documents_model.create({
+                                        'attachment_id': attachment_id.id,
+                                        'folder_id': folder_id.id,
+                                        'tag_ids': tag.ids,
+                                        'partner_id': doc.invoice_id.partner_id.id,
+                                        'purchase_id': self.po_id.id,
+                                        'invoice_id': self.id,
+                                        'bap_id': self.bap_id.id,
+                                    })
+                
+                        elif doc.document_id.name in ['GR', 'Surat Jalan', 'SES']:
+                            folder_id = self.env['documents.folder'].sudo().search([('name', '=', 'GR/SES')], limit=1)
+                            if folder_id:
+                                facet_id = self.env['documents.facet'].sudo().search([
+                                    ('name', '=', 'Documents'),
+                                    ('folder_id', '=', folder_id.id)
+                                ], limit=1)
+                                attachment_id = self.env['ir.attachment'].sudo().create({
+                                    'name': doc.filename,
+                                    'datas': doc.document,
+                                    'res_model': 'documents.document',
+                                })
+                                if attachment_id:
+                                    tag = self.env['documents.tag'].sudo().search([
+                                        ('facet_id', '=', facet_id.id),
+                                        ('name', '=', doc.document_id.name)
+                                    ], limit=1)
+                                    documents_model.create({
+                                        'attachment_id': attachment_id.id,
+                                        'folder_id': folder_id.id,
+                                        'tag_ids': tag.ids,
+                                        'partner_id': doc.invoice_id.partner_id.id,
+                                        'purchase_id': self.po_id.id,
+                                        'invoice_id': self.id,
+                                        'picking_id': doc.picking_id.id
+                                    })
+
+                        elif doc.document_id.name == 'Kontrak':
+                            folder_id = self.env['documents.folder'].sudo().search([('name', '=', 'PO')], limit=1)
+                            if folder_id:
+                                facet_id = self.env['documents.facet'].sudo().search([
+                                    ('name', '=', 'Documents'),
+                                    ('folder_id', '=', folder_id.id)
+                                ], limit=1)
+                                attachment_id = self.env['ir.attachment'].sudo().create({
+                                    'name': doc.filename,
+                                    'datas': doc.document,
+                                    'res_model': 'documents.document',
+                                })
+                                if attachment_id:
+                                    tag = self.env['documents.tag'].sudo().search([
+                                        ('facet_id', '=', facet_id.id),
+                                        ('name', '=', doc.document_id.name)
+                                    ], limit=1)
+                                    documents_model.create({
+                                        'attachment_id': attachment_id.id,
+                                        'folder_id': folder_id.id,
+                                        'tag_ids': tag.ids,
+                                        'partner_id': doc.invoice_id.partner_id.id,
+                                        'purchase_id': self.po_id.id,
+                                        'invoice_id': self.id,
+                                        'is_po_doc': True
+                                    })
+
+
                 groups_line = self.env['wika.approval.setting.line'].search([
                     ('level', '=', level),
                     ('sequence', '=', self.step_approve),
@@ -832,36 +1087,80 @@ class WikaInheritedAccountMove(models.Model):
                 self.state = 'approved'
                 self.approval_stage = 'Pusat'
 
-                folder_id = self.env['documents.folder'].sudo().search([('name', '=', 'Invoicing')], limit=1)
-                # print("TESTTTTTTTTTTTTTTTTTTTTT", folder_id)
-                if folder_id:
-                    facet_id = self.env['documents.facet'].sudo().search([
-                        ('name', '=', 'Documents'),
-                        ('folder_id', '=', folder_id.id)
-                    ], limit=1)
-                    # print("TESTTTTTTTTTERRRRRRR", facet_id)
-                    for doc in self.document_ids.filtered(lambda x: x.state in ('uploaded', 'rejected')):
-                        doc.state = 'verified'
-                        attachment_id = self.env['ir.attachment'].sudo().create({
-                            'name': doc.filename,
-                            'datas': doc.document,
-                            'res_model': 'documents.document',
-                        })
-                        # print("SSSIIIIUUUUUUUUUUUUUUUUUU", attachment_id)
-                        if attachment_id:
-                            tag = self.env['documents.tag'].sudo().search([
-                                ('facet_id', '=', facet_id.id),
-                                ('name', '=', doc.document_id.name)
-                            ], limit=1)
-                            documents_model.create({
-                                'attachment_id': attachment_id.id,
-                                'folder_id': folder_id.id,
-                                'tag_ids': tag.ids,
-                                'partner_id': self.partner_id.id,
-                                'purchase_id': self.bap_id.po_id.id,
-                                'invoice_id': self.id,
+                # folder_id = self.env['documents.folder'].sudo().search([('name', '=', 'Invoicing')], limit=1)
+                # # print("TESTTTTTTTTTTTTTTTTTTTTT", folder_id)
+                # if folder_id:
+                #     facet_id = self.env['documents.facet'].sudo().search([
+                #         ('name', '=', 'Documents'),
+                #         ('folder_id', '=', folder_id.id)
+                #     ], limit=1)
+                #     # print("TESTTTTTTTTTERRRRRRR", facet_id)
+                #     for doc in self.document_ids.filtered(lambda x: x.state in ('uploaded', 'rejected')):
+                #         doc.state = 'verified'
+                #         attachment_id = self.env['ir.attachment'].sudo().create({
+                #             'name': doc.filename,
+                #             'datas': doc.document,
+                #             'res_model': 'documents.document',
+                #         })
+                #         # print("SSSIIIIUUUUUUUUUUUUUUUUUU", attachment_id)
+                #         if attachment_id:
+                #             tag = self.env['documents.tag'].sudo().search([
+                #                 ('facet_id', '=', facet_id.id),
+                #                 ('name', '=', doc.document_id.name)
+                #             ], limit=1)
+                #             documents_model.create({
+                #                 'attachment_id': attachment_id.id,
+                #                 'folder_id': folder_id.id,
+                #                 'tag_ids': tag.ids,
+                #                 'partner_id': self.partner_id.id,
+                #                 'purchase_id': self.bap_id.po_id.id,
+                #                 'invoice_id': self.id
+                #             })
 
-                            })
+                # replace docsss
+                for doc in self.document_ids:
+                    if doc.document_id.name == 'Kontrak' and doc.document:
+                        for doc_po in self.po_id.document_ids:
+                            bap_fname = doc.filename
+                            if doc_po.document_id.name == 'Kontrak':
+                                po_fname = doc_po.filename
+                                if bap_fname != po_fname:
+                                    doc_po.update({
+                                        'document': doc.document,
+                                        'filename': f'[Revised by {self.env.user.name}]' + ' ' + doc.filename,
+                                        'state': 'verified'
+                                    })
+
+                    elif doc.document_id.name == 'BAP' and doc.document:
+                        for doc_bap in self.bap_id.document_ids:
+                            inv_fname = doc.filename
+                            if doc_bap.document_id.name == 'BAP':
+                                bap_fname = doc_bap.filename
+                                if inv_fname != bap_fname:
+                                    doc_bap.update({
+                                        'document': doc.document,
+                                        'filename': f'[Revised by {self.env.user.name}]' + ' ' + doc.filename,
+                                        'state': 'verified'
+                                    })
+
+                    elif doc.document_id.name in ['GR', 'Surat Jalan', 'SES'] and doc.document:
+                        for grses_id in self.bap_id.bap_ids:
+                            for doc_grses in grses_id.picking_id.document_ids:
+                                if doc_grses.state == 'rejected':
+                                    if doc.picking_id.name == doc_grses.picking_id.name and doc.document_id.name == doc_grses.document_id.name:
+                                        bap_fname = doc.filename
+                                        grses_fname = doc_grses.filename
+                                        if bap_fname != grses_fname:
+                                            doc_grses.update({
+                                                'document': doc.document,
+                                                'filename': f'[Revised by {self.env.user.name}]' + ' ' + doc.filename,
+                                                'state': 'verified'
+                                            })
+
+                for doc in self.document_ids.filtered(lambda x: x.state in ('uploaded','rejected')):
+                    doc.state = 'verified'
+
+
                 if self.activity_ids:
                     for x in self.activity_ids.filtered(lambda x: x.status != 'approved'):
                         if x.user_id.id == self._uid:
@@ -1053,7 +1352,8 @@ class WikaInvoiceDocumentLine(models.Model):
     _name = 'wika.invoice.document.line'
     _description = 'Invoice Document Line'
 
-    invoice_id = fields.Many2one('account.move', string='Invoice id')
+    invoice_id = fields.Many2one('account.move', string='Invoice ID')
+    picking_id = fields.Many2one('stock.picking', string='Nomor GR/SES')
     document_id = fields.Many2one('wika.document.setting', string='Document')
     document = fields.Binary(string="Upload File", attachment=True, store=True)
     filename = fields.Char(string="File Name")
