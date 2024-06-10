@@ -243,7 +243,6 @@
                     <field name="project_id"/>
                     <field name="partner_id"/>
                     <field name="po_id"/>
-                    <field name="bap_type"/>
                     <field name="invoice_date" string="Document Date"/>
                     <field name="invoice_date_due"/>
                     <field name="total_line" sum="Total" string="Untaxed Amount"/>
@@ -251,7 +250,7 @@
                     <field name="state" invisible="1"/>
                     <field name="status_invoice_rel"/>
                     <field name="approval_stage"  widget="badge"  optional="show"/>
-                    <field name="payment_state"  invisible="1"/>
+                    <field name="status_payment"  invisible="1"/>
                     <field name="currency_id" invisible="1"/>
                 </tree>
             </field>
