@@ -10,53 +10,104 @@
             <t t-call="web.internal_layout">
                 <div class="page">
                     <div style="text-align: center; margin-top: -5px; font-size: 14px;">
-                        <h4>BERITA ACARA PEMBAYARAN CUT OVER (BAP CUT OVER)</h4>
-                        <strong>Nomor :</strong> <span t-field="o.name"/> 
+                        <t t-if="o.currency_id.name == 'EUR'">
+                            <h4>OVER PAYMENT MINUTES (BAP CUT OVER)</h4>
+                            <strong>Number :</strong> <span t-field="o.name"/> 
+                        </t>
+                        <t t-if="o.currency_id.name != 'EUR'">
+                            <h4>BERITA ACARA PEMBAYARAN CUT OVER (BAP CUT OVER)</h4>
+                            <strong>Nomor :</strong> <span t-field="o.name"/> 
+                        </t>
                     </div>
                     <div>
                         <table style="width:80%; margin:auto;" class="table table-borderless">
                             <tr>
-                                <th scope="col" style="width: auto;">Pada hari ini,</th>
-                                <th scope="col" style="width: auto;">
-                                    <td style="padding: 2px 0;">
-                                        <t t-esc="{
-                                            'Monday': 'Senin',
-                                            'Tuesday': 'Selasa',
-                                            'Wednesday': 'Rabu',
-                                            'Thursday': 'Kamis',
-                                            'Friday': 'Jumat',
-                                            'Saturday': 'Sabtu',
-                                            'Sunday': 'Minggu'
-                                        }[o.bap_date.strftime('%A')] if o.bap_date else ''"/>
-                                    </td>
-                                </th>
-                                <th scope="col" style="width: auto;">Tanggal,</th>
-                                <th scope="col" style="width: auto;">
-                                    <td style="padding: 2px;"><t t-esc="o.bap_date.strftime('%d')" /></td>
-                                </th>
-                                <th scope="col" style="width: auto;">Bulan,</th>
-                                <th scope="col" style="width: auto;">
-                                    <td style="padding: 2px;"><t t-esc="{
-                                        '01': 'Januari',
-                                        '02': 'Februari',
-                                        '03': 'Maret',
-                                        '04': 'April',
-                                        '05': 'Mei',
-                                        '06': 'Juni',
-                                        '07': 'Juli',
-                                        '08': 'Agustus',
-                                        '09': 'September',
-                                        '10': 'Oktober',
-                                        '11': 'November',
-                                        '12': 'Desember'
-                                    }[o.bap_date.strftime('%m')] if o.bap_date else ''"/>
-                                    </td>
-                                </th>
-                                <th scope="col" style="width: auto;">Tahun,</th>
-                                <th scope="col" style="width: auto;">
-                                    <td style="padding: 2px;"><t t-esc="o.bap_date.strftime('%Y')" /></td>
-                                </th>
-                                <th scope="col" style="width: auto;">yang bertanda - tangan dibawah ini:</th>
+                                <t t-if="o.currency_id.name == 'EUR'">
+                                    <th scope="col" style="width: auto;">On this day,</th>
+                                    <th scope="col" style="width: auto;">
+                                        <td style="padding: 2px 0;">
+                                            <t t-esc="{
+                                                'Monday': 'Monday',
+                                                'Tuesday': 'Tuesday',
+                                                'Wednesday': 'Wednesday',
+                                                'Thursday': 'Thursday',
+                                                'Friday': 'Friday',
+                                                'Saturday': 'Saturday',
+                                                'Sunday': 'Sunday'
+                                            }[o.bap_date.strftime('%A')] if o.bap_date else ''"/>
+                                        </td>
+                                    </th>
+                                    <th scope="col" style="width: auto;">Date,</th>
+                                    <th scope="col" style="width: auto;">
+                                        <td style="padding: 2px;"><t t-esc="o.bap_date.strftime('%d')" /></td>
+                                    </th>
+                                    <th scope="col" style="width: auto;">Month,</th>
+                                    <th scope="col" style="width: auto;">
+                                        <td style="padding: 2px;"><t t-esc="{
+                                            '01': 'January',
+                                            '02': 'February',
+                                            '03': 'March',
+                                            '04': 'April',
+                                            '05': 'May',
+                                            '06': 'June',
+                                            '07': 'July',
+                                            '08': 'August',
+                                            '09': 'September',
+                                            '10': 'October',
+                                            '11': 'November',
+                                            '12': 'December'
+                                        }[o.bap_date.strftime('%m')] if o.bap_date else ''"/>
+                                        </td>
+                                    </th>
+                                    <th scope="col" style="width: auto;">Year,</th>
+                                    <th scope="col" style="width: auto;">
+                                        <td style="padding: 2px;"><t t-esc="o.bap_date.strftime('%Y')" /></td>
+                                    </th>
+                                    <th scope="col" style="width: auto;">the undersigned below:</th>
+                                </t>
+                                <t t-if="o.currency_id.name != 'EUR'">
+                                    <th scope="col" style="width: auto;">Pada hari ini,</th>
+                                    <th scope="col" style="width: auto;">
+                                        <td style="padding: 2px 0;">
+                                            <t t-esc="{
+                                                'Monday': 'Senin',
+                                                'Tuesday': 'Selasa',
+                                                'Wednesday': 'Rabu',
+                                                'Thursday': 'Kamis',
+                                                'Friday': 'Jumat',
+                                                'Saturday': 'Sabtu',
+                                                'Sunday': 'Minggu'
+                                            }[o.bap_date.strftime('%A')] if o.bap_date else ''"/>
+                                        </td>
+                                    </th>
+                                    <th scope="col" style="width: auto;">Tanggal,</th>
+                                    <th scope="col" style="width: auto;">
+                                        <td style="padding: 2px;"><t t-esc="o.bap_date.strftime('%d')" /></td>
+                                    </th>
+                                    <th scope="col" style="width: auto;">Bulan,</th>
+                                    <th scope="col" style="width: auto;">
+                                        <td style="padding: 2px;"><t t-esc="{
+                                            '01': 'Januari',
+                                            '02': 'Februari',
+                                            '03': 'Maret',
+                                            '04': 'April',
+                                            '05': 'Mei',
+                                            '06': 'Juni',
+                                            '07': 'Juli',
+                                            '08': 'Agustus',
+                                            '09': 'September',
+                                            '10': 'Oktober',
+                                            '11': 'November',
+                                            '12': 'Desember'
+                                        }[o.bap_date.strftime('%m')] if o.bap_date else ''"/>
+                                        </td>
+                                    </th>
+                                    <th scope="col" style="width: auto;">Tahun,</th>
+                                    <th scope="col" style="width: auto;">
+                                        <td style="padding: 2px;"><t t-esc="o.bap_date.strftime('%Y')" /></td>
+                                    </th>
+                                    <th scope="col" style="width: auto;">yang bertanda - tangan dibawah ini:</th>
+                                </t>
                             </tr>
                         </table>
                     </div>
@@ -64,53 +115,92 @@
                         <table class="table table-borderless" style="width:100%;">
                             <tbody>
                                 <tr style="text-align: left;">
-                                    <td style="padding: 1px;">Nama</td>
+                                    <td style="padding: 1px;">
+                                        <t t-if="o.currency_id.name == 'EUR'">Name</t>
+                                        <t t-if="o.currency_id.name != 'EUR'">Nama</t>
+                                    </td>
                                     <td style="padding: 1px;">:</td>
                                     <td style="padding: 1px;"><t t-esc="o.signatory_name"/></td>
                                 </tr>
                                 <tr style="text-align: left;">
-                                    <td style="padding: 1px;">Jabatan</td>
+                                    <td style="padding: 3px;">
+                                        <t t-if="o.currency_id.name == 'EUR'">Position</t>
+                                        <t t-if="o.currency_id.name != 'EUR'">Jabatan</t>
+                                    </td>
                                     <td style="padding: 1px;">:</td>
                                     <td style="padding: 1px;">
                                         <p>
-                                            <strong>Manajer Proyek</strong> <t t-esc="o.project_id.name"/>
+                                            <t t-if="o.currency_id.name == 'EUR'">
+                                                <strong>Project Manager</strong> <t t-esc="o.project_id.name"/>
+                                            </t>
+                                            <t t-if="o.currency_id.name != 'EUR'">
+                                                <strong>Manajer Proyek</strong> <t t-esc="o.project_id.name"/>
+                                            </t>
                                         </p>
                                     </td>
                                 </tr>
-                                <tr style="text-align: left;">
-                                    <td style="padding: 1px;">Sehubungan dengan</td>
-                                    <td style="padding: 1px;">:</td>
-                                    <td style="padding: 1px;"></td>
+                                <tr>
+                                    <t t-if="o.currency_id.name == 'EUR'">
+                                        <th colspan="4" style="text-align: left; padding: 3px;">in connection with:</th>
+                                    </t>
+                                    <t t-if="o.currency_id.name != 'EUR'">
+                                        <th colspan="4" style="text-align: left; padding: 3px;">Sehubungan dengan:</th>
+                                    </t>
                                 </tr>
                                 <tr style="text-align: left;">
-                                    <td style="padding: 1px;">Pekerjaan</td>
+                                    <td style="padding: 1px;">
+                                        <t t-if="o.currency_id.name == 'EUR'">Job</t>
+                                        <t t-if="o.currency_id.name != 'EUR'">Pekerjaan</t>
+                                    </td>
                                     <td style="padding: 1px;">:</td>
                                     <td style="padding: 1px;"><t t-esc="o.job"/></td>
                                 </tr>
                                 <tr style="text-align: left;">
-                                    <td style="padding: 1px;">Proyek</td>
+                                    <td style="padding: 1px;">
+                                        <t t-if="o.currency_id.name == 'EUR'">Project</t>
+                                        <t t-if="o.currency_id.name != 'EUR'">Proyek</t>
+                                    </td>
                                     <td style="padding: 1px;">:</td>
                                     <td style="padding: 1px;"><t t-esc="o.project_id.name"/></td>
                                 </tr>
                                 <tr style="text-align: left;">
-                                    <td style="padding: 1px;">Nomor PO</td>
+                                    <td style="padding: 1px;">
+                                        <t t-if="o.currency_id.name == 'EUR'">Number PO</t>
+                                        <t t-if="o.currency_id.name != 'EUR'">Nomor PO</t>
+                                    </td>
                                     <td style="padding: 1px;">:</td>
                                     <td style="padding: 1px;"><t t-esc="o.po_id.name"/></td>
                                 </tr>
                                 <tr style="text-align: left;">
-                                    <td style="padding: 1px;">Nomor Kontrak</td>
+                                    <td style="padding: 1px;">
+                                        <t t-if="o.currency_id.name == 'EUR'">Contract number</t>
+                                        <t t-if="o.currency_id.name != 'EUR'">Nomor Kontrak</t>
+                                    </td>
                                     <td style="padding: 1px;">:</td>
                                     <td style="padding: 1px;"><t t-esc="o.sap_doc_number"/></td>
                                 </tr>
                                 <tr style="text-align: left;">
-                                    <td style="padding: 1px;">Tanggal Kontrak</td>
+                                    <td style="padding: 1px;">
+                                        <t t-if="o.currency_id.name == 'EUR'">Contract date</t>
+                                        <t t-if="o.currency_id.name != 'EUR'">Tanggal Kontrak</t>
+                                    </td>
                                     <td style="padding: 1px;">:</td>
                                     <td style="padding: 1px;"><t t-esc="o.begin_date"/></td>
                                 </tr>
                                 <tr style="text-align: left;">
-                                    <td style="padding: 1px;">Nilai Kontrak (exlude PPN)</td>
+                                    <td style="padding: 1px;">
+                                        <t t-if="o.currency_id.name == 'EUR'">Contract Value (exclude VAT)</t>
+                                        <t t-if="o.currency_id.name != 'EUR'">Nilai Kontrak (exlude PPN)</t>
+                                    </td>
                                     <td style="padding: 1px;">:</td>
-                                    <td style="padding: 1px;">Rp.<t t-esc="'{:,.2f}'.format(o.po_id.amount_untaxed)"/></td>
+                                    <td style="padding: 1px;">
+                                        <t t-if="o.currency_id.name == 'EUR'">
+                                            €. <t t-esc="'{:,.2f}'.format(o.po_id.amount_untaxed)"/>
+                                        </t>
+                                        <t t-if="o.currency_id.name != 'EUR'">
+                                            Rp. <t t-esc="'{:,.0f}'.format(o.po_id.amount_untaxed)"/>
+                                        </t>
+                                    </td>
                                 </tr>
                                 <tr style="text-align: left;">
                                     <td style="padding: 1px;">Business Partner</td>
@@ -122,7 +212,12 @@
                     </div>
                     <div>
                         <p style="text-align: left; font-size: 14px;">
-                            Dengan ini menyatakan bahwa atas pekerjaan sesuai dengan Nomor PO dan Kontrak di atas sudah dilakukan Proses Invoicenya, dengan rincian sebagai berikut :
+                            <t t-if="o.currency_id.name == 'EUR'">
+                                This is to certify that the Invoice Process for the work in accordance with the PO and Contract Number above has been carried out, with the following details:
+                            </t>
+                            <t t-if="o.currency_id.name != 'EUR'">
+                                Dengan ini menyatakan bahwa atas pekerjaan sesuai dengan Nomor PO dan Kontrak di atas sudah dilakukan Proses Invoicenya, dengan rincian sebagai berikut :
+                            </t>
                         </p>
                     </div>
                     <div style="margin-top: -20px;">
@@ -230,13 +325,20 @@
                                 </tr> -->
                                 <tr>
                                     <th style="padding: 1px;" scope="row">a</th>
-                                    <td style="padding: 1px;">NILAI PRESTASI s/d saat ini</td>
+                                    <td style="padding: 1px;">
+                                        <t t-if="o.currency_id.name == 'EUR'">
+                                            <strong>ACHIEVEMENT VALUE to date</strong>
+                                        </t>
+                                        <t t-if="o.currency_id.name != 'EUR'">
+                                            <strong>NILAI PRESTASI s/d saat ini</strong>
+                                        </t>
+                                    </td>
                                     <td style="padding: 1px;">:</td>
                                     <td style="padding: 1px;"><t t-esc="'{:,.2f}'.format((o.total_amount / o.po_id.amount_untaxed) * 100) if o.total_amount > 0 else 0"/>%</td>
                                     <td style="padding: 1px;">x</td>
                                     <td style="padding: 1px;">
                                         <t t-if="o.currency_id.name == 'EUR'">
-                                            Rp. <t t-esc="'{:,.2f}'.format(o.po_id.amount_untaxed) if o.po_id.amount_untaxed else ''"/>
+                                            €. <t t-esc="'{:,.2f}'.format(o.po_id.amount_untaxed) if o.po_id.amount_untaxed else ''"/>
                                         </t>
                                         <t t-else="">
                                             Rp. <t t-esc="'{:,.0f}'.format(o.po_id.amount_untaxed) if o.po_id.amount_untaxed else ''"/>
@@ -245,7 +347,7 @@
                                     <td style="text-align: right; padding: 1px;">=</td>
                                     <td style="text-align: right; padding: 1px;">
                                         <t t-if="o.currency_id.name == 'EUR'">
-                                            Rp. <t t-esc="'{:,.2f}'.format(o.total_amount)"/>
+                                            €. <t t-esc="'{:,.2f}'.format(o.total_amount)"/>
                                         </t>
                                         <t t-else="">
                                             Rp. <t t-esc="'{:,.0f}'.format(o.total_amount)"/>
@@ -254,7 +356,14 @@
                                 </tr>
                                 <tr>
                                     <th style="padding: 1px;" scope="row">b</th>
-                                    <td style="padding: 1px;">Potongan Uang Muka s/d saat ini</td>
+                                    <td style="padding: 1px;">
+                                        <t t-if="o.currency_id.name == 'EUR'">
+                                            <strong>Down payment deductions up to now</strong>
+                                        </t>
+                                        <t t-if="o.currency_id.name != 'EUR'">
+                                            <strong>Potongan Uang Muka s/d saat ini</strong>
+                                        </t>
+                                    </td>
                                     <td style="padding: 1px;"></td>
                                     <td style="padding: 1px;"></td>
                                     <td style="padding: 1px;"></td>
@@ -262,7 +371,7 @@
                                     <td style="text-align: right; padding: 1px;">=</td>
                                     <td style="text-align: right; padding: 1px;">
                                         <t t-if="o.currency_id.name == 'EUR'">
-                                            Rp. <t t-esc="'{:,.2f}'.format(o.dp_total)"/>
+                                            €. <t t-esc="'{:,.2f}'.format(o.dp_total)"/>
                                         </t>
                                         <t t-if="o.currency_id.name != 'EUR'">
                                             Rp. <t t-esc="'{:,.0f}'.format(o.dp_total)"/>
@@ -272,7 +381,14 @@
                                 <t t-set="jumlah_total_netto" t-value="(o.total_amount - o.dp_total - o.retensi_total)"/>
                                 <tr>
                                     <th style="padding: 1px;" scope="row">c</th>
-                                    <td style="padding: 1px;">Potongan Retensi s/d saat ini</td>
+                                    <td style="padding: 1px;">
+                                        <t t-if="o.currency_id.name == 'EUR'">
+                                            <strong>Retention deductions up to now</strong>
+                                        </t>
+                                        <t t-if="o.currency_id.name != 'EUR'">
+                                            <strong>Potongan Retensi s/d saat ini</strong>
+                                        </t>
+                                    </td>
                                     <td style="padding: 1px;"></td>
                                     <td style="padding: 1px;"></td>
                                     <td style="padding: 1px;"></td>
@@ -280,7 +396,7 @@
                                     <td style="text-align: right; padding: 1px;">=</td>
                                     <td style="text-align: right; padding: 1px;">
                                         <t t-if="o.currency_id.name == 'EUR'">
-                                            Rp. <t t-esc="'{:,.2f}'.format(o.retensi_total)"/>
+                                            €. <t t-esc="'{:,.2f}'.format(o.retensi_total)"/>
                                         </t>
                                         <t t-if="o.currency_id.name != 'EUR'">
                                             Rp. <t t-esc="'{:,.0f}'.format(o.retensi_total)"/>
@@ -290,7 +406,14 @@
                                 <!-- <t t-set="ppn" t-value="o.retensi_total * 0.11"/> -->
                                 <tr>
                                     <th style="padding: 1px;" scope="row">d</th>
-                                    <td style="padding: 1px;">Jumlah Tagihan netto s/d saat ini</td>
+                                    <td style="padding: 1px;">
+                                        <t t-if="o.currency_id.name == 'EUR'">
+                                            <strong>Net Billing Amount to date</strong>
+                                        </t>
+                                        <t t-if="o.currency_id.name != 'EUR'">
+                                            <strong>Jumlah Tagihan netto s/d saat ini</strong>
+                                        </t>
+                                    </td>
                                     <td style="padding: 1px;"></td>
                                     <td style="padding: 1px;"></td>
                                     <td style="padding: 1px;"></td>
@@ -298,7 +421,7 @@
                                     <td style="text-align: right; padding: 1px;">=</td>
                                     <td style="text-align: right; padding: 1px;">
                                         <t t-if="o.currency_id.name == 'EUR'">
-                                            Rp. <t t-esc="'{:,.0f}'.format(jumlah_total_netto) if jumlah_total_netto else ''"/>
+                                            €. <t t-esc="'{:,.0f}'.format(jumlah_total_netto) if jumlah_total_netto else ''"/>
                                         </t>
                                         <t t-if="o.currency_id.name != 'EUR'">
                                             Rp. <t t-esc="'{:,.0f}'.format(jumlah_total_netto) if jumlah_total_netto else ''"/>
@@ -307,7 +430,14 @@
                                 </tr>
                                 <tr>
                                     <th style="padding: 1px;" scope="row">e</th>
-                                    <td style="padding: 1px;">PPN s/d saat ini </td>
+                                    <td style="padding: 1px;">
+                                        <t t-if="o.currency_id.name == 'EUR'">
+                                            <strong>VAT up to now</strong>
+                                        </t>
+                                        <t t-if="o.currency_id.name != 'EUR'">
+                                            <strong>PPN s/d saat ini</strong>
+                                        </t>
+                                    </td>
                                     <td style="padding: 1px;"></td>
                                     <td style="padding: 1px;"></td>
                                     <td style="padding: 1px;"></td>
@@ -316,7 +446,7 @@
                                     <!-- <td style="text-align: right; padding: 1px;">Rp. <t t-esc="'{:,.0f}'.format(o.total_tax) if o.total_tax else ''"/></td> -->
                                     <td style="text-align: right; padding: 1px;">
                                         <t t-if="o.currency_id.name == 'EUR'">
-                                            Rp. <t t-esc="'{:,.2f}'.format(o.total_tax) if o.total_tax else ''"/>
+                                            €. <t t-esc="'{:,.2f}'.format(o.total_tax) if o.total_tax else ''"/>
                                         </t>
                                         <t t-if="o.currency_id.name != 'EUR'">
                                             Rp. <t t-esc="'{:,.0f}'.format(o.total_tax) if o.total_tax else ''"/>
@@ -325,7 +455,14 @@
                                 </tr>
                                 <tr>
                                     <th style="padding: 1px;" scope="row">f</th>
-                                    <td style="padding: 1px;">Potongan Lain-lain s/d saat ini </td>
+                                    <td style="padding: 1px;">
+                                        <t t-if="o.currency_id.name == 'EUR'">
+                                            <strong>Other deductions up to now</strong>
+                                        </t>
+                                        <t t-if="o.currency_id.name != 'EUR'">
+                                            <strong>Potongan Lain-lain s/d saat ini </strong>
+                                        </t>
+                                    </td>
                                     <td style="padding: 1px;"></td>
                                     <td style="padding: 1px;"></td>
                                     <td style="padding: 1px;"></td>
@@ -333,7 +470,7 @@
                                     <td style="text-align: right; padding: 1px;">=</td>
                                     <td style="text-align: right; padding: 1px;">
                                         <t t-if="o.currency_id.name == 'EUR'">
-                                            Rp. <t t-esc="'{:,.0f}'.format(o.total_pph) if o.total_pph else ''"/>
+                                            €. <t t-esc="'{:,.0f}'.format(o.total_pph) if o.total_pph else ''"/>
                                         </t>
                                         <t t-if="o.currency_id.name != 'EUR'">
                                             Rp. <t t-esc="'{:,.0f}'.format(o.total_pph) if o.total_pph else ''"/>
@@ -342,7 +479,14 @@
                                 </tr>
                                 <tr>
                                     <th style="padding: 1px;" scope="row">g</th>
-                                    <td style="padding: 1px;">Yang sudah diproses Invoicenya s/d saat ini </td>
+                                    <td style="padding: 1px;">
+                                        <t t-if="o.currency_id.name == 'EUR'">
+                                            <strong>Yang sudah diproses Invoicenya s/d saat ini</strong>
+                                        </t>
+                                        <t t-if="o.currency_id.name != 'EUR'">
+                                            <strong>The invoice has been processed up to now</strong>
+                                        </t>
+                                    </td>
                                     <td style="padding: 1px;"></td>
                                     <td style="padding: 1px;"></td>
                                     <td style="padding: 1px;"></td>
@@ -350,7 +494,7 @@
                                     <td style="text-align: right; padding: 1px;">=</td>
                                     <td style="text-align: right; padding: 1px;">
                                         <t t-if="o.currency_id.name == 'EUR'">
-                                            Rp. <t t-esc="'{:,.2f}'.format(o.total_pembayaran)"/>
+                                            €. <t t-esc="'{:,.2f}'.format(o.total_pembayaran)"/>
                                         </t>
                                         <t t-if="o.currency_id.name != 'EUR'">
                                             Rp. <t t-esc="'{:,.0f}'.format(o.total_pembayaran)"/>
@@ -404,13 +548,23 @@
                         </table>
                     </div>
                     <div style="text-align: center;">
-                        <p style="font-size: 14px;">
-                            Terbilang: <span t-esc="o.terbilang"/>
+                        <p style="margin-top: -10px; font-size: 14px;">
+                            <t t-if="o.currency_id.name == 'EUR'">
+                                spelled out: <span t-esc="o.terbilang"/>
+                            </t>
+                            <t t-if="o.currency_id.name != 'EUR'">
+                                Terbilang: <span t-esc="o.terbilang"/>
+                            </t>
                         </p>
                     </div>
                     <div>
                         <p style="text-align: left; margin-top: -14px; font-size: 14px;">
-                            Demikian Berita Acara ini dibuat dengan sebenarnya untuk dapat dipergunakan sebagaimana mestinya.
+                            <t t-if="o.currency_id.name == 'EUR'">
+                               Thus, this Minutes has been prepared truthfully so that it can be used properly
+                            </t>
+                            <t t-if="o.currency_id.name != 'EUR'">
+                               Demikian Berita Acara ini dibuat dengan sebenarnya untuk dapat dipergunakan sebagaimana mestinya.
+                            </t>
                         </p>
                     </div>
                     <div style="display: flex; justify-content: space-between; font-size: 14px; margin-top: -10px;">
