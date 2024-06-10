@@ -413,10 +413,10 @@ class WikaBeritaAcaraPembayaran(models.Model):
         for bap in self:
             invoices = self.env['account.move'].search([('bap_id', '=', bap.id)])
 
-            tots = 0.0
-            for bap_line in bap.bap_ids:
-                tots += bap_line.qty
-            if invoices and tots == 0.0:
+            # tots = 0.0
+            # for bap_line in bap.bap_ids:
+            #     tots += bap_line.qty
+            if invoices:
                 bap.is_fully_invoiced = True
             else:
                 bap.is_fully_invoiced = False
@@ -426,10 +426,10 @@ class WikaBeritaAcaraPembayaran(models.Model):
         for bap in self:
             invoices = self.env['account.move'].search([('bap_id', '=', bap.id)])
 
-            tots = 0.0
-            for bap_line in bap.bap_ids:
-                tots += bap_line.qty
-            if invoices and tots == 0.0:
+            # tots = 0.0
+            # for bap_line in bap.bap_ids:
+            #     tots += bap_line.qty
+            if invoices:
                 bap.is_fully_invoiced_temp = True
             else:
                 bap.is_fully_invoiced_temp = False
