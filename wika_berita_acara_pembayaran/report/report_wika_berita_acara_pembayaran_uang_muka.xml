@@ -160,10 +160,10 @@
                                         <p>
                                             <strong><t t-esc="o.position"/> <t t-esc="o.project_id.long_name"/></strong>
                                             <t t-if="o.currency_id.name == 'EUR'">
-                                                acting on behalf of PT WIJAYA KARYA (Persero) Tbk. based at <strong><t t-esc="o.project_id.company_id.street"/></strong>, hereinafter referred to as the FIRST PARTY
+                                                <strong><t t-esc="o.partner_id.name"/></strong> based in, <strong><t t-esc="o.address"/></strong> This event report is referred to as the SECOND PARTY
                                             </t>
                                             <t t-if="o.currency_id.name != 'EUR'">
-                                                dalam hal ini bertindak untuk dan atas nama PT WIJAYA KARYA (Persero) Tbk. yang berkedudukan di, <strong><t t-esc="o.project_id.company_id.street"/></strong>, dalam berita acara ini disebut sebagai PIHAK PERTAMA
+                                                <strong><t t-esc="o.partner_id.name"/></strong> yang berkedudukan di, <strong><t t-esc="o.address"/></strong> berita acara ini disebut sebagai PIHAK KEDUA
                                             </t>
                                         </p>
                                     </td>
@@ -368,7 +368,7 @@
                                     </td>
                                 </tr>
                                 <tr>
-                                    <th scope="row" style="padding: 1px;">2.2</th>
+                                    <th scope="row" style="padding: 1px;">1.2</th>
                                     <td style="padding: 1px;">
                                         <t t-if="o.currency_id.name == 'EUR'">
                                             Currenty
@@ -384,19 +384,19 @@
                                     <td style="padding: 1px;">x</td>
                                     <td style="padding: 1px;">
                                         <t t-if="o.currency_id.name == 'EUR'">
-                                            Rp. <t t-esc="'{:,.2f}'.format(o.total_amount) if o.total_amount else 0"/>
+                                            €. <t t-esc="'{:,.2f}'.format(o.total_amount) if o.total_amount else 0"/>
                                         </t>
                                         <t t-if="o.currency_id.name != 'EUR'">
-                                            €. <t t-esc="'{:,.0f}'.format(o.total_amount) if o.total_amount else 0"/>
+                                            Rp. <t t-esc="'{:,.0f}'.format(o.total_amount) if o.total_amount else 0"/>
                                         </t>
                                     </td>
                                     <td style="text-align: right; padding: 1px;">=</td>
                                     <td style="text-align: right; padding: 1px;">
                                         <t t-if="o.currency_id.name == 'EUR'">
-                                            Rp. <t t-esc="'{:,.2f}'.format(o.dp_total)"/>
+                                            €. <t t-esc="'{:,.2f}'.format(o.dp_total)"/>
                                         </t>
                                         <t t-if="o.currency_id.name != 'EUR'">
-                                            €. <t t-esc="'{:,.0f}'.format(o.dp_total)"/>
+                                            Rp. <t t-esc="'{:,.0f}'.format(o.dp_total)"/>
                                         </t>
                                     </td>
                                 </tr>
@@ -417,10 +417,10 @@
                                     <td style="text-align: right; padding: 1px;">=</td>
                                     <td style="text-align: right; padding: 1px;">
                                         <t t-if="o.currency_id.name == 'EUR'">
-                                            Rp. <t t-esc="'{:,.2f}'.format(o.last_dp_total + o.dp_total)"/>
+                                            €. <t t-esc="'{:,.2f}'.format(o.last_dp_total + o.dp_total)"/>
                                         </t>
                                         <t t-if="o.currency_id.name != 'EUR'">
-                                            €. <t t-esc="'{:,.0f}'.format(o.last_dp_total + o.dp_total)"/>
+                                            Rp. <t t-esc="'{:,.0f}'.format(o.last_dp_total + o.dp_total)"/>
                                         </t>
                                     </td>
                                 </tr>

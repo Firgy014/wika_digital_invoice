@@ -413,10 +413,10 @@ class WikaBeritaAcaraPembayaran(models.Model):
         for bap in self:
             invoices = self.env['account.move'].search([('bap_id', '=', bap.id)])
 
-            tots = 0.0
-            for bap_line in bap.bap_ids:
-                tots += bap_line.qty
-            if invoices and tots == 0.0:
+            # tots = 0.0
+            # for bap_line in bap.bap_ids:
+            #     tots += bap_line.qty
+            if invoices:
                 bap.is_fully_invoiced = True
             else:
                 bap.is_fully_invoiced = False
@@ -426,10 +426,10 @@ class WikaBeritaAcaraPembayaran(models.Model):
         for bap in self:
             invoices = self.env['account.move'].search([('bap_id', '=', bap.id)])
 
-            tots = 0.0
-            for bap_line in bap.bap_ids:
-                tots += bap_line.qty
-            if invoices and tots == 0.0:
+            # tots = 0.0
+            # for bap_line in bap.bap_ids:
+            #     tots += bap_line.qty
+            if invoices:
                 bap.is_fully_invoiced_temp = True
             else:
                 bap.is_fully_invoiced_temp = False
@@ -580,35 +580,65 @@ class WikaBeritaAcaraPembayaran(models.Model):
             else:
                 record.terbilang = ""
 
-    @api.depends('total_pembayaran_um')
+    @api.depends('total_pembayaran_um', 'currency_id')
     def _compute_rupiah_terbilang_um(self):
         for record in self:
             if record.total_pembayaran_um:
-                # Convert float to integer representation of Rupiah
-                rupiah_int = round(record.total_pembayaran_um)  # Pembulatan angka
-                # Convert the integer part to words
-                rupiah_terbilang = num2words(rupiah_int, lang='id') + " rupiah"
-                # If there are cents, add them as well
-                sen = abs(int((record.total_pembayaran_um - rupiah_int) * 100))  # Menghindari masalah pembulatan
-                if sen > 0:
-                    rupiah_terbilang += " dan " + num2words(sen, lang='id') + " sen"
-                record.terbilang_um = rupiah_terbilang
+                if record.currency_id.name == 'EUR':
+                    # Convert to integer part and cents for Euro
+                    euro_int = int(record.total_pembayaran_um)
+                    euro_terbilang = num2words(euro_int, lang='en') + " Euro"
+                    cents = int((record.total_pembayaran_um - euro_int) * 100)
+                    if cents > 0:
+                        euro_terbilang += " and " + num2words(cents, lang='en') + " cents"
+                    record.terbilang_um = euro_terbilang
+                else:
+                    # Convert to integer part and cents for Rupiah
+                    rupiah_int = int(record.total_pembayaran_um)
+                    rupiah_terbilang = num2words(rupiah_int, lang='id') + " rupiah"
+                    sen = int((record.total_pembayaran_um - rupiah_int) * 100)
+                    if sen > 0:
+                        rupiah_terbilang += " dan " + num2words(sen, lang='id') + " sen"
+                    record.terbilang_um = rupiah_terbilang
             else:
                 record.terbilang_um = ""
 
-    @api.depends('total_pembayaran_retensi')
+    # @api.depends('total_pembayaran_retensi')
+    # def _compute_rupiah_terbilang_retensi(self):
+    #     for record in self:
+    #         if record.total_pembayaran_retensi:
+    #             # Convert float to integer representation of Rupiah
+    #             rupiah_int = round(record.total_pembayaran_retensi)  # Pembulatan angka
+    #             # Convert the integer part to words
+    #             rupiah_terbilang = num2words(rupiah_int, lang='id') + " rupiah"
+    #             # If there are cents, add them as well
+    #             sen = abs(int((record.total_pembayaran_retensi - rupiah_int) * 100))  # Menghindari masalah pembulatan
+    #             if sen > 0:
+    #                 rupiah_terbilang += " dan " + num2words(sen, lang='id') + " sen"
+    #             record.terbilang_retensi = rupiah_terbilang
+    #         else:
+    #             record.terbilang_retensi = ""
+
+    @api.depends('total_pembayaran_retensi', 'currency_id')
     def _compute_rupiah_terbilang_retensi(self):
         for record in self:
             if record.total_pembayaran_retensi:
-                # Convert float to integer representation of Rupiah
-                rupiah_int = round(record.total_pembayaran_retensi)  # Pembulatan angka
-                # Convert the integer part to words
-                rupiah_terbilang = num2words(rupiah_int, lang='id') + " rupiah"
-                # If there are cents, add them as well
-                sen = abs(int((record.total_pembayaran_retensi - rupiah_int) * 100))  # Menghindari masalah pembulatan
-                if sen > 0:
-                    rupiah_terbilang += " dan " + num2words(sen, lang='id') + " sen"
-                record.terbilang_retensi = rupiah_terbilang
+                if record.currency_id.name == 'EUR':
+                    # Convert to integer part and cents for Euro
+                    euro_int = int(record.total_pembayaran_retensi)
+                    euro_terbilang = num2words(euro_int, lang='en') + " Euro"
+                    cents = int((record.total_pembayaran_retensi - euro_int) * 100)
+                    if cents > 0:
+                        euro_terbilang += " and " + num2words(cents, lang='en') + " cents"
+                    record.terbilang_retensi = euro_terbilang
+                else:
+                    # Convert to integer part and cents for Rupiah
+                    rupiah_int = int(record.total_pembayaran_retensi)
+                    rupiah_terbilang = num2words(rupiah_int, lang='id') + " rupiah"
+                    sen = int((record.total_pembayaran_retensi - rupiah_int) * 100)
+                    if sen > 0:
+                        rupiah_terbilang += " dan " + num2words(sen, lang='id') + " sen"
+                    record.terbilang_retensi = rupiah_terbilang
             else:
                 record.terbilang_retensi = ""
 

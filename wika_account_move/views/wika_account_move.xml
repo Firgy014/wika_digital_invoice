@@ -6,43 +6,45 @@
             <field name="model">account.move</field>
             <field name="priority" eval="1"/>
             <field name="arch" type="xml">
-                <form string="Invoice Form">
-                    <header>
-                        <button name="action_print_invoice"   attrs="{'invisible': [('is_approval_checked', '=', False)]}" string="Print" type="object" class="oe_highlight"/>
-                        <button name="action_submit" string="SUBMIT" type="object" class="oe_highlight" states="draft,rejected"/>
-                        <button name="action_approve" string="APPROVE" type="object" class="btn-success" states="uploaded"/>
-                        <button name="action_reject" string="REJECT" type="object" class="btn-danger" states="uploaded"/>
-                        <button name="compute_account_payable" string="GET COA" type="object"  groups="base.group_no_one"/>
-                        <button name="add_pricecut_scf" string="ADD POTONGAN SCF" type="object" attrs="{'invisible': [('state', 'not in', ['draft', 'rejected'])]}"/>
-                        <field name="state" widget="statusbar" statusbar_visible="draft,uploaded,approved"/>
-                    </header>
-                    <sheet>
-                        <div name="button_box" position="inside">
-                            <button class="oe_stat_button" type="object" name="get_documents" icon="fa-file-text-o">
-                                <field string="Documents" name="documents_count" widget="statinfo"/>
-                            </button>
-                        </div>
-                        <div class="oe_title">
-                            <h1>
-                                <field name="name"  readonly="1" force_save="1"/>
-                            </h1>
-                        </div>
-                        <group>
-                            <group id="header_left_group">
-                                <field name="partner_id" options="{'no_create': True, 'no_create_edit':True}" widget="res_partner_many2one" string="Vendor" />
-                                <field name="bap_id" options="{'no_create': True, 'no_create_edit':True}" 
-                                    domain="[('is_fully_invoiced', '=', False), ('state', '=', 'approved'),('bap_type', '!=', 'cut over')]" 
-                                    attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
-                                <field name="bap_type"/>
-                                <field name="po_id" options="{'no_create': True, 'no_create_edit':True}" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
-                                <field name="no_invoice_vendor" style="background-color: #dddded;" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
-                                <field name="valuation_class" groups="base.group_no_one" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
-                                <field name="amount_invoice" style="background-color: #dddded;" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
-                                <field name="no_faktur_pajak" style="background-color: #dddded;" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
-                                <field name="currency_id" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
-                            </group>
-                            <group id="header_right_group">
-                                <field name="branch_id" domain="[('biro', '=', False)]"
+            <form string="Invoice Form">
+                <header>
+                    <button name="action_print_invoice"   attrs="{'invisible': [('is_approval_checked', '=', False)]}" string="Print" type="object" class="oe_highlight"/>
+                    <button name="action_submit" string="SUBMIT" type="object" class="oe_highlight" states="draft,rejected"/>
+                    <button name="action_approve" string="APPROVE" type="object" class="btn-success" states="uploaded"/>
+                    <button name="action_reject" string="REJECT" type="object" class="btn-danger" states="uploaded"/>
+                    <button name="compute_account_payable" string="GET COA" type="object"  groups="base.group_no_one"/>
+                    <button name="add_pricecut_scf" string="ADD POTONGAN SCF" type="object" attrs="{'invisible': [('state', 'not in', ['draft', 'rejected'])]}"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,uploaded,approved"/>
+                </header>
+                <sheet>
+                    <div name="button_box" position="inside">
+                       <button class="oe_stat_button" type="object" name="get_documents" icon="fa-file-text-o">
+                            <field string="Documents" name="documents_count" widget="statinfo"/>
+                        </button>
+                    </div>
+                    <!-- Payment status for invoices / receipts -->
+                    <widget name="web_ribbon" title="Paid"
+                    attrs="{'invisible': ['|', ('status_payment', '!=', 'paid'), ('move_type', 'not in', ('out_invoice', 'out_refund', 'in_invoice', 'in_refund', 'out_receipt', 'in_receipt'))]}"/>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name"  readonly="1" force_save="1"/>
+                        </h1>
+                    </div>
+                    <group>
+                      <group id="header_left_group">
+                           <field name="partner_id" options="{'no_create': True, 'no_create_edit':True}" widget="res_partner_many2one" string="Vendor" />
+                            <field name="bap_id" options="{'no_create': True, 'no_create_edit':True}" domain="[('is_fully_invoiced', '!=', True), ('state', '=', 'approved'),('bap_type', '!=', 'cut over')]" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
+                           <field name="po_id" options="{'no_create': True, 'no_create_edit':True}" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
+                           <field name="no_invoice_vendor" style="background-color: #dddded;" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
+                           <field name="valuation_class" groups="base.group_no_one" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
+                           <field name="amount_invoice" style="background-color: #dddded;" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
+                           <field name="no_faktur_pajak" style="background-color: #dddded;" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
+                           <field name="currency_id" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
+                           <field name="status_payment" invisible="1"/>
+
+                      </group>
+                      <group id="header_right_group">
+                            <field name="branch_id" domain="[('biro', '=', False)]"
                                     attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
                                 <field name="check_biro" invisible="1"/>
                                 <field name="department_id" domain="[('biro', '=', True), ('parent_id', '=', branch_id)]"

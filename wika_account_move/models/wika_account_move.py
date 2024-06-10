@@ -43,7 +43,11 @@ class WikaInheritedAccountMove(models.Model):
     bap_id = fields.Many2one(
         'wika.berita.acara.pembayaran',
         string='BAP',
-        domain="[('state', '=', 'approved'), ('is_cut_over', '!=', True)]"
+        domain="""[
+            ('state', '=', 'approved'),
+            ('is_cut_over', '!=', True),
+            ('is_fully_invoiced', '!=', True)
+        ]"""
     )
     branch_id = fields.Many2one('res.branch', string='Divisi', required=True, default=122)
     department_id = fields.Many2one('res.branch', string='Department')
@@ -248,7 +252,7 @@ class WikaInheritedAccountMove(models.Model):
     ], compute='_compute_get_lowest_valuation_class', string='Valuation Class')
 
     documents_count = fields.Integer(string='Total Doc', compute='_compute_documents_count')
-    no_faktur_pajak = fields.Char(string='Tax Number')
+    no_faktur_pajak = fields.Char(string='Tax Number', default='0000000000000000')
     dp_total = fields.Float(string='Total DP', compute='_compute_potongan_total', store= True)
     retensi_total = fields.Float(string='Total Retensi', compute='_compute_potongan_total', store= True)
     total_tax = fields.Monetary(string='Total Tax', compute='compute_total_tax')
@@ -323,13 +327,13 @@ class WikaInheritedAccountMove(models.Model):
 
     def unlink(self):
         for record in self:
-            if record.state=='draft':
+            if record.state != 'draft':
+                raise ValidationError('Tidak dapat menghapus ketika status Invoice dalam keadaan Upload atau Approve')
+        for record in self:
                 record.activity_ids.unlink()
                 record.document_ids.unlink()
                 record.history_approval_ids.unlink()
                 record.price_cut_ids.unlink()
-            else:
-                raise ValidationError('Tidak dapat menghapus ketika status Invoice dalam keadaan Upload atau Approve')
         return super(WikaInheritedAccountMove, self).unlink()
 
     # @api.depends('date')
