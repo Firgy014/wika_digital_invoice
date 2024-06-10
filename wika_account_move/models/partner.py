@@ -16,3 +16,13 @@ class PartnerInherit(models.Model):
         ('ZV09', 'ZV09 Perseorangan'),
         ('ZV11', 'ZV11 Vendor Fasilitas Bank'),
     ], string='Bill Chart of Accounts Type')
+
+    @api.model
+    def _build_vat_error_message(self, country_code, wrong_vat, record_label):
+        # Disable VAT format
+        pass
+
+    @api.constrains('vat', 'country_id')
+    def check_vat(self):
+        # Disable VAT format
+        pass

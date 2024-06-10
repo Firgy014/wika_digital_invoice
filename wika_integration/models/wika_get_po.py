@@ -221,8 +221,6 @@ class wika_get_po(models.Model):
                             _logger.info(vendor)
                             if not vendor:
                                 vendor = self.get_partner(data['vendor'], '', '')
-
-                            
                                 
                             sql = """
                                 SELECT 
@@ -308,6 +306,41 @@ class wika_get_po(models.Model):
                     else: # Update PO
                         _logger.info("# === UPDATE PO === #")
                         _logger.info(po)
+                        dp = float(data['dp_amt'])
+                        retensi = float(data['ret_pc'])
+                        if dp > 0:
+                            prod = self.env['product.product'].sudo().search([
+                                ('name', '=', 'DP')], limit=1)
+                            if not prod:
+                                prod = self.env['product.product'].sudo().create({
+                                    'name': 'DP'})
+                            
+                            pot = self.env['wika.po.pricecut.line'].search([
+                                ('purchase_id', '=', po.id),
+                                ('product_id', '=', prod.id)], limit=1)
+                            if pot:
+                                potongan.append((1, pot.id, {
+                                    'product_id': prod.id,
+                                    'persentage_amount': '',
+                                    'amount': dp,
+                                }))
+                        if retensi > 0:
+                            prod = self.env['product.product'].sudo().search([
+                                ('name', '=', 'RETENSI')], limit=1)
+                            if not prod:
+                                prod = self.env['product.product'].sudo().create({
+                                    'name': 'RETENSI'})
+                            
+                            pot = self.env['wika.po.pricecut.line'].search([
+                                ('purchase_id', '=', po.id),
+                                ('product_id', '=', prod.id)], limit=1)
+                            if pot:
+                                potongan.append((1, pot.id, {
+                                    'product_id': prod.id,
+                                    'persentage_amount': retensi,
+                                    'amount': '',
+                                }))
+
                         current_date = fields.Date.today()
                         po_lcdat = datetime.strptime(data['po_lcdat'], '%Y-%m-%d').date()
                         difference = current_date - po_lcdat
@@ -322,8 +355,12 @@ class wika_get_po(models.Model):
                                 _logger.info(po_line.id)
                                 current_datetime_str = fields.Datetime.now()+ timedelta(hours=7)
 
-                                noted_message = f"updated {current_datetime_str}"
-                                po.write({'notes': noted_message})
+                                noted_message = f"debug updated {current_datetime_str}"
+                                _logger.info("# === PO WRITE === #" + str(potongan))
+                                po.write({
+                                    'price_cut_ids': potongan,
+                                    'notes': noted_message
+                                })
                                 
                                 if po_line.id:
                                     _logger.info("# === WRITE PO === #")
@@ -374,7 +411,6 @@ class wika_get_po(models.Model):
                                                 'price_unit': price,
                                                 'taxes_id': [(6, 0, [x.id for x in tax])]})
 
-                                    continue
 
                             # po.update_gr()
                             tot_u += 1
@@ -461,14 +497,14 @@ class wika_get_po(models.Model):
                             'bic': bic,
                             'active': True
                         })
+                        _logger.info(bank_create)
                         if bank_create:
                             bank_id = bank_create.id
 
                 res_partner = self.env['res.partner'].search([('sap_code', '=', sap_code)], limit=1)
                 res_partner_id = 0
-                if res_partner:
-                    res_partner_id = res_partner.id
-                else:
+                if not res_partner:
+                    _logger.info("# === CREATE PARTNER === #")
                     res_partner_create = self.env['res.partner'].create({
                         'name': name,
                         'sap_code': sap_code,
@@ -479,8 +515,11 @@ class wika_get_po(models.Model):
                         'country_id': country_id,
                         'is_company': True,
                     })
+                    _logger.info(res_partner_create)
                     if res_partner_create:
+                        res_partner = res_partner_create
                         res_partner_id = res_partner_create.id
+                        _logger.info("# === CREATE BANK === #")
                         res_partner_bank_create = self.env['res.partner.bank'].create({
                             'partner_id': res_partner_id,  
                             'bank_id': bank_id,  
@@ -488,9 +527,10 @@ class wika_get_po(models.Model):
                             'acc_holder_name': acc_holder_name,
                             'company_id': company_id
                         })
+                        _logger.info(res_partner_bank_create)
 
 
-            return res_partner_id
+            return res_partner
                      
     def _autocreate_po(self):
         ''' This method is called from a cron job.
