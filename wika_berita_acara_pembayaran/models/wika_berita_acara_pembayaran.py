@@ -64,7 +64,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
     begin_date = fields.Date(string='Tgl Mulai Kontrak', required=True, related="po_id.begin_date")
     sap_doc_number = fields.Char(string='Nomor Kontrak', required=True, related="po_id.sap_doc_number")
     amount_total = fields.Monetary(string='Total', related="po_id.amount_total")
-    currency_id = fields.Many2one('res.currency', string='Currency')
+    currency_id = fields.Many2one('res.currency', string='Currency', related="po_id.currency_id")
     notes = fields.Html(string='Terms and Conditions', store=True, readonly=False,)
     total_amount = fields.Monetary(string='Total Amount', compute='compute_total_amount')
     total_tax = fields.Monetary(string='Total Tax', compute='compute_total_tax')
