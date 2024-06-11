@@ -194,7 +194,7 @@ class sap_integration_configure(models.Model):
                     _logger.info(f"File content:\n{file_content}")
 
                 if conf_id.sftp_host:
-                    self._send_file_to_sftp(conf_id, file_content, filename)
+                    self._send_file_to_sftp(conf_id, fp, filename)
 
             except Exception as e:
                 _logger.error(f"Error occurred while generating and sending data: {str(e)}")
