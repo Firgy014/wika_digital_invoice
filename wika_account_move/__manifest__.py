@@ -48,7 +48,7 @@
         'report/report_wika_account_move_proyek.xml',
         'views/wika_special_gl.xml',
         'data/pricecut_scf_data.xml',
-        # 'data/documents_folder_data.xml',
+        'data/documents_folder_data.xml',
         'data/document_setting_data.xml',
         'data/special_gl.xml',
         'views/filter.xml',
