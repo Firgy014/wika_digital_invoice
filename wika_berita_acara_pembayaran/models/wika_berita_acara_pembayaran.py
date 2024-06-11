@@ -556,27 +556,38 @@ class WikaBeritaAcaraPembayaran(models.Model):
             total_pembayaran_retensi = retensi_total - total_pph
             record.total_pembayaran_retensi = total_pembayaran_retensi
 
+    
+    # list currency
+    def _get_currency_info(self, currency_name):
+        currency_info = {
+            'EUR': {'lang': 'en', 'currency_name': 'Euro', 'cent_name': 'cents'},
+            'IDR': {'lang': 'id', 'currency_name': 'rupiah', 'cent_name': 'sen'},
+            'USD': {'lang': 'en', 'currency_name': 'US Dollar', 'cent_name': 'cents'},
+            'GBP': {'lang': 'en', 'currency_name': 'British Pound', 'cent_name': 'pence'},
+            'AUD': {'lang': 'en', 'currency_name': 'Australian Dollar', 'cent_name': 'cents'},
+        }
+
+        return currency_info.get(currency_name, {'lang': 'id', 'currency_name': 'rupiah', 'cent_name': 'sen'})
+
     # # funct terbilang
     @api.depends('total_pembayaran', 'currency_id')
     def _compute_rupiah_terbilang(self):
         for record in self:
             if record.total_pembayaran:
-                if record.currency_id.name == 'EUR':
-                    # Convert to integer part and cents for Euro
-                    euro_int = int(record.total_pembayaran)
-                    euro_terbilang = num2words(euro_int, lang='en') + " Euro"
-                    cents = int((record.total_pembayaran - euro_int) * 100)
-                    if cents > 0:
-                        euro_terbilang += " and " + num2words(cents, lang='en') + " cents"
-                    record.terbilang = euro_terbilang
-                else:
-                    # Convert to integer part and cents for Rupiah
-                    rupiah_int = int(record.total_pembayaran)
-                    rupiah_terbilang = num2words(rupiah_int, lang='id') + " rupiah"
-                    sen = int((record.total_pembayaran - rupiah_int) * 100)
-                    if sen > 0:
-                        rupiah_terbilang += " dan " + num2words(sen, lang='id') + " sen"
-                    record.terbilang = rupiah_terbilang
+                currency = self._get_currency_info(record.currency_id.name)
+                lang = currency['lang']
+                currency_name = currency['currency_name']
+                cent_name = currency['cent_name']
+
+                total_int = int(record.total_pembayaran)
+                terbilang = num2words(total_int, lang=lang) + " " + currency_name
+                cents = int((record.total_pembayaran - total_int) * 100)
+                if cents > 0:
+                    if lang == 'en':
+                        terbilang += " and " + num2words(cents, lang=lang) + " " + cent_name
+                    else:
+                        terbilang += " dan " + num2words(cents, lang=lang) + " " + cent_name
+                record.terbilang = terbilang
             else:
                 record.terbilang = ""
 
@@ -584,61 +595,41 @@ class WikaBeritaAcaraPembayaran(models.Model):
     def _compute_rupiah_terbilang_um(self):
         for record in self:
             if record.total_pembayaran_um:
-                if record.currency_id.name == 'EUR':
-                    # Convert to integer part and cents for Euro
-                    euro_int = int(record.total_pembayaran_um)
-                    euro_terbilang = num2words(euro_int, lang='en') + " Euro"
-                    cents = int((record.total_pembayaran_um - euro_int) * 100)
-                    if cents > 0:
-                        euro_terbilang += " and " + num2words(cents, lang='en') + " cents"
-                    record.terbilang_um = euro_terbilang
-                else:
-                    # Convert to integer part and cents for Rupiah
-                    rupiah_int = int(record.total_pembayaran_um)
-                    rupiah_terbilang = num2words(rupiah_int, lang='id') + " rupiah"
-                    sen = int((record.total_pembayaran_um - rupiah_int) * 100)
-                    if sen > 0:
-                        rupiah_terbilang += " dan " + num2words(sen, lang='id') + " sen"
-                    record.terbilang_um = rupiah_terbilang
+                currency = self._get_currency_info(record.currency_id.name)
+                lang = currency['lang']
+                currency_name = currency['currency_name']
+                cent_name = currency['cent_name']
+
+                total_int = int(record.total_pembayaran_um)
+                terbilang_um = num2words(total_int, lang=lang) + " " + currency_name
+                cents = int((record.total_pembayaran_um - total_int) * 100)
+                if cents > 0:
+                    if lang == 'en':
+                        terbilang_um += " and " + num2words(cents, lang=lang) + " " + cent_name
+                    else:
+                        terbilang_um += " dan " + num2words(cents, lang=lang) + " " + cent_name
+                record.terbilang_um = terbilang_um
             else:
                 record.terbilang_um = ""
-
-    # @api.depends('total_pembayaran_retensi')
-    # def _compute_rupiah_terbilang_retensi(self):
-    #     for record in self:
-    #         if record.total_pembayaran_retensi:
-    #             # Convert float to integer representation of Rupiah
-    #             rupiah_int = round(record.total_pembayaran_retensi)  # Pembulatan angka
-    #             # Convert the integer part to words
-    #             rupiah_terbilang = num2words(rupiah_int, lang='id') + " rupiah"
-    #             # If there are cents, add them as well
-    #             sen = abs(int((record.total_pembayaran_retensi - rupiah_int) * 100))  # Menghindari masalah pembulatan
-    #             if sen > 0:
-    #                 rupiah_terbilang += " dan " + num2words(sen, lang='id') + " sen"
-    #             record.terbilang_retensi = rupiah_terbilang
-    #         else:
-    #             record.terbilang_retensi = ""
 
     @api.depends('total_pembayaran_retensi', 'currency_id')
     def _compute_rupiah_terbilang_retensi(self):
         for record in self:
             if record.total_pembayaran_retensi:
-                if record.currency_id.name == 'EUR':
-                    # Convert to integer part and cents for Euro
-                    euro_int = int(record.total_pembayaran_retensi)
-                    euro_terbilang = num2words(euro_int, lang='en') + " Euro"
-                    cents = int((record.total_pembayaran_retensi - euro_int) * 100)
-                    if cents > 0:
-                        euro_terbilang += " and " + num2words(cents, lang='en') + " cents"
-                    record.terbilang_retensi = euro_terbilang
-                else:
-                    # Convert to integer part and cents for Rupiah
-                    rupiah_int = int(record.total_pembayaran_retensi)
-                    rupiah_terbilang = num2words(rupiah_int, lang='id') + " rupiah"
-                    sen = int((record.total_pembayaran_retensi - rupiah_int) * 100)
-                    if sen > 0:
-                        rupiah_terbilang += " dan " + num2words(sen, lang='id') + " sen"
-                    record.terbilang_retensi = rupiah_terbilang
+                currency = self._get_currency_info(record.currency_id.name)
+                lang = currency['lang']
+                currency_name = currency['currency_name']
+                cent_name = currency['cent_name']
+
+                total_int = int(record.total_pembayaran_retensi)
+                terbilang_retensi = num2words(total_int, lang=lang) + " " + currency_name
+                cents = int((record.total_pembayaran_retensi - total_int) * 100)
+                if cents > 0:
+                    if lang == 'en':
+                        terbilang_retensi += " and " + num2words(cents, lang=lang) + " " + cent_name
+                    else:
+                        terbilang_retensi += " dan " + num2words(cents, lang=lang) + " " + cent_name
+                record.terbilang_retensi = terbilang_retensi
             else:
                 record.terbilang_retensi = ""
 
