@@ -181,7 +181,10 @@ class sap_integration_configure(models.Model):
 
                 with open(file_path, 'wb') as fp:
                     fp.write(out2)
+                    _logger.info('ISI NYA'+str(fp))
                     _logger.info("Data written to file successfully")
+
+
 
                 # Change the file permissions
                 os.chmod(file_path, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO)  # Equivalent to 0o777
