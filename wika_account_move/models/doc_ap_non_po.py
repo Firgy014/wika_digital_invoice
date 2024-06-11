@@ -69,6 +69,9 @@ class DocApNonPO(models.Model):
                             doc_date = data["DOC_DATE"]
                             posting_date = data["POSTING_DATE"]
                             pph_cbasis = data["PPH_CBASIS"] * -1
+                            if pph_cbasis <= 0 :
+                                pph_cbasis = data["PPH_ACCRUAL"] * -1
+                            
                             amount = data["AMOUNT"] * -1
                             header_text = data["HEADER_TEXT"]
                             reference = data["REFERENCE"]
@@ -216,6 +219,7 @@ class DocApNonPO(models.Model):
                                             'name': item_text, 
                                             'quantity': 1, 
                                             'price_unit': amount, 
+                                            'tax_ids': [(5,0,0)],
                                             'price_subtotal': amount, 
                                             'amount_sap': amount, 
                                             'pph_cash_basis': pph_cbasis, 
