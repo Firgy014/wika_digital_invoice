@@ -1,5 +1,6 @@
 from odoo import models, fields, api, _
 import requests
+from datetime import datetime, timedelta
 from odoo.exceptions import UserError, ValidationError, Warning,AccessError
 import logging, json
 _logger = logging.getLogger(__name__)
@@ -31,82 +32,88 @@ class DocApNonPO(models.Model):
 
         for doc in self:
             if doc.state != 'done':
-                try:
-                    payload = json.dumps({
-                        "COMPANY_CODE": "A000",
-                        "POSTING_DATE": {
-                            "LOW": "%s",
-                            "HIGH": "%s"
-                        },
-                        "DOC_NUMBER": "%s"
-                    }) % (str(doc.posting_date), str(doc.posting_date), doc.doc_number)
-                    payload = payload.replace('\n', '')
-                    
-                    _logger.info("# === PAYLOAD === #")
-                    _logger.info(payload)
-                    
-                    response = requests.request("GET", url_config, data=payload, headers=headers)
-                    result = json.loads(response.text)
+                # try:
+                payload = json.dumps({
+                    "COMPANY_CODE": "A000",
+                    "POSTING_DATE": {
+                        "LOW": "%s",
+                        "HIGH": "%s"
+                    },
+                    "DOC_NUMBER": "%s"
+                }) % (str(doc.posting_date), str(doc.posting_date), doc.doc_number)
+                payload = payload.replace('\n', '')
+                
+                _logger.info("# === PAYLOAD === #")
+                _logger.info(payload)
+                
+                response = requests.request("GET", url_config, data=payload, headers=headers)
+                result = json.loads(response.text)
 
-                    if result['DATA']:
-                        _logger.info("# === IMPORT DATA === #")
-                        company_id = self.env.company.id
-                        # diurutkan berdasarakan tahun dan doc number
-                        txt_data = sorted(result['DATA'], key=lambda x: (x["YEAR"], x["DOC_NUMBER"]))
-                        i = 0
-                        sap_codes = []
-                        vendors = []
-                        for data in txt_data:
-                            _logger.info(data)
-                            doc_number = data["DOC_NUMBER"]
-                            line_item = data["LINE_ITEM"]
-                            year = data["YEAR"]
-                            currency = data["CURRENCY"]
-                            doc_type = data["DOC_TYPE"]
-                            doc_date = data["DOC_DATE"]
-                            posting_date = data["POSTING_DATE"]
-                            pph_cbasis = data["PPH_CBASIS"] * -1
-                            amount = data["AMOUNT"] * -1
-                            header_text = data["HEADER_TEXT"]
-                            reference = data["REFERENCE"]
-                            vendor = data["VENDOR"]
-                            top = data["TOP"]
-                            item_text = data["ITEM_TEXT"]
-                            profit_center = data["PROFIT_CENTER"]
-                            name = str(doc_number)+str(year)
+                if result['DATA']:
+                    _logger.info("# === IMPORT DATA === #")
+                    company_id = self.env.company.id
+                    # diurutkan berdasarakan tahun dan doc number
+                    txt_data = sorted(result['DATA'], key=lambda x: (x["YEAR"], x["DOC_NUMBER"]))
+                    i = 0
+                    sap_codes = []
+                    vendors = []
+                    move_line_vals = []
+                    account_move_id = 0
+                    for data in txt_data:
+                        _logger.info(data)
+                        doc_number = data["DOC_NUMBER"]
+                        line_item = data["LINE_ITEM"]
+                        year = str(data["YEAR"])
+                        currency = data["CURRENCY"]
+                        doc_type = data["DOC_TYPE"]
+                        doc_date = data["DOC_DATE"]
+                        posting_date = data["POSTING_DATE"]
+                        pph_cbasis = data["PPH_CBASIS"] * -1
+                        amount = data["AMOUNT"] * -1
+                        header_text = data["HEADER_TEXT"]
+                        reference = data["REFERENCE"]
+                        vendor = data["VENDOR"]
+                        top = data["TOP"]
+                        item_text = data["ITEM_TEXT"]
+                        profit_center = data["PROFIT_CENTER"]
+                        name = str(doc_number)+str(year)
 
-                            project = self.env['project.project'].search([('sap_code', '=', profit_center)], limit=1)
-                            _logger.info("# === PROJECT === #")
-                            _logger.info(project)
-                            partner = self.env['res.partner'].search([('sap_code', '=', vendor)], limit=1)
-                            _logger.info("# === PARTNER === #")
-                            _logger.info(partner)
-                            if project and partner:
-                                if project.branch_id != "":
-                                    _logger.info("# === SEARCH CURRENCY === #")
-                                    res_currency = self.env['res.currency'].search([('name', '=', currency)], limit=1)
-                                    _logger.info(res_currency)
-                                    currency_id = ''
-                                    if res_currency:
-                                        currency_id = res_currency.id
-                                    else:
-                                        raise UserError("Currency kosong atau tidak ditemukan!")
+                        project = self.env['project.project'].search([('sap_code', '=', profit_center)], limit=1)
+                        _logger.info("# === PROJECT === #")
+                        _logger.info(project)
+                        partner = self.env['res.partner'].search([('sap_code', '=', vendor)], limit=1)
+                        _logger.info("# === PARTNER === #")
+                        _logger.info(partner)
+                        if project and partner:
+                            if project.branch_id != "":
+                                _logger.info("# === SEARCH CURRENCY === #")
+                                res_currency = self.env['res.currency'].search([('name', '=', currency)], limit=1)
+                                _logger.info(res_currency)
+                                currency_id = ''
+                                if res_currency:
+                                    currency_id = res_currency.id
+                                else:
+                                    raise UserError("Currency kosong atau tidak ditemukan!")
 
-                                    _logger.info("# === SEARCH account.payment.term === #")
-                                    account_payment_term = self.env['account.payment.term'].search([('name', '=', top)], limit=1)
-                                    _logger.info(account_payment_term)
-                                    payment_term_id = ''
-                                    if account_payment_term:
-                                        payment_term_id = account_payment_term.id
-                                    else:
-                                        raise UserError("Payment Terms kosong atau tidak ditemukan!")
-                                    
-                                    status_payment = ''
-                                    _logger.info("# === SEARCH account.move === #")
+                                _logger.info("# === SEARCH account.payment.term === #")
+                                account_payment_term = self.env['account.payment.term'].search([('name', '=', top)], limit=1)
+                                _logger.info(account_payment_term)
+                                payment_term_id = ''
+                                if account_payment_term:
+                                    payment_term_id = account_payment_term.id
+                                else:
+                                    raise UserError("Payment Terms kosong atau tidak ditemukan!")
+                                
+                                status_payment = ''
+                                _logger.info("# === SEARCH account.move === #")
+                                date_format = '%Y-%m-%d'
+                                date_from = datetime.strptime(year + '-01-01', date_format)
+                                date_to = datetime.strptime(year + '-12-31', date_format)
+                                if i == 0:
                                     account_move = self.env['account.move'].search([('payment_reference', '=', doc_number),
-                                                    ('year', '=', year),
-                                                    ('project_id', '=', project.id),
-                                                    ('partner_id', '=', partner.id)], limit=1)
+                                        ('project_id', '=', project.id), ('partner_id', '=', partner.id),
+                                        ('date', '>=', date_from), ('date', '<=', date_to)
+                                    ], limit=1)
                                     _logger.info(account_move)
                                     if not account_move:
                                         _logger.info('# === CREATE ACCOUNT MOVE === #')
@@ -179,42 +186,67 @@ class DocApNonPO(models.Model):
                                     #         account_move_line.move_id.compute_pph_amount()
                                     #         account_move_line.move_id.compute_amount_invoice()
                                     # else:
-                                        _logger.info('# === Insert invoice detail === #')
-                                        account_move_line_created = self.env['account.move.line'].create({
-                                            'move_id': account_move_id, 
-                                            'move_name': name, 
-                                            'sequence': line_item,
-                                            'name': item_text, 
-                                            'quantity': 1, 
-                                            'price_unit': amount, 
-                                            'price_subtotal': amount, 
-                                            'amount_sap': amount, 
-                                            'pph_cash_basis': pph_cbasis, 
-                                            'date': posting_date,
-                                            'parent_state': 'approved', 
-                                            'currency_id': currency_id, 
-                                            'company_currency_id': currency_id,
-                                            'display_type': 'product', 
-                                            'company_id': company_id, 
-                                        })
-                                        account_move_line_created.move_id.compute_pph_amount()
-                                        account_move_line_created.move_id.compute_amount_invoice()
-
+                                    
+                                        # _logger.info('# === Insert invoice detail === #')
+                                        # account_move_line_created = self.env['account.move.line'].create({
+                                        #     'move_id': account_move_id, 
+                                        #     'move_name': name, 
+                                        #     'sequence': line_item,
+                                        #     'name': item_text, 
+                                        #     'quantity': 1, 
+                                        #     'price_unit': amount, 
+                                        #     'price_subtotal': amount, 
+                                        #     'amount_sap': amount, 
+                                        #     'pph_cash_basis': pph_cbasis, 
+                                        #     'date': posting_date,
+                                        #     'parent_state': 'approved', 
+                                        #     'currency_id': currency_id, 
+                                        #     'company_currency_id': currency_id,
+                                        #     'display_type': 'product', 
+                                        #     'company_id': company_id, 
+                                        # })
+                                        # account_move_line_created.move_id.compute_pph_amount()
+                                        # account_move_line_created.move_id.compute_amount_invoice()
                                 
-                            i = i+1
+                                if account_move_id > 0:
+                                    move_line_vals.append({
+                                        'move_id': account_move_id, 
+                                        'move_name': name, 
+                                        'sequence': line_item,
+                                        'name': item_text, 
+                                        'quantity': 1, 
+                                        'price_unit': amount, 
+                                        'price_subtotal': amount, 
+                                        'amount_sap': amount, 
+                                        'pph_cash_basis': pph_cbasis, 
+                                        'date': posting_date,
+                                        'parent_state': 'approved', 
+                                        'currency_id': currency_id, 
+                                        'company_currency_id': currency_id,
+                                        'display_type': 'product', 
+                                        'company_id': company_id, 
+                                    })
+                        _logger.info('# === ACCOUNT MOVE ID === #')
+                        _logger.info(account_move_id)
+                        i = i+1
 
-
-                        cr = self.env.cr
-                        doc.state = "done"
-                        _logger.info(_("# === Import Data Berhasil === #"))
-                        
-                    else:
-                        raise UserError(_("Data Tidak Tersedia!"))
+                    if move_line_vals:
+                        _logger.info('# === Insert invoice detail === #')
+                        _logger.info(move_line_vals)
+                        account_move_line_created = self.env['account.move.line'].create(move_line_vals)
+                        account_move_line_created.move_id.compute_pph_amount()
+                        account_move_line_created.move_id.compute_amount_invoice()
                     
-                except Exception as e:
-                    _logger.info("# === EXCEPTION === #")
-                    _logger.info(e)
-                    raise UserError(_("Terjadi Kesalahan! Update Invoice Gagal."))
+                    doc.state = "done"
+                    _logger.info(_("# === Import Data Berhasil === #"))
+                    
+                else:
+                    raise UserError(_("Data Tidak Tersedia!"))
+                    
+                # except Exception as e:
+                #     _logger.info("# === EXCEPTION === #")
+                #     _logger.info(e)
+                #     raise UserError(_("Terjadi Kesalahan! Update Invoice Gagal."))
                     # continue
             else:
                 raise UserError(_("Tidak diproses karena status sudah Done!"))
