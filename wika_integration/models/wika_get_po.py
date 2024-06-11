@@ -355,7 +355,7 @@ class wika_get_po(models.Model):
                                 _logger.info(po_line.id)
                                 current_datetime_str = fields.Datetime.now()+ timedelta(hours=7)
 
-                                noted_message = f"debug updated {current_datetime_str}"
+                                noted_message = f"updated {current_datetime_str}"
                                 _logger.info("# === PO WRITE === #" + str(potongan))
                                 po.write({
                                     'price_cut_ids': potongan,

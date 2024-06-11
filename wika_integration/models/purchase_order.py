@@ -189,24 +189,73 @@ class Purchase_Order(models.Model):
                                     "po_del": "",
                                     "poitem_del": "",
                                     "incmp_cat": "","po_lcdat":""
-                                    }) % (profit_center, self.name,self.tgl_create_sap)
+                                    }) % (profit_center, self.name, self.tgl_create_sap)
             payload_2 = payload_2.replace('\n', '')
             _logger.info(payload_2)
+
             response_2 = requests.request("POST", url_get_po, data=payload_2, headers=headers)
             txt = json.loads(response_2.text)
-            print (txt)
+            # print (txt)
             if 'data' in txt:
                 if txt['data']:
                     vals = []
-                    print (txt['data'])
+                    _logger.info("# === TXT DATA === #")
                     txt_data = txt['data']
+                    _logger.info(txt_data)
+                    dp = float(txt_data['dp_amt'])
+                    retensi = float(txt_data['ret_pc'])
+                    potongan = []
+
+                    if dp > 0:
+                        prod = self.env['product.product'].search([
+                            ('name', '=', 'DP')], limit=1)
+                        if not prod:
+                            prod = self.env['product.product'].create({
+                                'name': 'DP'})
+                        
+                        pot = self.env['wika.po.pricecut.line'].search([
+                            ('purchase_id', '=', self.id),
+                            ('product_id', '=', prod.id)], limit=1)
+                        if pot:
+                            potongan.append((1, pot.id, {
+                                'product_id': prod.id,
+                                'persentage_amount': '',
+                                'amount': dp,
+                            }))
+                    if retensi > 0:
+                        prod = self.env['product.product'].search([
+                            ('name', '=', 'RETENSI')], limit=1)
+                        if not prod:
+                            prod = self.env['product.product'].create({
+                                'name': 'RETENSI'})
+                        
+                        pot = self.env['wika.po.pricecut.line'].search([
+                            ('purchase_id', '=', self.id),
+                            ('product_id', '=', prod.id)], limit=1)
+                        if pot:
+                            potongan.append((1, pot.id, {
+                                'product_id': prod.id,
+                                'persentage_amount': retensi,
+                                'amount': '',
+                            }))
+                            
+                    current_datetime_str = fields.Datetime.now()+ timedelta(hours=7)
+                    noted_message = f"updated {current_datetime_str}"
+                    _logger.info("# === PO WRITE === #" + str(potongan))
+                    self.write({
+                        'price_cut_ids': potongan,
+                        'notes': noted_message
+                    })
+                    
                     for data in txt_data['isi']:
                         seq = float(data['po_no'])
                         qty = float(data['po_qty'])
-                        po_line = self.env['purchase.order.line'].sudo().search([
+
+                        _logger.info("# === SEARCH PO LINE === #")
+                        po_line = self.env['purchase.order.line'].search([
                             ('order_id', '=', self.id),
                             ('sequence', '=', int(seq))], limit=1)
-                        print (po_line)
+                        _logger.info(po_line)
                         if po_line.id:
                             if txt_data['po_jenis'] == 'JASA':
                                 price = float(data['po_price']) / qty
@@ -227,7 +276,7 @@ class Purchase_Order(models.Model):
                             if data['poitem_del'] == 'L':
                                 continue
                             else:
-                                print (data['poitem_del'])
+                                # print (data['poitem_del'])
                                 if txt_data['po_jenis'] == 'JASA':
                                     price = float(data['po_price']) / qty
                                 else:
