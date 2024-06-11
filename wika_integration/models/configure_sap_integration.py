@@ -137,8 +137,8 @@ class sap_integration_configure(models.Model):
                 with open(file_path, 'wb') as fp:
                     fp.write(out2)
 
-                if conf_id.sftp_host:
-                    self._send_file_to_sftp(conf_id, file_path, filename)
+                # if conf_id.sftp_host:
+                #     self._send_file_to_sftp(conf_id, file_path, filename)
             except Exception as e:
                 _logger.error(f"Error occurred while generating and sending data: {str(e)}")
 
@@ -234,8 +234,8 @@ class sap_integration_configure(models.Model):
                 with open(file_path, 'wb') as fp:
                     fp.write(out2)
 
-                if conf_id.sftp_host:
-                    self._send_file_to_sftp(conf_id, file_path, filename)
+                # if conf_id.sftp_host:
+                #     self._send_file_to_sftp(conf_id, file_path, filename)
 
             except Exception as e:
                 _logger.error(f"Error occurred while generating and sending data: {str(e)}")
