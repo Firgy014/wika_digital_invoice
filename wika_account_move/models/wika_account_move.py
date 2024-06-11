@@ -704,6 +704,10 @@ class WikaInheritedAccountMove(models.Model):
             if record.ap_type == 'ap_po':
                 if record.date != False and record.date < record.bap_id.bap_date and record.cut_off!=True:
                     raise ValidationError("Posting Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
+
+            # Posting date validation
+            if record.date and record.date < record.bap_id.bap_date and not record.cut_off:
+                raise ValidationError("Posting Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
             
         return record
 
@@ -737,19 +741,6 @@ class WikaInheritedAccountMove(models.Model):
                 if invoice.is_waba:
                     invoice.refresh()
                     _logger.info('Successfully refreshing all values for Invoice: %s', invoice.name)
-            # Posting date validation
-            if record.date and record.date < record.bap_id.bap_date and not record.cut_off:
-                raise ValidationError("Posting Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
-
-            # New validation for posting date
-            today = fields.Date.today()
-            first_day_of_current_month = today.replace(day=1)
-            first_day_of_previous_month = (first_day_of_current_month - timedelta(days=1)).replace(day=1)
-
-            if record.date and record.date < first_day_of_previous_month:
-                raise ValidationError("Posting Date tidak boleh lebih awal dari bulan sebelumnya.")
-        
-        return result
 
     def _replace_document_object(self, folder_name, document_ids, po_id):
         documents_model = self.env['documents.document'].sudo()
