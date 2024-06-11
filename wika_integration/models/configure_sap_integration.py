@@ -450,19 +450,16 @@ class sap_integration_configure(models.Model):
                     for line in file_txt:
                         invoice_data = line.strip().split('|')
                         _logger.debug("Invoice data parsed: %s", invoice_data)
-                        
+
                         if len(invoice_data) < 3:
                             _logger.error("Invalid invoice data format: %s", invoice_data)
                             continue
 
                         dig_code = invoice_data[0]
-                        invoice_number = invoice_data[1]
-                        year = invoice_data[2]
+                        invoice_number = invoice_data[2]
+                        year = invoice_data[3]
 
-                        invoice_id = invoice_model.search([
-                            ('name', '=', dig_code)
-                            # ('is_mp_approved', '=', True)
-                        ], limit=1)
+                        invoice_id = invoice_model.search([('name', '=', dig_code)], limit=1)
 
                         if invoice_id:
                             update_vals = {
@@ -476,9 +473,10 @@ class sap_integration_configure(models.Model):
                             _logger.info("Successfully updated invoice: %s", dig_code)
                         else:
                             _logger.warning("No matching invoice found for DIG_CODE: %s", dig_code)
-                            
-                shutil.copy(file_path, os.path.join(conf_id.sftp_folder_archive, file_name))
-                _logger.info("File copied to archive: %s", file_name)
+
+                archive_path = os.path.join(conf_id.sftp_folder_archive, file_name)
+                shutil.move(file_path, archive_path)
+                _logger.info("File moved to archive: %s", archive_path)
             except FileNotFoundError:
                 _logger.error("File not found: %s", file_path)
             except Exception as e:
