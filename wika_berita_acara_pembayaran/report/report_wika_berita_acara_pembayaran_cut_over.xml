@@ -481,10 +481,10 @@
                                     <th style="padding: 1px;" scope="row">g</th>
                                     <td style="padding: 1px;">
                                         <t t-if="o.currency_id.name != 'IDR'">
-                                            <strong>Yang sudah diproses Invoicenya s/d saat ini</strong>
+                                            <strong>The invoice has been processed up to now</strong>
                                         </t>
                                         <t t-if="o.currency_id.name == 'IDR'">
-                                            <strong>The invoice has been processed up to now</strong>
+                                            <strong>Yang sudah diproses Invoicenya s/d saat ini</strong>
                                         </t>
                                     </td>
                                     <td style="padding: 1px;"></td>
