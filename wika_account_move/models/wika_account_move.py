@@ -8,6 +8,10 @@ from odoo.tools import (
     date_utils,
     float_compare
 )
+import base64
+from pypdf import PdfReader, PdfWriter
+from io import BytesIO
+from PIL import Image
 import logging, json
 _logger = logging.getLogger(__name__)
 
@@ -161,7 +165,7 @@ class WikaInheritedAccountMove(models.Model):
         for record in self:
             total_pph = 0.0
             total_net = record.total_line - record.retensi_total - record.dp_total
-            if record.pph_amount>0:
+            if record.pph_amount > 0:
                 record.total_pph = math.floor(record.pph_amount)
             else:
                 for pph in record.pph_ids:
@@ -612,7 +616,9 @@ class WikaInheritedAccountMove(models.Model):
                     total +=z.amount_adjustment
                 else:
                     total += z.price_unit * z.quantity
-            total_line = total
+
+            tot_pph_cash_basis = sum(x.invoice_line_ids.mapped('pph_cash_basis'))
+            total_line = total + tot_pph_cash_basis
             x.total_line=round(total_line)
 
     @api.depends('total_line', 'total_pph','dp_total','retensi_total','total_scf_cut', 'is_waba')
@@ -1816,7 +1822,45 @@ class WikaInvoiceDocumentLine(models.Model):
     @api.onchange('document')
     def onchange_document(self):
         if self.document:
+            self.compress_pdf()
             self.state = 'uploaded'
+
+    def compress_pdf(self):
+        for record in self:
+            # Read from bytes_stream
+            reader = PdfReader(BytesIO(base64.b64decode(record.document)))
+            writer = PdfWriter()
+
+            for page in reader.pages:
+                writer.add_page(page)
+
+            if reader.metadata is not None:
+                writer.add_metadata(reader.metadata)
+            
+            # writer.remove_images()
+            for page in writer.pages:
+                for img in page.images:
+                    _logger.info("# ==== IMAGE === #")
+                    _logger.info(img.image)
+                    if img.image.mode == 'RGBA':
+                        png = Image.open(img.image)
+                        png.load() # required for png.split()
+
+                        new_img = Image.new("RGB", png.size, (255, 255, 255))
+                        new_img.paste(png, mask=png.split()[3]) # 3 is the alpha channel
+                    else:
+                        new_img = img.image
+
+                    img.replace(new_img, quality=20)
+                    
+            for page in writer.pages:
+                page.compress_content_streams(level=9)  # This is CPU intensive!
+                writer.add_page(page)
+
+            output_stream = BytesIO()
+            writer.write(output_stream)
+
+            record.document = base64.b64encode(output_stream.getvalue())
 
     @api.constrains('document', 'filename')
     def _check_attachment_format(self):

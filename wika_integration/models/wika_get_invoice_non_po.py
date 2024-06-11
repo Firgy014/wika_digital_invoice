@@ -375,6 +375,7 @@ class wika_get_invoice_non_po(models.Model):
                                         'name': item_text, 
                                         'quantity': 1, 
                                         'price_unit': amount, 
+                                        'tax_ids': [(5,0,0)], 
                                         'price_subtotal': amount, 
                                         'amount_sap': amount, 
                                         'pph_cash_basis': pph_cbasis, 
@@ -387,6 +388,7 @@ class wika_get_invoice_non_po(models.Model):
                                     })
                                     account_move_line_created.move_id.compute_pph_amount()
                                     account_move_line_created.move_id.compute_amount_invoice()
+                                    # records.write({'tax_ids': [(5,0,0)]})
 
                                 # recs = [
                                 #     str(doc_number),
