@@ -95,7 +95,7 @@ SELECT
     inv.name AS NO,
     inv.payment_reference AS DOC_NUMBER,
     TO_CHAR(pricecutline.posting_date, 'YYYY') AS DOC_YEAR,
-    TO_CHAR(pricecutline.posting_date, 'DDMMYYYY') AS POSTING_DATE,
+    TO_CHAR(pricecutline.posting_date, 'YYYYMMDD') AS POSTING_DATE,
     TO_CHAR(pricecutline.posting_date, 'MM') AS PERIOD,
     pricecutline.amount AS AMOUNT_SCF,
     pricecutline.wbs_project_definition AS WBS,

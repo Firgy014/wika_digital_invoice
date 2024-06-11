@@ -379,10 +379,14 @@ class WikaInheritedAccountMove(models.Model):
             if persentage_retensi > 0:
                 x.retensi_total = math.floor((x.total_line / 100 ) * persentage_retensi)
 
-    @api.depends('total_line', 'dp_total', 'retensi_total','total_tax','total_scf_cut')
+    @api.depends('total_line', 'dp_total', 'retensi_total', 'total_tax', 'total_scf_cut')
     def _compute_amount_total_payment(self):
-        for x in self:
-            x.amount_total_payment= round(x.total_line-x.dp_total-x.retensi_total -x.total_scf_cut + x.total_tax)
+        for record in self:
+            amount_total_payment = record.total_line - record.dp_total - record.retensi_total - record.total_scf_cut + record.total_tax
+            if record.currency_id.name == 'IDR':
+                record.amount_total_payment = round(amount_total_payment)
+            else:
+                record.amount_total_payment = amount_total_payment
 
 
     def _compute_documents_count(self):
@@ -607,28 +611,32 @@ class WikaInheritedAccountMove(models.Model):
         # Disable _onchange_name_warning
         return
     
-    @api.depends('invoice_line_ids.price_unit','invoice_line_ids.quantity','invoice_line_ids.adjustment','invoice_line_ids.amount_adjustment')
+    @api.depends('invoice_line_ids.price_unit', 'invoice_line_ids.quantity', 'invoice_line_ids.adjustment', 'invoice_line_ids.amount_adjustment')
     def _compute_total_line(self):
-        for x in self:
+        for record in self:
             total = 0
-            for z in x.invoice_line_ids:
-                if z.adjustment==True:
-                    total +=z.amount_adjustment
+            for line in record.invoice_line_ids:
+                if line.adjustment:
+                    total += line.amount_adjustment
                 else:
-                    total += z.price_unit * z.quantity
+                    total += line.price_unit * line.quantity
+            
+            if record.currency_id.name == 'IDR':
+                record.total_line = round(total)
+            else:
+                record.total_line = total
 
-            tot_pph_cash_basis = sum(x.invoice_line_ids.mapped('pph_cash_basis'))
-            total_line = total + tot_pph_cash_basis
-            x.total_line=round(total_line)
-
-    @api.depends('total_line', 'total_pph','dp_total','retensi_total','total_scf_cut', 'is_waba')
+    @api.depends('total_line', 'total_pph', 'dp_total', 'retensi_total', 'total_scf_cut', 'is_waba')
     def _compute_amount_total(self):
         for move in self:
+            amount_total = move.total_line - move.dp_total - move.retensi_total - move.total_pph - move.total_scf_cut
             if move.is_waba:
-                move.amount_total_footer = round(move.total_line - move.dp_total - move.retensi_total - move.total_pph - move.total_scf_cut)
-                move.amount_total_footer += move.total_tax
+                amount_total += move.total_tax
+
+            if move.currency_id.name == 'IDR':
+                move.amount_total_footer = round(amount_total)
             else:
-                move.amount_total_footer = round(move.total_line-move.dp_total-move.retensi_total -move.total_pph-move.total_scf_cut)
+                move.amount_total_footer = amount_total
 
     @api.depends('partner_id.bill_coa_type', 'valuation_class','retensi_total')
     def compute_account_payable(self):
