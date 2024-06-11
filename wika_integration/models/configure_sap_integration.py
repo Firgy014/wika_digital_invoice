@@ -9,6 +9,8 @@ import json
 from . import helpers
 import os
 import stat
+import traceback
+import logging
 import io
 
 _logger = logging.getLogger(__name__)
@@ -149,14 +151,16 @@ class sap_integration_configure(models.Model):
                 today = datetime.now().strftime("%Y%m%d%H%M%S")
                 res = ''.join(random.sample(string.ascii_uppercase + string.digits, k=N))
                 dev_keys = ['YFII019', res, 'A000', 'AF00219I03', today]
-                keys = ['NO','DOC_NUMBER', 'DOC_YEAR', 'POSTING_DATE', 'PERIOD', 'AMOUNT_SCF', 'WBS', 'ITEM_TEXT']
+                keys = ['NO', 'DOC_NUMBER', 'DOC_YEAR', 'POSTING_DATE', 'PERIOD', 'AMOUNT_SCF', 'WBS', 'ITEM_TEXT']
                 query = helpers._get_computed_query_scf()
 
                 self._cr.execute(query)
                 vals = self.env.cr.fetchall()
 
-                print('VALSSSS', vals)  # Print vals to ensure it contains data
                 _logger.info(f"Fetched values: {vals}")
+                if not vals:
+                    _logger.warning("No data fetched from the database.")
+                    continue
 
                 buffer = StringIO()
                 writer = csv.writer(buffer, delimiter='|')
@@ -166,25 +170,35 @@ class sap_integration_configure(models.Model):
                 for res in vals:
                     writer.writerow(res)
 
+                buffer.flush()  # Explicitly flush the buffer
+
                 out2 = buffer.getvalue().encode('utf-8')
-                _logger.info(f"Buffer content: {buffer.getvalue()}")  # Log the buffer content
+                _logger.info(f"Buffer content: {buffer.getvalue()}")
 
-                print('BUFFER CONTENT:', buffer.getvalue())  # Print buffer content to ensure it's correct
-
-                filename = ('YFII019_' + today + '.txt')
-
+                filename = 'YFII019_' + today + '.txt'
                 file_path = os.path.join(conf_id.sftp_path, filename)
+                _logger.info(f"File path: {file_path}")
+
                 with open(file_path, 'wb') as fp:
                     fp.write(out2)
+                    _logger.info("Data written to file successfully")
 
                 # Change the file permissions
                 os.chmod(file_path, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO)  # Equivalent to 0o777
+
+                # Read and print the file content (emulating the cat command)
+                with open(file_path, 'r') as fp:
+                    file_content = fp.read()
+                    print("File content:")
+                    print(file_content)
+                    _logger.info(f"File content:\n{file_content}")
 
                 if conf_id.sftp_host:
                     self._send_file_to_sftp(conf_id, file_path, filename)
 
             except Exception as e:
                 _logger.error(f"Error occurred while generating and sending data: {str(e)}")
+                _logger.error(traceback.format_exc())  # Log the stack trace for debugging
 
     def _generate_data_dp(self):
         _logger.warning("<<================== GENERATE INVOICE DP TXT DATA OF WDIGI TO REMOTE DIRECTORY ==================>>")
