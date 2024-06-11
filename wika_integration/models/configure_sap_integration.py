@@ -8,6 +8,7 @@ import string
 import json
 from . import helpers
 import os
+import stat
 import io
 
 _logger = logging.getLogger(__name__)
@@ -154,6 +155,9 @@ class sap_integration_configure(models.Model):
                 self._cr.execute(query)
                 vals = self.env.cr.fetchall()
 
+                print('VALSSSS', vals)  # Print vals to ensure it contains data
+                _logger.info(f"Fetched values: {vals}")
+
                 buffer = StringIO()
                 writer = csv.writer(buffer, delimiter='|')
                 writer.writerow(dev_keys)
@@ -163,11 +167,18 @@ class sap_integration_configure(models.Model):
                     writer.writerow(res)
 
                 out2 = buffer.getvalue().encode('utf-8')
+                _logger.info(f"Buffer content: {buffer.getvalue()}")  # Log the buffer content
+
+                print('BUFFER CONTENT:', buffer.getvalue())  # Print buffer content to ensure it's correct
+
                 filename = ('YFII019_' + today + '.txt')
 
                 file_path = os.path.join(conf_id.sftp_path, filename)
                 with open(file_path, 'wb') as fp:
                     fp.write(out2)
+
+                # Change the file permissions
+                os.chmod(file_path, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO)  # Equivalent to 0o777
 
                 if conf_id.sftp_host:
                     self._send_file_to_sftp(conf_id, file_path, filename)
