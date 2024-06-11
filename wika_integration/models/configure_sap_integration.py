@@ -236,6 +236,25 @@ class sap_integration_configure(models.Model):
             except Exception as e:
                 _logger.error(f"Error occurred while generating and sending data: {str(e)}")
 
+    # def _send_file_to_sftp(self, conf_id, file_path, filename):
+    #     try:
+    #         _logger.info(f"Connecting to SFTP server: {conf_id.sftp_host}:{conf_id.sftp_port}")
+    #         transport = paramiko.Transport((conf_id.sftp_host, conf_id.sftp_port))
+    #         transport.connect(username=conf_id.sftp_user, password=conf_id.sftp_password)
+    #         sftp = paramiko.SFTPClient.from_transport(transport)
+    #         _logger.info("Connected to SFTP server successfully")
+
+    #         _logger.info(f"Uploading file '{filename}' to SFTP server")
+    #         sftp.put(file_path, os.path.join(conf_id.sftp_path, filename))
+    #         _logger.info("File uploaded successfully")
+    #     except Exception as e:
+    #         _logger.error(f"Error occurred while sending file via SFTP: {str(e)}")
+    #     finally:
+    #         if 'sftp' in locals():
+    #             sftp.close()
+    #         if 'transport' in locals():
+    #             transport.close()
+
     def _send_file_to_sftp(self, conf_id, file_path, filename):
         try:
             _logger.info(f"Connecting to SFTP server: {conf_id.sftp_host}:{conf_id.sftp_port}")
@@ -244,16 +263,25 @@ class sap_integration_configure(models.Model):
             sftp = paramiko.SFTPClient.from_transport(transport)
             _logger.info("Connected to SFTP server successfully")
 
-            _logger.info(f"Uploading file '{filename}' to SFTP server")
-            sftp.put(file_path, os.path.join(conf_id.sftp_path, filename))
+            remote_path = os.path.join(conf_id.sftp_path, filename)
+            _logger.info(f"Uploading file '{filename}' to SFTP server at '{remote_path}'")
+            sftp.put(file_path, remote_path)
             _logger.info("File uploaded successfully")
+
+            # Verify the file content on the SFTP server (if possible)
+            with sftp.open(remote_path, 'r') as remote_file:
+                remote_content = remote_file.read()
+                _logger.info(f"Remote file content:\n{remote_content}")
+
         except Exception as e:
             _logger.error(f"Error occurred while sending file via SFTP: {str(e)}")
+            _logger.error(traceback.format_exc())  # Log the stack trace for debugging
         finally:
             if 'sftp' in locals():
                 sftp.close()
             if 'transport' in locals():
                 transport.close()
+
 
     def _update_invoice(self):
         invoice_model = self.env['account.move'].sudo()
