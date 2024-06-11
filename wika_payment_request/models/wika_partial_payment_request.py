@@ -428,48 +428,6 @@ class WikaPartialPaymentRequest(models.Model):
                         'project_id': self.project_id.id,
                         'reference': last_partial.name if last_partial else False
                     })
-                self.remaining_amount = self.total_invoice - self.partial_amount
-
-                if self.remaining_amount > 0:
-                    current_year = datetime.now().year
-                    current_month = datetime.now().month
-
-                    #previous_partial_name = self.name
-                    #previous_sequence_number = int(previous_partial_name.split('/')[-1])
-                    #new_sequence_number = previous_sequence_number + 1
-                    #new_name = f"Partial/{current_year}/{current_month:02d}/{new_sequence_number:03d}"
-                    
-                    #test code yg dr local ane
-                    last_partial = self.env['wika.partial.payment.request'].search([
-                        ('name', 'like', f'Partial/{current_year}/{current_month:02d}/%')
-                    ], order="name desc", limit=1)
-
-                    if last_partial:
-                        last_sequence_number = int(last_partial.name.split('/')[-1])
-                        new_sequence_number = last_sequence_number + 1
-                    else:
-                        new_sequence_number = 1
-                    
-                    new_name = f"Partial/{current_year}/{current_month:02d}/{new_sequence_number:05d}"
-                    
-                    remaining_total = self.remaining_amount
-                    new_partial = self.env['wika.partial.payment.request'].create({
-                        'invoice_id': self.invoice_id.id,
-                        'partner_id': self.partner_id.id,
-                        'partial_amount': remaining_total,
-                        'total_invoice': self.remaining_amount,
-                        'name': new_name,
-                        #'reference': previous_partial_name,
-                        'reference': last_partial.name if last_partial else False,
-                        'date': fields.Date.today(),
-                        'branch_id': self.branch_id.id,
-                        'project_id': self.project_id.id,
-                    })
-
-                    #previous_partial = self.env['wika.partial.payment.request'].search([('name', '=', previous_partial_name)], limit=1)
-                    #if previous_partial:
-                        #previous_partial.write({'name': previous_partial_name})
-
                 self.env['wika.partial.approval.line'].create({
                     'user_id': self._uid,
                     'groups_id': groups_id.id,
