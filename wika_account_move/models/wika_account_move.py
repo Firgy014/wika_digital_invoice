@@ -1920,6 +1920,7 @@ class AccountMovePriceCutList(models.Model):
         store=True
     )
     posting_date = fields.Date(string='Posting Date')
+    is_scf = fields.Boolean(string='Potongan SCF', default=False)    
 
     @api.depends('move_id.project_id.sap_code')
     def _compute_wbs_project_definition(self):
