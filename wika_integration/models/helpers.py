@@ -106,7 +106,8 @@ LEFT JOIN
     wika_account_move_pricecut_line pricecutline ON pricecutline.move_id = inv.id
 WHERE
     pricecutline.wbs_project_definition IS NOT NULL
-    AND pricecutline.wbs_project_definition != '';
+    AND pricecutline.wbs_project_definition != ''
+    AND pricecutline.is_scf != true;
 """
 
 def _get_computed_partial_payment_query():
