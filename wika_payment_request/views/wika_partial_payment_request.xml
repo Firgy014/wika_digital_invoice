@@ -71,6 +71,7 @@
                         <!-- <button name="action_request" type="object" string="REQUEST" states="upload" class="btn-primary"/> -->
                         <button name="action_approve" type="object" string="APPROVE" states="requested" class="btn-success"/>
                         <button name="action_reject" type="object" string="REJECT" states="requested" class="btn-danger"/>
+                        <button name="add_pricecut_scf" type="object" string="ADD POTONGAN SCF" states="draft,rejected"/>
                         <field name="state" widget="statusbar" statusbar_visible="draft,requested,approved"/>
                     </header>
                     <sheet>
@@ -162,6 +163,30 @@
                                             </group>
                                         </form>
                                     </field>
+                                </group>
+                            </page>
+                            <page string="Potongan SCF">
+                                <!-- <group> -->
+                                    <field name="price_cut_ids" nolabel="1" attrs="{'readonly': [('state', 'not in', ['draft','rejected'])]}">
+                                        <tree string="Potongan SCF" delete="0" create="0">
+                                            <field name="partial_id" invisible="1"/>
+                                            <field name="product_id"/>
+                                            <field name="percentage_amount"/>
+                                            <field name="amount"/>
+                                            <field name="posting_date"/>
+                                        </tree>
+                                        <form string='Potongan SCF Partial' readonly="1">
+                                            <group>
+                                                <field name="partial_id" readonly="1"/>
+                                                <field name="product_id" readonly="1"/>
+                                                <field name="percentage_amount" readonly="1"/>
+                                                <field name="amount" readonly="1"/>
+                                                <field name="posting_date" readonly="1"/>
+                                            </group>
+                                        </form>
+                                    </field>
+                                <group string="Total Potongan SCF Partial Payment">
+                                    <field name="total_scf_cut" readonly="1"/>
                                 </group>
                             </page>
                         </notebook>

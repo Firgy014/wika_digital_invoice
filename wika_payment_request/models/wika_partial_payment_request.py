@@ -106,6 +106,27 @@ class WikaPartialPaymentRequest(models.Model):
         string="Payment",
         copy=False,
     )
+    amount_scf = fields.Float(string='Amount SCF')
+    price_cut_ids = fields.One2many('wika.partial.pr.pricecut.line', 'partial_id', string='Other Partial Payment Price Cut')
+    total_scf_cut = fields.Float(string='Total Potongan SCF', compute='_compute_total_scf_cut')
+
+    @api.depends('price_cut_ids.amount', 'amount_scf')
+    def _compute_total_scf_cut(self):
+        for record in self:
+            total_price_cut = sum(line.amount for line in record.price_cut_ids if line.product_id.name == 'Potongan SCF')
+            record.total_scf_cut = total_price_cut + record.amount_scf
+
+    def add_pricecut_scf(self):
+        action = {
+            'name': ('Masukkan Nilai Amount Potongan SCF Partial Payment'),
+            'type': "ir.actions.act_window",
+            'res_model': "wika.amount.scf.wizard.ppr",
+            'view_type': "form",
+            'target': 'new',
+            'view_mode': "form",
+            'view_id': self.env.ref('wika_payment_request.view_amount_scf_price_cut_form_ppr').id,
+        }
+        return action
 
     #_sql_constraints = [
         #('name_partial_payment_request_uniq', 'unique (name)', 'The name of the partial payment request must be unique!')
@@ -606,3 +627,12 @@ class WikaPrApprovalLine(models.Model):
     groups_id = fields.Many2one('res.groups', string='Groups')
     date = fields.Datetime(string='Date')
     note = fields.Char(string='Note')
+
+class WikaPartialPRPriceCutList(models.Model):
+    _name = 'wika.partial.pr.pricecut.line'
+
+    partial_id = fields.Many2one('wika.partial.payment.request', string='Partial')
+    product_id = fields.Many2one('product.product', string='Product')
+    percentage_amount = fields.Float(string='Percentage Amount')
+    amount = fields.Float(string='Amount')
+    posting_date = fields.Date(string='Posting Date')
