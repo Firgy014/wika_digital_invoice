@@ -30,5 +30,17 @@
             </field>
         </record>
 
+        <record id="action_document_batch_compress" model="ir.actions.server">
+            <field name="name">Compress PDF</field>
+            <field name="model_id" ref="documents.model_documents_document"/>
+            <field name="binding_model_id" ref="documents.model_documents_document"/>
+            <field name='groups_id' eval="[(4, ref('base.group_no_one'))]"/>
+            <field name="state">code</field>
+            <field name="code">
+                if records:
+                    action = records.compress_pdf()
+            </field>
+        </record>
+
     </data>
 </odoo>

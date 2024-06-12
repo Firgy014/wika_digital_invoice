@@ -206,38 +206,50 @@ class Purchase_Order(models.Model):
                     retensi = float(txt_data['ret_pc'])
                     potongan = []
 
-                    if dp > 0:
-                        prod = self.env['product.product'].search([
-                            ('name', '=', 'DP')], limit=1)
-                        if not prod:
-                            prod = self.env['product.product'].create({
-                                'name': 'DP'})
-                        
-                        pot = self.env['wika.po.pricecut.line'].search([
-                            ('purchase_id', '=', self.id),
-                            ('product_id', '=', prod.id)], limit=1)
-                        if pot:
-                            potongan.append((1, pot.id, {
-                                'product_id': prod.id,
-                                'persentage_amount': '',
-                                'amount': dp,
-                            }))
-                    if retensi > 0:
-                        prod = self.env['product.product'].search([
-                            ('name', '=', 'RETENSI')], limit=1)
-                        if not prod:
-                            prod = self.env['product.product'].create({
-                                'name': 'RETENSI'})
-                        
-                        pot = self.env['wika.po.pricecut.line'].search([
-                            ('purchase_id', '=', self.id),
-                            ('product_id', '=', prod.id)], limit=1)
-                        if pot:
-                            potongan.append((1, pot.id, {
-                                'product_id': prod.id,
-                                'persentage_amount': retensi,
-                                'amount': '',
-                            }))
+                    # if dp > 0:
+                    prod_dp = self.env['product.product'].search([
+                        ('name', '=', 'DP')], limit=1)
+                    if not prod_dp:
+                        prod_dp = self.env['product.product'].create({
+                            'name': 'DP'})
+                    
+                    pot = self.env['wika.po.pricecut.line'].search([
+                        ('purchase_id', '=', self.id),
+                        ('product_id', '=', prod_dp.id)], limit=1)
+                    if pot:
+                        potongan.append((1, pot.id, {
+                            'product_id': prod_dp.id,
+                            'persentage_amount': '',
+                            'amount': dp,
+                        }))
+                    else:
+                        potongan.append((0, 0, {
+                            'product_id': prod_dp.id,
+                            'persentage_amount': '',
+                            'amount': dp,
+                        }))
+                    # if retensi > 0:
+                    prod_retensi = self.env['product.product'].search([
+                        ('name', '=', 'RETENSI')], limit=1)
+                    if not prod_retensi:
+                        prod_retensi = self.env['product.product'].create({
+                            'name': 'RETENSI'})
+                    
+                    pot = self.env['wika.po.pricecut.line'].search([
+                        ('purchase_id', '=', self.id),
+                        ('product_id', '=', prod_retensi.id)], limit=1)
+                    if pot:
+                        potongan.append((1, pot.id, {
+                            'product_id': prod_retensi.id,
+                            'persentage_amount': retensi,
+                            'amount': '',
+                        }))
+                    else:
+                        potongan.append((0, 0, {
+                            'product_id': prod_retensi.id,
+                            'persentage_amount': retensi,
+                            'amount': '',
+                        }))
                             
                     current_datetime_str = fields.Datetime.now()+ timedelta(hours=7)
                     noted_message = f"updated {current_datetime_str}"
