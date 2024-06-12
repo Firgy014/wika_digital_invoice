@@ -1830,9 +1830,16 @@ class WikaInvoiceDocumentLine(models.Model):
     @api.onchange('document')
     def onchange_document(self):
         if self.document:
+            self.check_file_size()
             self.compress_pdf()
             self.state = 'uploaded'
 
+    def check_file_size(self):
+        self.ensure_one()
+        file_size = len(self.document) * 3 / 4  # base64
+        if (file_size / 1024.0 / 1024.0) > 20:
+            raise ValidationError(_('Tidak dapat mengunggah file lebih dari 20 MB!'))
+        
     def compress_pdf(self):
         for record in self:
             # Read from bytes_stream
@@ -1913,6 +1920,7 @@ class AccountMovePriceCutList(models.Model):
         store=True
     )
     posting_date = fields.Date(string='Posting Date')
+    is_scf = fields.Boolean(string='Potongan SCF', default=False)    
 
     @api.depends('move_id.project_id.sap_code')
     def _compute_wbs_project_definition(self):

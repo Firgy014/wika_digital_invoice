@@ -469,6 +469,14 @@ class sap_integration_configure(models.Model):
                             }
 
                             invoice_id.write(update_vals)
+
+                            # SCF flagging
+                            pricecut_model = self.env['wika.account.move.pricecut.line'].sudo()
+                            invoice_pricecut_line_id = pricecut_model.search([('move_id', '=', invoice_id.id)])
+                            # if invoice_pricecut_line_id and invoice_pricecut_line_id.wbs_project_definition != False:
+                            if invoice_pricecut_line_id:
+                                invoice_pricecut_line_id.write({'is_scf': True})
+
                             updated_invoices.append(dig_code)
                             _logger.info("Successfully updated invoice: %s", dig_code)
                         else:
