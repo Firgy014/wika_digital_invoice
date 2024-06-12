@@ -105,7 +105,8 @@ class DocApNonPO(models.Model):
                                     if account_payment_term:
                                         payment_term_id = account_payment_term.id
                                     else:
-                                        raise UserError("Payment Terms kosong atau tidak ditemukan!")
+                                        payment_term_id = ''
+                                        # raise UserError("Payment Terms kosong atau tidak ditemukan!")
                                     
                                     status_payment = ''
                                     _logger.info("# === SEARCH account.move === #")
