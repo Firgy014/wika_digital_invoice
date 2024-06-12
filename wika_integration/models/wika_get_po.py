@@ -26,21 +26,22 @@ class wika_get_po(models.Model):
         account_asset and recurring entries created in _post().
         '''
         records = self.search([])
+        # records = self.search([('jenis', '=', 'debug')])
         # Ambil nilai max_difference_days dari context
         for ids in self._cr.split_for_in_conditions(records.ids, size=100):
             moves = self.browse(ids)
-            try:  # try posting in batch
+            # try:  # try posting in batch
+            #     with self.env.cr.savepoint():
+            #         moves.get_po_schedule2(max_difference_days=max_difference_days)  # Mengirimkan parameter dari context
+
+
+            # except UserError:  # if at least one move cannot be posted, handle moves one by one
+            for move in moves:
+                # try:
                 with self.env.cr.savepoint():
-                    moves.get_po_schedule2(max_difference_days=max_difference_days)  # Mengirimkan parameter dari context
-
-
-            except UserError:  # if at least one move cannot be posted, handle moves one by one
-                for move in moves:
-                    try:
-                        with self.env.cr.savepoint():
-                            move.get_po_schedule2(max_difference_days=max_difference_days)  # Mengirimkan parameter dari context
-                    except:
-                        pass
+                    move.get_po_schedule2(max_difference_days=max_difference_days)  # Mengirimkan parameter dari context
+                    # except:
+                    #     pass
 
         # if len(records) == 100:  # assumes there are more whenever search hits limit
         self.env.ref('wika_integration.update_create_po_actions')._trigger()
@@ -110,7 +111,7 @@ class wika_get_po(models.Model):
                                     }) % (profit_center, no_po, tgl_write_sap)
             payload_2 = payload_2.replace('\n', '')
             
-            _logger.info(payload_2)
+            # _logger.info(payload_2)
         
             response_2 = requests.request("POST", url_get_po, data=payload_2, headers=headers)
             # _logger.info(response_2.text)
@@ -124,10 +125,10 @@ class wika_get_po(models.Model):
                 else:
                     list_txt_data.append(txt_data)
         
-                _logger.info(list_txt_data)
+                # _logger.info(list_txt_data)
                 for data in list_txt_data:
                     _logger.info("# === IMPORT DATA === #")
-                    _logger.info(data)
+                    # _logger.info(data)
                     vals = []
                     potongan = []
                     po = self.env['purchase.order'].search([
@@ -143,26 +144,29 @@ class wika_get_po(models.Model):
                         if 'pay_terms' in data and data['pay_terms'] != '':
                             payment_term = self.env['account.payment.term'].sudo().search([
                                 ('name', '=', data['pay_terms'])], limit=1)
-                        if dp > 0:
-                            prod = self.env['product.product'].sudo().search([
-                                ('name', '=', 'DP')], limit=1)
-                            if not prod:
-                                prod = self.env['product.product'].sudo().create({
-                                    'name': 'DP'})
-                            potongan.append((0, 0, {
-                                'product_id': prod.id,
-                                'amount': dp,
-                            }))
-                        if retensi > 0:
-                            prod = self.env['product.product'].sudo().search([
-                                ('name', '=', 'RETENSI')], limit=1)
-                            if not prod:
-                                prod = self.env['product.product'].sudo().create({
-                                    'name': 'RETENSI'})
-                            potongan.append((0, 0, {
-                                'product_id': prod.id,
-                                'persentage_amount': retensi
-                            }))
+                        # if dp > 0:
+                        prod_dp = self.env['product.product'].sudo().search([
+                            ('name', '=', 'DP')], limit=1)
+                        if not prod_dp:
+                            prod_dp = self.env['product.product'].sudo().create({
+                                'name': 'DP'})
+                        potongan.append((0, 0, {
+                            'product_id': prod_dp.id,
+                            'persentage_amount': '',
+                            'amount': dp,
+                        }))
+                        # if retensi > 0:
+                        prod_retensi = self.env['product.product'].sudo().search([
+                            ('name', '=', 'RETENSI')], limit=1)
+                        if not prod_retensi:
+                            prod_retensi = self.env['product.product'].sudo().create({
+                                'name': 'RETENSI'})
+                        potongan.append((0, 0, {
+                            'product_id': prod_retensi.id,
+                            'persentage_amount': retensi,
+                            'amount': '',
+
+                        }))
                         
                         # Looping pengisian data detail po
                         for hasil in data['isi']:
@@ -282,7 +286,7 @@ class wika_get_po(models.Model):
                         if not vals:
                             continue
                         else:
-                            po_create = self.env['purchase.order'].sudo().create({
+                            po_create = self.env['purchase.order'].create({
                                 'name': data['po_doc'],
                                 'payment_term_id': payment_term.id if payment_term else False,
                                 'partner_id': vendor.id if vendor else False,
@@ -308,43 +312,65 @@ class wika_get_po(models.Model):
                         _logger.info(po)
                         dp = float(data['dp_amt'])
                         retensi = float(data['ret_pc'])
-                        if dp > 0:
-                            prod = self.env['product.product'].sudo().search([
-                                ('name', '=', 'DP')], limit=1)
-                            if not prod:
-                                prod = self.env['product.product'].sudo().create({
-                                    'name': 'DP'})
-                            
-                            pot = self.env['wika.po.pricecut.line'].search([
-                                ('purchase_id', '=', po.id),
-                                ('product_id', '=', prod.id)], limit=1)
-                            if pot:
-                                potongan.append((1, pot.id, {
-                                    'product_id': prod.id,
-                                    'persentage_amount': '',
-                                    'amount': dp,
-                                }))
-                        if retensi > 0:
-                            prod = self.env['product.product'].sudo().search([
-                                ('name', '=', 'RETENSI')], limit=1)
-                            if not prod:
-                                prod = self.env['product.product'].sudo().create({
-                                    'name': 'RETENSI'})
-                            
-                            pot = self.env['wika.po.pricecut.line'].search([
-                                ('purchase_id', '=', po.id),
-                                ('product_id', '=', prod.id)], limit=1)
-                            if pot:
-                                potongan.append((1, pot.id, {
-                                    'product_id': prod.id,
-                                    'persentage_amount': retensi,
-                                    'amount': '',
-                                }))
+                        
+                        # if dp > 0:
+                        prod_dp = self.env['product.product'].sudo().search([
+                            ('name', '=', 'DP')], limit=1)
+                        if not prod_dp:
+                            prod_dp = self.env['product.product'].sudo().create({
+                                'name': 'DP'})
+                        
+                        pot_dp = self.env['wika.po.pricecut.line'].search([
+                            ('purchase_id', '=', po.id),
+                            ('product_id', '=', prod_dp.id)], limit=1)
+                        if pot_dp:
+                            potongan.append((1, pot_dp.id, {
+                                'product_id': prod_dp.id,
+                                'persentage_amount': '',
+                                'amount': dp,
+                            }))
+                        else:
+                            potongan.append((0, 0, {
+                                'product_id': prod_dp.id,
+                                'persentage_amount': '',
+                                'amount': dp,
+                            }))
+
+                        # if retensi > 0:
+                        prod_retensi = self.env['product.product'].search([
+                            ('name', '=', 'RETENSI')], limit=1)
+                        if not prod_retensi:
+                            prod_retensi = self.env['product.product'].create({
+                                'name': 'RETENSI'})
+                        
+                        pot_retensi = self.env['wika.po.pricecut.line'].search([
+                            ('purchase_id', '=', po.id),
+                            ('product_id', '=', prod_retensi.id)], limit=1)
+                        if pot_retensi:
+                            potongan.append((1, pot_retensi.id, {
+                                'product_id': prod_retensi.id,
+                                'persentage_amount': retensi,
+                                'amount': '',
+                            }))
+                        else:
+                            potongan.append((0, 0, {
+                                'product_id': prod_retensi.id,
+                                'persentage_amount': retensi,
+                                'amount': '',
+                            }))
 
                         current_date = fields.Date.today()
                         po_lcdat = datetime.strptime(data['po_lcdat'], '%Y-%m-%d').date()
                         difference = current_date - po_lcdat
                         if difference.days == max_difference_days:
+                            current_datetime_str = fields.Datetime.now()+ timedelta(hours=7)
+                            noted_message = f"updated {current_datetime_str}"
+                            _logger.info("# === PO WRITE === #" + str(potongan))
+                            po.write({
+                                'price_cut_ids': potongan,
+                                'notes': noted_message
+                            })
+                            
                             for hasil in data['isi']:
                                 seq = float(hasil['po_no'])
                                 qty = float(hasil['po_qty'])
@@ -353,14 +379,6 @@ class wika_get_po(models.Model):
                                     ('sequence', '=', int(seq))], limit=1)
                                 _logger.info("# === PO LINE ID === #")
                                 _logger.info(po_line.id)
-                                current_datetime_str = fields.Datetime.now()+ timedelta(hours=7)
-
-                                noted_message = f"updated {current_datetime_str}"
-                                _logger.info("# === PO WRITE === #" + str(potongan))
-                                po.write({
-                                    'price_cut_ids': potongan,
-                                    'notes': noted_message
-                                })
                                 
                                 if po_line.id:
                                     _logger.info("# === WRITE PO === #")
