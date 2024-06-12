@@ -890,6 +890,7 @@ class PurchaseOrderDocumentLine(models.Model):
                 self.state = 'waiting'
                 raise ValidationError('Tidak dapat mengunggah file selain ekstensi PDF!')
             elif self.filename.lower().endswith('.pdf'):
+                self.check_file_size()
                 self.compress_pdf()
                 self.state = 'uploaded'
 
@@ -898,6 +899,12 @@ class PurchaseOrderDocumentLine(models.Model):
             self.filename = False
             self.state = 'waiting'
 
+    def check_file_size(self):
+        self.ensure_one()
+        file_size = len(self.document) * 3 / 4  # base64
+        if (file_size / 1024.0 / 1024.0) > 20:
+            raise ValidationError(_('Tidak dapat mengunggah file lebih dari 20 MB!'))
+        
     def compress_pdf(self):
         for record in self:
             # Read from bytes_stream
