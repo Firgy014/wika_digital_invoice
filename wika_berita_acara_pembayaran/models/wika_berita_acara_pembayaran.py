@@ -146,49 +146,61 @@ class WikaBeritaAcaraPembayaran(models.Model):
     fee_management = fields.Boolean('Rincian Fee Management?')
     is_fully_invoiced_temp = fields.Boolean(string='Fully Invoiced Temp', compute='_compute_fully_invoiced_temp', store=False)
 
-    @api.constrains('po_id', 'bap_type', 'total_current_value', 'total_po')
-    def _check_total_amount(self):
-        for record in self:
-            if record.bap_type == 'retensi':
-                total_amount_sum = sum(self.search([
-                    ('po_id', '=', record.po_id.id),
-                    ('bap_type', '=', 'progress'),
-                    ('id', '!=', record.id)
-                ]).mapped('total_current_value')) + record.total_current_value
-
-                if record.total_po != 0 and total_amount_sum < record.total_po:
-                    raise ValidationError("Anda tidak dapat membuat BAP Retensi karena progress belum mencapai 100% dari Total PO.")
-
     @api.constrains('po_id', 'bap_type')
-    def _check_po_id_unique(self):
+    def _check_product_dp_retensi(self):
         for record in self:
-            # Ensure only one BAP of type 'uang muka' exists per PO
-            if record.bap_type == 'uang muka':
-                existing_uang_muka = self.search([
-                    ('po_id', '=', record.po_id.id),
-                    ('bap_type', '=', 'uang muka'),
-                    ('id', '!=', record.id)
-                ])
-                if existing_uang_muka:
-                    raise ValidationError('Anda tidak dapat membuat BAP Uang Muka lebih dari satu untuk nomor PO yang sama')
+            if record.bap_type == 'uang muka' and record.po_id:
+                product_names = record.po_id.price_cut_ids.mapped('product_id.name')
+                if 'DP' not in product_names:
+                    raise ValidationError("No PO tersebut tidak tersedia potongan lain-lain Uang Muka atau DP")
+            elif record.bap_type == 'retensi' and record.po_id:
+                product_names = record.po_id.price_cut_ids.mapped('product_id.name')
+                if 'RETENSI' not in product_names:
+                    raise ValidationError("No PO tersebut tidak tersedia potongan lain-lain Retensi")       
+                    
+    # @api.constrains('po_id', 'bap_type', 'total_current_value', 'total_po')
+    # def _check_total_amount(self):
+    #     for record in self:
+    #         if record.bap_type == 'retensi':
+    #             total_amount_sum = sum(self.search([
+    #                 ('po_id', '=', record.po_id.id),
+    #                 ('bap_type', '=', 'progress'),
+    #                 ('id', '!=', record.id)
+    #             ]).mapped('total_current_value')) + record.total_current_value
 
-                # Also check for existing 'progress' or 'retensi' BAPs
-                existing_progress_retensi = self.search([
-                    ('po_id', '=', record.po_id.id),
-                    ('bap_type', 'in', ['progress', 'retensi'])
-                ])
-                if existing_progress_retensi:
-                    raise ValidationError('Anda tidak dapat membuat BAP Uang Muka, karena BAP dengan nomor PO ini sudah ada dengan jenis BAP Progress atau Retensi')
+    #             if record.total_po != 0 and total_amount_sum < record.total_po:
+                    # raise ValidationError("Anda tidak dapat membuat BAP Retensi karena progress belum mencapai 100% dari Total PO.")
 
-            # Ensure only one BAP of type 'progress' or 'retensi' exists per PO
-            elif record.bap_type in ['progress', 'retensi']:
-                existing_bap = self.search([
-                    ('po_id', '=', record.po_id.id),
-                    ('bap_type', '=', record.bap_type),
-                    ('id', '!=', record.id)
-                ])
-                if existing_bap:
-                    raise ValidationError(f'Cannot create BAP with {record.bap_type} because a BAP with this PO ID already exists with the same BAP Type.')
+    # @api.constrains('po_id', 'bap_type')
+    # def _check_po_id_unique(self):
+    #     for record in self:
+    #         # Ensure only one BAP of type 'uang muka' exists per PO
+    #         if record.bap_type == 'uang muka':
+    #             existing_uang_muka = self.search([
+    #                 ('po_id', '=', record.po_id.id),
+    #                 ('bap_type', '=', 'uang muka'),
+    #                 ('id', '!=', record.id)
+    #             ])
+    #             if existing_uang_muka:
+    #                 raise ValidationError('Anda tidak dapat membuat BAP Uang Muka lebih dari satu untuk nomor PO yang sama')
+
+    #             # Also check for existing 'progress' or 'retensi' BAPs
+    #             existing_progress_retensi = self.search([
+    #                 ('po_id', '=', record.po_id.id),
+    #                 ('bap_type', 'in', ['progress', 'retensi'])
+    #             ])
+    #             if existing_progress_retensi:
+    #                 raise ValidationError('Anda tidak dapat membuat BAP Uang Muka, karena BAP dengan nomor PO ini sudah ada dengan jenis BAP Progress atau Retensi')
+
+    #         # Ensure only one BAP of type 'progress' or 'retensi' exists per PO
+    #         elif record.bap_type in ['progress', 'retensi']:
+    #             existing_bap = self.search([
+    #                 ('po_id', '=', record.po_id.id),
+    #                 ('bap_type', '=', record.bap_type),
+    #                 ('id', '!=', record.id)
+    #             ])
+    #             if existing_bap:
+    #                 raise ValidationError(f'Cannot create BAP with {record.bap_type} because a BAP with this PO ID already exists with the same BAP Type.')
 
     # @api.onchange('bap_date')
     # def _onchange_bap_date(self):
