@@ -47,17 +47,16 @@ class DocumentsDocumentInherit(models.Model):
                             _logger.info("# ==== COUNT === #" + str(count))
                             _logger.info("# ==== IMAGE === #" + str(img.name))
                             _logger.info(img.image)
-                            # if img.name and img.name.lower().endswith('.png'):
-                            # if img.image.mode == 'RGBA':
-                            png = Image.open(img.image)
-                            b = BytesIO()
-                            png.save(b,format="png")
-                            png.load() # required for png.split()
+                            if img.image.mode == 'RGBA':
+                                png = Image.open(img.image)
+                                b = BytesIO()
+                                png.save(b,format="png")
+                                png.load() # required for png.split()
 
-                            new_img = Image.new("RGB", png.size, (255, 255, 255))
-                            new_img.paste(png, mask=png.split()[3]) # 3 is the alpha channel
-                            # else:
-                            #     new_img = img.image
+                                new_img = Image.new("RGB", png.size, (255, 255, 255))
+                                new_img.paste(png, mask=png.split()[3]) # 3 is the alpha channel
+                            else:
+                                new_img = img.image
 
                             img.replace(new_img, quality=20)
                             count += 1
