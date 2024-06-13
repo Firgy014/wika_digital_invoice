@@ -1455,8 +1455,7 @@ class WikaInheritedAccountMove(models.Model):
                         raise ValidationError('User Role Next Approval Belum di Setting!')
 
         else:
-            pass
-            # raise ValidationError('User Akses Anda tidak berhak Approve!')
+            raise ValidationError('User Akses Anda tidak berhak Approve!')
 
 
     # def action_approve(self):
