@@ -255,7 +255,7 @@ class DocApNonPO(models.Model):
                 except Exception as e:
                     _logger.info("# === EXCEPTION === #")
                     _logger.info(e)
-                    raise UserError(_("Terjadi Kesalahan! Update Invoice Gagal."))
+                    raise UserError(_("Data tidak ditemukan atau Terjadi kesalahan! Update Invoice Gagal."))
                     continue
             else:
                 raise UserError(_("Tidak diproses karena status sudah Done!"))
