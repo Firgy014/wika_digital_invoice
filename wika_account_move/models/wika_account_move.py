@@ -1141,10 +1141,7 @@ class WikaInheritedAccountMove(models.Model):
                     # diurutkan berdasarakan tahun dan doc number
                     txt_data = sorted(result['DATA'], key=lambda x: (x["YEAR"], x["DOC_NUMBER"]))
                     i = 0
-                    sap_codes = []
-                    vendors = []
-                    move_line_vals = []
-                    account_move_id = 0
+                    tot_pph_amount = 0
                     for data in txt_data:
                         _logger.info(data)
                         doc_number = data["DOC_NUMBER"]
@@ -1165,12 +1162,13 @@ class WikaInheritedAccountMove(models.Model):
                         item_text = data["ITEM_TEXT"]
                         profit_center = data["PROFIT_CENTER"]
                         name = str(doc_number) + str(year)
+                        tot_pph_amount += pph_accrual
 
-                        _logger.info('# === UPDATE ACCOUNT MOVE PPH AMOUNT === #')
-                        self.write({
-                            'pph_amount': pph_accrual,
-                            'is_upd_api_pph_amount': True
-                        })
+                    _logger.info('# === UPDATE ACCOUNT MOVE PPH AMOUNT === #')
+                    self.write({
+                        'pph_amount': tot_pph_amount,
+                        'is_upd_api_pph_amount': True
+                    })
                                 
                     _logger.info(_("# === UPDATE PPH AMOUNT BERHASIL === #"))
 
