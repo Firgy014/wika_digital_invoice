@@ -1203,6 +1203,11 @@ class WikaBeritaAcaraPembayaran(models.Model):
                         ('folder_id', '=', folder_id.id)
                     ], limit=1)
                     for doc in self.document_ids.filtered(lambda x: x.state in ('uploaded','rejected')):
+                        
+                        # SOON REPLACER
+                        # if doc.attachment_id:
+                        #     doc.attachment_id.write({'datas':doc.document})
+                        
                         if doc.document_id.name == 'BAP':
                             # doc.state = 'verified'
                             attachment_id = self.env['ir.attachment'].sudo().create({
@@ -1223,7 +1228,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
                                     'purchase_id': self.po_id.id,
                                     'bap_id': self.id,
                                 })
-                
+                        
                         elif doc.document_id.name in ['GR', 'Surat Jalan', 'SES']:
                             folder_id = self.env['documents.folder'].sudo().search([('name', '=', 'GR/SES')], limit=1)
                             if folder_id:
@@ -1250,7 +1255,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
                                         'bap_id': self.id,
                                         'picking_id': doc.picking_id.id
                                     })
-
+                        
                         elif doc.document_id.name == 'Kontrak':
                             folder_id = self.env['documents.folder'].sudo().search([('name', '=', 'PO')], limit=1)
                             if folder_id:
@@ -1277,7 +1282,6 @@ class WikaBeritaAcaraPembayaran(models.Model):
                                         'bap_id': self.id,
                                         'is_po_doc': True
                                     })
-
 
 
                 groups_line = self.env['wika.approval.setting.line'].search([

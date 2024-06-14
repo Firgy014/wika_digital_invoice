@@ -1,4 +1,5 @@
 from odoo import fields, models, api, _
+import requests
 from odoo.exceptions import UserError, ValidationError, Warning, AccessError
 from datetime import datetime,timedelta
 import math, re
@@ -80,7 +81,7 @@ class WikaInheritedAccountMove(models.Model):
     check_biro = fields.Boolean(compute="_cek_biro")
 
     pph_ids = fields.Many2many('account.tax', string='PPH')
-    total_pph = fields.Monetary(string='Total PPH', readonly=False, compute='_compute_total_pph')
+    total_pph = fields.Monetary(string='Total PPH', readonly=False, compute='_compute_total_pph', tracking=True)
     pph_amount = fields.Monetary(string='PPH Amount', readonly=False)
 
     price_cut_ids = fields.One2many('wika.account.move.pricecut.line', 'move_id', string='Other Price Cut')
@@ -117,6 +118,7 @@ class WikaInheritedAccountMove(models.Model):
     nomor_payment_request= fields.Char(string='Nomor Payment Request')
     is_approval_checked = fields.Boolean(string="Approval Checked", compute='_compute_is_approval_checked' ,default=False)
     is_wizard_cancel = fields.Boolean(string="Is cancel", default=True)
+    is_upd_api_pph_amount = fields.Boolean(string="Is Update PPH From API?", default=False)
 
     # validasi posting date jika -1 bulan
     @api.constrains('posting_date')
@@ -1103,10 +1105,91 @@ class WikaInheritedAccountMove(models.Model):
             raise ValidationError('User Akses Anda tidak berhak Submit!')
 
 
+    def get_replace_pph_amount(self):
+        _logger.info("# === GET API REPLACE PPH AMOUNT === #")
+        self.ensure_one()
+        url_config = self.env['wika.integration'].search([('name', '=', 'URL_INV_NON_PO')], limit=1).url
+        headers = {
+            'Authorization': 'Basic V0lLQV9JTlQ6SW5pdGlhbDEyMw==',
+            'Content-Type': 'application/json'
+        }
+
+        if self.pph_amount > 0 and not self.is_upd_api_pph_amount:
+            try:
+                year = self.date.strftime('%Y')
+                date_format = '%Y-%m-%d'
+                date_from = datetime.strptime(year + '-01-01', date_format)
+                date_to = datetime.strptime(year + '-12-31', date_format)
+                payload = json.dumps({
+                    "COMPANY_CODE": "A000",
+                    "POSTING_DATE": {
+                        "LOW": "%s",
+                        "HIGH": "%s"
+                    },
+                    "DOC_NUMBER": "%s"
+                }) % (str(date_from), str(date_to), self.payment_reference)
+                payload = payload.replace('\n', '')
+
+                _logger.info("# === PAYLOAD === #")
+                _logger.info(payload)
+
+                response = requests.request("GET", url_config, data=payload, headers=headers)
+                result = json.loads(response.text)
+
+                if result['DATA']:
+                    _logger.info("# === RESPON DATA === #")
+                    company_id = self.env.company.id
+                    # diurutkan berdasarakan tahun dan doc number
+                    txt_data = sorted(result['DATA'], key=lambda x: (x["YEAR"], x["DOC_NUMBER"]))
+                    i = 0
+                    tot_pph_amount = 0
+                    for data in txt_data:
+                        _logger.info(data)
+                        doc_number = data["DOC_NUMBER"]
+                        line_item = data["LINE_ITEM"]
+                        year = str(data["YEAR"])
+                        currency = data["CURRENCY"]
+                        doc_type = data["DOC_TYPE"]
+                        doc_date = data["DOC_DATE"]
+                        posting_date = data["POSTING_DATE"]
+                        pph_cbasis = data["PPH_CBASIS"] * -1
+                        pph_accrual = data["PPH_ACCRUAL"] * -1
+
+                        amount = data["AMOUNT"] * -1
+                        header_text = data["HEADER_TEXT"]
+                        reference = data["REFERENCE"]
+                        vendor = data["VENDOR"]
+                        top = data["TOP"]
+                        item_text = data["ITEM_TEXT"]
+                        profit_center = data["PROFIT_CENTER"]
+                        name = str(doc_number) + str(year)
+                        tot_pph_amount += pph_accrual
+
+                    _logger.info('# === UPDATE ACCOUNT MOVE PPH AMOUNT === #')
+                    self.write({
+                        'pph_amount': tot_pph_amount,
+                        'is_upd_api_pph_amount': True
+                    })
+                                
+                    _logger.info(_("# === UPDATE PPH AMOUNT BERHASIL === #"))
+
+                else:
+                    raise UserError(_("Data Tidak Tersedia!"))
+
+            except Exception as e:
+                _logger.info("# === EXCEPTION === #")
+                _logger.info(e)
+                raise UserError(_("Terjadi Kesalahan! Update Invoice Gagal."))
+        else:
+            raise UserError(_("Tidak diproses karena status sudah Done!"))
+            
     def action_approve(self):
         # self.write({'is_wizard_cancel': False})
         user = self.env['res.users'].search([('id', '=', self._uid)], limit=1)
         documents_model = self.env['documents.document'].sudo()
+        if not self.is_upd_api_pph_amount:
+            self.get_replace_pph_amount()
+
         cek = False
         model_id = self.env['ir.model'].search([('model', '=', 'account.move')], limit=1)
         level = self.level
@@ -1844,40 +1927,43 @@ class WikaInvoiceDocumentLine(models.Model):
         
     def compress_pdf(self):
         for record in self:
-            # Read from bytes_stream
-            reader = PdfReader(BytesIO(base64.b64decode(record.document)))
-            writer = PdfWriter()
+            try:
+                # Read from bytes_stream
+                reader = PdfReader(BytesIO(base64.b64decode(record.document)))
+                writer = PdfWriter()
 
-            for page in reader.pages:
-                writer.add_page(page)
+                for page in reader.pages:
+                    writer.add_page(page)
 
-            if reader.metadata is not None:
-                writer.add_metadata(reader.metadata)
-            
-            # writer.remove_images()
-            for page in writer.pages:
-                for img in page.images:
-                    _logger.info("# ==== IMAGE === #")
-                    _logger.info(img.image)
-                    if img.image.mode == 'RGBA':
-                        png = Image.open(img.image)
-                        png.load() # required for png.split()
+                if reader.metadata is not None:
+                    writer.add_metadata(reader.metadata)
+                
+                # writer.remove_images()
+                for page in writer.pages:
+                    for img in page.images:
+                        _logger.info("# ==== IMAGE === #")
+                        _logger.info(img.image)
+                        if img.image.mode == 'RGBA':
+                            png = Image.open(img.image)
+                            png.load() # required for png.split()
 
-                        new_img = Image.new("RGB", png.size, (255, 255, 255))
-                        new_img.paste(png, mask=png.split()[3]) # 3 is the alpha channel
-                    else:
-                        new_img = img.image
+                            new_img = Image.new("RGB", png.size, (255, 255, 255))
+                            new_img.paste(png, mask=png.split()[3]) # 3 is the alpha channel
+                        else:
+                            new_img = img.image
 
-                    img.replace(new_img, quality=20)
-                    
-            for page in writer.pages:
-                page.compress_content_streams(level=9)  # This is CPU intensive!
-                writer.add_page(page)
+                        img.replace(new_img, quality=20)
+                        
+                for page in writer.pages:
+                    page.compress_content_streams(level=9)  # This is CPU intensive!
+                    writer.add_page(page)
 
-            output_stream = BytesIO()
-            writer.write(output_stream)
+                output_stream = BytesIO()
+                writer.write(output_stream)
 
-            record.document = base64.b64encode(output_stream.getvalue())
+                record.document = base64.b64encode(output_stream.getvalue())    
+            except:
+                continue
 
     @api.constrains('document', 'filename')
     def _check_attachment_format(self):
