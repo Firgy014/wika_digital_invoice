@@ -53,6 +53,7 @@ class WikaInheritedAccountMove(models.Model):
             ('is_fully_invoiced', '!=', True)
         ]"""
     )
+
     branch_id = fields.Many2one('res.branch', string='Divisi', required=True, default=122)
     department_id = fields.Many2one('res.branch', string='Department')
     project_id = fields.Many2one('project.project', string='Project')
@@ -1795,7 +1796,8 @@ class WikaInheritedAccountMove(models.Model):
             return self.env.ref('wika_account_move.report_wika_account_move_keuangan_action').report_action(self)
         else:
             return super(WikaInheritedAccountMove, self).action_print_invoice()
-        
+    
+    
     def compute_pph_amount(self):
         for rec in self:
             total_pph_cbasis = 0

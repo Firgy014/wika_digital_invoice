@@ -156,7 +156,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
             elif record.bap_type == 'retensi' and record.po_id:
                 product_names = record.po_id.price_cut_ids.mapped('product_id.name')
                 if 'RETENSI' not in product_names:
-                    raise ValidationError("No PO tersebut tidak tersedia potongan lain-lain Retensi")       
+                    raise ValidationError("No PO tersebut tidak tersedia potongan lain-lain Retensi") 
                     
     # @api.constrains('po_id', 'bap_type', 'total_current_value', 'total_po')
     # def _check_total_amount(self):

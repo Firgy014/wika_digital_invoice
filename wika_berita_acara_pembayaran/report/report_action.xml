@@ -46,4 +46,49 @@
         <field name="binding_view_types">form</field>
     </record>
 
+    <record id="report_wika_rpp_progress_action" model="ir.actions.report">
+        <field name="name">Rekap Progress Pekerjaan</field>
+        <field name="model">wika.berita.acara.pembayaran</field>
+        <field name="report_type">qweb-html</field>
+        <field name="report_name">wika_berita_acara_pembayaran.report_wika_rpp_progress</field>
+        <field name="report_file">wika_berita_acara_pembayaran.report_wika_rpp_progress</field>
+        <field name="print_report_name">'Rekap Progress Pekerjaan - %s' % (object.name)</field>
+        <field name="binding_model_id" ref="model_wika_berita_acara_pembayaran"/>
+        <field name="binding_view_types">form</field>
+    </record>
+
+    <record id="report_wika_rpp_uang_muka_action" model="ir.actions.report">
+        <field name="name">Rekap Progress Pekerjaan Uang Muka</field>
+        <field name="model">wika.berita.acara.pembayaran</field>
+        <field name="report_type">qweb-html</field>
+        <field name="report_name">wika_berita_acara_pembayaran.report_wika_rpp_uang_muka</field>
+        <field name="report_file">wika_berita_acara_pembayaran.report_wika_rpp_uang_muka</field>
+        <field name="print_report_name">'Rekap Progress Pekerjaan Uang Muka- %s' % (object.name)</field>
+        <field name="binding_model_id" ref="model_wika_berita_acara_pembayaran"/>
+        <field name="binding_view_types">form</field>
+    </record>
+
+    <record id="report_wika_rpp_retensi_action" model="ir.actions.report">
+        <field name="name">Rekap Progress Pekerjaan Retensi</field>
+        <field name="model">wika.berita.acara.pembayaran</field>
+        <field name="report_type">qweb-html</field>
+        <field name="report_name">wika_berita_acara_pembayaran.report_wika_rpp_retensi</field>
+        <field name="report_file">wika_berita_acara_pembayaran.report_wika_rpp_retensi</field>
+        <field name="print_report_name">'Rekap Progress Pekerjaan Retensi - %s' % (object.name)</field>
+        <field name="binding_model_id" ref="model_wika_berita_acara_pembayaran"/>
+        <field name="binding_view_types">form</field>
+    </record>
+
+    <record id="report_wika_rpp_cut_over_action" model="ir.actions.report">
+        <field name="name">Rekap Progress Pekerjaan Cut Over</field>
+        <field name="model">wika.berita.acara.pembayaran</field>
+        <field name="report_type">qweb-html</field>
+        <field name="report_name">wika_berita_acara_pembayaran.report_wika_rpp_cut_over</field>
+        <field name="report_file">wika_berita_acara_pembayaran.report_wika_rpp_cut_over</field>
+        <field name="print_report_name">'Rekap Progress Pekerjaan Cut Over - %s' % (object.name)</field>
+        <field name="binding_model_id" ref="model_wika_berita_acara_pembayaran"/>
+        <field name="binding_view_types">form</field>
+    </record>
+
+
 </odoo>

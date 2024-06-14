@@ -12,26 +12,14 @@
         <field name="binding_view_types">form</field>
     </record>
 
-    <record id="report_wika_account_move_proyek_action" model="ir.actions.report">
-        <field name="name">Report Invoice(PDF) Proyek Divisi</field>
-        <field name="model">account.move</field>
-        <field name="report_type">qweb-html</field>
-        <field name="report_name">wika_account_move.report_wika_account_move_divisi</field>
-        <field name="print_report_name">'Wika Account Move - Divisi %s' % (object.name)</field>
-        <field name="binding_model_id" eval="False"/>
-        <field name="binding_view_types">form</field>
-    </record>
 
     <record id="report_wika_account_move_proyek_action" model="ir.actions.report">
         <field name="name">Report Invoice(PDF) Proyek</field>
         <field name="model">account.move</field>
         <field name="report_type">qweb-html</field>
-        <field name="report_name">wika_account_move.report_wika_account_move_proyek</field>
-        <field name="print_report_name">'Wika Account Move - Proyek %s' % (object.name)</field>
         <field name="binding_model_id" eval="False"/>
         <field name="report_name">wika_account_move.report_wika_account_move_proyek</field>
         <field name="print_report_name">'Wika Account Move - Proyek %s' % (object.name)</field>
-        <field name="binding_model_id" ref="model_account_move"/>
         <field name="binding_view_types">form</field>
     </record>
 
@@ -45,13 +33,44 @@
         <field name="binding_view_types">form</field>
     </record>
 
-    <record id="report_wika_account_move_keuangan_action" model="ir.actions.report">
-        <field name="name">Report Invoice(PDF) Keuangan</field>
+    <record id="report_bap_progress_action" model="ir.actions.report">
+        <field name="name">Report BAP Progress</field>
         <field name="model">account.move</field>
         <field name="report_type">qweb-html</field>
-        <field name="report_name">wika_account_move.report_wika_account_move_keuangan</field>
-        <field name="print_report_name">'Wika Account Move - Keuangan %s' % (object.name)</field>
-        <field name="binding_model_id" ref="model_account_move"/>
+        <field name="report_name">wika_account_move.report_bap_progress</field>
+        <field name="print_report_name">'Wika Account Move - BAP Progress %s' % (object.name)</field>
+         <field name="binding_model_id" ref="model_account_move"/>
         <field name="binding_view_types">form</field>
     </record>
+
+    <record id="report_bap_uang_muka_action" model="ir.actions.report">
+        <field name="name">Report BAP Uang Muka</field>
+        <field name="model">account.move</field>
+        <field name="report_type">qweb-html</field>
+        <field name="report_name">wika_account_move.report_bap_uang_muka</field>
+        <field name="print_report_name">'Wika Account Move - BAP Uang Muka %s' % (object.name)</field>
+         <field name="binding_model_id" ref="model_account_move"/>
+        <field name="binding_view_types">form</field>
+    </record>
+
+    <record id="report_bap_retensi_action" model="ir.actions.report">
+        <field name="name">Report BAP Retensi</field>
+        <field name="model">account.move</field>
+        <field name="report_type">qweb-html</field>
+        <field name="report_name">wika_account_move.report_bap_retensi</field>
+        <field name="print_report_name">'Wika Account Move - BAP Retensi %s' % (object.name)</field>
+         <field name="binding_model_id" ref="model_account_move"/>
+        <field name="binding_view_types">form</field>
+    </record>
+
+    <record id="report_bap_cut_over_action" model="ir.actions.report">
+        <field name="name">Report BAP Cut Over</field>
+        <field name="model">account.move</field>
+        <field name="report_type">qweb-html</field>
+        <field name="report_name">wika_account_move.report_bap_cut_over</field>
+        <field name="print_report_name">'Wika Account Move - BAP Cut Over %s' % (object.name)</field>
+         <field name="binding_model_id" ref="model_account_move"/>
+        <field name="binding_view_types">form</field>
+    </record>
+    
 </odoo>   
