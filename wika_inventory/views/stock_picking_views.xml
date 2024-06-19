@@ -16,14 +16,16 @@
                 </header>
                 <field name="priority" optional="show" widget="priority" nolabel="1"/>
                 <field name="pick_type"/>
-                <field name="name" string="Nomor GR/SES"/>
+                <field name="name"/>
+                <field name="no_gr_ses"/>
                 <field name="branch_id"/>
                 <field name="department_id"/>
                 <field name="project_id"/>
                 <field name="partner_id" string="Vendor"/>
                 <field name="po_id" string="Nomor PO"/>
                 <field name="origin"/>
-                <field name="state"/>
+                <!-- <field name="wika_state"/> -->
+                <field name="state" optional="hide"/>
                 <field name="company_id" invisible="1"/>
             </tree>
         </field>
@@ -55,12 +57,12 @@
             <field name="show_clear_qty_button" invisible="1"/>
             <field name="company_id" invisible="1"/>
             <header>
-               <button name="assign_todo_first" type="object" states="waits,uploaded,approved" string="Assign Todo First" groups="base.group_no_one"/>
+                <!-- <button name="assign_todo_first" type="object" states="waits,uploaded,approved" string="Assign Todo First" groups="base.group_no_one"/>
 
                 <button name="action_submit_pick" type="object" states="waits,rejected" string="SUBMIT" class="oe_highlight" id="bid_submit" data-hotkey="v"/>
                 <button name="action_approve" type="object" states="uploaded" string="APPROVE" context="{'validate_analytic': True}" class="oe_highlight" id="bid_approve" data-hotkey="v"/>
-                <button name="action_reject" type="object" states="uploaded" string="REJECT" context="{'validate_analytic': True}" class="btn-danger" id="bid_reject" data-hotkey="v"/>
-                <field name="state" widget="statusbar" statusbar_visible="waits,uploaded,approved" />
+                <button name="action_reject" type="object" states="uploaded" string="REJECT" context="{'validate_analytic': True}" class="btn-danger" id="bid_reject" data-hotkey="v"/> -->
+                <field name="state" widget="statusbar"/>
             </header>
             <sheet>
                 <div name="button_box" position="inside">
@@ -69,34 +71,40 @@
                         <field string= "Purchase Orders" name="po_count" widget="statinfo"/>
                     </button>
                 </div>
-
                 <div class="oe_button_box" name="button_box">
                     <field name="has_scrap_move" invisible="True"/>
                     <field name="has_tracking" invisible="True"/>
                 </div>
+                <!-- <widget name="web_ribbon" title="Waiting" attrs="{'invisible': [('wika_state', '!=', 'waits')]}" bg_color="bg-warning"/>
+                <widget name="web_ribbon" title="Uploaded" attrs="{'invisible': [('wika_state', '!=', 'uploaded')]}" bg_color="bg-info"/>
+                <widget name="web_ribbon" title="Approved" attrs="{'invisible': [('wika_state', '!=', 'approved')]}" bg_color="bg-success"/>
+                <widget name="web_ribbon" title="Rejected" attrs="{'invisible': [('wika_state', '!=', 'rejected')]}" bg_color="bg-danger"/> -->
                 <div class="oe_title">
                     <h1 class="d-flex">
                         <field name="priority" widget="priority" class="me-3" attrs="{'invisible': [('name','=','/')]}" />
                         <field name="name" attrs="{
                             'invisible': [('name','=','/')],
-                            'readonly': [('state', 'in', ['uploaded', 'approved'])]
+                            'readonly': True
                         }"/>
                     </h1>
                 </div>
                 <group>
                     <group>
+                        <field name="no_gr_ses" attrs="{
+                            'readonly': [('wika_state', 'in', ['uploaded', 'approved'])]
+                        }"/>
                         <field name="partner_id" string="Receive From" readonly="1"/>
                         <field name="po_id" string="Nomor PO"  readonly="1"/>
                         <field name="pick_type"  readonly="1"/>
                         <field name="level"  invisible="1"/>
                         <field name="origin" readonly="1" force_save="1" attrs="{'invisible': [('pick_type', '=', 'gr')]}"/>
 
-                        <field name="start_date" string="Period Start" attrs="{'invisible': [('pick_type', '=', 'gr')], 'readonly': [('state', 'in', ['uploaded', 'approved'])]}" style="background-color: #dddded;"/>
-                        <field name="end_date" string="Period End" attrs="{'invisible': [('pick_type', '=', 'gr')], 'required': [('pick_type', '!=', 'gr')],'readonly': [('state', 'in', ['uploaded', 'approved'])]}" style="background-color: #dddded;"/>
+                        <field name="start_date" string="Period Start" attrs="{'invisible': [('pick_type', '=', 'gr')], 'readonly': [('wika_state', 'in', ['uploaded', 'approved'])]}" style="background-color: #dddded;"/>
+                        <field name="end_date" string="Period End" attrs="{'invisible': [('pick_type', '=', 'gr')], 'required': [('pick_type', '!=', 'gr')],'readonly': [('wika_state', 'in', ['uploaded', 'approved'])]}" style="background-color: #dddded;"/>
                     </group>
                     <group>
                         <field name="branch_id" string="Divisi" domain="[('biro', '=', False)]"  readonly="1" force_save="1"/>
-                        <field name="department_id" string="Dept" domain="[('biro', '=', True), ('parent_id', '=', branch_id)]" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])], 'invisible': [('check_biro', '=', False)]}"/>
+                        <field name="department_id" string="Dept" domain="[('biro', '=', True), ('parent_id', '=', branch_id)]" attrs="{'readonly': [('wika_state', 'in', ['uploaded', 'approved'])], 'invisible': [('check_biro', '=', False)]}"/>
                         <field name="project_id" string="Project" readonly="1"/>
                         <field name="check_biro" invisible="1"/>
 
@@ -262,10 +270,10 @@
 
                     <page string="Picking Mandatories" groups="base.group_no_one">
                         <group>
-                            <field name="location_id" string="Origin Location" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
-                            <field name="location_dest_id" string="Destination Location" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
-                            <field name="picking_type_id" string="Picking Type" attrs="{'readonly': [('state', 'in', ('uploaded', 'approved'))]}"/>      
-                            <field name="company_id" string="Company" attrs="{'readonly': [('state', 'in', ('uploaded', 'approved'))]}"/>
+                            <field name="location_id" string="Origin Location" attrs="{'readonly': [('wika_state', 'in', ['uploaded', 'approved'])]}"/>
+                            <field name="location_dest_id" string="Destination Location" attrs="{'readonly': [('wika_state', 'in', ['uploaded', 'approved'])]}"/>
+                            <field name="picking_type_id" string="Picking Type" attrs="{'readonly': [('wika_state', 'in', ('uploaded', 'approved'))]}"/>      
+                            <field name="company_id" string="Company" attrs="{'readonly': [('wika_state', 'in', ('uploaded', 'approved'))]}"/>
                         </group>
                     </page>
 

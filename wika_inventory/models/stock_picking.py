@@ -16,7 +16,7 @@ class PickingInherit(models.Model):
     department_id = fields.Many2one('res.branch', string='Department')
     project_id = fields.Many2one('project.project', string='Project')
     po_id = fields.Many2one('purchase.order', string='Nomor PO')
-    state = fields.Selection(selection_add=[
+    wika_state = fields.Selection(selection_add=[
         ('waits', 'Waiting'), 
         ('uploaded', 'Uploaded'), 
         ('approved', 'Approved'),
@@ -95,7 +95,7 @@ class PickingInherit(models.Model):
         model_id = model_model.search([('model', '=', 'stock.picking')], limit=1)
         for res in self:
             level=res.level
-            res.write({'state':'waits'})
+            res.write({'wika_state':'waits'})
             first_user = False
             if level:
                 approval_id = self.env['wika.approval.setting'].sudo().search(
@@ -187,7 +187,7 @@ class PickingInherit(models.Model):
 
         if cek == True:
             if approval_id.total_approve == self.step_approve:
-                self.state = 'approved'
+                self.wika_state = 'approved'
                 self.env['wika.picking.approval.line'].create({
                     'user_id': self._uid,
                     'groups_id': groups_id.id,
@@ -344,7 +344,7 @@ class PickingInherit(models.Model):
                         if x.user_id.id == self._uid:
                             x.status = 'approved'
                             x.action_done()
-                    self.state = 'uploaded'
+                    self.wika_state = 'uploaded'
                     self.step_approve += 1
                     self.env['wika.picking.approval.line'].sudo().create({
                         'user_id': self._uid,

@@ -124,7 +124,7 @@ def _get_computed_partial_payment_query():
           wika_partial_payment_request pp
       LEFT JOIN account_move am ON am.id = pp.invoice_id
       WHERE 
-          pp.state = 'approved'
+          pp.wika_state = 'approved'
         AND (pp.total_invoice - pp.partial_amount) > 0
         AND pp.no_doc_sap IS NULL 
       """

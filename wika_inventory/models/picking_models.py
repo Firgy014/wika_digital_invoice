@@ -9,6 +9,7 @@ _logger = logging.getLogger(__name__)
 
 class PickingDocument(models.Model):
     _name = "wika.picking.document.line"
+    _description = "wika.picking.document.line"
 
     picking_id = fields.Many2one('stock.picking', string='Picking')
     document_id = fields.Many2one('wika.document.setting', string='Document')
@@ -27,17 +28,17 @@ class PickingDocument(models.Model):
             if self.filename and not self.filename.lower().endswith('.pdf'):
                 self.document = False
                 self.filename = False
-                self.state = 'waiting'
+                self.wika_state = 'waits'
                 raise ValidationError('Tidak dapat mengunggah file selain ekstensi PDF!')
             elif self.filename.lower().endswith('.pdf'):
                 self.check_file_size()
                 self.compress_pdf()
-                self.state = 'uploaded'
+                self.wika_state = 'uploaded'
 
         else:
             self.document = False
             self.filename = False
-            self.state = 'waiting'
+            self.wika_state = 'waits'
 
     def check_file_size(self):
         self.ensure_one()
@@ -87,6 +88,7 @@ class PickingDocument(models.Model):
 
 class PickingApproval(models.Model):
     _name = "wika.picking.approval.line"
+    _description = "wika.picking.approval.line"
 
     picking_id = fields.Many2one('stock.picking', string='Picking')
     user_id = fields.Many2one('res.users', string='User')

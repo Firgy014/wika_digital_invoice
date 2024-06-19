@@ -7,12 +7,12 @@
             <field name="name">GR/SES</field>
             <field name="res_model">stock.picking</field>
             <field name="view_mode">tree,form</field>
-            <field name="domain">[('state', 'in', ('waits', 'uploaded', 'approved','rejected'))]</field>
+            <field name="domain">[('wika_state', 'in', ('waits', 'uploaded', 'approved','rejected'))]</field>
             <field name="view_ids" eval="[(5, 0, 0),
                 (0, 0, {'view_mode': 'tree', 'view_id': ref('wika_inventory.stock_picking_tree_wika')}),
                 (0, 0, {'view_mode': 'form', 'view_id': ref('wika_inventory.stock_picking_form_wika')}),
             ]"/>
-            <field name="context">{'default_state':'waits'}</field>
+            <field name="context">{'default_wika_state':'waits'}</field>
         </record>
 
         <!-- Stock Move Action -->
@@ -20,7 +20,7 @@
             <field name="name">GR/SES Items</field>
             <field name="res_model">stock.move</field>
             <field name="view_mode">tree</field>
-            <!-- <field name="domain">[('picking_id.state', 'in', ('waits', 'uploaded', 'approved'))]</field> -->
+            <!-- <field name="domain">[('picking_id.wika_state', 'in', ('waits', 'uploaded', 'approved'))]</field> -->
             <field name="view_id" ref="stock_move_tree_wika"/>
         </record>
 

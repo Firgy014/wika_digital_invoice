@@ -562,7 +562,7 @@ class Purchase_Order(models.Model):
                                             'product_uom_qty': float(item['QUANTITY']),
                                             'product_uom': uom.id,
                                             #'active': active,
-                                            'state':'waits',
+                                            'wika_state':'waits',
                                             'location_id': 4,
                                             'location_dest_id': 8,
                                             'purchase_line_id': po_line.id,
@@ -590,7 +590,7 @@ class Purchase_Order(models.Model):
                                             'origin':matdoc,
                                             #'move_ids_without_package':vals,
                                             'company_id': 1,
-                                            'state': 'waits'
+                                            'wika_state': 'waits'
                                         })
                                         picking_create.write({'state': 'waits'})
                                     else:

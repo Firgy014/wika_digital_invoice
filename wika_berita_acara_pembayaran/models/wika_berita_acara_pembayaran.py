@@ -1539,6 +1539,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
     #
 class WikaBeritaAcaraPembayaranLine(models.Model):
     _name = 'wika.berita.acara.pembayaran.line'
+    _description = 'wika.berita.acara.pembayaran.line'
 
     bap_id = fields.Many2one('wika.berita.acara.pembayaran', string='')
     picking_id = fields.Many2one('stock.picking', string='NO GR/SES')

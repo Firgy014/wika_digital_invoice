@@ -80,7 +80,7 @@ class wika_get_po(models.Model):
                                 'product_uom_qty': float(item['QUANTITY']),
                                 'product_uom': uom.id,
                                 #'active':active,
-                                'state':'waits',
+                                'wika_state':'waits',
                                 'location_id': 4,
                                 'location_dest_id': 8,
                                 'purchase_line_id':po_line.id,
@@ -105,7 +105,7 @@ class wika_get_po(models.Model):
                                 'pick_type': 'gr',
                                 #'move_ids_without_package':vals,
                                 'company_id': 1,
-                                'state': 'waits'
+                                'wika_state': 'waits'
                             })
                             self.status = 'OK'
                         else:
@@ -148,7 +148,7 @@ class wika_get_po(models.Model):
                                 'product_uom_qty': float(item['QUANTITY']),
                                 'product_uom': uom.id,
                                 #'active': active,
-                                'state':'waits',
+                                'wika_state':'waits',
                                 'location_id': 4,
                                 'location_dest_id': 8,
                                 'purchase_line_id': po_line.id,
@@ -175,7 +175,7 @@ class wika_get_po(models.Model):
                                 'origin':matdoc,
                                 #'move_ids_without_package':vals,
                                 'company_id': 1,
-                                'state': 'waits'
+                                'wika_state': 'waits'
                             })
                             self.status = 'OK'
                         else:
