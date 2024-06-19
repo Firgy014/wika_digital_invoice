@@ -85,7 +85,8 @@ class RejectWizard(models.TransientModel):
                                     document_list.append((0, 0, {
                                         'invoice_id': invoice_id_model.id,
                                         'document_id': document_line.id,
-                                        'state': 'rejected'
+                                        'state': 'rejected',
+                                        'rejected_doc_id': doc.id
                                     }))
                                 invoice_id.document_ids = document_list
 
@@ -113,7 +114,8 @@ class RejectWizard(models.TransientModel):
                                     document_list.append((0, 0, {
                                         'invoice_id': invoice_id_model.id,
                                         'document_id': document_line.id,
-                                        'state': 'rejected'
+                                        'state': 'rejected',
+                                        'rejected_doc_id': doc.id
                                     }))
                                 invoice_id.document_ids = document_list
 
@@ -131,7 +133,8 @@ class RejectWizard(models.TransientModel):
                                         'invoice_id': invoice_id_model.id,
                                         'document_id': doc_setting_gr_id.id,
                                         'state': 'rejected',
-                                        'picking_id': picking_id
+                                        'picking_id': picking_id,
+                                        'rejected_doc_id': doc.id
                                     }))
                                     added_gr_documents[picking_id] = True
                                 is_able_to_reject_picking_doc = True
@@ -143,7 +146,8 @@ class RejectWizard(models.TransientModel):
                                         'invoice_id': invoice_id_model.id,
                                         'document_id': doc_setting_sj_id.id,
                                         'state': 'rejected',
-                                        'picking_id': picking_id
+                                        'picking_id': picking_id,
+                                        'rejected_doc_id': doc.id
                                     }))
                                     added_sj_documents[picking_id] = True
                                 is_able_to_reject_picking_doc = True
@@ -155,7 +159,8 @@ class RejectWizard(models.TransientModel):
                                 'invoice_id': invoice_id_model.id,
                                 'document_id': doc_setting_ses_id.id,
                                 'state': 'rejected',
-                                'picking_id': doc.picking_id.id
+                                'picking_id': doc.picking_id.id,
+                                'rejected_doc_id': doc.id
                             }))                            
                             is_able_to_reject_picking_doc = True
                             # x.state = 'rejected'
