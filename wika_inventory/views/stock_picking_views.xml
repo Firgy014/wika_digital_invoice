@@ -8,7 +8,7 @@
         <field eval="1" name="priority"/>
         <field name="arch" type="xml" >
             <!-- <tree string="Picking list" multi_edit="1" sample="1" create="false"> -->
-            <tree string="Picking list" multi_edit="1" sample="1" create="0">
+            <tree string="Picking list" multi_edit="1" sample="1" create="1">
                 <header>
                     <button name="do_unreserve" type="object" string="Unreserve"/>
                     <button name="action_assign" type="object" string="Check Availability"/>
@@ -24,7 +24,7 @@
                 <field name="partner_id" string="Vendor"/>
                 <field name="po_id" string="Nomor PO"/>
                 <field name="origin"/>
-                <!-- <field name="wika_state"/> -->
+                <field name="wika_state"/>
                 <field name="state" optional="hide"/>
                 <field name="company_id" invisible="1"/>
             </tree>
@@ -57,12 +57,13 @@
             <field name="show_clear_qty_button" invisible="1"/>
             <field name="company_id" invisible="1"/>
             <header>
-                <!-- <button name="assign_todo_first" type="object" states="waits,uploaded,approved" string="Assign Todo First" groups="base.group_no_one"/>
+                <button name="assign_todo_first" type="object" attrs="{'invisible': [('wika_state', 'in', ('waits', 'uploaded', 'approved'))]}" string="Assign Todo First" groups="base.group_no_one"/>
 
                 <button name="action_submit_pick" type="object" states="waits,rejected" string="SUBMIT" class="oe_highlight" id="bid_submit" data-hotkey="v"/>
-                <button name="action_approve" type="object" states="uploaded" string="APPROVE" context="{'validate_analytic': True}" class="oe_highlight" id="bid_approve" data-hotkey="v"/>
-                <button name="action_reject" type="object" states="uploaded" string="REJECT" context="{'validate_analytic': True}" class="btn-danger" id="bid_reject" data-hotkey="v"/> -->
-                <field name="state" widget="statusbar"/>
+                <button name="action_approve" type="object" attrs="{'invisible': [('wika_state', '=', 'approved')]}" string="APPROVE" context="{'validate_analytic': True}" class="oe_highlight" id="bid_approve" data-hotkey="v"/>
+                <button name="action_reject" type="object" attrs="{'invisible': [('wika_state', '=', 'uploaded')]}" string="REJECT" context="{'validate_analytic': True}" class="btn-danger" id="bid_reject" data-hotkey="v"/>
+                <field name="state" widget="statusbar" statusbar_visible="draft,confirmed,assigned,done"/>
+                <field name="wika_state" invisible="1"/>
             </header>
             <sheet>
                 <div name="button_box" position="inside">
@@ -75,10 +76,10 @@
                     <field name="has_scrap_move" invisible="True"/>
                     <field name="has_tracking" invisible="True"/>
                 </div>
-                <!-- <widget name="web_ribbon" title="Waiting" attrs="{'invisible': [('wika_state', '!=', 'waits')]}" bg_color="bg-warning"/>
+                <widget name="web_ribbon" title="Waiting" attrs="{'invisible': [('wika_state', '!=', 'waits')]}" bg_color="bg-warning"/>
                 <widget name="web_ribbon" title="Uploaded" attrs="{'invisible': [('wika_state', '!=', 'uploaded')]}" bg_color="bg-info"/>
                 <widget name="web_ribbon" title="Approved" attrs="{'invisible': [('wika_state', '!=', 'approved')]}" bg_color="bg-success"/>
-                <widget name="web_ribbon" title="Rejected" attrs="{'invisible': [('wika_state', '!=', 'rejected')]}" bg_color="bg-danger"/> -->
+                <widget name="web_ribbon" title="Rejected" attrs="{'invisible': [('wika_state', '!=', 'rejected')]}" bg_color="bg-danger"/>
                 <div class="oe_title">
                     <h1 class="d-flex">
                         <field name="priority" widget="priority" class="me-3" attrs="{'invisible': [('name','=','/')]}" />
@@ -93,9 +94,9 @@
                         <field name="no_gr_ses" attrs="{
                             'readonly': [('wika_state', 'in', ['uploaded', 'approved'])]
                         }"/>
-                        <field name="partner_id" string="Receive From" readonly="1"/>
-                        <field name="po_id" string="Nomor PO"  readonly="1"/>
-                        <field name="pick_type"  readonly="1"/>
+                        <field name="partner_id" string="Receive From" readonly="0"/>
+                        <field name="po_id" string="Nomor PO"  readonly="0"/>
+                        <field name="pick_type"  readonly="0"/>
                         <field name="level"  invisible="1"/>
                         <field name="origin" readonly="1" force_save="1" attrs="{'invisible': [('pick_type', '=', 'gr')]}"/>
 
@@ -103,7 +104,7 @@
                         <field name="end_date" string="Period End" attrs="{'invisible': [('pick_type', '=', 'gr')], 'required': [('pick_type', '!=', 'gr')],'readonly': [('wika_state', 'in', ['uploaded', 'approved'])]}" style="background-color: #dddded;"/>
                     </group>
                     <group>
-                        <field name="branch_id" string="Divisi" domain="[('biro', '=', False)]"  readonly="1" force_save="1"/>
+                        <field name="branch_id" string="Divisi" domain="[('biro', '=', False)]"  readonly="0" force_save="1"/>
                         <field name="department_id" string="Dept" domain="[('biro', '=', True), ('parent_id', '=', branch_id)]" attrs="{'readonly': [('wika_state', 'in', ['uploaded', 'approved'])], 'invisible': [('check_biro', '=', False)]}"/>
                         <field name="project_id" string="Project" readonly="1"/>
                         <field name="check_biro" invisible="1"/>
@@ -133,7 +134,7 @@
                     <page string="Operations" name="operations">
                         <group>
                             <field name="move_ids_without_package" mode="tree,kanban"
-                                widget="stock_move_one2many" readonly="1" context="{'default_company_id': company_id, 'default_date': scheduled_date, 'default_date_deadline': date_deadline, 'picking_type_code': picking_type_code, 'default_picking_id': id, 'form_view_ref':'stock.view_move_form', 'address_in_id': partner_id, 'default_picking_type_id': picking_type_id, 'default_location_id': location_id, 'default_location_dest_id': location_dest_id, 'default_partner_id': partner_id}"
+                                widget="stock_move_one2many" attrs="{'readonly': ['&amp;', ('state', '=', 'done'), ('is_locked', '=', True)]}" context="{'default_company_id': company_id, 'default_date': scheduled_date, 'default_date_deadline': date_deadline, 'picking_type_code': picking_type_code, 'default_picking_id': id, 'form_view_ref':'stock.view_move_form', 'address_in_id': partner_id, 'default_picking_type_id': picking_type_id, 'default_location_id': location_id, 'default_location_dest_id': location_dest_id, 'default_partner_id': partner_id}"
                                 add-label="Add a Product">
                                 <tree decoration-danger="not parent.immediate_transfer and state != 'done' and quantity_done > reserved_availability and show_reserved_availability" decoration-muted="scrapped == True or state == 'cancel' or (state == 'done' and is_locked == True)" string="Stock Moves" editable="bottom">
                                     <field name="company_id" invisible="1"/>
@@ -163,7 +164,7 @@
                                     <field name="is_initial_demand_editable" invisible="1"/>
                                     <field name="is_quantity_done_editable" invisible="1"/>
                                     <field name="product_packaging_id" groups="product.group_stock_packaging"/>
-                                    <!-- <field name="product_uom_qty" string="Demand" attrs="{'column_invisible': [('parent.immediate_transfer', '=', True)], 'readonly': ['|', ('is_initial_demand_editable', '=', False), '&amp;', '&amp;', ('show_operations', '=', True), ('is_locked', '=', True), ('is_initial_demand_editable', '=', False)]}"/> -->
+                                    <field name="product_uom_qty" string="Demand" attrs="{'column_invisible': [('parent.immediate_transfer', '=', True)], 'readonly': ['|', ('is_initial_demand_editable', '=', False), '&amp;', '&amp;', ('show_operations', '=', True), ('is_locked', '=', True), ('is_initial_demand_editable', '=', False)]}"/>
                                     <field name="forecast_expected_date" invisible="1"/>
                                     <field name="forecast_availability" string="Reserved"
                                         attrs="{'column_invisible': ['|', '|', ('parent.state', 'in', ['draft', 'done']), ('parent.picking_type_code', '!=', 'outgoing'), ('parent.immediate_transfer', '=', True)]}" widget="forecast_widget"/>

@@ -16,13 +16,13 @@ class PickingInherit(models.Model):
     department_id = fields.Many2one('res.branch', string='Department')
     project_id = fields.Many2one('project.project', string='Project')
     po_id = fields.Many2one('purchase.order', string='Nomor PO')
-    wika_state = fields.Selection(selection_add=[
+    wika_state = fields.Selection([
         ('waits', 'Waiting'), 
         ('uploaded', 'Uploaded'), 
         ('approved', 'Approved'),
         ('rejected', 'Rejected')
 
-    ], string='Status', default='waits')
+    ], string='Wika Status', default='waits')
     pick_type = fields.Selection([
         ('ses', 'SES'), 
         ('gr', 'GR')
@@ -51,6 +51,7 @@ class PickingInherit(models.Model):
     @api.depends('project_id', 'branch_id', 'department_id')
     def _compute_level(self):
         for res in self:
+            level = ''
             if res.project_id:
                 level = 'Proyek'
             elif res.branch_id and not res.department_id and not res.project_id:
@@ -174,9 +175,9 @@ class PickingInherit(models.Model):
             model_id = self.env['ir.model'].search([('model', '=', 'stock.picking')], limit=1)
             approval_id = self.env['wika.approval.setting'].sudo().search(
                 [('model_id', '=', model_id.id), ('level', '=', level),('transaction_type','=',self.pick_type)], limit=1)
-            if not approval_id:
-                raise ValidationError(
-                    'Approval Setting untuk menu GR/SES tidak ditemukan. Silakan hubungi Administrator!')
+            # if not approval_id:
+            #     raise ValidationError(
+            #         'Approval Setting untuk menu GR/SES tidak ditemukan. Silakan hubungi Administrator!')
             approval_line_id = self.env['wika.approval.setting.line'].search([
                 ('sequence', '=', self.step_approve),
                 ('approval_id', '=', approval_id.id)
@@ -414,50 +415,9 @@ class PickingInherit(models.Model):
             
     @api.depends('move_type', 'immediate_transfer', 'move_ids.state', 'move_ids.picking_id')
     def _compute_state(self):
-        _logger.info("# === SP _compute_state === #" + str(self.state))
-        ''' State of a picking depends on the state of its related stock.move
-        - Draft: only used for "planned pickings"
-        - Waiting: if the picking is not ready to be sent so if
-          - (a) no quantity could be reserved at all or if
-          - (b) some quantities could be reserved and the shipping policy is "deliver all at once"
-        - Waiting another move: if the picking is waiting for another move
-        - Ready: if the picking is ready to be sent so if:
-          - (a) all quantities are reserved or if
-          - (b) some quantities could be reserved and the shipping policy is "as soon as possible"
-        - Done: if the picking is done.
-        - Cancelled: if the picking is cancelled
-        '''
-        picking_moves_state_map = defaultdict(dict)
-        picking_move_lines = defaultdict(set)
-        for move in self.env['stock.move'].search([('picking_id', 'in', self.ids)]):
-            picking_id = move.picking_id
-            move_state = move.state
-            picking_moves_state_map[picking_id.id].update({
-                'any_draft': picking_moves_state_map[picking_id.id].get('any_draft', False) or move_state == 'draft',
-                'all_cancel': picking_moves_state_map[picking_id.id].get('all_cancel', True) and move_state == 'cancel',
-                'all_cancel_done': picking_moves_state_map[picking_id.id].get('all_cancel_done', True) and move_state in ('cancel', 'done'),
-                'all_done_are_scrapped': picking_moves_state_map[picking_id.id].get('all_done_are_scrapped', True) and (move.scrapped if move_state == 'done' else True),
-                'any_cancel_and_not_scrapped': picking_moves_state_map[picking_id.id].get('any_cancel_and_not_scrapped', False) or (move_state == 'cancel' and not move.scrapped),
-            })
-            picking_move_lines[picking_id.id].add(move.id)
-        for picking in self:
-            picking_id = (picking.ids and picking.ids[0]) or picking.id
-            if not picking_moves_state_map[picking_id]:
-                picking.state = 'draft'
-            elif picking_moves_state_map[picking_id]['any_draft']:
-                picking.state = 'draft'
-            elif picking_moves_state_map[picking_id]['all_cancel']:
-                picking.state = 'cancel'
-            elif picking_moves_state_map[picking_id]['all_cancel_done']:
-                if picking_moves_state_map[picking_id]['all_done_are_scrapped'] and picking_moves_state_map[picking_id]['any_cancel_and_not_scrapped']:
-                    picking.state = 'cancel'
-                else:
-                    picking.state = 'done'
-            else:
-                relevant_move_state = self.env['stock.move'].browse(picking_move_lines[picking_id])._get_relevant_state_among_moves()
-                # if picking.immediate_transfer and relevant_move_state not in ('draft', 'cancel', 'done'):
-                #     picking.state = 'assigned'
-                # elif relevant_move_state == 'partially_available':
-                #     picking.state = 'assigned'
-                # else:
-                #     picking.state = relevant_move_state
+        for rec in self:
+            _logger.info("# === SP _compute_state === #" + str(self.state))
+            res = super(PickingInherit, rec)._compute_state()
+        
+        return res
+        

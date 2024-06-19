@@ -15,7 +15,7 @@ class StockMoveInherit(models.Model):
     _inherit = 'stock.move'
 
     price_subtotal = fields.Float(string='Amount', compute='_compute_price_subtotal')
-    wika_state = fields.Selection(selection_add=[
+    wika_state = fields.Selection([
         ('waits', 'Waiting'),
         ('uploaded', 'Uploaded'),
         ('approved', 'Approved'),
@@ -29,23 +29,24 @@ class StockMoveInherit(models.Model):
 
     def _compute_qty_bap(self):
         for x in self:
-            query = """select sum(qty) from wika_berita_acara_pembayaran_line where bap_id is not null and stock_move_id=%s
-            """% (x.id)
-            # print (query)
-            self.env.cr.execute(query)
-            result = self.env.cr.fetchone()
-            # bap_line_model = self.env['wika.berita.acara.pembayaran.line'].sudo()
-            #
-            # total_qty = 0
-            # bap_line_ids = bap_line_model.search([('stock_move_id', '=', self.id)]).qty
-            # bap_lines = bap_line_model.browse(bap_line_ids)
-            #
-            # for bap_line in bap_lines:
-            #     total_qty += bap_line.qty
-            if result:
-                x.qty_bap = result[0]
-            else:
-                x.qty_bap=0.0
+            x.qty_bap=0.0
+            if 'NewId' not in str(x.id):
+                query = """select sum(qty) from wika_berita_acara_pembayaran_line where bap_id is not null and stock_move_id=%s
+                """% (x.id)
+                # _logger.info("# === _compute_qty_bap === #"+ query)
+                self.env.cr.execute(query)
+                result = self.env.cr.fetchone()
+                # bap_line_model = self.env['wika.berita.acara.pembayaran.line'].sudo()
+                #
+                # total_qty = 0
+                # bap_line_ids = bap_line_model.search([('stock_move_id', '=', self.id)]).qty
+                # bap_lines = bap_line_model.browse(bap_line_ids)
+                #
+                # for bap_line in bap_lines:
+                #     total_qty += bap_line.qty
+                if result:
+                    x.qty_bap = result[0]
+                    
 
     @api.depends('qty_bap','quantity_done')
     def _compute_sisa_qty_bap(self):
@@ -85,6 +86,7 @@ class StockMoveInherit(models.Model):
         return res
     
     def _recompute_state(self):
+        res = []
         for rec in self:
             _logger.info("# === _recompute_state === #" + str(rec.state))
             res = super(StockMoveInherit, rec)._recompute_state()
@@ -92,6 +94,7 @@ class StockMoveInherit(models.Model):
         return res
 
     def _action_assign(self, force_qty=False):
+        res = []
         for rec in self:
             _logger.info("# === _action_assign === #" + str(rec.state))
             res = super(StockMoveInherit, rec)._action_assign()
@@ -99,6 +102,7 @@ class StockMoveInherit(models.Model):
         return res
 
     def _get_relevant_state_among_moves(self):
+        res = []
         for rec in self:
             _logger.info("# === _get_relevant_state_among_moves. === #" + str(rec.state))
             res = super(StockMoveInherit, rec)._get_relevant_state_among_moves()
@@ -120,6 +124,13 @@ class StockMoveInherit(models.Model):
 class StockMoveLineInherit(models.Model):
     _inherit = 'stock.move.line'
 
+    wika_state = fields.Selection([
+        ('waits', 'Waiting'),
+        ('uploaded', 'Uploaded'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected')
+
+    ], string='Status', default='waits')
     active = fields.Boolean(default=True)
 
     @api.model_create_multi
