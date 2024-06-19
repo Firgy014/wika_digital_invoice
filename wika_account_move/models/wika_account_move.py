@@ -815,22 +815,22 @@ class WikaInheritedAccountMove(models.Model):
                 for cut_line in self.bap_id.price_cut_ids:
                     invoice_lines.append((0, 0, {
                         'product_id': cut_line.product_id.id,
-                        'quantity': 1,
+                        'quantity': cut_line.qty or 1.0,
                         'price_unit': cut_line.amount,
                         'currency_id': self.currency_id.id,
                     }))
             elif self.bap_type == 'retensi':
                 for cut_line in self.bap_id.price_cut_ids:
                     invoice_lines.append((0, 0, {
-                        'display_type':'product',
+                        'display_type': 'product',
                         'product_id': cut_line.product_id.id,
-                        'quantity': cut_line.qty,
+                        'quantity': cut_line.qty or 1.0,
                         'price_unit': cut_line.amount,
                     }))
             else:
                 for bap_line in self.bap_id.bap_ids:
                     invoice_lines.append((0, 0, {
-                        'display_type':'product',
+                        'display_type': 'product',
                         'product_id': bap_line.product_id.id,
                         'purchase_line_id': bap_line.purchase_line_id.id,
                         'bap_line_id': bap_line.id,
@@ -841,10 +841,11 @@ class WikaInheritedAccountMove(models.Model):
                         'currency_id': self.currency_id.id,
                         'tax_ids': bap_line.purchase_line_id.taxes_id.ids,
                         'product_uom_id': bap_line.product_uom.id,
-                        'adjustment':bap_line.adjustment,
-                        'amount_adjustment':bap_line.amount_adjustment,
+                        'adjustment': bap_line.adjustment,
+                        'amount_adjustment': bap_line.amount_adjustment,
                     }))
             self.invoice_line_ids = invoice_lines
+
 
     def assign_todo_first(self):
         model_model = self.env['ir.model'].sudo()
