@@ -36,6 +36,7 @@ class SAPIntegration(models.Model):
     form = fields.Selection([
         ('ncl', 'NCL'),
         ('vendor_bills', 'Vendor Bills'),
+        ('vendor_bills_scf', 'Vendor Bills with SCF'),
         ('payroll', 'Payroll'),
         ('partial_payment', 'Partial Payment')
     ], string='Form')
@@ -87,6 +88,51 @@ class SAPIntegration(models.Model):
         out2 = (buffer.getvalue()).encode('utf-8')
         gentextfile = base64.b64encode(out2)
         filename = ('YFII015_' + today + '.txt')
+
+        self.write({'file_template': gentextfile,'datas_fname':filename})
+
+        form_id = self.env.ref('wika_integration.template_sap_integration_form_view')
+        return {
+            'name': 'Generate & Download File',
+            'res_model': 'wika.sap.integration',
+            'view_id': False,
+            'res_id': self.id,
+            'views': [(form_id.id, 'form')],
+            'type': 'ir.actions.act_window',
+            'view_mode': 'form',
+            'view_type': 'form',
+            'target': 'new',
+        }
+    
+    def generate_data_vendor_bills_scf(self):
+        N = 32
+        today = datetime.now().strftime("%Y%m%d%H%M%S")
+        if self.type == 'generate' and self.form == 'vendor_bills_scf':
+            res = ''.join(random.sample(string.ascii_uppercase + string.digits, k=N))
+            dev_keys = ['YFII019', res, 'A000', 'AF00219I03', today]
+            keys = ['NO', 'DOC_NUMBER', 'DOC_YEAR', 'POSTING_DATE', 'PERIOD', 'AMOUNT_SCF', 'WBS', 'ITEM_TEXT']
+            query = helpers._get_computed_query_scf()
+
+        self._cr.execute(query)
+        vals = self.env.cr.fetchall()
+
+        # _logger.info(f"Fetched values: {vals}")
+        # if not vals:
+        #     _logger.warning("No data fetched from the database.")
+        #     continue
+
+        buffer = StringIO()
+        writer = csv.writer(buffer, delimiter='|')
+
+        writer.writerow(dev_keys)
+        writer.writerow(keys)
+
+        for res in vals:
+            writer.writerow(res)
+
+        out2 = buffer.getvalue().encode('utf-8')
+        gentextfile = base64.b64encode(out2)
+        filename = 'YFII019_' + today + '.txt'
 
         self.write({'file_template': gentextfile,'datas_fname':filename})
 

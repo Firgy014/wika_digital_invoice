@@ -992,87 +992,95 @@ class WikaInheritedAccountMove(models.Model):
                                     'purchase_id': self.po_id.id,
                                     'invoice_id': self.id,
                                 })
+                        else:
+                            doc.rejected_doc_id.attachment_id.write({
+                                'name': doc.filename,
+                                'datas': doc.document,
+                                'res_model': 'documents.document'
+                            })
+                            doc.rejected_doc_id.write({'active': True})
 
-                        elif doc.document_id.name == 'BAP':
-                            folder_id = self.env['documents.folder'].sudo().search([('name', '=', 'BAP')], limit=1)
-                            if folder_id:
-                                facet_id = self.env['documents.facet'].sudo().search([
-                                    ('name', '=', 'Documents'),
-                                    ('folder_id', '=', folder_id.id)
-                                ], limit=1)
-                                attachment_id = self.env['ir.attachment'].sudo().create({
-                                    'name': doc.filename,
-                                    'datas': doc.document,
-                                    'res_model': 'documents.document',
-                                })
-                                if attachment_id:
-                                    tag = self.env['documents.tag'].sudo().search([
-                                        ('facet_id', '=', facet_id.id),
-                                        ('name', '=', doc.document_id.name)
-                                    ], limit=1)
-                                    documents_model.create({
-                                        'attachment_id': attachment_id.id,
-                                        'folder_id': folder_id.id,
-                                        'tag_ids': tag.ids,
-                                        'partner_id': doc.invoice_id.partner_id.id,
-                                        'purchase_id': self.po_id.id,
-                                        'invoice_id': self.id,
-                                        'bap_id': self.bap_id.id,
-                                    })
+
+                        # elif doc.document_id.name == 'BAP':
+                        #     folder_id = self.env['documents.folder'].sudo().search([('name', '=', 'BAP')], limit=1)
+                        #     if folder_id:
+                        #         facet_id = self.env['documents.facet'].sudo().search([
+                        #             ('name', '=', 'Documents'),
+                        #             ('folder_id', '=', folder_id.id)
+                        #         ], limit=1)
+                        #         attachment_id = self.env['ir.attachment'].sudo().create({
+                        #             'name': doc.filename,
+                        #             'datas': doc.document,
+                        #             'res_model': 'documents.document',
+                        #         })
+                        #         if attachment_id:
+                        #             tag = self.env['documents.tag'].sudo().search([
+                        #                 ('facet_id', '=', facet_id.id),
+                        #                 ('name', '=', doc.document_id.name)
+                        #             ], limit=1)
+                        #             documents_model.create({
+                        #                 'attachment_id': attachment_id.id,
+                        #                 'folder_id': folder_id.id,
+                        #                 'tag_ids': tag.ids,
+                        #                 'partner_id': doc.invoice_id.partner_id.id,
+                        #                 'purchase_id': self.po_id.id,
+                        #                 'invoice_id': self.id,
+                        #                 'bap_id': self.bap_id.id,
+                        #             })
                 
-                        elif doc.document_id.name in ['GR', 'Surat Jalan', 'SES']:
-                            folder_id = self.env['documents.folder'].sudo().search([('name', '=', 'GR/SES')], limit=1)
-                            if folder_id:
-                                facet_id = self.env['documents.facet'].sudo().search([
-                                    ('name', '=', 'Documents'),
-                                    ('folder_id', '=', folder_id.id)
-                                ], limit=1)
-                                attachment_id = self.env['ir.attachment'].sudo().create({
-                                    'name': doc.filename,
-                                    'datas': doc.document,
-                                    'res_model': 'documents.document',
-                                })
-                                if attachment_id:
-                                    tag = self.env['documents.tag'].sudo().search([
-                                        ('facet_id', '=', facet_id.id),
-                                        ('name', '=', doc.document_id.name)
-                                    ], limit=1)
-                                    documents_model.create({
-                                        'attachment_id': attachment_id.id,
-                                        'folder_id': folder_id.id,
-                                        'tag_ids': tag.ids,
-                                        'partner_id': doc.invoice_id.partner_id.id,
-                                        'purchase_id': self.po_id.id,
-                                        'invoice_id': self.id,
-                                        'picking_id': doc.picking_id.id
-                                    })
+                        # elif doc.document_id.name in ['GR', 'Surat Jalan', 'SES']:
+                        #     folder_id = self.env['documents.folder'].sudo().search([('name', '=', 'GR/SES')], limit=1)
+                        #     if folder_id:
+                        #         facet_id = self.env['documents.facet'].sudo().search([
+                        #             ('name', '=', 'Documents'),
+                        #             ('folder_id', '=', folder_id.id)
+                        #         ], limit=1)
+                        #         attachment_id = self.env['ir.attachment'].sudo().create({
+                        #             'name': doc.filename,
+                        #             'datas': doc.document,
+                        #             'res_model': 'documents.document',
+                        #         })
+                        #         if attachment_id:
+                        #             tag = self.env['documents.tag'].sudo().search([
+                        #                 ('facet_id', '=', facet_id.id),
+                        #                 ('name', '=', doc.document_id.name)
+                        #             ], limit=1)
+                        #             documents_model.create({
+                        #                 'attachment_id': attachment_id.id,
+                        #                 'folder_id': folder_id.id,
+                        #                 'tag_ids': tag.ids,
+                        #                 'partner_id': doc.invoice_id.partner_id.id,
+                        #                 'purchase_id': self.po_id.id,
+                        #                 'invoice_id': self.id,
+                        #                 'picking_id': doc.picking_id.id
+                        #             })
 
-                        elif doc.document_id.name == 'Kontrak':
-                            folder_id = self.env['documents.folder'].sudo().search([('name', '=', 'PO')], limit=1)
-                            if folder_id:
-                                facet_id = self.env['documents.facet'].sudo().search([
-                                    ('name', '=', 'Documents'),
-                                    ('folder_id', '=', folder_id.id)
-                                ], limit=1)
-                                attachment_id = self.env['ir.attachment'].sudo().create({
-                                    'name': doc.filename,
-                                    'datas': doc.document,
-                                    'res_model': 'documents.document',
-                                })
-                                if attachment_id:
-                                    tag = self.env['documents.tag'].sudo().search([
-                                        ('facet_id', '=', facet_id.id),
-                                        ('name', '=', doc.document_id.name)
-                                    ], limit=1)
-                                    documents_model.create({
-                                        'attachment_id': attachment_id.id,
-                                        'folder_id': folder_id.id,
-                                        'tag_ids': tag.ids,
-                                        'partner_id': doc.invoice_id.partner_id.id,
-                                        'purchase_id': self.po_id.id,
-                                        'invoice_id': self.id,
-                                        'is_po_doc': True
-                                    })
+                        # elif doc.document_id.name == 'Kontrak':
+                        #     folder_id = self.env['documents.folder'].sudo().search([('name', '=', 'PO')], limit=1)
+                        #     if folder_id:
+                        #         facet_id = self.env['documents.facet'].sudo().search([
+                        #             ('name', '=', 'Documents'),
+                        #             ('folder_id', '=', folder_id.id)
+                        #         ], limit=1)
+                        #         attachment_id = self.env['ir.attachment'].sudo().create({
+                        #             'name': doc.filename,
+                        #             'datas': doc.document,
+                        #             'res_model': 'documents.document',
+                        #         })
+                        #         if attachment_id:
+                        #             tag = self.env['documents.tag'].sudo().search([
+                        #                 ('facet_id', '=', facet_id.id),
+                        #                 ('name', '=', doc.document_id.name)
+                        #             ], limit=1)
+                        #             documents_model.create({
+                        #                 'attachment_id': attachment_id.id,
+                        #                 'folder_id': folder_id.id,
+                        #                 'tag_ids': tag.ids,
+                        #                 'partner_id': doc.invoice_id.partner_id.id,
+                        #                 'purchase_id': self.po_id.id,
+                        #                 'invoice_id': self.id,
+                        #                 'is_po_doc': True
+                        #             })
 
 
                 groups_line = self.env['wika.approval.setting.line'].search([
@@ -1911,6 +1919,7 @@ class WikaInvoiceDocumentLine(models.Model):
         ('verified', 'Verified'),
         ('rejected', 'Rejected')
     ], string='Status', default='waiting')
+    rejected_doc_id = fields.Many2one('documents.document', string='Rejected Document')
 
 
     @api.onchange('document')
