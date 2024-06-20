@@ -37,6 +37,7 @@ class SAPIntegration(models.Model):
         ('ncl', 'NCL'),
         ('vendor_bills', 'Vendor Bills'),
         ('vendor_bills_scf', 'Vendor Bills with SCF'),
+        ('vendor_bills_dp', 'Vendor Bills with DP'),
         ('payroll', 'Payroll'),
         ('partial_payment', 'Partial Payment')
     ], string='Form')
@@ -148,6 +149,49 @@ class SAPIntegration(models.Model):
             'view_type': 'form',
             'target': 'new',
         }
+    
+    def generate_data_vendor_bills_dp(self):
+        N = 32
+        today = datetime.now().strftime("%Y%m%d%H%M%S")
+        if self.type == 'generate' and self.form == 'vendor_bills_dp':
+            res = ''.join(random.sample(string.ascii_uppercase + string.digits, k=N))
+            dev_keys = ['YFII020', res, 'A000', 'AF00219I03', today]
+            keys = ['NO','DOC_DATE','POSTING_DATE','PERIOD','CURRENCY','REFERENCE','HEADER_TXT',
+                    'ACC_VENDOR','SPECIAL_GL','AMOUNT','TAX_CODE','DUE_ON','PO_NUMBER','PO_ITEM',
+                    'PROFIT_CTR','TEXT','WHT_TYPE','WHT_CODE']
+            query = helpers._get_computed_query_dp()
+
+        self._cr.execute(query)
+        vals = self.env.cr.fetchall()
+
+        buffer = StringIO()
+        writer = csv.writer(buffer, delimiter='|')
+
+        writer.writerow(dev_keys)
+        writer.writerow(keys)
+
+        for res in vals:
+            writer.writerow(res)
+
+        out2 = buffer.getvalue().encode('utf-8')
+        gentextfile = base64.b64encode(out2)
+        filename = 'YFII020_' + today + '.txt'
+
+        self.write({'file_template': gentextfile,'datas_fname':filename})
+
+        form_id = self.env.ref('wika_integration.template_sap_integration_form_view')
+        return {
+            'name': 'Generate & Download File',
+            'res_model': 'wika.sap.integration',
+            'view_id': False,
+            'res_id': self.id,
+            'views': [(form_id.id, 'form')],
+            'type': 'ir.actions.act_window',
+            'view_mode': 'form',
+            'view_type': 'form',
+            'target': 'new',
+        }
+    
     
     def generate_data_partial_payment(self):
         N = 32

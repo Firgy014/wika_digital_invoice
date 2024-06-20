@@ -28,6 +28,7 @@
                     <button string="Generate" name="generate_data_vendor_bills" type="object" class="oe_highlight" attrs="{'invisible': ['|',('type','=','upload'),('form','!=','vendor_bills')]}"/>
                     <button string="Generate" name="generate_data_partial_payment" type="object" class="oe_highlight" attrs="{'invisible': ['|',('type','=','upload'),('form','!=','partial_payment')]}"/>
                     <button string="Generate" name="generate_data_vendor_bills_scf" type="object" class="oe_highlight" attrs="{'invisible': ['|',('type','=','upload'),('form','!=','vendor_bills_scf')]}"/>
+                    <button string="Generate" name="generate_data_vendor_bills_dp" type="object" class="oe_highlight" attrs="{'invisible': ['|',('type','=','upload'),('form','!=','vendor_bills_dp')]}"/>
                     or
                     <button string="Cancel" class="oe_link" special="cancel"/>
                 </footer>
