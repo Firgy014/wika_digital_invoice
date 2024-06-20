@@ -133,36 +133,52 @@ def _get_computed_query_dp():
     return """
 SELECT
     inv.name AS NO,
-    inv.invoice_date AS DOC_DATE,
-    inv.date AS POSTING_DATE,
+    TO_CHAR(inv.invoice_date, 'YYYYMMDD') AS DOC_DATE,
+    TO_CHAR(inv.date, 'YYYYMMDD') AS POSTING_DATE,
     TO_CHAR(inv.date, 'FMmm') AS PERIOD,
+    currency.name AS CURRENCY,
     inv.no_invoice_vendor AS REFERENCE,
     inv.no_faktur_pajak AS HEADER_TXT,
-    inv.payment_reference AS ACC_VENDOR,
+    partner.sap_code AS ACC_VENDOR,
     TO_CHAR(inv.special_gl_id, '') AS SPECIAL_GL,
     inv.amount_invoice AS AMOUNT,
-    tax.pph_code AS TAX_CODE,
-    inv.invoice_date_due AS DUE_ON,
+    tax.name->>'en_US' AS TAX_CODE,
+    TO_CHAR(inv.invoice_date_due, 'YYYYMMDD') AS DUE_ON,
     po.name AS PO_NUMBER,
-    pol.sequence AS PO_ITEM,
+    COALESCE(pol.sequence, 10) AS PO_ITEM,
     proj.sap_code AS PROFIT_CTR,
-    line.name AS TEXT
+    line.name AS TEXT,
+    wht_tax_group.name->>'en_US' AS WHT_TYPE,
+    wht_tax.pph_code AS WHT_CODE
 FROM
     account_move inv
+LEFT JOIN
+    res_currency currency ON currency.id = inv.currency_id
+LEFT JOIN
+    res_partner partner ON partner.id = inv.partner_id
 LEFT JOIN
     account_move_line line ON line.move_id = inv.id
 LEFT JOIN
     account_move_account_tax_rel pph ON pph.account_move_id = inv.id
 LEFT JOIN
-    account_tax tax ON tax.id = pph.account_tax_id
+    account_move_line_account_tax_rel tax_line_rel ON tax_line_rel.account_move_line_id = line.id
+LEFT JOIN
+    account_tax tax ON tax.id = tax_line_rel.account_tax_id
+LEFT JOIN
+    account_tax_group tax_group ON tax_group.id = tax.tax_group_id
 LEFT JOIN
     purchase_order po ON po.id = inv.po_id
 LEFT JOIN
     project_project proj ON proj.id = inv.project_id
 LEFT JOIN
     purchase_order_line pol ON pol.id = line.purchase_line_id
+LEFT JOIN
+    account_tax wht_tax ON wht_tax.id = pph.account_tax_id
+LEFT JOIN
+    account_tax_group wht_tax_group ON wht_tax_group.id = wht_tax.tax_group_id
 WHERE
     inv.is_mp_approved = true AND
     inv.bap_type = 'uang muka' AND
+    line.display_type = 'product' AND
     inv.payment_reference IS NULL;
 """
