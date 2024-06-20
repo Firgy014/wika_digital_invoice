@@ -63,7 +63,7 @@
                                 <field name="is_mp_approved" groups="base.group_no_one"/>
                                 <field name="is_wizard_cancel" readonly="1" invisible="1"/>
                                 <field name="cut_off" readonly="1" force_save="1"/>
-                                <field name="special_gl_id" readonly="1" force_save="1" attrs="{'invisible': [('bap_type', '!=', 'uang muka')]}"/>
+                                <field name="special_gl_id" attrs="{'invisible': [('bap_type', '!=', 'uang muka')]}"/>
                                 <!-- <field name="is_full_payment" /> -->
                             </group>
                         </group>
@@ -192,7 +192,7 @@
                                         <tree editable="top">
                                             <field name="move_id" invisible="1"/>
                                             <field name="product_id"/>
-                                            <field name="special_gl_id"/>
+                                            <field name="special_gl_id" invisible="1"/>
                                             <field name="account_id"/>
                                             <field name="wbs_project_definition"/>
                                             <field name="percentage_amount"/>
