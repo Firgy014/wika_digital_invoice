@@ -820,6 +820,17 @@ class PurchaseOrderInherit(models.Model):
             record.picking_count = self.env['stock.picking'].search_count(
                 [('po_id', '=', record.id)])
 
+    def _prepare_stock_picking(self, picking=False):
+        self.ensure_one()
+        res = {
+            'partner_id': self.partner_id,
+            'branch_id': self.branch_id,
+            'project_id': self.project_id,
+        }
+        
+        return res
+    
+    
 class PurchaseOrderLineInherit(models.Model):
     _inherit = 'purchase.order.line'
 
@@ -865,7 +876,26 @@ class PurchaseOrderLineInherit(models.Model):
                 x.sisa_qty_bap = x.product_qty - x.qty_bap
             else:
                 x.sisa_qty_bap= x.product_qty
+    
+    
+    def _prepare_stock_move(self, picking=False):
+        self.ensure_one()
+        po_currency = self.currency_id
+        date = picking and picking.date or fields.Date.today()
+        res = {
+            'name': picking.name,
+            'product_id': self.product_id.id,
+            'product_uom': self.product_uom.id,
+            'product_qty': self.product_qty,
+            'price_unit': self.currency_id._convert(self.price_unit, po_currency, self.company_id, date, round=False),
+            'purchase_line_id': self.id,
+            'location_id': picking.location_id.id,
+            'location_dest_id': picking.location_dest_id.id,
+            'company_id': self.company_id.id,
+        }
 
+        return res
+    
 class PurchaseOrderDocumentLine(models.Model):
     _name = 'wika.po.document.line'
     _description = 'List Document PO'

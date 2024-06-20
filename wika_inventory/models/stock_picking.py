@@ -282,6 +282,46 @@ class PickingInherit(models.Model):
             raise ValidationError('User Akses Anda tidak berhak Approve!')
 
 
+    @api.onchange('po_id')
+    def _onchange_purchase_auto_complete(self):
+        _logger.info("# === _onchange_purchase_auto_complete === #")
+        
+        if not self.po_id:
+            return
+        
+        # Copy data from PO
+        picking_vals = self.po_id._prepare_stock_picking()
+        self.update(picking_vals)
+
+        po_lines = self.po_id.order_line - self.move_ids.mapped('purchase_line_id')
+        for line in po_lines.filtered(lambda l: not l.display_type):
+            self.move_ids += self.env['stock.move'].new(
+                line._prepare_stock_move(self)
+            )
+            _logger.info('# === ADD STOCK MOVE BARANG === #')
+            # # stock_move.create(vals)
+            # self.invoice_line_ids += .write({
+            #     'move_ids': [(0, 0, {
+            #         'sequence': item['MATDOC_ITM'],
+            #         'product_id': prod.id if prod else False,
+            #         'quantity_done': qty,
+            #         'product_uom_qty': qty,
+            #         'product_uom': uom.id,
+            #         #'active':active,
+            #         'state': 'waits',
+            #         'location_id': 4,
+            #         'location_dest_id': 8,
+            #         'purchase_line_id': po_line.id,
+            #         'name': prod.display_name if prod else False,
+            #         'origin': rec.name,
+            #     })],
+            #     'active': active
+            # })
+
+        # Compute gr ses origin.
+        origins = set(self.move_ids.mapped('purchase_line_id.order_id.name'))
+        self.origin = ','.join(list(origins))
+
     def action_reject(self):
         cek = False
         level=self.level
@@ -413,11 +453,11 @@ class PickingInherit(models.Model):
             record.po_count = self.env['purchase.order'].search_count(
                 [('id', '=', record.po_id.id)])
             
-    @api.depends('move_type', 'immediate_transfer', 'move_ids.state', 'move_ids.picking_id')
-    def _compute_state(self):
-        for rec in self:
-            _logger.info("# === SP _compute_state === #" + str(self.state))
-            res = super(PickingInherit, rec)._compute_state()
+    # @api.depends('move_type', 'immediate_transfer', 'move_ids.state', 'move_ids.picking_id')
+    # def _compute_state(self):
+    #     for rec in self:
+    #         _logger.info("# === SP _compute_state === #" + str(self.state))
+    #         res = super(PickingInherit, rec)._compute_state()
         
-        return res
+    #     return res
         

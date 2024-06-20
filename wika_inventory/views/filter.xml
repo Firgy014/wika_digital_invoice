@@ -8,6 +8,7 @@
 
                 <!-- search fields  -->
                 <xpath expr="//field[@name='product_id']" position="before">
+                    <field name="no_gr_ses" string="Nomor GR/SES"/>
                     <field name="branch_id" string="Divisi"/>
                 </xpath>
                 <xpath expr="//field[@name='branch_id']" position="after">
@@ -28,7 +29,7 @@
 
                 <!-- hidden search fields -->
                 <xpath expr="//field[@name='name']" position="attributes">
-                    <attribute name="string">Nomor GR/SES</attribute>
+                    <attribute name="string">Reference</attribute>
                 </xpath>
                 <xpath expr="//field[@name='origin']" position="replace">
                     <field name="origin" invisible="1"/>

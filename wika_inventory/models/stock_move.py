@@ -78,48 +78,48 @@ class StockMoveInherit(models.Model):
         for record in self:
             record.price_subtotal = record.quantity_done * record.price_unit
 
-    def name_get(self):
-        res = []
-        for move in self:
-            tit = "[%s] %s" % (move.sequence, move.product_id.code)
-            res.append((move.id, tit))
-        return res
+    # def name_get(self):
+    #     res = []
+    #     for move in self:
+    #         tit = "[%s] %s" % (move.sequence, move.product_id.code)
+    #         res.append((move.id, tit))
+    #     return res
     
-    def _recompute_state(self):
-        res = []
-        for rec in self:
-            _logger.info("# === _recompute_state === #" + str(rec.state))
-            res = super(StockMoveInherit, rec)._recompute_state()
+    # def _recompute_state(self):
+    #     res = []
+    #     for rec in self:
+    #         _logger.info("# === _recompute_state === #" + str(rec.state))
+    #         res = super(StockMoveInherit, rec)._recompute_state()
 
-        return res
+    #     return res
 
-    def _action_assign(self, force_qty=False):
-        res = []
-        for rec in self:
-            _logger.info("# === _action_assign === #" + str(rec.state))
-            res = super(StockMoveInherit, rec)._action_assign()
+    # def _action_assign(self, force_qty=False):
+    #     res = []
+    #     for rec in self:
+    #         _logger.info("# === _action_assign === #" + str(rec.state))
+    #         res = super(StockMoveInherit, rec)._action_assign()
 
-        return res
+    #     return res
 
-    def _get_relevant_state_among_moves(self):
-        res = []
-        for rec in self:
-            _logger.info("# === _get_relevant_state_among_moves. === #" + str(rec.state))
-            res = super(StockMoveInherit, rec)._get_relevant_state_among_moves()
+    # def _get_relevant_state_among_moves(self):
+    #     res = []
+    #     for rec in self:
+    #         _logger.info("# === _get_relevant_state_among_moves. === #" + str(rec.state))
+    #         res = super(StockMoveInherit, rec)._get_relevant_state_among_moves()
 
-        return res
+    #     return res
 
-    def write(self, vals):
-        _logger.info(str(vals.get('state')) + "# === WRITE === #" + str(self.state))
-        res = super(StockMoveInherit, self).write(vals)
+    # def write(self, vals):
+    #     _logger.info(str(vals.get('state')) + "# === WRITE === #" + str(self.state))
+    #     res = super(StockMoveInherit, self).write(vals)
 
-        return res
+    #     return res
     
-    def _merge_moves_fields(self):
-        _logger.info("# === _merge_moves_fields === #" + str(self.state))
-        res = super(StockMoveInherit, self)._merge_moves_fields()
+    # def _merge_moves_fields(self):
+    #     _logger.info("# === _merge_moves_fields === #" + str(self.state))
+    #     res = super(StockMoveInherit, self)._merge_moves_fields()
 
-        return res
+    #     return res
 
 class StockMoveLineInherit(models.Model):
     _inherit = 'stock.move.line'
@@ -135,12 +135,29 @@ class StockMoveLineInherit(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
-        for vals in vals_list:
-            vals['wika_state'] = 'waits'
+        # for vals in vals_list:
+        #     vals['wika_state'] = 'waits'
 
         # _logger.info('vals_listTTTTTTTTTTTT')
         # _logger.info(vals_list)
-        
         res = super(StockMoveLineInherit, self).create(vals_list)
         return res
-
+    
+    def unlink(self):
+        precision = self.env['decimal.precision'].precision_get('Product Unit of Measure')
+        for ml in self:
+            # _logger.info("# === unlink === #" + str(ml.state) + str(ml.id))
+            if ml.state and ml.state == 'cancel':
+                ml.state = 'assigned'
+                # _logger.info("# === unlink set state === #" + str(ml.state) + str(ml.id))
+            # Unlinking a move line should unreserve.
+            if not float_is_zero(ml.reserved_qty, precision_digits=precision) and ml.move_id and not ml.move_id._should_bypass_reservation(ml.location_id):
+                self.env['stock.quant']._update_reserved_quantity(ml.product_id, ml.location_id, -ml.reserved_qty, lot_id=ml.lot_id, package_id=ml.package_id, owner_id=ml.owner_id, strict=True)
+        moves = self.mapped('move_id')
+        res = super(StockMoveLineInherit, self).unlink()
+        if moves:
+            # Add with_prefetch() to set the _prefecht_ids = _ids
+            # because _prefecht_ids generator look lazily on the cache of move_id
+            # which is clear by the unlink of move line
+            moves.with_prefetch()._recompute_state()
+        return res
