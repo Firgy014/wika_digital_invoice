@@ -33,7 +33,8 @@
                     <group>
                       <group id="header_left_group">
                            <field name="partner_id" options="{'no_create': True, 'no_create_edit':True}" widget="res_partner_many2one" string="Vendor" />
-                            <field name="bap_id" options="{'no_create': True, 'no_create_edit':True}" domain="[('is_fully_invoiced', '!=', True), ('state', '=', 'approved'),('bap_type', '!=', 'cut over')]" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
+                           <field name="bap_id" options="{'no_create': True, 'no_create_edit':True}" domain="[('is_fully_invoiced', '!=', True), ('state', '=', 'approved'),('bap_type', '!=', 'cut over')]" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
+                           <field name="bap_type" invisible="1"/>
                            <field name="po_id" options="{'no_create': True, 'no_create_edit':True}" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
                            <field name="no_invoice_vendor" style="background-color: #dddded;" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
                            <field name="valuation_class" groups="base.group_no_one" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
@@ -62,6 +63,7 @@
                                 <field name="is_mp_approved" groups="base.group_no_one"/>
                                 <field name="is_wizard_cancel" readonly="1" invisible="1"/>
                                 <field name="cut_off" readonly="1" force_save="1"/>
+                                <field name="special_gl_id" readonly="1" force_save="1" attrs="{'invisible': [('bap_type', '!=', 'uang muka')]}"/>
                                 <!-- <field name="is_full_payment" /> -->
                             </group>
                         </group>

@@ -77,7 +77,8 @@ class WikaInheritedAccountMove(models.Model):
         help='Edit Tax amounts if you encounter rounding issues.',
         exportable=False,
     )
-    special_gl_id = fields.Many2one('wika.special.gl', string='Special GL')
+    # special_gl_id = fields.Many2one('wika.special.gl', string='Special GL')
+    special_gl_id = fields.Many2one('wika.special.gl', string='Special GL', compute='_compute_special_gl_id', store=True)
     check_biro = fields.Boolean(compute="_cek_biro")
 
     pph_ids = fields.Many2many('account.tax', string='PPH')
@@ -147,6 +148,14 @@ class WikaInheritedAccountMove(models.Model):
     _sql_constraints = [
         ('name_invoice_uniq', 'unique (name, year)', 'The name of the invoice must be unique per year !')
     ]
+
+    @api.depends('bap_id')
+    def _compute_special_gl_id(self):
+        for move in self:
+            if move.bap_id and move.bap_type == 'uang muka':
+                move.special_gl_id = move.price_cut_ids and move.price_cut_ids[0].special_gl_id or False
+            else:
+                move.special_gl_id = False
 
     def _must_check_constrains_date_sequence(self):
         # OVERRIDES sequence.mixin
