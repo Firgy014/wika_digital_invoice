@@ -1,0 +1,253 @@
+<odoo>
+
+    <template id="report_wika_rpp_retensi">
+        <t t-foreach="docs" t-as="o">
+        <t t-call="web.html_container">
+            <t t-set="data_report_margin_top" t-value="8"/>
+            <t t-set="data_report_header_spacing" t-value="9"/>
+            <t t-set="data_report_dpi" t-value="110"/>
+
+            <t t-call="web.internal_layout">
+                <div class="page">
+                    <div style="text-align: center; margin-top: -5px; font-size: 14px;">
+                        <t t-if="o.currency_id.name != 'IDR'">
+                            <h4>RETENTION WORK PROGRESS RECAP</h4>
+                        </t>
+                        <t t-if="o.currency_id.name == 'IDR'">
+                            <h4>REKAP PROGRESS PEKERJAAN RETENSI</h4>
+                        </t>
+                    </div>
+                    <div class="d-flex justify-content-center" style="margin-top: -8px; width: 100%;">
+                        <table class="table table-borderless" style="width:100%;">
+                            <tbody>
+                                <tr style="text-align: left;">
+                                    <td rowspan="2" style="padding: 3px;">1.</td>
+                                    <td style="padding: 1px;">
+                                        <t t-if="o.currency_id.name != 'IDR'">Job</t>
+                                        <t t-if="o.currency_id.name == 'IDR'">Pekerjaan</t>
+                                    </td>
+                                    <td style="padding: 1px;">:</td>
+                                    <td style="padding: 1px;"><t t-esc="o.job"/></td>
+                                </tr>
+                                <tr style="text-align: left;">
+                                    <td style="padding: 1px;">
+                                        <t t-if="o.currency_id.name != 'IDR'">Project</t>
+                                        <t t-if="o.currency_id.name == 'IDR'">Proyek</t>
+                                    </td>
+                                    <td style="padding: 1px;">:</td>
+                                    <td style="padding: 1px;"><t t-esc="o.project_id.description"/></td>
+                                </tr>
+                                <tr style="text-align: left;">
+                                    <td rowspan="4" style="padding: 3px;">2.</td>
+                                    <td style="padding: 1px;">
+                                        <t t-if="o.currency_id.name != 'IDR'">Contract date</t>
+                                        <t t-if="o.currency_id.name == 'IDR'">Tanggal kontrak</t>
+                                    </td>
+                                    <td style="padding: 1px;">:</td>
+                                    <td style="padding: 1px;"><t t-esc="o.begin_date"/></td>
+                                </tr>
+                                <tr style="text-align: left;">
+                                    <td style="padding: 1px;">
+                                        <t t-if="o.currency_id.name != 'IDR'">Number PO</t>
+                                        <t t-if="o.currency_id.name == 'IDR'">Nomor PO</t>
+                                    </td>
+                                    <td style="padding: 1px;">:</td>
+                                    <td style="padding: 1px;"><t t-esc="o.po_id.name"/></td>
+                                </tr>
+                                <tr style="text-align: left;">
+                                    <td style="padding: 1px;">
+                                        <t t-if="o.currency_id.name != 'IDR'">Contract number</t>
+                                        <t t-if="o.currency_id.name == 'IDR'">Nomor Kontrak</t>
+                                    </td>
+                                    <td style="padding: 1px;">:</td>
+                                    <td style="padding: 1px;"><t t-esc="o.sap_doc_number"/></td>
+                                </tr>
+                                <tr style="text-align: left;">
+                                    <td style="padding: 1px;">
+                                        <t t-if="o.currency_id.name != 'IDR'">Contract value</t>
+                                        <t t-if="o.currency_id.name == 'IDR'">Nilai kontrak</t>
+                                    </td>
+                                    <td style="padding: 1px;">:</td>
+                                    <td style="padding: 1px;">
+                                        <t t-if="o.currency_id.name != 'IDR'">
+                                            <t t-esc="o.currency_id.symbol"/>. <t t-esc="'{:,.2f}'.format(o.po_id.amount_untaxed)"/>
+                                        </t>
+                                        <t t-if="o.currency_id.name == 'IDR'">
+                                            <t t-esc="o.currency_id.symbol"/>. <t t-esc="'{:,.0f}'.format(o.po_id.amount_untaxed)"/>
+                                        </t>
+                                    </td>
+                                </tr>
+                                <tr style="text-align: left;">
+                                    <td rowspan="4" style="padding: 3px;">3.</td>
+                                    <td style="padding: 1px;">
+                                        <t t-if="o.currency_id.name != 'IDR'">PHO Minutes No</t>
+                                        <t t-if="o.currency_id.name == 'IDR'">No Berita Acara PHO</t>
+                                    </td>
+                                    <td style="padding: 1px;">:</td>
+                                    <td style="padding: 1px;"><t t-esc="o.numb_ba_pho"/></td>
+                                </tr>
+                                <tr style="text-align: left;">
+                                    <td style="padding: 1px;">
+                                        <t t-if="o.currency_id.name != 'IDR'">PHO Date</t>
+                                        <t t-if="o.currency_id.name == 'IDR'">Tanggal PHO</t>
+                                    </td>
+                                    <td style="padding: 1px;">:</td>
+                                    <td style="padding: 1px;"><t t-esc="o.pho_date"/></td>
+                                </tr>
+                                <tr style="text-align: left;">
+                                    <td style="padding: 1px;">
+                                        <t t-if="o.currency_id.name != 'IDR'">FHO Minutes No</t>
+                                        <t t-if="o.currency_id.name == 'IDR'">No Berita Acara FHO</t>
+                                    </td>
+                                    <td style="padding: 1px;">:</td>
+                                    <td style="padding: 1px;"><t t-esc="o.numb_ba_fho"/></td>
+                                </tr>
+                                <tr style="text-align: left;">
+                                    <td style="padding: 1px;">
+                                        <t t-if="o.currency_id.name != 'IDR'">FHO Date</t>
+                                        <t t-if="o.currency_id.name == 'IDR'">Tanggal FHO</t>
+                                    </td>
+                                    <td style="padding: 1px;">:</td>
+                                    <td style="padding: 1px;"><t t-esc="o.fho_date"/></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div style="margin-top: -20px;">
+                        <style>
+                            .table tbody th,
+                            .table tbody td,
+                            .table tbody p {
+                                font-size: 14px; /* Sesuaikan ukuran teks yang diinginkan */
+                            }
+                        </style>
+                        <table class="table table-borderless" style="width:100%">
+                            <thead class="thead-dark">
+                                <tr>
+                                    <th scope="col" style="width: auto;"></th>
+                                    <th scope="col" style="width: auto;"></th>
+                                    <th scope="col" style="width: auto;"></th>
+                                    <th scope="col" style="width: auto;"></th>
+                                    <th scope="col" style="width: auto;"></th>
+                                    <th scope="col" style="width: auto;"></th>
+                                    <th scope="col" style="width: auto;"></th>
+                                    <!-- <th scope="col" style="width: 14%;"></th> -->
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <!-- <th style="padding: 1px;" scope="row">1.</th>
+                                    <td style="padding: 1px;"><strong>NILAI RETENSI</strong></td>
+                                    <td style="padding: 1px;"></td>
+                                    <td style="padding: 1px;"></td>
+                                    <td style="padding: 1px;"></td>
+                                    <td style="padding: 1px;"></td>
+                                    <td style="padding: 1px;"></td>
+                                    <td style="padding: 1px;"></td> -->
+                                </tr>
+                                <tr>
+                                    <!-- <th scope="row" style="padding: 1px;">1.1</th>
+                                    <td style="padding: 1px;">Yang lalu</td>
+                                    <td style="padding: 1px;">:</td>
+                                    <td style="padding: 1px;"></td>
+                                    <td style="padding: 1px;"></td>
+                                    <td style="padding: 1px;"></td>
+                                    <td style="text-align: right; padding: 1px;">=</td>
+                                    <td style="text-align: right; padding: 1px;"><t t-esc="o.currency_id.symbol"/>. <t t-esc="'{:,.0f}'.format(o.last_retensi_total)"/></td> -->
+                                </tr>
+                                <tr>
+                                    <!-- <th scope="row" style="padding: 1px;">1.2</th>
+                                    <td style="padding: 1px;">Saat ini</td>
+                                    <td style="padding: 1px;">:</td>
+                                    <td style="padding: 1px;"><t t-esc="o.amount_pecentage_retensi"/>%</td>
+                                    <td style="padding: 1px;">x</td>
+                                    <td style="padding: 1px;"><t t-esc="o.currency_id.symbol"/>. <t t-esc="'{:,.0f}'.format(o.total_amount) if o.total_amount else 0"/></td>
+                                    <td style="text-align: right; padding: 1px;">=</td>
+                                    <td style="text-align: right; padding: 1px;"><t t-esc="o.currency_id.symbol"/>. <t t-esc="'{:,.0f}'.format(o.retensi_total)"/></td>
+                                </tr>
+                                <tr>
+                                    <th style="padding: 1px;" scope="row">1.3</th>
+                                    <td style="padding: 1px;">S/d saat ini</td>
+                                    <td style="padding: 1px;">:</td>
+                                    <td style="padding: 1px;"></td>
+                                    <td style="padding: 1px;"></td>
+                                    <td style="padding: 1px;"></td>
+                                    <td style="text-align: right; padding: 1px;">=</td>
+                                    <td style="text-align: right; padding: 1px;"><t t-esc="o.currency_id.symbol"/>. <t t-esc="'{:,.0f}'.format(o.last_retensi_total + o.retensi_total)"/></td> -->
+                                </tr>
+                                <!-- <tr>
+                                    <th style="padding: 1px;" scope="row">1.</th>
+                                    <td style="padding: 1px;"><strong>NILAI RETENSI</strong></td>
+                                    <td style="padding: 1px;">:</td>
+                                    <td style="padding: 1px;"><t t-esc="o.amount_pecentage_retensi"/>%</td>
+                                    <td style="padding: 1px;">x</td>
+                                    <td style="padding: 1px;"><t t-esc="o.currency_id.symbol"/>. <t t-esc="'{:,.0f}'.format(o.total_retensi_saatini) if o.total_retensi_saatini else 0"/></td>
+                                    <td style="text-align: right; padding: 1px;">=</td>
+                                    <td style="text-align: right; padding: 1px;"><t t-esc="o.currency_id.symbol"/>. <t t-esc="'{:,.0f}'.format(o.retensi_total)"/></td>
+                                </tr> -->
+                                <tr>
+                                    <th style="padding: 1px;" scope="row">1.</th>
+                                    <td style="padding: 1px;">
+                                        <t t-if="o.currency_id.name != 'IDR'">
+                                            <strong>RETENTION VALUE</strong>
+                                        </t>
+                                        <t t-if="o.currency_id.name == 'IDR'">
+                                            <strong>NILAI RETENSI</strong>
+                                        </t>
+                                    </td>
+                                    <td style="padding: 1px;">:</td>
+                                    <td style="padding: 1px;">
+                                        <t t-esc="o.amount_pecentage_retensi"/>%
+                                    </td>
+                                    <td style="padding: 1px;">x</td>
+                                    <td style="padding: 1px;">
+                                        <t t-if="o.currency_id.name != 'IDR'">
+                                            <t t-esc="o.currency_id.symbol"/>. <t t-esc="'{:,.2f}'.format(o.total_retensi_saatini) if o.total_retensi_saatini else 0"/>
+                                        </t>
+                                        <t t-if="o.currency_id.name == 'IDR'">
+                                            <t t-esc="o.currency_id.symbol"/>. <t t-esc="'{:,.0f}'.format(o.total_retensi_saatini) if o.total_retensi_saatini else 0"/>
+                                        </t>
+                                    </td>
+                                    <td style="text-align: right; padding: 1px;">=</td>
+                                    <td style="text-align: right; padding: 1px;">
+                                        <t t-if="o.currency_id.name != 'IDR'">
+                                            <t t-esc="o.currency_id.symbol"/>. <t t-esc="'{:,.2f}'.format(o.retensi_total)"/>
+                                        </t>
+                                        <t t-if="o.currency_id.name == 'IDR'">
+                                            <t t-esc="o.currency_id.symbol"/>. <t t-esc="'{:,.0f}'.format(o.retensi_total)"/>
+                                        </t>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th style="padding: 1px;" scope="row">2.</th>
+                                    <td style="padding: 1px;">
+                                        <t t-if="o.currency_id.name != 'IDR'">
+                                            <strong>NET BILL AMOUNT</strong>
+                                        </t>
+                                        <t t-if="o.currency_id.name == 'IDR'">
+                                            <strong>JUMLAH TAGIHAN NETTO</strong>
+                                        </t>
+                                    </td>
+                                    <td style="padding: 1px;"></td>
+                                    <td style="padding: 1px;"></td>
+                                    <td style="padding: 1px;"></td>
+                                    <td style="padding: 1px;"></td>
+                                    <td style="text-align: right; padding: 1px;">=</td>
+                                    <td style="text-align: right; padding: 1px;">
+                                        <t t-if="o.currency_id.name != 'IDR'">
+                                            <t t-esc="o.currency_id.symbol"/>. <t t-esc="'{:,.2f}'.format(o.retensi_total)"/>
+                                        </t>
+                                        <t t-if="o.currency_id.name == 'IDR'">
+                                            <t t-esc="o.currency_id.symbol"/>. <t t-esc="'{:,.0f}'.format(o.retensi_total)"/>
+                                        </t>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </t>
+        </t>
+        </t>
+    </template>
+</odoo>

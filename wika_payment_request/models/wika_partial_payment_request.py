@@ -67,17 +67,25 @@ class WikaPartialPaymentRequest(models.Model):
     @api.model
     def create(self, vals):
         if vals.get('name', '/') == '/':
-            latest_partial = self.search([], order='id desc', limit=1)
-            if latest_partial:
-                latest_sequence_number = int(latest_partial.name.split('/')[-1])
-                new_sequence_number = latest_sequence_number + 1
-                if new_sequence_number - latest_sequence_number > 1:
-                    new_sequence_number = latest_sequence_number + 1
-            else:
-                new_sequence_number = 1
-
             current_year = fields.Date.today().year
             current_month = fields.Date.today().month
+            
+            self._cr.execute('LOCK TABLE wika_partial_payment_request IN ACCESS EXCLUSIVE MODE')
+
+            self._cr.execute("""
+                SELECT name 
+                FROM wika_partial_payment_request 
+                WHERE name LIKE %s 
+                ORDER BY id DESC 
+                LIMIT 1
+            """, (f'Partial/{current_year}/{current_month:02d}/%',))
+            latest_partial = self._cr.fetchone()
+
+            if latest_partial:
+                latest_sequence_number = int(latest_partial[0].split('/')[-1])
+                new_sequence_number = latest_sequence_number + 1
+            else:
+                new_sequence_number = 1
 
             new_name = f"Partial/{current_year}/{current_month:02d}/{new_sequence_number:05d}"
             vals['name'] = new_name
@@ -136,39 +144,6 @@ class WikaPartialPaymentRequest(models.Model):
     def _compute_remaining_amount(self):
         for record in self:
             record.remaining_amount = record.total_invoice - record.partial_amount
-
-    #@api.model
-    #def create(self, vals):
-        #if vals.get('name', '/') == '/':
-            #sequence = self.env['ir.sequence'].next_by_code('wika.partial.payment.request')
-            #vals['name'] = sequence
-
-        #res = super(WikaPartialPaymentRequest, self).create(vals)
-        #res.assign_todo_first()
-        #return res
-    
-    #make code yg ini dulu    
-    @api.model
-    def create(self, vals):
-        if vals.get('name', '/') == '/':
-            latest_partial = self.search([], order='id desc', limit=1)
-            if latest_partial:
-                latest_sequence_number = int(latest_partial.name.split('/')[-1])
-                new_sequence_number = latest_sequence_number + 1
-                if new_sequence_number - latest_sequence_number > 1:
-                    new_sequence_number = latest_sequence_number + 1
-            else:
-                new_sequence_number = 1
-
-            current_year = fields.Date.today().year
-            current_month = fields.Date.today().month
-
-            new_name = f"Partial/{current_year}/{current_month:02d}/{new_sequence_number:05d}"
-            vals['name'] = new_name
-
-        res = super(WikaPartialPaymentRequest, self).create(vals)
-        res.assign_todo_first()
-        return res
 
     # documents_count = fields.Integer(string='Total Doc', compute='_compute_documents_count')
     # @api.depends('invoice_ids')
@@ -419,22 +394,26 @@ class WikaPartialPaymentRequest(models.Model):
                 self.remaining_amount = self.total_invoice - self.partial_amount
         
                 if self.remaining_amount > 0:
-                    # Dapatkan tahun dan bulan saat ini
                     current_year = datetime.now().year
                     current_month = datetime.now().month
-                    
-                    # Cari nomor urut terbaru untuk bulan dan tahun yang sama
-                    last_partial = self.env['wika.partial.payment.request'].search([
-                        ('name', 'like', f'Partial/{current_year}/{current_month:02d}/%')
-                    ], order="name desc", limit=1)
+
+                    self._cr.execute('LOCK TABLE wika_partial_payment_request IN ACCESS EXCLUSIVE MODE')
+
+                    self._cr.execute("""
+                        SELECT name 
+                        FROM wika_partial_payment_request 
+                        WHERE name LIKE %s 
+                        ORDER BY id DESC 
+                        LIMIT 1
+                    """, (f'Partial/{current_year}/{current_month:02d}/%',))
+                    last_partial = self._cr.fetchone()
 
                     if last_partial:
-                        last_sequence_number = int(last_partial.name.split('/')[-1])
+                        last_sequence_number = int(last_partial[0].split('/')[-1])
                         new_sequence_number = last_sequence_number + 1
                     else:
                         new_sequence_number = 1
 
-                    # Bangun nama baru untuk partial payment request
                     new_name = f"Partial/{current_year}/{current_month:02d}/{new_sequence_number:05d}"
 
                     remaining_total = self.remaining_amount
@@ -447,8 +426,9 @@ class WikaPartialPaymentRequest(models.Model):
                         'date': fields.Date.today(),
                         'branch_id': self.branch_id.id,
                         'project_id': self.project_id.id,
-                        'reference': last_partial.name if last_partial else False
+                        'reference': self.name
                     })
+
                 self.env['wika.partial.approval.line'].create({
                     'user_id': self._uid,
                     'groups_id': groups_id.id,
