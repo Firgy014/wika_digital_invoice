@@ -54,7 +54,7 @@ class WikaInheritedAccountMove(models.Model):
             ('is_fully_invoiced', '!=', True)
         ]"""
     )
-    branch_id = fields.Many2one('res.branch', string='Divisi', required=True, default=122)
+    branch_id = fields.Many2one('res.branch', string='Divisi', required=True)
     department_id = fields.Many2one('res.branch', string='Department')
     project_id = fields.Many2one('project.project', string='Project')
     document_ids = fields.One2many('wika.invoice.document.line', 'invoice_id', string='Document Line', required=True)
@@ -729,6 +729,8 @@ class WikaInheritedAccountMove(models.Model):
 
     def write(self, values):
         for rec in self:
+            _logger.info("# === ACCOUNT MOVE WRITE === #")
+            _logger.info(str(values))
             record = super(WikaInheritedAccountMove, rec).write(values)
 
             if isinstance(record, bool):
