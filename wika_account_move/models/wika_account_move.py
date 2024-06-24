@@ -749,7 +749,8 @@ class WikaInheritedAccountMove(models.Model):
                 raise ValidationError("Posting Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
             else:
                 pass
-            return record
+        
+        return record
 
     # Refresh all records to ensure is_waba and amount total is successfully computed
     def _cron_refresh_record_values(self):
