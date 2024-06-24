@@ -825,7 +825,7 @@ class WikaInheritedAccountMove(models.Model):
                         'display_type': 'product',
                         'product_id': cut_line.product_id.id,
                         'quantity': cut_line.qty or 1.0,
-                        'price_unit': cut_line.amount,
+                        'price_unit': self.bap_id.retensi_total,
                     }))
             else:
                 for bap_line in self.bap_id.bap_ids:
