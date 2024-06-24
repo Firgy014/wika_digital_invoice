@@ -279,6 +279,7 @@ class WikaInheritedAccountMove(models.Model):
     is_waba = fields.Boolean(string='Invoice Waba', compute='_compute_is_waba')
     bap_type = fields.Char(string='Jenis BAP', compute='_compute_bap_type', store=True)
     activity_user_id = fields.Many2one('res.users', string='ToDo User', store=True)
+    error_narration = fields.Char(string='Error Narration')
 
     @api.depends('bap_id.bap_type')
     def _compute_bap_type(self):
