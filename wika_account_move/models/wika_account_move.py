@@ -1193,7 +1193,7 @@ class WikaInheritedAccountMove(models.Model):
                 _logger.info(e)
                 raise UserError(_("Terjadi Kesalahan! Update Invoice Gagal."))
         else:
-            raise UserError(_("Tidak diproses karena status sudah Done!"))
+            raise UserError(_("Terjadi Kesalahan! pph_amount harus ada nilainya dan tidak pernah di update"))
             
     def action_approve(self):
         # self.write({'is_wizard_cancel': False})
