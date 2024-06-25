@@ -185,23 +185,25 @@ WHERE
 
 def _get_computed_query_retensi():
     return """
-SELECT inv.name AS NO, 
-       TO_CHAR(inv.date, 'YYYYMMDD') AS POSTING_DATE, 
-       TO_CHAR(inv.date, 'FMmm') AS PERIOD, 
-       TO_CHAR(inv.date, 'FMyyyy') AS FISCAL_YEAR, 
-       inv.no_invoice_vendor AS REFERENCE, 
-       inv.no_faktur_pajak AS HEADER_TEXT, 
-       partner.sap_code AS VENDOR, 
-       inv.amount_invoice AS AMOUNT, 
-       po.name AS ASSIGNMENT, 
-       CONCAT(partner.sap_code, ' ', partner.name) AS ITEM_TEXT, 
-       CASE WHEN inv.project_id IS NOT NULL THEN proj.sap_code ELSE branch.sap_code END AS PROFIT_CENTER, 
-       (SELECT tax.pph_code 
-        FROM account_move_line line 
-        JOIN account_move_line_account_tax_rel rel ON rel.account_move_line_id = line.id 
-        JOIN account_tax tax ON tax.id = rel.account_tax_id 
-        WHERE line.move_id = inv.id 
-        LIMIT 1) AS TAX_CODE 
+SELECT
+    inv.name AS NO,
+    TO_CHAR(inv.date, 'YYYYMMDD') AS POSTING_DATE,
+    TO_CHAR(inv.date, 'FMmm') AS PERIOD,
+    TO_CHAR(inv.date, 'FMyyyy') AS YEAR,
+    currency.name AS CURRENCY,
+    inv.no_invoice_vendor AS REFERENCE,
+    inv.no_faktur_pajak AS HEADER_TEXT,
+    partner.sap_code AS VENDOR,
+    inv.amount_invoice AS AMOUNT,
+    po.name AS ASSIGNMENT,
+    CONCAT(partner.sap_code, '-', partner.name) AS ITEM_TEXT,
+    CASE WHEN inv.project_id IS NOT NULL THEN proj.sap_code ELSE branch.sap_code END AS PROFIT_CENTER,
+    (SELECT tax.pph_code
+    FROM account_move_line line
+    JOIN account_move_line_account_tax_rel rel ON rel.account_move_line_id = line.id
+    JOIN account_tax tax ON tax.id = rel.account_tax_id
+    WHERE line.move_id = inv.id
+    LIMIT 1) AS TAX_CODE
 FROM
     account_move inv 
 LEFT JOIN
@@ -210,6 +212,8 @@ LEFT JOIN
     res_partner partner ON partner.id = inv.partner_id 
 LEFT JOIN
     account_move_line line ON line.move_id = inv.id 
+LEFT JOIN
+    res_currency currency ON currency.id = inv.currency_id
 LEFT JOIN
     purchase_order po ON po.id = inv.po_id 
 LEFT JOIN
