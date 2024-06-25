@@ -146,7 +146,7 @@
                                     <field name="cut_off" readonly="1" force_save="1"/>
                                     <field name="pph_amount"/>
                                     <field name="is_waba" readonly="0" widget="toggle_boolean"/>
-                                    <field name="error_narration" attrs="{'invisible': [('payment_reference', '=', False)]}"/>
+                                    <field name="error_narration" attrs="{'invisible': [('payment_reference', '!=', False)]}"/>
                                 </group>
                             </page>
                             <page string="List Document">
