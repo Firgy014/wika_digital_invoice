@@ -38,6 +38,7 @@ class SAPIntegration(models.Model):
         ('vendor_bills', 'Vendor Bills'),
         ('vendor_bills_scf', 'Vendor Bills with SCF'),
         ('vendor_bills_dp', 'Vendor Bills with DP'),
+        ('vendor_bills_retensi', 'Vendor Bills with Retensi'),
         ('payroll', 'Payroll'),
         ('partial_payment', 'Partial Payment')
     ], string='Form')
@@ -191,7 +192,47 @@ class SAPIntegration(models.Model):
             'view_type': 'form',
             'target': 'new',
         }
-    
+
+    def generate_data_vendor_bills_retensi(self):
+        N = 32
+        today = datetime.now().strftime("%Y%m%d%H%M%S")
+        if self.type == 'generate' and self.form == 'vendor_bills_retensi':
+            res = ''.join(random.sample(string.ascii_uppercase + string.digits, k=N))
+            dev_keys = ['YFII024', res, 'A000', 'AF00219I03', today]
+            keys = ['NO','POSTING_DATE','PERIOD','FISCAL_YEAR','REFERENCE','HEADER_TXT',
+                    'VENDOR','AMOUNT','ASSIGNMENT','ITEM_TEXT','PROFIT_CENTER','TAX_CODE']
+            query = helpers._get_computed_query_retensi()
+
+        self._cr.execute(query)
+        vals = self.env.cr.fetchall()
+
+        buffer = StringIO()
+        writer = csv.writer(buffer, delimiter='|')
+
+        writer.writerow(dev_keys)
+        writer.writerow(keys)
+
+        for res in vals:
+            writer.writerow(res)
+
+        out2 = buffer.getvalue().encode('utf-8')
+        gentextfile = base64.b64encode(out2)
+        filename = 'YFII024_' + today + '.txt'
+
+        self.write({'file_template': gentextfile,'datas_fname':filename})
+
+        form_id = self.env.ref('wika_integration.template_sap_integration_form_view')
+        return {
+            'name': 'Generate & Download File',
+            'res_model': 'wika.sap.integration',
+            'view_id': False,
+            'res_id': self.id,
+            'views': [(form_id.id, 'form')],
+            'type': 'ir.actions.act_window',
+            'view_mode': 'form',
+            'view_type': 'form',
+            'target': 'new',
+        }    
     
     def generate_data_partial_payment(self):
         N = 32
