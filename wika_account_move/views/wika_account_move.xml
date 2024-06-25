@@ -135,7 +135,7 @@
                             </page>
                             <page id="other_tab" string="Other Info" name="other_info">
                                 <group id="other_tab_group">
-                                    <field name="payment_reference"  groups="base.group_no_one"/>
+                                    <field name="payment_reference"/>
                                     <field name="payment_method" groups="base.group_no_one"/>
                                     <field name="approval_stage" readonly="1" force_save="1"/>
                                     <field name="baseline_date" groups="base.group_no_one"/>
@@ -146,7 +146,7 @@
                                     <field name="cut_off" readonly="1" force_save="1"/>
                                     <field name="pph_amount"/>
                                     <field name="is_waba" readonly="0" widget="toggle_boolean"/>
-                                    <field name="error_narration"/>
+                                    <field name="error_narration" attrs="{'invisible': [('payment_reference', '=', False)]}"/>
                                 </group>
                             </page>
                             <page string="List Document">
