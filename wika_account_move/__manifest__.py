@@ -47,6 +47,7 @@
         'report/report_bap_progress.xml',
         'report/report_bap_uang_muka.xml',
         'report/report_bap_retensi.xml',
+        'report/report_invoice_inherit.xml',
         'views/wika_special_gl.xml',
         'data/pricecut_scf_data.xml',
         'data/documents_folder_data.xml',
