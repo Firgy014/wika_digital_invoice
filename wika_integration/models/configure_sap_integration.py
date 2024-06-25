@@ -242,24 +242,40 @@ class sap_integration_configure(models.Model):
             except Exception as e:
                 _logger.error(f"Error occurred while generating and sending data: {str(e)}")
 
-    # def _send_file_to_sftp(self, conf_id, file_path, filename):
-    #     try:
-    #         _logger.info(f"Connecting to SFTP server: {conf_id.sftp_host}:{conf_id.sftp_port}")
-    #         transport = paramiko.Transport((conf_id.sftp_host, conf_id.sftp_port))
-    #         transport.connect(username=conf_id.sftp_user, password=conf_id.sftp_password)
-    #         sftp = paramiko.SFTPClient.from_transport(transport)
-    #         _logger.info("Connected to SFTP server successfully")
+    def _generate_data_retensi(self):
+        _logger.warning("<<================== GENERATE INVOICE RETENSI TXT DATA OF WDIGI TO REMOTE DIRECTORY ==================>>")
+        conf_ids = self.search([])
+        for conf_id in conf_ids:
+            try:
+                N = 32
+                today = datetime.now().strftime("%Y%m%d%H%M%S")
+                res = ''.join(random.sample(string.ascii_uppercase + string.digits, k=N))
+                dev_keys = ['YFII024', res, 'A000', 'AF00219I03', today]
+                keys = ['NO','POSTING_DATE','PERIOD','FISCAL_YEAR','REFERENCE','HEADER_TXT',
+                        'VENDOR','AMOUNT','ASSIGNMENT','ITEM_TEXT','PROFIT_CENTER','TAX_CODE']
+            
+                query = helpers._get_computed_query_retensi()
 
-    #         _logger.info(f"Uploading file '{filename}' to SFTP server")
-    #         sftp.put(file_path, os.path.join(conf_id.sftp_path, filename))
-    #         _logger.info("File uploaded successfully")
-    #     except Exception as e:
-    #         _logger.error(f"Error occurred while sending file via SFTP: {str(e)}")
-    #     finally:
-    #         if 'sftp' in locals():
-    #             sftp.close()
-    #         if 'transport' in locals():
-    #             transport.close()
+                self._cr.execute(query)
+                vals = self.env.cr.fetchall()
+
+                buffer = StringIO()
+                writer = csv.writer(buffer, delimiter='|')
+                writer.writerow(dev_keys)
+                writer.writerow(keys)
+
+                for res in vals:
+                    writer.writerow(res)
+
+                out2 = buffer.getvalue().encode('utf-8')
+                filename = ('YFII024_' + today + '.txt')
+
+                file_path = os.path.join(conf_id.sftp_path, filename)
+                with open(file_path, 'wb') as fp:
+                    fp.write(out2)
+
+            except Exception as e:
+                _logger.error(f"Error occurred while generating and sending data: {str(e)}")
 
     def _send_file_to_sftp(self, conf_id, file_path, filename):
         try:
@@ -287,7 +303,6 @@ class sap_integration_configure(models.Model):
                 sftp.close()
             if 'transport' in locals():
                 transport.close()
-
 
     def _update_invoice(self):
         invoice_model = self.env['account.move'].sudo()
