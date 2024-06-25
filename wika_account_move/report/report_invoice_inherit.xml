@@ -182,7 +182,7 @@
 							</style> -->
 							<div class="d-flex justify-content-end">
 								<body>
-									<table style="width:50%">
+									<table class="table table-sm table-borderless" style="page-break-inside: avoid; width:50%">
 										<tr>
 											<th style="width:60%"></th>
 											<th style="width:50%"></th>
