@@ -201,7 +201,8 @@
 										</tr>
 										<tr class="border-black fw-bold">
 											<td style="color: #0272af;">Untaxed Amount</td>
-											<td style="text-align: right;"><span t-field="o.total_line"/></td>
+											<td style="text-align: right;"><span t-field="o.total_line" 
+												t-options='{"widget": "monetary", "display_currency": o.currency_id}'/></td>
 										</tr>
 										<tr>
 											<td>PPH</td>
@@ -213,7 +214,9 @@
 										</tr>
 										<tr class="border-black fw-bold">
 											<td style="color: #0272af;">Total</td>
-											<td style="text-align: right;"><span t-field="o.amount_total_footer"/></td>
+											<td style="text-align: right;">
+												<span t-field="o.amount_total_footer" t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>
+											</td>
 										</tr>
 									</table>
 								</body>
