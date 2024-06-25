@@ -1166,6 +1166,7 @@ class WikaInheritedAccountMove(models.Model):
                         posting_date = data["POSTING_DATE"]
                         pph_cbasis = data["PPH_CBASIS"] * -1
                         pph_accrual = data["PPH_ACCRUAL"] * -1
+                        wht_type = data["WHT_TYPE"]
 
                         amount = data["AMOUNT"] * -1
                         header_text = data["HEADER_TEXT"]
@@ -1178,7 +1179,7 @@ class WikaInheritedAccountMove(models.Model):
                         tot_pph_amount += pph_accrual
 
                     _logger.info('# === UPDATE ACCOUNT MOVE PPH AMOUNT === #')
-                    if pph_accrual > 0:
+                    if pph_accrual > 0 and wht_type == 'I6':
                         self.write({
                             'pph_amount': tot_pph_amount,
                             'is_upd_api_pph_amount': True
