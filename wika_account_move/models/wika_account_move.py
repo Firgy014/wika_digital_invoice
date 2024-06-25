@@ -1178,12 +1178,15 @@ class WikaInheritedAccountMove(models.Model):
                         tot_pph_amount += pph_accrual
 
                     _logger.info('# === UPDATE ACCOUNT MOVE PPH AMOUNT === #')
-                    self.write({
-                        'pph_amount': tot_pph_amount,
-                        'is_upd_api_pph_amount': True
-                    })
-                                
-                    _logger.info(_("# === UPDATE PPH AMOUNT BERHASIL === #"))
+                    if pph_accrual > 0:
+                        self.write({
+                            'pph_amount': tot_pph_amount,
+                            'is_upd_api_pph_amount': True
+                        })
+                                    
+                        _logger.info(_("# === UPDATE PPH AMOUNT BERHASIL === #"))
+                    else:
+                        _logger.info(_("# === PPH ACCRUAL 0 === #"))
 
                 else:
                     raise UserError(_("Data Tidak Tersedia!"))
@@ -1193,7 +1196,7 @@ class WikaInheritedAccountMove(models.Model):
                 _logger.info(e)
                 raise UserError(_("Terjadi Kesalahan! Update Invoice Gagal."))
         else:
-            raise UserError(_("Tidak diproses karena status sudah Done!"))
+            raise UserError(_("Terjadi Kesalahan! pph_amount harus ada nilainya dan tidak pernah di update"))
             
     def action_approve(self):
         # self.write({'is_wizard_cancel': False})

@@ -14,6 +14,7 @@
                     <button name="action_reject" string="REJECT" type="object" class="btn-danger" states="uploaded"/>
                     <button name="compute_account_payable" string="GET COA" type="object"  groups="base.group_no_one"/>
                     <button name="add_pricecut_scf" string="ADD POTONGAN SCF" type="object" attrs="{'invisible': [('state', 'not in', ['draft', 'rejected'])]}"/>
+                    <button name="get_replace_pph_amount" string="Replace PPh Amount" type="object" class="oe_highlight"/>
                     <field name="state" widget="statusbar" statusbar_visible="draft,uploaded,approved"/>
                 </header>
                 <sheet>
@@ -146,7 +147,7 @@
                                     <field name="cut_off" readonly="1" force_save="1"/>
                                     <field name="pph_amount"/>
                                     <field name="is_waba" readonly="0" widget="toggle_boolean"/>
-                                    <field name="error_narration" attrs="{'invisible': [('payment_reference', '=', False)]}"/>
+                                    <field name="error_narration" attrs="{'invisible': [('payment_reference', '!=', False)]}"/>
                                 </group>
                             </page>
                             <page string="List Document">
