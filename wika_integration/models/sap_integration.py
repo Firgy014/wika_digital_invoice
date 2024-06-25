@@ -199,7 +199,7 @@ class SAPIntegration(models.Model):
         if self.type == 'generate' and self.form == 'vendor_bills_retensi':
             res = ''.join(random.sample(string.ascii_uppercase + string.digits, k=N))
             dev_keys = ['YFII024', res, 'A000', 'AF00219I03', today]
-            keys = ['NO','POSTING_DATE','PERIOD','FISCAL_YEAR','REFERENCE','HEADER_TXT',
+            keys = ['NO','POSTING_DATE','PERIOD','YEAR','CURRENCY','REFERENCE','HEADER_TEXT',
                     'VENDOR','AMOUNT','ASSIGNMENT','ITEM_TEXT','PROFIT_CENTER','TAX_CODE']
             query = helpers._get_computed_query_retensi()
 

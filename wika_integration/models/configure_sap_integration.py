@@ -251,7 +251,7 @@ class sap_integration_configure(models.Model):
                 today = datetime.now().strftime("%Y%m%d%H%M%S")
                 res = ''.join(random.sample(string.ascii_uppercase + string.digits, k=N))
                 dev_keys = ['YFII024', res, 'A000', 'AF00219I03', today]
-                keys = ['NO','POSTING_DATE','PERIOD','FISCAL_YEAR','REFERENCE','HEADER_TXT',
+                keys = ['NO','POSTING_DATE','PERIOD','YEAR','CURRENCY','REFERENCE','HEADER_TEXT',
                         'VENDOR','AMOUNT','ASSIGNMENT','ITEM_TEXT','PROFIT_CENTER','TAX_CODE']
             
                 query = helpers._get_computed_query_retensi()
