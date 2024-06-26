@@ -94,18 +94,20 @@ def _get_computed_query_scf():
 SELECT
     inv.name AS NO,
     inv.payment_reference AS DOC_NUMBER,
-    TO_CHAR(pricecutline.posting_date, 'YYYY') AS DOC_YEAR,
-    TO_CHAR(pricecutline.posting_date, 'YYYYMMDD') AS POSTING_DATE,
-    TO_CHAR(pricecutline.posting_date, 'MM') AS PERIOD,
+    CASE WHEN pricecutline.posting_date IS NULL THEN TO_CHAR(current_date, 'YYYY') ELSE TO_CHAR(pricecutline.posting_date, 'YYYY') END AS DOC_YEAR,
+    CASE WHEN pricecutline.posting_date IS NULL THEN TO_CHAR(current_date, 'YYYYMMDD') ELSE TO_CHAR(pricecutline.posting_date, 'YYYYMMDD') END AS POSTING_DATE,
+    CASE WHEN pricecutline.posting_date IS NULL THEN TO_CHAR(current_date, 'FMmm') ELSE TO_CHAR(pricecutline.posting_date, 'FMmm') END AS PERIOD,
     pricecutline.amount AS AMOUNT_SCF,
     pricecutline.wbs_project_definition AS WBS,
-    'Potongan SCF' AS ITEM_TEXT
+    product.name->>'en_US' AS ITEM_TEXT
 FROM
     account_move inv
 LEFT JOIN
     wika_account_move_pricecut_line pricecutline ON pricecutline.move_id = inv.id
+LEFT JOIN
+    product_template product ON product.name->>'en_US' = 'Potongan SCF'
 WHERE
-    pricecutline.wbs_project_definition IS NOT NULL
+    pricecutline.amount > 0
     AND pricecutline.wbs_project_definition != ''
     AND pricecutline.is_scf != true;
 """
