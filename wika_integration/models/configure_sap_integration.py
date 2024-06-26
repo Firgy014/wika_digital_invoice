@@ -628,7 +628,7 @@ class sap_integration_configure(models.Model):
                             'name': dig_code,
                             'payment_reference': belnr,
                             'year': gjahr,
-                            'total_line': amount_idr
+                            'amount_idr': amount_idr
                         }
                         
                         invoice_id.write(update_vals)
