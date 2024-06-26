@@ -17,6 +17,7 @@ class AccountMoveInheritWika(models.Model):
         readonly=True,
         states={'draft': [('readonly', False)]},
     )
+    sap_amount_payment = fields.Float('Amount Payment')
     amount_due = fields.Float('Amount Due')
 
     def _compute_amount_due(self):
@@ -28,26 +29,22 @@ class AccountMoveInheritWika(models.Model):
                 residual_amount = rec.amount_invoice - tot_partial_amount
                 # residual_amount = rec.sisa_partial
             else:    
-                total_paid = sum(rec.payment_move_ids.mapped('amount'))
+                total_paid = rec.sap_amount_payment
                 residual_amount = rec.amount_invoice - total_paid
             
             _logger.info("Total Paid %s Residual Amount %s" % (str(total_paid), str(residual_amount)))
 
             rec.amount_due = residual_amount
     
-    @api.depends('amount_residual', 'move_type', 'state', 'company_id')
-    def _compute_payment_state(self):
+    def _compute_status_payment(self):
         for rec in self:
             rec._compute_amount_due()
             if rec.state != 'draft':
                 if rec.amount_due <= 0:
-                    rec.payment_state = 'paid'
                     rec.status_payment = 'Paid'
                 else:
-                    rec.payment_state = 'not_paid'
                     rec.status_payment = 'Not Request'
             else:
-                rec.payment_state = 'not_paid'
                 rec.status_payment = 'Not Request'
 
 class AccountMoveLine(models.Model):

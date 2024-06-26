@@ -83,68 +83,86 @@ class wika_get_payment_status(models.Model):
                     account_move = account_move1
                     
                 _logger.info(account_move)
-                if account_move:
-                    _logger.info("# === SEARCH ACCOUNT PAYMENT === #")
-                    account_payment = self.env['account.payment'].search([
-                        ('ref', '=', doc_number),
-                        ('date', '=', clear_date)
-                    ], limit=1)
-                    _logger.info(account_payment)
-                    if not account_payment:
-                        _logger.info("# === INSERT PAYMENT === #")
-                        account_payment_created = self.env['account.payment'].create({
-                            'name': new_name,
-                            'date': clear_date,
-                            'partner_id': account_move.partner_id.id, 
-                            'payment_move_id': account_move.id, 
-                            'line_item': line_item, 
-                            'amount': abs(amount), 
-                            'ref': doc_number,
-                            'company_id': company_id,
-                            'payment_type': 'inbound',
-                            'partner_type': 'supplier'
-                        })
+                if account_move and account_move.partner_id.company_id.id:
+                    account_move.write({
+                        'sap_amount_payment': abs(amount)
+                    })
+                    account_move._compute_status_payment()
+                    # _logger.info("# === SEARCH ACCOUNT PAYMENT === #")
+                    # account_payment = self.env['account.payment'].search([
+                    #     ('ref', '=', doc_number),
+                    #     ('date', '=', clear_date)
+                    # ], limit=1)
+                    # _logger.info(account_payment)
+                    # if not account_payment:
+                    #     _logger.info("# === INSERT PAYMENT === #" + str(account_move.partner_id.company_id.id))
+                    #     if account_move.partner_id.company_id.id:
+                    #         account_payment_created = self.env['account.payment'].create({
+                    #             'name': new_name,
+                    #             'date': clear_date,
+                    #             'partner_id': account_move.partner_id.id, 
+                    #             'branch_id': account_move.branch_id.id,
+                    #             'payment_move_id': account_move.id, 
+                    #             'line_item': line_item, 
+                    #             'amount': abs(amount), 
+                    #             'ref': doc_number,
+                    #             'company_id': company_id,
+                    #             'payment_type': 'inbound',
+                    #             'partner_type': 'supplier'
+                    #         })
 
-                        if account_payment_created:
-                            _logger.info("# === POST ACCOUNT PAYMENT === #")
-                            account_payment_created.action_post()
+                    #         if account_payment_created:
+                    #             _logger.info("# === POST ACCOUNT PAYMENT === #")
+                    #             account_payment_created.action_post()
                             
-                    account_move._compute_payment_state()
+                    #         account_move._compute_payment_state()
 
                 else:
                     _logger.info("# === CEK PARTIAL PAYMENT REQUEST === #" + year + doc_number )
                     partial_payment_request = self.env['wika.partial.payment.request'].search([
                         ('reference', '=', doc_number),
                         ('year', '=', year)], limit=1)
-                    if partial_payment_request:
-                        _logger.info("# === INSERT PAYMENT === #")
-                        _logger.info(partial_payment_request)
-                        account_payment = self.env['account.payment'].search([('ref', '=', doc_number),
-                                                                            ('date', '=', clear_date)], limit=1)
-                        if not account_payment:
-                            account_payment_created = self.env['account.payment'].create({
-                                'name': new_name,
-                                'date': clear_date,
-                                'partner_id': partial_payment_request.partner_id.id,
-                                'payment_move_id': account_move.id,  
-                                'line_item': line_item, 
-                                'amount': abs(amount), 
-                                'ref': doc_number,
-                                'company_id': company_id,
-                                'payment_type': 'inbound',
-                                'partner_type': 'supplier'
-                            })
+                    if partial_payment_request and partial_payment_request.partner_id.company_id.id:
+                        sap_amount_payment = partial_payment_request.invoice_id.sap_amount_payment
+                        partial_payment_request.invoice_id.write({
+                            'sap_amount_payment': sap_amount_payment+abs(amount)
+                        })                                
+                        partial_payment_request.invoice_id._compute_status_payment()                                
+                        partial_payment_request.write({
+                            'payment_state': 'paid',
+                            'no_doc_sap': clear_doc
+                        })
 
-                            if account_payment_created:
-                                _logger.info("# === POST ACCOUNT PAYMENT === #")
-                                payment_id = account_payment_created.id
-                                partial_payment_request.invoice_id._compute_payment_state()                                
-                                partial_payment_request.write({
-                                    'payment_state': 'paid',
-                                    'payment_id': payment_id,
-                                    'no_doc_sap': clear_doc
-                                })
-                                account_payment_created.action_post()
+                        # _logger.info("# === INSERT PAYMENT === #" + str(partial_payment_request.partner_id.company_id.id))
+                        # _logger.info(partial_payment_request)
+                        # account_payment = self.env['account.payment'].search([('ref', '=', doc_number),
+                        #                                                     ('date', '=', clear_date)], limit=1)
+                        # if not account_payment:
+                        #     if partial_payment_request.partner_id.company_id.id:
+                        #         account_payment_created = self.env['account.payment'].create({
+                        #             'name': new_name,
+                        #             'date': clear_date,
+                        #             'partner_id': partial_payment_request.partner_id.id,
+                        #             'branch_id': partial_payment_request.branch_id.id,
+                        #             'payment_move_id': account_move.id,  
+                        #             'line_item': line_item, 
+                        #             'amount': abs(amount), 
+                        #             'ref': doc_number,
+                        #             'company_id': company_id,
+                        #             'payment_type': 'inbound',
+                        #             'partner_type': 'supplier'
+                        #         })
+
+                        #         if account_payment_created:
+                        #             _logger.info("# === POST ACCOUNT PAYMENT === #")
+                        #             payment_id = account_payment_created.id
+                        #             partial_payment_request.invoice_id._compute_payment_state()                                
+                        #             partial_payment_request.write({
+                        #                 'payment_state': 'paid',
+                        #                 'payment_id': payment_id,
+                        #                 'no_doc_sap': clear_doc
+                        #             })
+                        #             account_payment_created.action_post()
                                 
 
             _logger.info("# === IMPORT DATA SUKSES === #")

@@ -286,53 +286,62 @@ class WikaPaymentRequest(models.Model):
         model_model = self.env['ir.model'].sudo()
         model_id = model_model.search([('model', '=', 'wika.payment.request')], limit=1)
         for res in self:
-            level=res.level
+            level = res.level
             first_user = False
             if level:
                 approval_id = self.env['wika.approval.setting'].sudo().search(
-                    [ ('model_id', '=', model_id.id),('transaction_type', '=', 'pr'),('level', '=', level)], limit=1)
-                approval_line_id = self.env['wika.approval.setting.line'].search([
+                    [('model_id', '=', model_id.id), ('transaction_type', '=', 'pr'), ('level', '=', level)], limit=1)
+                current_approval_line_id = self.env['wika.approval.setting.line'].search([
+                    ('sequence', '=', 1),
+                    ('approval_id', '=', approval_id.id)
+                ], limit=1)
+                next_approval_line_id = self.env['wika.approval.setting.line'].search([
                     ('sequence', '=', 2),
                     ('approval_id', '=', approval_id.id)
                 ], limit=1)
-                print(approval_line_id)
-                groups_id = approval_line_id.groups_id
+                groups_id = next_approval_line_id.groups_id if next_approval_line_id else False
                 if groups_id:
                     for x in groups_id.users:
-                        if level == 'Proyek' and self.project_id in x.project_ids:
+                        if level == 'Proyek' and res.project_id in x.project_ids:
                             first_user = x.id
-                        if level == 'Divisi Operasi' and x.branch_id == res.branch_id:
+                        elif level == 'Divisi Operasi' and x.branch_id == res.branch_id:
                             first_user = x.id
-                        if level == 'Divisi Fungsi' and x.department_id == res.department_id:
+                        elif level == 'Divisi Fungsi' and x.department_id == res.department_id:
                             first_user = x.id
+                        if first_user:
+                            break
+
                 if first_user:
-                    if self.activity_ids:
-                        for x in self.activity_ids.filtered(lambda x: x.status != 'approved'):
+                    if res.activity_ids:
+                        for x in res.activity_ids.filtered(lambda x: x.status != 'approved'):
                             if x.user_id.id == self._uid:
                                 x.status = 'approved'
                                 x.action_done()
-                                
-                    activity=self.env['mail.activity'].sudo().create({
+
+                    activity = self.env['mail.activity'].sudo().create({
                         'activity_type_id': 4,
                         'res_model_id': model_id.id,
                         'res_id': res.id,
                         'user_id': first_user,
-                        # 'nomor_po': res.po_id.name,
                         'date_deadline': fields.Date.today() + timedelta(days=2),
                         'state': 'planned',
                         'summary': f"Need Approve Payment"
                     })
                     activity.write({'status': 'to_approve'})
-                    res.approval_stage=level
-                    res.activity_user_id=activity.user_id.id
-                    res.activity_summary=activity.summary
-                    res.approval_line_id=approval_line_id.id
-                    self.env['wika.pr.approval.line'].create({'user_id': self._uid,
-                        'groups_id': groups_id.id,
+                    res.approval_stage = level
+                    res.activity_user_id = activity.user_id.id
+                    res.activity_summary = activity.summary
+                    res.approval_line_id = next_approval_line_id.id
+                    res.write({'approval_line_id': next_approval_line_id.id})
+
+                    self.env['wika.pr.approval.line'].create({
+                        'user_id': self._uid,
+                        'groups_id': current_approval_line_id.groups_id.id if current_approval_line_id else False,
                         'date': datetime.now(),
                         'note': 'Request Payment',
-                        'pr_id': self.id
+                        'pr_id': res.id
                     })
+
 
     # @api.model
     # def create(self, vals):
@@ -374,34 +383,10 @@ class WikaPaymentRequest(models.Model):
 
     def action_approve(self):
         if self.activity_user_id.id ==self._uid:
-            move_lines = []
-            for partial in self.partial_payment_ids:
-                move_lines.append((0, 0, {
-                    'invoice_id': partial.invoice_id.id,
-                    'partial_id': partial.id,
-                    'partner_id': partial.invoice_id.partner_id.id,
-                    'branch_id': partial.invoice_id.branch_id.id,
-                    'project_id': partial.invoice_id.project_id.id,
-                    'amount': partial.partial_amount,
-                }))
-
-            self.move_ids = move_lines
-            for partial in self.partial_payment_ids:
-                move_lines.append((0, 0, {
-                    'invoice_id': partial.invoice_id.id,
-                    'partial_id': partial.id,
-                    'partner_id': partial.invoice_id.partner_id.id,
-                    'branch_id': partial.invoice_id.branch_id.id,
-                    'project_id': partial.invoice_id.project_id.id,
-                    'amount': partial.partial_amount,
-                }))
-
-            self.move_ids = move_lines
-
             approval_id=self.approval_line_id.approval_id
             step_approve=self.approval_line_id.sequence+1
             apploval_line_next_id=self.env['wika.approval.setting.line'].sudo().search(
-                        [('approval_id', '=', approval_id.id),('sequence','=',step_approve)], limit=1)
+                [('approval_id', '=', approval_id.id),('sequence','=',step_approve)], limit=1)
             groups_id_next = apploval_line_next_id.groups_id
             first_user=False
             if groups_id_next:
@@ -414,43 +399,25 @@ class WikaPaymentRequest(models.Model):
                     if self.level == 'Divisi Fungsi' and x.department_id == self.department_id:
                         first_user = x.id
                 if first_user:
-                    # for invoice in self.invoice_ids:
-                    #     print (invoice)
-                    #     invoice.write({'status_payment': 'Request Divisi',
-                    #                    'payment_block':'C'})
-                    #     self.env['wika.payment.request.line'].sudo().create({
-                    #         'pr_id':self.id,
-                    #         'invoice_id': invoice.id,
-                    #         'partner_id': invoice.partner_id.id,
-                    #         'branch_id': invoice.branch_id.id,
-                    #         'project_id': invoice.project_id.id,
-                    #         'department_id': invoice.department_id.id,
-                    #         'amount': invoice.total_partial_pr,
-                    #         'is_partial_pr': invoice.is_partial_pr,
-                    #         'payment_method': self.payment_method,
-                    #         'payment_request_date': self.date,
-                    #         'approval_line_id':apploval_line_next_id.id,
-                    #         'next_user_id':first_user
-                    #     })
                     for invoice in self.journal_item_sap_ids:
                         invoice.write({'status': 'req_divisi'})
-                    self.env['mail.activity'].sudo().create({
-                        'activity_type_id': 4,
-                        'res_model_id': self.env['ir.model'].sudo().search(
-                            [('model', '=', 'wika.payment.request.line')], limit=1).id,
-                        'res_id': self.id,
-                        'user_id': first_user,
-                        # 'nomor_po': self.po_id.name,
-                        'date_deadline': fields.Date.today() + timedelta(days=2),
-                        'state': 'planned',
-                        'status': 'to_approve',
-                        'summary': """Need Approval Payment Item"""
-                    })
-                    if self.activity_ids:
-                        for x in self.activity_ids.filtered(lambda x: x.status != 'approved'):
-                            if x.user_id.id == self._uid:
-                                x.status = 'approved'
-                                x.action_done()
+                        self.env['mail.activity'].sudo().create({
+                            'activity_type_id': 4,
+                            'res_model_id': self.env['ir.model'].sudo().search(
+                                [('model', '=', 'wika.payment.request.line')], limit=1).id,
+                            'res_id': self.id,
+                            'user_id': first_user,
+                            # 'nomor_po': self.po_id.name,
+                            'date_deadline': fields.Date.today() + timedelta(days=2),
+                            'state': 'planned',
+                            'status': 'to_approve',
+                            'summary': """Need Approval Payment Item"""
+                        })
+                        if self.activity_ids:
+                            for x in self.activity_ids.filtered(lambda x: x.status != 'approved'):
+                                if x.user_id.id == self._uid:
+                                    x.status = 'approved'
+                                    x.action_done()
                     for invoice in self.invoice_ids:
                         print (invoice)
                         invoice.write({'status_payment': 'Request Divisi', 'payment_block':'C'})
@@ -468,63 +435,33 @@ class WikaPaymentRequest(models.Model):
                             'approval_line_id':apploval_line_next_id.id,
                             'next_user_id':first_user
                         })
-                    audit_log_obj = self.env['wika.pr.approval.line'].create({'user_id': self._uid,
-                        'groups_id' :self.approval_line_id.groups_id.id,
-                        'date': datetime.now(),
-                        'note': 'Verified',
-                        'pr_id': self.id
+                        audit_log_obj = self.env['wika.pr.approval.line'].create({'user_id': self._uid,
+                            'groups_id' :self.approval_line_id.groups_id.id,
+                            'date': datetime.now(),
+                            'note': 'Verified',
+                            'pr_id': self.id
                         })
                     self.write({'state': 'verified','activity_summary':'Request Divisi','approval_stage':'Divisi Operasi'})
+                    move_lines = []
+                    for partial in self.partial_payment_ids:
+                        move_lines.append((0, 0, {
+                            'invoice_id': partial.invoice_id.id,
+                            'partial_id': partial.id,
+                            'partner_id': partial.invoice_id.partner_id.id,
+                            'branch_id': partial.invoice_id.branch_id.id,
+                            'project_id': partial.invoice_id.project_id.id,
+                            'amount': partial.partial_amount,
+                            'approval_line_id':apploval_line_next_id.id,
+                            'next_user_id':first_user
+                        }))
+
+                    self.move_ids = move_lines
                     # self.sudo().send_proyek_approved_pr_to_sap()
                 else:
                     raise ValidationError('User Next Approval tidak ditemukan!')
 
         else:
             raise ValidationError('User Akses Anda tidak berhak Approve!')
-
-    # def action_approve(self):
-    #     if self.activity_user_id.id == self._uid:
-    #         move_lines = []
-    #         approval_id = self.approval_line_id.approval_id
-    #         step_approve = self.approval_line_id.sequence + 1
-    #         apploval_line_next_id = self.env['wika.approval.setting.line'].sudo().search(
-    #             [('approval_id', '=', approval_id.id), ('sequence', '=', step_approve)], limit=1)
-    #         groups_id_next = apploval_line_next_id.groups_id
-    #         first_user = False
-    #         if groups_id_next:
-    #             print(groups_id_next.name)
-    #             for x in groups_id_next.users:
-    #                 if self.level == 'Proyek' and x.branch_id == self.branch_id:
-    #                     first_user = x.id
-    #                 if self.level == 'Divisi Operasi' and x.branch_id == self.branch_id:
-    #                     first_user = x.id
-    #                 if self.level == 'Divisi Fungsi' and x.department_id == self.department_id:
-    #                     first_user = x.id
-    #             if first_user:
-    #                 for invoice in self.invoice_ids:
-    #                     print(invoice)
-    #                     invoice.write({'status_payment': 'Request Divisi', 'payment_block': 'C'})
-    #                     move_lines.append((0, 0, {
-    #                         'invoice_id': invoice.id,
-    #                         'partial_id': partial.id,
-    #                         'partner_id': invoice.partner_id.id,
-    #                         'branch_id': invoice.branch_id.id,
-    #                         'project_id': invoice.project_id.id,
-    #                         'amount': invoice.total_partial_pr,
-    #                     }))
-    #                 self.move_ids = move_lines  # Mengisi move_ids di model 'wika.payment.request'
-    #                 audit_log_obj = self.env['wika.pr.approval.line'].create({'user_id': self._uid,
-    #                     'groups_id': self.approval_line_id.groups_id.id,
-    #                     'date': datetime.now(),
-    #                     'note': 'Verified',
-    #                     'pr_id': self.id
-    #                     })
-    #                 self.write({'state': 'verified', 'activity_summary': 'Request Divisi', 'approval_stage': 'Divisi Operasi'})
-    #                 # self.send_proyek_approved_pr_to_sap()
-    #             else:
-    #                 raise ValidationError('User Next Approval tidak ditemukan!')
-    #     else:
-    #         raise ValidationError('User Akses Anda tidak berhak Approve!')
 
     def action_reject(self):
         action = self.env.ref('wika_payment_request.action_reject_pr_wizard').read()[0]
@@ -774,14 +711,14 @@ class WikaPrLine(models.Model):
                     elif apploval_line_next_id.level_role == 'Pusat':
                         self.pr_id.write({ 'activity_summary': 'Request Pusat','approval_stage':'Pusat'})
                         self.invoice_id.write({'status_payment': 'Request Pusat','payment_block':'D'})
-                        self.sudo().send_divisi_approved_pr_to_sap()
+                        # self.sudo().send_divisi_approved_pr_to_sap()
 
-                    # audit_log_obj = self.env['wika.pr.approval.line'].create({'user_id': self._uid,
-                    #         'groups_id' :self.approval_line_id.groups_id.id,
-                    #         'date': datetime.now(),
-                    #         'note': 'Verified',
-                    #         'pr_id': self.id
-                    #         })
+                    audit_log_obj = self.env['wika.pr.approval.payment.item'].create({'user_id': self._uid,
+                        'groups_id' :self.approval_line_id.groups_id.id,
+                        'date': datetime.now(),
+                        'note': 'Verified',
+                        'pr_id': self.id
+                    })
                 else:
                     raise ValidationError('User Next Approval tidak ditemukan!')
             else:

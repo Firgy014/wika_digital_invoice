@@ -13,14 +13,13 @@ class WikaAccountMoveLine(models.Model):
     amount_sap = fields.Float(string='Amount SAP')
     cut_off = fields.Boolean(string='Cut Off',related='move_id.cut_off',default=False,copy=False)
 
-    # asw_tnat = fields.Char('asw tnat')
     quantity = fields.Float(
         string='Quantity',
         digits='Product Unit of Measure',
         compute='_compute_quantity', store=True, readonly=False, precompute=True,
 
         help="The optional quantity expressed by this line, eg: number of product sold. "
-             "The quantity is not a legal requirement but is very useful for some reports.",
+            "The quantity is not a legal requirement but is very useful for some reports.",
     )
     price_unit = fields.Float(
         string='Unit Price',
@@ -48,10 +47,19 @@ class WikaAccountMoveLine(models.Model):
         # if line.move_id.is_purchase_document(include_receipts=True):
         #     if (line.display_type == 'payment_term') ^ (account_type == 'liability_payable'):
         #         raise UserError(_("Any journal item on a payable account must have a due date and vice versa."))
-    @api.depends('display_type','bap_line_id')
+        
+    @api.depends('display_type', 'bap_line_id.qty')
     def _compute_quantity(self):
         for line in self:
-            line.quantity = line.bap_line_id.qty if line.display_type == 'product' and line.bap_line_id else False
+            if line.display_type == 'product' and line.bap_line_id:
+                line.quantity = line.bap_line_id.qty
+
+    @api.onchange('display_type', 'bap_line_id')
+    def _onchange_display_type_bap_line_id(self):
+        if self.display_type == 'product' and self.bap_line_id:
+            self.quantity = self.bap_line_id.qty
+        else:
+            self.quantity = 0.0 if self.display_type == 'product' else None
 
     @api.depends('product_id', 'product_uom_id','bap_line_id')
     def _compute_price_unit(self):

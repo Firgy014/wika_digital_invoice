@@ -8,12 +8,14 @@
             <field name="arch" type="xml">
             <form string="Invoice Form">
                 <header>
-                    <button name="action_print_invoice"   attrs="{'invisible': [('is_approval_checked', '=', False)]}" string="Print" type="object" class="oe_highlight"/>
+                    <button name="action_print_invoice" attrs="{'invisible': [('is_approval_checked', '=', False)]}" string="Print" type="object" class="oe_highlight"/>
                     <button name="action_submit" string="SUBMIT" type="object" class="oe_highlight" states="draft,rejected"/>
                     <button name="action_approve" string="APPROVE" type="object" class="btn-success" states="uploaded"/>
                     <button name="action_reject" string="REJECT" type="object" class="btn-danger" states="uploaded"/>
-                    <button name="compute_account_payable" string="GET COA" type="object"  groups="base.group_no_one"/>
+                    <button name="compute_account_payable" string="GET COA" type="object" groups="base.group_no_one"/>
                     <button name="add_pricecut_scf" string="ADD POTONGAN SCF" type="object" attrs="{'invisible': [('state', 'not in', ['draft', 'rejected'])]}"/>
+                    <button name="get_replace_pph_amount" string="Replace PPh Amount" type="object" class="oe_highlight"/>
+                    <button name="get_dp_payment_status" string="Update DP Payment Status" type="object" groups="base.group_no_one" attrs="{'invisible': [('status_payment', '=', 'Paid')]}"/>
                     <field name="state" widget="statusbar" statusbar_visible="draft,uploaded,approved"/>
                 </header>
                 <sheet>
@@ -24,7 +26,7 @@
                     </div>
                     <!-- Payment status for invoices / receipts -->
                     <widget name="web_ribbon" title="Paid"
-                    attrs="{'invisible': ['|', ('status_payment', '!=', 'paid'), ('move_type', 'not in', ('out_invoice', 'out_refund', 'in_invoice', 'in_refund', 'out_receipt', 'in_receipt'))]}"/>
+                    attrs="{'invisible': ['|', ('status_payment', '!=', 'Paid'), ('move_type', 'not in', ('out_invoice', 'out_refund', 'in_invoice', 'in_refund', 'out_receipt', 'in_receipt'))]}"/>
                     <div class="oe_title">
                         <h1>
                             <field name="name"  readonly="1" force_save="1"/>
@@ -33,7 +35,8 @@
                     <group>
                       <group id="header_left_group">
                            <field name="partner_id" options="{'no_create': True, 'no_create_edit':True}" widget="res_partner_many2one" string="Vendor" />
-                            <field name="bap_id" options="{'no_create': True, 'no_create_edit':True}" domain="[('is_fully_invoiced', '!=', True), ('state', '=', 'approved'),('bap_type', '!=', 'cut over')]" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
+                           <field name="bap_id" options="{'no_create': True, 'no_create_edit':True}" domain="[('is_fully_invoiced', '!=', True), ('state', '=', 'approved'),('bap_type', '!=', 'cut over')]" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
+                           <field name="bap_type" invisible="1"/>
                            <field name="po_id" options="{'no_create': True, 'no_create_edit':True}" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
                            <field name="no_invoice_vendor" style="background-color: #dddded;" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
                            <field name="valuation_class" groups="base.group_no_one" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
@@ -62,6 +65,7 @@
                                 <field name="is_mp_approved" groups="base.group_no_one"/>
                                 <field name="is_wizard_cancel" readonly="1" invisible="1"/>
                                 <field name="cut_off" readonly="1" force_save="1"/>
+                                <field name="special_gl_id" attrs="{'invisible': [('bap_type', '!=', 'uang muka')]}"/>
                                 <!-- <field name="is_full_payment" /> -->
                             </group>
                         </group>
@@ -133,7 +137,7 @@
                             </page>
                             <page id="other_tab" string="Other Info" name="other_info">
                                 <group id="other_tab_group">
-                                    <field name="payment_reference"  groups="base.group_no_one"/>
+                                    <field name="payment_reference"/>
                                     <field name="payment_method" groups="base.group_no_one"/>
                                     <field name="approval_stage" readonly="1" force_save="1"/>
                                     <field name="baseline_date" groups="base.group_no_one"/>
@@ -144,6 +148,7 @@
                                     <field name="cut_off" readonly="1" force_save="1"/>
                                     <field name="pph_amount"/>
                                     <field name="is_waba" readonly="0" widget="toggle_boolean"/>
+                                    <field name="error_narration" attrs="{'invisible': [('payment_reference', '!=', False)]}"/>
                                 </group>
                             </page>
                             <page string="List Document">
@@ -190,7 +195,7 @@
                                         <tree editable="top">
                                             <field name="move_id" invisible="1"/>
                                             <field name="product_id"/>
-                                            <field name="special_gl_id"/>
+                                            <field name="special_gl_id" invisible="1"/>
                                             <field name="account_id"/>
                                             <field name="wbs_project_definition"/>
                                             <field name="percentage_amount"/>

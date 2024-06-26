@@ -213,7 +213,9 @@ class sap_integration_configure(models.Model):
                 today = datetime.now().strftime("%Y%m%d%H%M%S")
                 res = ''.join(random.sample(string.ascii_uppercase + string.digits, k=N))
                 dev_keys = ['YFII020', res, 'A000', 'AF00219I03', today]
-                keys = ['NO','DOC_DATE','POSTING_DATE','PERIOD','REFERENCE','HEADER_TXT','ACC_VENDOR','SPECIAL_GL','AMOUNT','TAX_CODE','DUE_ON','PO_NUMBER','PO_ITEM','PROFIT_CTR','TEXT']
+                keys = ['NO','DOC_DATE','POSTING_DATE','PERIOD','CURRENCY','REFERENCE','HEADER_TXT',
+                        'ACC_VENDOR','SPECIAL_GL','AMOUNT','TAX_CODE','DUE_ON','PO_NUMBER','PO_ITEM',
+                        'PROFIT_CTR','TEXT','WHT_TYPE','WHT_CODE']
                 query = helpers._get_computed_query_dp()
 
                 self._cr.execute(query)
@@ -240,24 +242,40 @@ class sap_integration_configure(models.Model):
             except Exception as e:
                 _logger.error(f"Error occurred while generating and sending data: {str(e)}")
 
-    # def _send_file_to_sftp(self, conf_id, file_path, filename):
-    #     try:
-    #         _logger.info(f"Connecting to SFTP server: {conf_id.sftp_host}:{conf_id.sftp_port}")
-    #         transport = paramiko.Transport((conf_id.sftp_host, conf_id.sftp_port))
-    #         transport.connect(username=conf_id.sftp_user, password=conf_id.sftp_password)
-    #         sftp = paramiko.SFTPClient.from_transport(transport)
-    #         _logger.info("Connected to SFTP server successfully")
+    def _generate_data_retensi(self):
+        _logger.warning("<<================== GENERATE INVOICE RETENSI TXT DATA OF WDIGI TO REMOTE DIRECTORY ==================>>")
+        conf_ids = self.search([])
+        for conf_id in conf_ids:
+            try:
+                N = 32
+                today = datetime.now().strftime("%Y%m%d%H%M%S")
+                res = ''.join(random.sample(string.ascii_uppercase + string.digits, k=N))
+                dev_keys = ['YFII024', res, 'A000', 'AF00219I03', today]
+                keys = ['NO','POSTING_DATE','PERIOD','YEAR','CURRENCY','REFERENCE','HEADER_TEXT',
+                        'VENDOR','AMOUNT','ASSIGNMENT','ITEM_TEXT','PROFIT_CENTER','TAX_CODE']
+            
+                query = helpers._get_computed_query_retensi()
 
-    #         _logger.info(f"Uploading file '{filename}' to SFTP server")
-    #         sftp.put(file_path, os.path.join(conf_id.sftp_path, filename))
-    #         _logger.info("File uploaded successfully")
-    #     except Exception as e:
-    #         _logger.error(f"Error occurred while sending file via SFTP: {str(e)}")
-    #     finally:
-    #         if 'sftp' in locals():
-    #             sftp.close()
-    #         if 'transport' in locals():
-    #             transport.close()
+                self._cr.execute(query)
+                vals = self.env.cr.fetchall()
+
+                buffer = StringIO()
+                writer = csv.writer(buffer, delimiter='|')
+                writer.writerow(dev_keys)
+                writer.writerow(keys)
+
+                for res in vals:
+                    writer.writerow(res)
+
+                out2 = buffer.getvalue().encode('utf-8')
+                filename = ('YFII024_' + today + '.txt')
+
+                file_path = os.path.join(conf_id.sftp_path, filename)
+                with open(file_path, 'wb') as fp:
+                    fp.write(out2)
+
+            except Exception as e:
+                _logger.error(f"Error occurred while generating and sending data: {str(e)}")
 
     def _send_file_to_sftp(self, conf_id, file_path, filename):
         try:
@@ -286,19 +304,22 @@ class sap_integration_configure(models.Model):
             if 'transport' in locals():
                 transport.close()
 
-
     def _update_invoice(self):
         invoice_model = self.env['account.move'].sudo()
         conf_model = self.env['sap.integration.configure'].sudo()
 
         conf_id = conf_model.search([('sftp_folder_archive', '!=', False)], limit=1)
         file_path = None
+        file_is_error = False
+
         if conf_id:
             outbound_dir = conf_id.sftp_folder
             file_name_prefix = 'YFII015A'
             for file_name in os.listdir(outbound_dir):
                 if file_name.startswith(file_name_prefix):
                     file_path = os.path.join(outbound_dir, file_name)
+                    if file_name.endswith('_error.txt'):
+                        file_is_error = True
                     break
 
         if not file_path:
@@ -308,42 +329,58 @@ class sap_integration_configure(models.Model):
         try:
             with open(file_path, 'r') as file:
                 print('TEST PATTTTHHHH', file_path)
-                next(file)
-                next(file)
-                for line in file:
-                    invoice_data = line.strip().split('|')
-                    
-                    if len(invoice_data) < 7:
-                        _logger.error("Invalid invoice data format: %s", invoice_data)
-                        continue
-                    
-                    no_inv = invoice_data[0]
-                    invoice_id = invoice_model.search([('name', '=', no_inv)], limit=1)
-
-                    if invoice_id:
-                        update_vals = {
-                            'invoice_number': invoice_data[1],
-                            'year': invoice_data[2],
-                            'dp_doc': invoice_data[4],
-                            'retensi_doc': invoice_data[5],
-                        }
+                if file_is_error:
+                    next(file)
+                    next(file)
+                    for line in file:
+                        if line.strip():
+                            invoice_data = line.strip().split('|')
+                            if len(invoice_data) == 3:
+                                dig_inv = invoice_data[0]
+                                error_narration = invoice_data[2]
+                                invoice_id = invoice_model.search([('name', '=', dig_inv)], limit=1)
+                                if invoice_id:
+                                    invoice_id.write({'error_narration': error_narration})
+                                    updated_invoices.append(dig_inv)
+                                else:
+                                    _logger.warning("No matching invoice found for DIG_INV: %s", dig_inv)
+                else:
+                    next(file)
+                    next(file)
+                    for line in file:
+                        invoice_data = line.strip().split('|')
                         
-                        if invoice_data[6]:  # If AP_DOC exist
-                            update_vals['payment_reference'] = invoice_data[6]
-                            update_vals['no_doc_sap'] = invoice_data[3]
-                            update_vals['dp_doc'] = invoice_data[4]
-                            update_vals['retensi_doc'] = invoice_data[5]
-                        else:  # If AP_DOC not exits
-                            update_vals['payment_reference'] = invoice_data[3]
-                            update_vals['no_doc_sap'] = ''
+                        if len(invoice_data) < 7:
+                            _logger.error("Invalid invoice data format: %s", invoice_data)
+                            continue
                         
-                        invoice_id.write(update_vals)
-                        updated_invoices.append(no_inv)
-                    else:
-                        _logger.warning("No matching invoice found for no_inv: %s", no_inv)
+                        no_inv = invoice_data[0]
+                        invoice_id = invoice_model.search([('name', '=', no_inv)], limit=1)
 
-            shutil.move(file_path, os.path.join(conf_id.sftp_folder_archive, file_name))
-            _logger.info("File moved to archive: %s", file_name)
+                        if invoice_id:
+                            update_vals = {
+                                'invoice_number': invoice_data[1],
+                                'year': invoice_data[2],
+                                'dp_doc': invoice_data[4],
+                                'retensi_doc': invoice_data[5],
+                            }
+                            
+                            if invoice_data[6]:  # If AP_DOC exist
+                                update_vals['payment_reference'] = invoice_data[6]
+                                update_vals['no_doc_sap'] = invoice_data[3]
+                                update_vals['dp_doc'] = invoice_data[4]
+                                update_vals['retensi_doc'] = invoice_data[5]
+                            else:  # If AP_DOC not exists
+                                update_vals['payment_reference'] = invoice_data[3]
+                                update_vals['no_doc_sap'] = ''
+                            
+                            invoice_id.write(update_vals)
+                            updated_invoices.append(no_inv)
+                        else:
+                            _logger.warning("No matching invoice found for no_inv: %s", no_inv)
+
+                shutil.move(file_path, os.path.join(conf_id.sftp_folder_archive, file_name))
+                _logger.info("File moved to archive: %s", file_name)
         except FileNotFoundError:
             _logger.error("File not found: %s", file_path)
             raise ValidationError(_("File TXT dari SAP atas invoice yang dituju tidak ditemukan!"))
@@ -553,3 +590,59 @@ class sap_integration_configure(models.Model):
         else:
             _logger.info("No invoices were updated.")
         
+    def _update_retensi_invoice(self):
+        invoice_model = self.env['account.move'].sudo()
+        conf_model = self.env['sap.integration.configure'].sudo()
+
+        conf_id = conf_model.search([('sftp_folder_archive', '!=', False)], limit=1)
+        file_path = None
+        if conf_id:
+            outbound_dir = conf_id.sftp_folder
+            file_name_prefix = 'YFII024'
+            for file_name in os.listdir(outbound_dir):
+                if file_name.startswith(file_name_prefix):
+                    file_path = os.path.join(outbound_dir, file_name)
+                    break
+
+        if not file_path:
+            raise ValidationError(_("No file found with prefix {} in directory {}".format(file_name_prefix, outbound_dir)))
+
+        updated_invoices = []
+        try:
+            with open(file_path, 'r') as file:
+                next(file)
+                next(file)
+                for line in file:
+                    invoice_data = line.strip().split('|')
+                    
+                    dig_code = invoice_data[0]
+                    belnr = invoice_data[1]
+                    gjahr = invoice_data[2]
+
+                    invoice_id = invoice_model.search([('name', '=', dig_code)], limit=1)
+
+                    if invoice_id:
+                        update_vals = {
+                            'name': dig_code,
+                            'payment_reference': belnr,
+                            'year': gjahr
+                        }
+                        
+                        invoice_id.write(update_vals)
+                        updated_invoices.append(dig_code)
+                    else:
+                        _logger.warning("No matching invoice found for no_inv: %s", dig_code)
+
+            shutil.move(file_path, os.path.join(conf_id.sftp_folder_archive, file_name))
+            _logger.info("File moved to archive: %s", file_name)
+        except FileNotFoundError:
+            _logger.error("File not found: %s", file_path)
+            raise ValidationError(_("File TXT dari SAP atas invoice yang dituju tidak ditemukan!"))
+        except Exception as e:
+            _logger.error("An error occurred: %s", str(e))
+            raise ValidationError(_("An error occurred while updating invoices: %s" % str(e)))
+
+        if updated_invoices:
+            _logger.info("Successfully updated invoices: %s", updated_invoices)
+        else:
+            _logger.info("No invoices were updated.")

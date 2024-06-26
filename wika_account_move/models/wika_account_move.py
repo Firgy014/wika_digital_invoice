@@ -54,7 +54,7 @@ class WikaInheritedAccountMove(models.Model):
             ('is_fully_invoiced', '!=', True)
         ]"""
     )
-    branch_id = fields.Many2one('res.branch', string='Divisi', required=True, default=122)
+    branch_id = fields.Many2one('res.branch', string='Divisi', required=True)
     department_id = fields.Many2one('res.branch', string='Department')
     project_id = fields.Many2one('project.project', string='Project')
     document_ids = fields.One2many('wika.invoice.document.line', 'invoice_id', string='Document Line', required=True)
@@ -279,6 +279,7 @@ class WikaInheritedAccountMove(models.Model):
     is_waba = fields.Boolean(string='Invoice Waba', compute='_compute_is_waba')
     bap_type = fields.Char(string='Jenis BAP', compute='_compute_bap_type', store=True)
     activity_user_id = fields.Many2one('res.users', string='ToDo User', store=True)
+    error_narration = fields.Char(string='Error Narration')
 
     @api.depends('bap_id.bap_type')
     def _compute_bap_type(self):
@@ -729,6 +730,8 @@ class WikaInheritedAccountMove(models.Model):
 
     def write(self, values):
         for rec in self:
+            _logger.info("# === ACCOUNT MOVE WRITE === #")
+            _logger.info(str(values))
             record = super(WikaInheritedAccountMove, rec).write(values)
 
             if isinstance(record, bool):
@@ -747,7 +750,8 @@ class WikaInheritedAccountMove(models.Model):
                 raise ValidationError("Posting Date harus lebih atau sama dengan Tanggal BAP yang dipilih!")
             else:
                 pass
-            return record
+        
+        return record
 
     # Refresh all records to ensure is_waba and amount total is successfully computed
     def _cron_refresh_record_values(self):
@@ -814,22 +818,22 @@ class WikaInheritedAccountMove(models.Model):
                 for cut_line in self.bap_id.price_cut_ids:
                     invoice_lines.append((0, 0, {
                         'product_id': cut_line.product_id.id,
-                        'quantity': 1,
+                        'quantity': cut_line.qty or 1.0,
                         'price_unit': cut_line.amount,
                         'currency_id': self.currency_id.id,
                     }))
             elif self.bap_type == 'retensi':
                 for cut_line in self.bap_id.price_cut_ids:
                     invoice_lines.append((0, 0, {
-                        'display_type':'product',
+                        'display_type': 'product',
                         'product_id': cut_line.product_id.id,
-                        'quantity': cut_line.qty,
-                        'price_unit': cut_line.amount,
+                        'quantity': cut_line.qty or 1.0,
+                        'price_unit': self.bap_id.retensi_total,
                     }))
             else:
                 for bap_line in self.bap_id.bap_ids:
                     invoice_lines.append((0, 0, {
-                        'display_type':'product',
+                        'display_type': 'product',
                         'product_id': bap_line.product_id.id,
                         'purchase_line_id': bap_line.purchase_line_id.id,
                         'bap_line_id': bap_line.id,
@@ -840,10 +844,11 @@ class WikaInheritedAccountMove(models.Model):
                         'currency_id': self.currency_id.id,
                         'tax_ids': bap_line.purchase_line_id.taxes_id.ids,
                         'product_uom_id': bap_line.product_uom.id,
-                        'adjustment':bap_line.adjustment,
-                        'amount_adjustment':bap_line.amount_adjustment,
+                        'adjustment': bap_line.adjustment,
+                        'amount_adjustment': bap_line.amount_adjustment,
                     }))
             self.invoice_line_ids = invoice_lines
+
 
     def assign_todo_first(self):
         model_model = self.env['ir.model'].sudo()
@@ -990,87 +995,95 @@ class WikaInheritedAccountMove(models.Model):
                                     'purchase_id': self.po_id.id,
                                     'invoice_id': self.id,
                                 })
+                        else:
+                            doc.rejected_doc_id.attachment_id.write({
+                                'name': doc.filename,
+                                'datas': doc.document,
+                                'res_model': 'documents.document'
+                            })
+                            doc.rejected_doc_id.write({'active': True})
 
-                        elif doc.document_id.name == 'BAP':
-                            folder_id = self.env['documents.folder'].sudo().search([('name', '=', 'BAP')], limit=1)
-                            if folder_id:
-                                facet_id = self.env['documents.facet'].sudo().search([
-                                    ('name', '=', 'Documents'),
-                                    ('folder_id', '=', folder_id.id)
-                                ], limit=1)
-                                attachment_id = self.env['ir.attachment'].sudo().create({
-                                    'name': doc.filename,
-                                    'datas': doc.document,
-                                    'res_model': 'documents.document',
-                                })
-                                if attachment_id:
-                                    tag = self.env['documents.tag'].sudo().search([
-                                        ('facet_id', '=', facet_id.id),
-                                        ('name', '=', doc.document_id.name)
-                                    ], limit=1)
-                                    documents_model.create({
-                                        'attachment_id': attachment_id.id,
-                                        'folder_id': folder_id.id,
-                                        'tag_ids': tag.ids,
-                                        'partner_id': doc.invoice_id.partner_id.id,
-                                        'purchase_id': self.po_id.id,
-                                        'invoice_id': self.id,
-                                        'bap_id': self.bap_id.id,
-                                    })
+
+                        # elif doc.document_id.name == 'BAP':
+                        #     folder_id = self.env['documents.folder'].sudo().search([('name', '=', 'BAP')], limit=1)
+                        #     if folder_id:
+                        #         facet_id = self.env['documents.facet'].sudo().search([
+                        #             ('name', '=', 'Documents'),
+                        #             ('folder_id', '=', folder_id.id)
+                        #         ], limit=1)
+                        #         attachment_id = self.env['ir.attachment'].sudo().create({
+                        #             'name': doc.filename,
+                        #             'datas': doc.document,
+                        #             'res_model': 'documents.document',
+                        #         })
+                        #         if attachment_id:
+                        #             tag = self.env['documents.tag'].sudo().search([
+                        #                 ('facet_id', '=', facet_id.id),
+                        #                 ('name', '=', doc.document_id.name)
+                        #             ], limit=1)
+                        #             documents_model.create({
+                        #                 'attachment_id': attachment_id.id,
+                        #                 'folder_id': folder_id.id,
+                        #                 'tag_ids': tag.ids,
+                        #                 'partner_id': doc.invoice_id.partner_id.id,
+                        #                 'purchase_id': self.po_id.id,
+                        #                 'invoice_id': self.id,
+                        #                 'bap_id': self.bap_id.id,
+                        #             })
                 
-                        elif doc.document_id.name in ['GR', 'Surat Jalan', 'SES']:
-                            folder_id = self.env['documents.folder'].sudo().search([('name', '=', 'GR/SES')], limit=1)
-                            if folder_id:
-                                facet_id = self.env['documents.facet'].sudo().search([
-                                    ('name', '=', 'Documents'),
-                                    ('folder_id', '=', folder_id.id)
-                                ], limit=1)
-                                attachment_id = self.env['ir.attachment'].sudo().create({
-                                    'name': doc.filename,
-                                    'datas': doc.document,
-                                    'res_model': 'documents.document',
-                                })
-                                if attachment_id:
-                                    tag = self.env['documents.tag'].sudo().search([
-                                        ('facet_id', '=', facet_id.id),
-                                        ('name', '=', doc.document_id.name)
-                                    ], limit=1)
-                                    documents_model.create({
-                                        'attachment_id': attachment_id.id,
-                                        'folder_id': folder_id.id,
-                                        'tag_ids': tag.ids,
-                                        'partner_id': doc.invoice_id.partner_id.id,
-                                        'purchase_id': self.po_id.id,
-                                        'invoice_id': self.id,
-                                        'picking_id': doc.picking_id.id
-                                    })
+                        # elif doc.document_id.name in ['GR', 'Surat Jalan', 'SES']:
+                        #     folder_id = self.env['documents.folder'].sudo().search([('name', '=', 'GR/SES')], limit=1)
+                        #     if folder_id:
+                        #         facet_id = self.env['documents.facet'].sudo().search([
+                        #             ('name', '=', 'Documents'),
+                        #             ('folder_id', '=', folder_id.id)
+                        #         ], limit=1)
+                        #         attachment_id = self.env['ir.attachment'].sudo().create({
+                        #             'name': doc.filename,
+                        #             'datas': doc.document,
+                        #             'res_model': 'documents.document',
+                        #         })
+                        #         if attachment_id:
+                        #             tag = self.env['documents.tag'].sudo().search([
+                        #                 ('facet_id', '=', facet_id.id),
+                        #                 ('name', '=', doc.document_id.name)
+                        #             ], limit=1)
+                        #             documents_model.create({
+                        #                 'attachment_id': attachment_id.id,
+                        #                 'folder_id': folder_id.id,
+                        #                 'tag_ids': tag.ids,
+                        #                 'partner_id': doc.invoice_id.partner_id.id,
+                        #                 'purchase_id': self.po_id.id,
+                        #                 'invoice_id': self.id,
+                        #                 'picking_id': doc.picking_id.id
+                        #             })
 
-                        elif doc.document_id.name == 'Kontrak':
-                            folder_id = self.env['documents.folder'].sudo().search([('name', '=', 'PO')], limit=1)
-                            if folder_id:
-                                facet_id = self.env['documents.facet'].sudo().search([
-                                    ('name', '=', 'Documents'),
-                                    ('folder_id', '=', folder_id.id)
-                                ], limit=1)
-                                attachment_id = self.env['ir.attachment'].sudo().create({
-                                    'name': doc.filename,
-                                    'datas': doc.document,
-                                    'res_model': 'documents.document',
-                                })
-                                if attachment_id:
-                                    tag = self.env['documents.tag'].sudo().search([
-                                        ('facet_id', '=', facet_id.id),
-                                        ('name', '=', doc.document_id.name)
-                                    ], limit=1)
-                                    documents_model.create({
-                                        'attachment_id': attachment_id.id,
-                                        'folder_id': folder_id.id,
-                                        'tag_ids': tag.ids,
-                                        'partner_id': doc.invoice_id.partner_id.id,
-                                        'purchase_id': self.po_id.id,
-                                        'invoice_id': self.id,
-                                        'is_po_doc': True
-                                    })
+                        # elif doc.document_id.name == 'Kontrak':
+                        #     folder_id = self.env['documents.folder'].sudo().search([('name', '=', 'PO')], limit=1)
+                        #     if folder_id:
+                        #         facet_id = self.env['documents.facet'].sudo().search([
+                        #             ('name', '=', 'Documents'),
+                        #             ('folder_id', '=', folder_id.id)
+                        #         ], limit=1)
+                        #         attachment_id = self.env['ir.attachment'].sudo().create({
+                        #             'name': doc.filename,
+                        #             'datas': doc.document,
+                        #             'res_model': 'documents.document',
+                        #         })
+                        #         if attachment_id:
+                        #             tag = self.env['documents.tag'].sudo().search([
+                        #                 ('facet_id', '=', facet_id.id),
+                        #                 ('name', '=', doc.document_id.name)
+                        #             ], limit=1)
+                        #             documents_model.create({
+                        #                 'attachment_id': attachment_id.id,
+                        #                 'folder_id': folder_id.id,
+                        #                 'tag_ids': tag.ids,
+                        #                 'partner_id': doc.invoice_id.partner_id.id,
+                        #                 'purchase_id': self.po_id.id,
+                        #                 'invoice_id': self.id,
+                        #                 'is_po_doc': True
+                        #             })
 
 
                 groups_line = self.env['wika.approval.setting.line'].search([
@@ -1153,6 +1166,7 @@ class WikaInheritedAccountMove(models.Model):
                         posting_date = data["POSTING_DATE"]
                         pph_cbasis = data["PPH_CBASIS"] * -1
                         pph_accrual = data["PPH_ACCRUAL"] * -1
+                        wht_type = data["WHT_TYPE"]
 
                         amount = data["AMOUNT"] * -1
                         header_text = data["HEADER_TEXT"]
@@ -1165,12 +1179,15 @@ class WikaInheritedAccountMove(models.Model):
                         tot_pph_amount += pph_accrual
 
                     _logger.info('# === UPDATE ACCOUNT MOVE PPH AMOUNT === #')
-                    self.write({
-                        'pph_amount': tot_pph_amount,
-                        'is_upd_api_pph_amount': True
-                    })
-                                
-                    _logger.info(_("# === UPDATE PPH AMOUNT BERHASIL === #"))
+                    if pph_accrual > 0 and wht_type == 'I6':
+                        self.write({
+                            'pph_amount': tot_pph_amount,
+                            'is_upd_api_pph_amount': True
+                        })
+                                    
+                        _logger.info(_("# === UPDATE PPH AMOUNT BERHASIL === #"))
+                    else:
+                        _logger.info(_("# === PPH ACCRUAL 0 === #"))
 
                 else:
                     raise UserError(_("Data Tidak Tersedia!"))
@@ -1180,7 +1197,63 @@ class WikaInheritedAccountMove(models.Model):
                 _logger.info(e)
                 raise UserError(_("Terjadi Kesalahan! Update Invoice Gagal."))
         else:
-            raise UserError(_("Tidak diproses karena status sudah Done!"))
+            raise UserError(_("Terjadi Kesalahan! pph_amount harus ada nilainya dan tidak pernah di update"))
+        
+    def get_dp_payment_status(self):
+        self.ensure_one()
+        if not self.payment_reference:
+            raise UserError("Payment Reference harus diisi")
+
+        url_config = self.env['wika.integration'].search([('name', '=', 'URL_DP_PAYMENT_STATUS')], limit=1).url
+        headers = {
+            'Authorization': 'Basic V0lLQV9JTlQ6SW5pdGlhbDEyMw==',
+            'Content-Type': 'application/json'
+        }
+
+        payload = json.dumps({
+            "COMPANY_CODE": "A000",
+            "CLEAR_DATE": 
+                {   
+                    "LOW": "",
+                    "HIGH":""
+                },
+            "DOC_NUMBER": "%s",
+            "STATUS": "Y"
+        }) % (self.payment_reference)
+        payload = payload.replace('\n', '')
+        _logger.info("# === CEK PAYLOAD === #")
+        _logger.info(payload)
+
+        # try:
+        response = requests.request("GET", url_config, data=payload, headers=headers)
+        txt = json.loads(response.text)
+
+        if txt['DATA']:
+            _logger.info("# === IMPORT DATA === #")
+            company_id = self.env.company.id
+            # _logger.info(txt['DATA'])
+            txt_data = sorted(txt['DATA'], key=lambda x: x["DOC_NUMBER"])
+            # txt_data = txt['DATA']
+            for data in txt_data:
+                # _logger.info(data)
+                doc_number = data["DOC_NUMBER"]
+                year = str(data["YEAR"])
+                currency = str(data["CURRENCY"])
+                amount = data["AMOUNT"]
+                pph_cbasis = data["PPH_CBASIS"]
+                ppn = data["PPN"]
+                clear_date = data["CLEAR_DATE"]
+                clear_doc = data["CLEAR_DOC"]
+                vendor = data["VENDOR"]
+                profit_center = data["PROFIT_CENTER"]
+                status = data["STATUS"]
+
+                if self.partner_id.company_id.id and self.status_payment != 'Paid':
+                    self.status_payment ='Paid'
+
+            _logger.info("# === IMPORT DATA SUKSES === #")
+        else:
+            raise UserError(_("Data DP Payment Status Tidak Tersedia!"))
             
     def action_approve(self):
         # self.write({'is_wizard_cancel': False})
@@ -1878,7 +1951,8 @@ class WikaInheritedAccountMove(models.Model):
             return self.env.ref('wika_account_move.report_wika_account_move_keuangan_action').report_action(self)
         else:
             return super(WikaInheritedAccountMove, self).action_print_invoice()
-        
+    
+    
     def compute_pph_amount(self):
         for rec in self:
             total_pph_cbasis = 0
@@ -1908,6 +1982,7 @@ class WikaInvoiceDocumentLine(models.Model):
         ('verified', 'Verified'),
         ('rejected', 'Rejected')
     ], string='Status', default='waiting')
+    rejected_doc_id = fields.Many2one('documents.document', string='Rejected Document')
 
 
     @api.onchange('document')
