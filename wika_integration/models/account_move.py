@@ -9,14 +9,6 @@ class AccountMoveInheritWika(models.Model):
     year = fields.Char(string='Invoice Year')
     dp_doc = fields.Char(string='DP Doc')
     retensi_doc = fields.Char(string='Retensi Doc')
-    payment_move_ids = fields.One2many(
-        'account.payment',
-        'payment_move_id',
-        string='Payments',
-        copy=False,
-        readonly=True,
-        states={'draft': [('readonly', False)]},
-    )
     sap_amount_payment = fields.Float('Amount Payment')
     amount_due = fields.Float('Amount Due')
 
