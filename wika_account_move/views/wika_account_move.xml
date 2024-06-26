@@ -15,7 +15,7 @@
                     <button name="compute_account_payable" string="GET COA" type="object" groups="base.group_no_one"/>
                     <button name="add_pricecut_scf" string="ADD POTONGAN SCF" type="object" attrs="{'invisible': [('state', 'not in', ['draft', 'rejected'])]}"/>
                     <button name="get_replace_pph_amount" string="Replace PPh Amount" type="object" class="oe_highlight"/>
-                    <button name="get_dp_payment_status" string="GET DP PAYMENT STATUS" type="object" groups="base.group_no_one" attrs="{'invisible': [('status_payment', '=', 'paid')]}"/>
+                    <button name="get_dp_payment_status" string="Update DP Payment Status" type="object" groups="base.group_no_one" attrs="{'invisible': [('status_payment', '=', 'Paid')]}"/>
                     <field name="state" widget="statusbar" statusbar_visible="draft,uploaded,approved"/>
                 </header>
                 <sheet>
