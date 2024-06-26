@@ -11,5 +11,5 @@ from . import wika_integration_models
 from . import account_payment
 from . import wika_get_payment_status
 from . import wika_get_invoice_non_po
-
+from . import wika_get_dp_payment_status
 #from . import loan_bcg

@@ -62,5 +62,11 @@
             <field name="url">https://new-portal.wika.co.id/app/sso/valid</field>
             <field name="app_secret">bbcdac3c884ba59a188cd3aa18553152</field>
         </record>
+        <record id="url_dp_payment_status" model="wika.integration">
+            <field name="name">URL_DP_PAYMENT_STATUS</field>
+            <field name="app">SAP</field>
+            <field name="url">http://wtapperp-dev.wika.co.id:8010/ywikafi027/dppaymentstatus?sap-client=110</field>
+            <field name="app_secret"></field>
+        </record>
     </data>
 </odoo>

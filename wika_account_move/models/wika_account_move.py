@@ -1198,6 +1198,62 @@ class WikaInheritedAccountMove(models.Model):
                 raise UserError(_("Terjadi Kesalahan! Update Invoice Gagal."))
         else:
             raise UserError(_("Terjadi Kesalahan! pph_amount harus ada nilainya dan tidak pernah di update"))
+        
+    def get_dp_payment_status(self):
+        self.ensure_one()
+        if not self.payment_reference:
+            raise UserError("Payment Reference harus diisi")
+
+        url_config = self.env['wika.integration'].search([('name', '=', 'URL_DP_PAYMENT_STATUS')], limit=1).url
+        headers = {
+            'Authorization': 'Basic V0lLQV9JTlQ6SW5pdGlhbDEyMw==',
+            'Content-Type': 'application/json'
+        }
+
+        payload = json.dumps({
+            "COMPANY_CODE": "A000",
+            "CLEAR_DATE": 
+                {   
+                    "LOW": "",
+                    "HIGH":""
+                },
+            "DOC_NUMBER": "%s",
+            "STATUS": "Y"
+        }) % (self.payment_reference)
+        payload = payload.replace('\n', '')
+        _logger.info("# === CEK PAYLOAD === #")
+        _logger.info(payload)
+
+        # try:
+        response = requests.request("GET", url_config, data=payload, headers=headers)
+        txt = json.loads(response.text)
+
+        if txt['DATA']:
+            _logger.info("# === IMPORT DATA === #")
+            company_id = self.env.company.id
+            # _logger.info(txt['DATA'])
+            txt_data = sorted(txt['DATA'], key=lambda x: x["DOC_NUMBER"])
+            # txt_data = txt['DATA']
+            for data in txt_data:
+                # _logger.info(data)
+                doc_number = data["DOC_NUMBER"]
+                year = str(data["YEAR"])
+                currency = str(data["CURRENCY"])
+                amount = data["AMOUNT"]
+                pph_cbasis = data["PPH_CBASIS"]
+                ppn = data["PPN"]
+                clear_date = data["CLEAR_DATE"]
+                clear_doc = data["CLEAR_DOC"]
+                vendor = data["VENDOR"]
+                profit_center = data["PROFIT_CENTER"]
+                status = data["STATUS"]
+
+                if self.partner_id.company_id.id and self.status_payment != 'Paid':
+                    self.status_payment ='Paid'
+
+            _logger.info("# === IMPORT DATA SUKSES === #")
+        else:
+            raise UserError(_("Data DP Payment Status Tidak Tersedia!"))
             
     def action_approve(self):
         # self.write({'is_wizard_cancel': False})
