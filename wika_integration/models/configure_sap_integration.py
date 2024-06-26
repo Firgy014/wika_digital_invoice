@@ -616,8 +616,10 @@ class sap_integration_configure(models.Model):
                     invoice_data = line.strip().split('|')
                     
                     dig_code = invoice_data[0]
-                    belnr = invoice_data[1]
-                    gjahr = invoice_data[2]
+                    # bukrs = invoice_data[1]
+                    belnr = invoice_data[2]
+                    gjahr = invoice_data[3]
+                    amount_idr = invoice_data[4]
 
                     invoice_id = invoice_model.search([('name', '=', dig_code)], limit=1)
 
@@ -625,7 +627,8 @@ class sap_integration_configure(models.Model):
                         update_vals = {
                             'name': dig_code,
                             'payment_reference': belnr,
-                            'year': gjahr
+                            'year': gjahr,
+                            'total_line': amount_idr
                         }
                         
                         invoice_id.write(update_vals)
