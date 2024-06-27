@@ -5,7 +5,7 @@
     <record id="stock_picking_tree_wika" model="ir.ui.view">
         <field name="name">stock.picking.tree.wika</field>
         <field name="model">stock.picking</field>
-        <field eval="1" name="priority"/>
+        <field eval="200" name="priority"/>
         <field name="arch" type="xml" >
             <!-- <tree string="Picking list" multi_edit="1" sample="1" create="false"> -->
             <tree string="Picking list" multi_edit="1" sample="1" create="1">
@@ -35,7 +35,7 @@
     <record id="stock_picking_form_wika" model="ir.ui.view">
         <field name="name">stock.picking.form.wika</field>
         <field name="model">stock.picking</field>
-        <field eval="1" name="priority"/>
+        <field eval="200" name="priority"/>
         <field name="arch" type="xml">
             <form string="Transfer" js_class="picking_form">
             <field name="is_locked" invisible="1"/>
