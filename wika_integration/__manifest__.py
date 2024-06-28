@@ -21,7 +21,7 @@
     'license': 'LGPL-3',
 
     # any module necessary for this one to work correctly
-    'depends': ['base','inherit_for_api','base_setup','wika_account_move'],
+    'depends': ['base','inherit_for_api','base_setup','wika_account_move','wika_payment_request'],
 
     # always loaded
     'data': [
@@ -30,6 +30,7 @@
         'data/scheduler.xml',
         'data/scheduler_generate_data.xml',
         'data/sap_configuration_data.xml',
+        'views/wika_payment_request.xml',
         'views/sap_integration_views.xml',
         'views/configure_sap_integration_views.xml',
         'views/wika_integration_views.xml',
