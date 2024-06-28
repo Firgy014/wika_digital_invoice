@@ -242,7 +242,7 @@ LEFT JOIN
 LEFT JOIN
     account_move inv ON inv.id = rel.account_move_id
 WHERE
-    pay.id = 129
+    pay.id = {payment_id.id}
     AND pay.is_sent_to_sap = false    
     AND inv.payment_reference IS NOT NULL
     AND inv.is_waba = true
@@ -264,7 +264,7 @@ LEFT JOIN
 LEFT JOIN
     account_move partial_inv ON partial_inv.id = partial_pay.invoice_id
 WHERE
-    pay.id = 129
+    pay.id = {payment_id.id}
     AND partial_inv.payment_reference IS NOT NULL
     AND partial_inv.is_waba = true;
 """

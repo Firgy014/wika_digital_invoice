@@ -53,7 +53,7 @@ class PaymentRequestInherit(models.Model):
                     with open(file_path, 'wb') as fp:
                         fp.write(out2)
 
-                    # payment_id.write({'is_sent_to_sap':True})
+                    payment_id.write({'is_sent_to_sap':True})
 
                 except Exception as e:
                     _logger.error(f"Error occurred while generating and sending data: {str(e)}")
