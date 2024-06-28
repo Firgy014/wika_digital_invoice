@@ -238,7 +238,7 @@ SELECT
 FROM
     wika_payment_request pay
 LEFT JOIN
-    account_move_wika_payment_request_rel rel ON pay.id = rel.wika_payment_request_id
+    account_move_wika_payment_request_rel rel ON pay.id = {payment_id.id}
 LEFT JOIN
     account_move inv ON inv.id = rel.account_move_id
 WHERE
@@ -258,7 +258,7 @@ SELECT
 FROM
     wika_payment_request pay
 LEFT JOIN
-    wika_partial_payment_request_wika_payment_request_rel partial_rel ON pay.id = partial_rel.wika_payment_request_id
+    wika_partial_payment_request_wika_payment_request_rel partial_rel ON pay.id = {payment_id.id}
 LEFT JOIN
     wika_partial_payment_request partial_pay ON partial_pay.id = partial_rel.wika_partial_payment_request_id
 LEFT JOIN
