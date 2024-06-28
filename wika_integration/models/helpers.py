@@ -226,3 +226,45 @@ WHERE
     AND line.display_type = 'product'
     AND inv.payment_reference IS NULL;
 """
+
+def _get_computed_query_reclass_ppn_waba(payment_id):
+    return f"""
+SELECT
+    inv.name AS NO,
+    inv.payment_reference AS DOC_NUMBER,
+    TO_CHAR(inv.date, 'YYYY') AS DOC_YEAR,
+    TO_CHAR(inv.date, 'YYYYMMDD') AS POSTING_DATE,
+    TO_CHAR(inv.date, 'FMmm') AS PERIOD
+FROM
+    wika_payment_request pay
+LEFT JOIN
+    account_move_wika_payment_request_rel rel ON pay.id = rel.wika_payment_request_id
+LEFT JOIN
+    account_move inv ON inv.id = rel.account_move_id
+WHERE
+    pay.id = {payment_id.id}
+    AND pay.is_sent_to_sap = false    
+    AND inv.payment_reference IS NOT NULL
+    AND inv.is_waba = true
+
+UNION
+
+SELECT
+    partial_inv.name AS NO,
+    partial_inv.payment_reference AS DOC_NUMBER,
+    TO_CHAR(partial_inv.date, 'YYYY') AS DOC_YEAR,
+    TO_CHAR(partial_inv.date, 'YYYYMMDD') AS POSTING_DATE,
+    TO_CHAR(partial_inv.date, 'FMmm') AS PERIOD
+FROM
+    wika_payment_request pay
+LEFT JOIN
+    wika_partial_payment_request_wika_payment_request_rel partial_rel ON pay.id = partial_rel.wika_payment_request_id
+LEFT JOIN
+    wika_partial_payment_request partial_pay ON partial_pay.id = partial_rel.wika_partial_payment_request_id
+LEFT JOIN
+    account_move partial_inv ON partial_inv.id = partial_pay.invoice_id
+WHERE
+    pay.id = {payment_id.id}
+    AND partial_inv.payment_reference IS NOT NULL
+    AND partial_inv.is_waba = true;
+"""
