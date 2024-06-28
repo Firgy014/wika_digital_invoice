@@ -7,7 +7,6 @@ from odoo.tools.float_utils import float_is_zero, float_compare
 from odoo.exceptions import UserError
 from odoo.tools.misc import unique
 
-
 class res_branch(models.Model):
     _name = 'res.branch'
     _rec_name = 'code'
@@ -38,8 +37,6 @@ class res_branch(models.Model):
                                                  ('sequence', '=', sequence)
                                                  ], limit=1)
         return ttd
-
-
 
 class res_branch_ttd(models.Model):
     _name = 'res.branch.ttd'

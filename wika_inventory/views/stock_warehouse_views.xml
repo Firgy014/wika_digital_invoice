@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+        <record id="view_warehouse_branch" model="ir.ui.view">
+            <field name="name">stock.warehouse.branch</field>
+            <field name="model">stock.warehouse</field>
+            <field name="inherit_id" ref="stock.view_warehouse"/>
+            <field name="arch" type="xml">
+                <field name="code" position="after">
+                    <field name="project_id" />
+                    <field name="divisi_id" />
+                </field>
+            </field>
+        </record>
+
+        <record id="view_warehouse_branch_tree" model="ir.ui.view">
+            <field name="name">stock.warehouse.branch.tree</field>
+            <field name="model">stock.warehouse</field>
+            <field name="inherit_id" ref="stock.view_warehouse_tree"/>
+            <field name="arch" type="xml">
+                <field name="company_id" position="after">
+                    <field name="project_id" />
+                    <field name="divisi_id" />
+                </field>
+            </field>
+        </record>
+
+</odoo>

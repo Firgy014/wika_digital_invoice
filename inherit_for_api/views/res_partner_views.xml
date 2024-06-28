@@ -7,7 +7,7 @@
             <field name="model">res.partner</field>
             <field name="inherit_id" ref="base.view_partner_tree"/>
             <field name="arch" type="xml">
-                <xpath expr="//tree/field[@name='display_name']" position='after'>
+                <xpath expr="//h2/field[@name='display_name']" position='after'>
                     <field name="kode_nasabah_baru" string="Kode Nasabah Baru"/>
                     <field name="sap_code" string="Kode SAP"/>
 
