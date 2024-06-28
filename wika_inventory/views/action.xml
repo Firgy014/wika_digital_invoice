@@ -25,5 +25,72 @@
             <field name="context">{'default_wika_state': 'waits', 'default_picking_type_id': 1, 'default_immediate_transfer': True}</field>
         </record>
 
+        <!-- Goods Receipt Action -->
+         <record id="action_goods_receipt" model="ir.actions.act_window">
+            <field name="name">Goods Receipt (GR)</field>
+            <field name="res_model">stock.picking</field>
+            <field name="view_mode">tree,form</field>
+            <field name="domain">[('wika_state', 'in', ('waits', 'uploaded', 'approved','rejected'))]</field>
+            <field name="view_ids" eval="[(5, 0, 0),
+                (0, 0, {'view_mode': 'tree', 'view_id': ref('wika_inventory.stock_picking_tree_wika')}),
+                (0, 0, {'view_mode': 'form', 'view_id': ref('wika_inventory.stock_picking_form_wika')}),
+            ]"/>
+            <field name="context">{'default_wika_state': 'waits', 'default_picking_type_id': 1, 'default_immediate_transfer': True}</field>
+        </record>
+
+        <!-- Goods Issue Action -->
+        <record id="action_goods_issue" model="ir.actions.act_window">
+            <field name="name">Goods Issue (GI)</field>
+            <field name="res_model">stock.picking</field>
+            <field name="view_mode">tree,form</field>
+            <field name="domain">[('wika_state', 'in', ('waits', 'uploaded', 'approved','rejected'))]</field>
+            <field name="context">{'default_wika_state': 'waits', 'default_picking_type_id': 2, 'default_immediate_transfer': False}</field>
+        </record>
+
+        <!-- Transfer Stock Action -->
+        <!-- <record id="action_transfer_stock" model="ir.actions.act_window">
+            <field name="name">Transfers Stock</field>
+            <field name="res_model">stock.picking</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="view_mode">tree,kanban,form,calendar</field>
+            <field name="domain"></field>
+            <field name="context">{'contact_display': 'partner_address', 'default_company_id': allowed_company_ids[0]}</field>
+            <field name="search_view_id" ref="stock.view_picking_internal_search"/>
+            <field name="help" type="html">
+                <p class="o_view_nocontent_smiling_face">
+                    No transfer found. Let's create one!
+                </p><p>
+                    Transfers allow you to move products from one location to another.
+                </p>
+            </field>
+        </record> -->
+        <record id="action_transfer_stock" model="ir.actions.act_window">
+            <field name="name">Transfer Stock</field>
+            <field name="res_model">stock.picking</field>
+            <field name="view_mode">tree,form</field>
+            <field name="view_ids" eval="[(5, 0, 0),
+                (0, 0, {'view_mode': 'tree', 'view_id': ref('stock.vpicktree')}),
+            ]"/>
+            <field name="domain">[('wika_state', 'in', ('waits', 'uploaded', 'approved','rejected'))]</field>
+            <field name="context">{'default_wika_state': 'waits', 'default_picking_type_id': 5, 'default_immediate_transfer': False}</field>
+        </record>
+
+        <record id="action_reservation" model="ir.actions.act_window">
+            <field name="name">Reservation</field>
+            <field name="res_model">stock.move.line</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="view_mode">tree,kanban,pivot,form</field>
+            <field name="view_id" ref="stock.view_move_line_tree"/>
+            <field name="context">{'search_default_done': 1, 'create': 0}</field>
+            <field name="help" type="html">
+                <p class="o_view_nocontent_empty_folder">
+                    There's no reservation yet
+                </p><p>
+                    This menu gives you the full traceability of inventory operations on a specific product.
+                    You can filter on the product to see all the past movements for the product.
+                </p>
+            </field>
+        </record>
+
     </data>
 </odoo>

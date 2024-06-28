@@ -325,6 +325,7 @@ class WikaInheritedAccountMove(models.Model):
 
     def _compute_name_wdigi(self):
         for rec in self:
+            _logger.info("# === _compute_name_wdigi === #")
             sequence = self.env['ir.sequence'].sudo().next_by_code('invoice_number_sequence') or '/'
             seq = sequence.split("/")
             if rec.invoice_date:

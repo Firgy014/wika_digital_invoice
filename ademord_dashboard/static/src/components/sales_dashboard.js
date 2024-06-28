@@ -267,38 +267,38 @@ export class OwlSalesDashboard extends Component {
 
 
     // partner orders
-    async getPartnerOrders(){
-        let domain = [['sap_code', '!=', false]]
-        if (this.state.period > 0){
-            domain.push(['create_date','>', this.state.current_date])
-        }
+    // async getPartnerOrders(){
+    //     let domain = [['sap_code', '!=', false]]
+    //     if (this.state.period > 0){
+    //         domain.push(['create_date','>', this.state.current_date])
+    //     }
 
-        const data = await this.orm.searchRead("res.partner", domain, ['name', 'sap_code'])
-        console.log(data)
+    //     const data = await this.orm.searchRead("res.partner", domain, ['name', 'sap_code'])
+    //     console.log(data)
 
-        const sapCodeCount = data.filter(d => d.sap_code).length;
+    //     const sapCodeCount = data.filter(d => d.sap_code).length;
 
-        this.state.partnerOrders = {
-            data: {
-                labels: data.map(d => d.name),
-                  datasets: [
-                  {
-                    label: 'Partners',
-                    data: data.map(d => d.sap_code),
-                    hoverOffset: 4,
-                    backgroundColor: "orange",
-                },
-                {
-                    label: 'SAP Code Count',
-                    data: [sapCodeCount],
-                    hoverOffset: 4,
-                    backgroundColor: "blue",
-                }]
-            },
-            domain,
-            label_field: 'name',
-        }
-    }
+    //     this.state.partnerOrders = {
+    //         data: {
+    //             labels: data.map(d => d.name),
+    //               datasets: [
+    //               {
+    //                 label: 'Partners',
+    //                 data: data.map(d => d.sap_code),
+    //                 hoverOffset: 4,
+    //                 backgroundColor: "orange",
+    //             },
+    //             {
+    //                 label: 'SAP Code Count',
+    //                 data: [sapCodeCount],
+    //                 hoverOffset: 4,
+    //                 backgroundColor: "blue",
+    //             }]
+    //         },
+    //         domain,
+    //         label_field: 'name',
+    //     }
+    // }
 
     setup(){
         this.state = useState({

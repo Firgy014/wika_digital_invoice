@@ -8,7 +8,7 @@ _logger = logging.getLogger(__name__)
 
 class PickingInherit(models.Model):
     _inherit = "stock.picking"
-    _description = "GR/SES"
+    _description = "Stock Picking"
 
     partner_id = fields.Many2one('res.partner', string='Receive From', required=True)
     purchase_id = fields.Many2one('purchase.order', string='Purchase Order', store=True)
@@ -40,6 +40,49 @@ class PickingInherit(models.Model):
     amount_bap = fields.Float('BAP Amount')
     # total_amount = fields.Float(string='Total Amount', compute='_compute_total_amount')
     total_amount = fields.Float(string='Total Amount')
+    product_uom_category_id = fields.Many2one(
+        'uom.category', 
+        string='Product UoM Category', 
+        help='The unit of measure category for the products in this picking.'
+    )
+    account_id = fields.Many2one(
+        'account.account', 
+        string='Account',
+        help='The account related to this picking.'
+    )
+    ref = fields.Char(
+        string='Reference',  
+        help='Reference for the picking operation.'
+    )
+    general_account_id = fields.Many2one(
+        'account.account', 
+        string='General Account', 
+        help='The general account related to this picking.'
+    )
+    move_line_id = fields.Many2one(
+        'stock.move.line', 
+        string='Move Line', 
+        help='The stock move line related to this picking.'
+    )
+    plan_id = fields.Integer('plan_id')
+    currency_id = fields.Many2one(
+        'res.currency', 
+        string='Currency',  
+        help='The currency related to this picking.'
+    )
+    unit_amount = fields.Float(
+        'Unit Amount',
+        default=0.0,
+    )
+    product_uom_id = fields.Many2one(
+        'uom.uom', 
+        string='Product Unit of Measure',
+        help='The unit of measure for the product in this picking.'
+    )
+    amount = fields.Float(
+        string='Amount', 
+        help='The amount related to this picking.'
+    )
 
     level = fields.Selection([
         ('Proyek', 'Proyek'),
