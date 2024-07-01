@@ -1233,33 +1233,39 @@ class WikaBeritaAcaraPembayaran(models.Model):
                             })
                             doc.rejected_doc_id.write({'active': True})
 
-                    groups_line = self.env['wika.approval.setting.line'].search([
-                        ('level', '=', level),
-                        ('sequence', '=', self.step_approve),
-                        ('approval_id', '=', approval_id.id)
-                    ], limit=1)
-                    groups_id_next = groups_line.groups_id
-                    if groups_id_next:
-                        for x in groups_id_next.users:
-                            if level == 'Proyek' and  self.project_id in x.project_ids:
-                                first_user = x.id
-                            if level == 'Divisi Operasi' and x.branch_id == self.branch_id:
-                                first_user = x.id
-                            if level == 'Divisi Fungsi' and x.department_id == self.department_id:
-                                first_user = x.id
-                        if first_user:
-                            self.env['mail.activity'].sudo().create({
-                                'activity_type_id': 4,
-                                'res_model_id': self.env['ir.model'].sudo().search(
-                                    [('model', '=', 'wika.berita.acara.pembayaran')], limit=1).id,
-                                'res_id': self.id,
-                                'user_id': first_user,
-                                'nomor_po': self.po_id.name,
-                                'date_deadline': fields.Date.today() + timedelta(days=2),
-                                'state': 'planned',
-                                'status': 'to_approve',
-                                'summary': """Need Approval Document BAP"""
-                            })
+                groups_line = self.env['wika.approval.setting.line'].search([
+                    ('level', '=', level),
+                    ('sequence', '=', self.step_approve),
+                    ('approval_id', '=', approval_id.id)
+                ], limit=1)
+                groups_id_next = groups_line.groups_id
+                first_user = False
+                if groups_id_next:
+                    for x in groups_id_next.users:
+                        if level == 'Proyek' and  self.project_id in x.project_ids:
+                            first_user = x.id
+                        if level == 'Divisi Operasi' and x.branch_id == self.branch_id:
+                            first_user = x.id
+                        if level == 'Divisi Fungsi' and x.department_id == self.department_id:
+                            first_user = x.id
+
+                    if not first_user and groups_id_next.users:
+                        first_user = groups_id_next.users[0].id
+                    if first_user:
+                        self.env['mail.activity'].sudo().create({
+                            'activity_type_id': 4,
+                            'res_model_id': self.env['ir.model'].sudo().search(
+                                [('model', '=', 'wika.berita.acara.pembayaran')], limit=1).id,
+                            'res_id': self.id,
+                            'user_id': first_user,
+                            'nomor_po': self.po_id.name,
+                            'date_deadline': fields.Date.today() + timedelta(days=2),
+                            'state': 'planned',
+                            'status': 'to_approve',
+                            'summary': """Need Approval Document BAP"""
+                        })
+
+                    self.sudo().push_bap()
         else:
             raise ValidationError('User Akses Anda tidak berhak Submit!')
 
