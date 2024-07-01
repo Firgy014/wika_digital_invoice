@@ -1232,75 +1232,13 @@ class WikaBeritaAcaraPembayaran(models.Model):
                             })
                             doc.rejected_doc_id.write({'active': True})
 
-                        
-                        # elif doc.document_id.name in ['GR', 'Surat Jalan', 'SES']:
-                            # doc.rejected_doc_id.attachment_id.write({
-                            #     'name': doc.filename,
-                            #     'datas': doc.document,
-                            #     'res_model': 'documents.document'
-                            # })
-                            # doc.rejected_doc_id.write({'active': True})
-
-                        #     folder_id = self.env['documents.folder'].sudo().search([('name', '=', 'GR/SES')], limit=1)
-                        #     if folder_id:
-                        #         facet_id = self.env['documents.facet'].sudo().search([
-                        #             ('name', '=', 'Documents'),
-                        #             ('folder_id', '=', folder_id.id)
-                        #         ], limit=1)
-                        #         attachment_id = self.env['ir.attachment'].sudo().create({
-                        #             'name': doc.filename,
-                        #             'datas': doc.document,
-                        #             'res_model': 'documents.document',
-                        #         })
-                        #         if attachment_id:
-                        #             tag = self.env['documents.tag'].sudo().search([
-                        #                 ('facet_id', '=', facet_id.id),
-                        #                 ('name', '=', doc.document_id.name)
-                        #             ], limit=1)
-                        #             documents_model.create({
-                        #                 'attachment_id': attachment_id.id,
-                        #                 'folder_id': folder_id.id,
-                        #                 'tag_ids': tag.ids,
-                        #                 'partner_id': doc.bap_id.partner_id.id,
-                        #                 'purchase_id': self.po_id.id,
-                        #                 'bap_id': self.id,
-                        #                 'picking_id': doc.picking_id.id
-                        #             })
-                        
-                        # elif doc.document_id.name == 'Kontrak':
-                            # folder_id = self.env['documents.folder'].sudo().search([('name', '=', 'PO')], limit=1)
-                            # if folder_id:
-                            #     facet_id = self.env['documents.facet'].sudo().search([
-                            #         ('name', '=', 'Documents'),
-                            #         ('folder_id', '=', folder_id.id)
-                            #     ], limit=1)
-                            #     attachment_id = self.env['ir.attachment'].sudo().create({
-                            #         'name': doc.filename,
-                            #         'datas': doc.document,
-                            #         'res_model': 'documents.document',
-                            #     })
-                            #     if attachment_id:
-                            #         tag = self.env['documents.tag'].sudo().search([
-                            #             ('facet_id', '=', facet_id.id),
-                            #             ('name', '=', doc.document_id.name)
-                            #         ], limit=1)
-                            #         documents_model.create({
-                            #             'attachment_id': attachment_id.id,
-                            #             'folder_id': folder_id.id,
-                            #             'tag_ids': tag.ids,
-                            #             'partner_id': doc.bap_id.partner_id.id,
-                            #             'purchase_id': self.po_id.id,
-                            #             'bap_id': self.id,
-                            #             'is_po_doc': True
-                            #         })
-
-
                 groups_line = self.env['wika.approval.setting.line'].search([
                     ('level', '=', level),
                     ('sequence', '=', self.step_approve),
                     ('approval_id', '=', approval_id.id)
                 ], limit=1)
                 groups_id_next = groups_line.groups_id
+                first_user = False
                 if groups_id_next:
                     for x in groups_id_next.users:
                         if level == 'Proyek' and  self.project_id in x.project_ids:
@@ -1309,6 +1247,9 @@ class WikaBeritaAcaraPembayaran(models.Model):
                             first_user = x.id
                         if level == 'Divisi Fungsi' and x.department_id == self.department_id:
                             first_user = x.id
+
+                    if not first_user and groups_id_next.users:
+                        first_user = groups_id_next.users[0].id
                     if first_user:
                         self.env['mail.activity'].sudo().create({
                             'activity_type_id': 4,

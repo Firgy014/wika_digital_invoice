@@ -770,6 +770,7 @@ class PurchaseOrderInherit(models.Model):
                         ('approval_id', '=', approval_id.id)
                     ], limit=1)
                     groups_id_next = groups_line.groups_id
+                    first_user = False
                     if groups_id_next:
                         for x in groups_id_next.users:
                             if level == 'Proyek' and self.project_id in x.project_ids:
@@ -779,6 +780,10 @@ class PurchaseOrderInherit(models.Model):
                             if level == 'Divisi Fungsi' and x.department_id == self.department_id:
                                 first_user = x.id
                         print (first_user)
+                        if not first_user and groups_id_next.users:
+                            first_user = groups_id_next.users[0].id
+                    
+                        # Buat aktivitas untuk first_user yang valid
                         if first_user:
                             self.env['mail.activity'].sudo().create({
                                 'activity_type_id': 4,

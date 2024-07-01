@@ -1003,89 +1003,6 @@ class WikaInheritedAccountMove(models.Model):
                             })
                             doc.rejected_doc_id.write({'active': True})
 
-
-                        # elif doc.document_id.name == 'BAP':
-                        #     folder_id = self.env['documents.folder'].sudo().search([('name', '=', 'BAP')], limit=1)
-                        #     if folder_id:
-                        #         facet_id = self.env['documents.facet'].sudo().search([
-                        #             ('name', '=', 'Documents'),
-                        #             ('folder_id', '=', folder_id.id)
-                        #         ], limit=1)
-                        #         attachment_id = self.env['ir.attachment'].sudo().create({
-                        #             'name': doc.filename,
-                        #             'datas': doc.document,
-                        #             'res_model': 'documents.document',
-                        #         })
-                        #         if attachment_id:
-                        #             tag = self.env['documents.tag'].sudo().search([
-                        #                 ('facet_id', '=', facet_id.id),
-                        #                 ('name', '=', doc.document_id.name)
-                        #             ], limit=1)
-                        #             documents_model.create({
-                        #                 'attachment_id': attachment_id.id,
-                        #                 'folder_id': folder_id.id,
-                        #                 'tag_ids': tag.ids,
-                        #                 'partner_id': doc.invoice_id.partner_id.id,
-                        #                 'purchase_id': self.po_id.id,
-                        #                 'invoice_id': self.id,
-                        #                 'bap_id': self.bap_id.id,
-                        #             })
-                
-                        # elif doc.document_id.name in ['GR', 'Surat Jalan', 'SES']:
-                        #     folder_id = self.env['documents.folder'].sudo().search([('name', '=', 'GR/SES')], limit=1)
-                        #     if folder_id:
-                        #         facet_id = self.env['documents.facet'].sudo().search([
-                        #             ('name', '=', 'Documents'),
-                        #             ('folder_id', '=', folder_id.id)
-                        #         ], limit=1)
-                        #         attachment_id = self.env['ir.attachment'].sudo().create({
-                        #             'name': doc.filename,
-                        #             'datas': doc.document,
-                        #             'res_model': 'documents.document',
-                        #         })
-                        #         if attachment_id:
-                        #             tag = self.env['documents.tag'].sudo().search([
-                        #                 ('facet_id', '=', facet_id.id),
-                        #                 ('name', '=', doc.document_id.name)
-                        #             ], limit=1)
-                        #             documents_model.create({
-                        #                 'attachment_id': attachment_id.id,
-                        #                 'folder_id': folder_id.id,
-                        #                 'tag_ids': tag.ids,
-                        #                 'partner_id': doc.invoice_id.partner_id.id,
-                        #                 'purchase_id': self.po_id.id,
-                        #                 'invoice_id': self.id,
-                        #                 'picking_id': doc.picking_id.id
-                        #             })
-
-                        # elif doc.document_id.name == 'Kontrak':
-                        #     folder_id = self.env['documents.folder'].sudo().search([('name', '=', 'PO')], limit=1)
-                        #     if folder_id:
-                        #         facet_id = self.env['documents.facet'].sudo().search([
-                        #             ('name', '=', 'Documents'),
-                        #             ('folder_id', '=', folder_id.id)
-                        #         ], limit=1)
-                        #         attachment_id = self.env['ir.attachment'].sudo().create({
-                        #             'name': doc.filename,
-                        #             'datas': doc.document,
-                        #             'res_model': 'documents.document',
-                        #         })
-                        #         if attachment_id:
-                        #             tag = self.env['documents.tag'].sudo().search([
-                        #                 ('facet_id', '=', facet_id.id),
-                        #                 ('name', '=', doc.document_id.name)
-                        #             ], limit=1)
-                        #             documents_model.create({
-                        #                 'attachment_id': attachment_id.id,
-                        #                 'folder_id': folder_id.id,
-                        #                 'tag_ids': tag.ids,
-                        #                 'partner_id': doc.invoice_id.partner_id.id,
-                        #                 'purchase_id': self.po_id.id,
-                        #                 'invoice_id': self.id,
-                        #                 'is_po_doc': True
-                        #             })
-
-
                 groups_line = self.env['wika.approval.setting.line'].search([
                     ('level', '=', level),
                     ('sequence', '=', self.step_approve),
@@ -1203,8 +1120,8 @@ class WikaInheritedAccountMove(models.Model):
         # self.write({'is_wizard_cancel': False})
         user = self.env['res.users'].search([('id', '=', self._uid)], limit=1)
         documents_model = self.env['documents.document'].sudo()
-        if not self.is_upd_api_pph_amount:
-            self.get_replace_pph_amount()
+        # if not self.is_upd_api_pph_amount:
+        #     self.get_replace_pph_amount()
 
         cek = False
         model_id = self.env['ir.model'].search([('model', '=', 'account.move')], limit=1)
@@ -1287,36 +1204,6 @@ class WikaInheritedAccountMove(models.Model):
             if approval_id.total_approve == self.step_approve:
                 self.state = 'approved'
                 self.approval_stage = 'Pusat'
-
-                # folder_id = self.env['documents.folder'].sudo().search([('name', '=', 'Invoicing')], limit=1)
-                # # print("TESTTTTTTTTTTTTTTTTTTTTT", folder_id)
-                # if folder_id:
-                #     facet_id = self.env['documents.facet'].sudo().search([
-                #         ('name', '=', 'Documents'),
-                #         ('folder_id', '=', folder_id.id)
-                #     ], limit=1)
-                #     # print("TESTTTTTTTTTERRRRRRR", facet_id)
-                #     for doc in self.document_ids.filtered(lambda x: x.state in ('uploaded', 'rejected')):
-                #         doc.state = 'verified'
-                #         attachment_id = self.env['ir.attachment'].sudo().create({
-                #             'name': doc.filename,
-                #             'datas': doc.document,
-                #             'res_model': 'documents.document',
-                #         })
-                #         # print("SSSIIIIUUUUUUUUUUUUUUUUUU", attachment_id)
-                #         if attachment_id:
-                #             tag = self.env['documents.tag'].sudo().search([
-                #                 ('facet_id', '=', facet_id.id),
-                #                 ('name', '=', doc.document_id.name)
-                #             ], limit=1)
-                #             documents_model.create({
-                #                 'attachment_id': attachment_id.id,
-                #                 'folder_id': folder_id.id,
-                #                 'tag_ids': tag.ids,
-                #                 'partner_id': self.partner_id.id,
-                #                 'purchase_id': self.bap_id.po_id.id,
-                #                 'invoice_id': self.id
-                #             })
 
                 # replace docsss
                 for doc in self.document_ids:
@@ -1404,16 +1291,16 @@ class WikaInheritedAccountMove(models.Model):
                 groups_id_next = groups_line_next.groups_id
                 if groups_id_next:
                     for x in groups_id_next.users:
-                        if level == 'Proyek' :
-                            if self.project_id in x.project_ids or x.branch_id == self.branch_id or x.branch_id.parent_id.code == 'Pusat':
-                                first_user = x.id
-                        if level == 'Divisi Operasi' and x.branch_id == self.branch_id:
+                        if level == 'Proyek' and (self.project_id in x.project_ids or x.branch_id == self.branch_id or x.branch_id.parent_id.code == 'Pusat'):
                             first_user = x.id
-                        if level == 'Divisi Fungsi' and x.department_id == self.department_id:
+                        elif level == 'Divisi Operasi' and x.branch_id == self.branch_id:
+                            first_user = x.id
+                        elif level == 'Divisi Fungsi' and x.department_id == self.department_id:
                             first_user = x.id
                     if first_user:
                         self.step_approve += 1
                         self.approval_stage = groups_line_next.level_role
+                        print("test next approval", self.approval_stage)
                         existing_activity = self.env['mail.activity'].sudo().search([
                             ('res_model_id', '=',
                              self.env['ir.model'].sudo().search([('model', '=', 'account.move')], limit=1).id),
