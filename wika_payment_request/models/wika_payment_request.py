@@ -450,7 +450,7 @@ class WikaPaymentRequest(models.Model):
                             'partner_id': partial.invoice_id.partner_id.id,
                             'branch_id': partial.invoice_id.branch_id.id,
                             'project_id': partial.invoice_id.project_id.id,
-                            'amount': partial.partial_amount,
+                            'amount': partial.amount_net,
                             'approval_line_id':apploval_line_next_id.id,
                             'next_user_id':first_user
                         }))
