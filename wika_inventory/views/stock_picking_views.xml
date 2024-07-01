@@ -242,7 +242,7 @@
                             <field name="document_ids">
                                 <tree string="List Document" create="0" delete="0">
                                     <field name="document_id"/>
-                                    <field name="document" widget="binary_button" filename="filename"/>
+                                    <field name="document" widget="binary_button" filename="filename"  attrs="{'readonly': [('state', 'in', ('verified'))]}"/>
                                     <field name="filename" invisible="1"/>
                                     <field name="state"/>
                                 </tree>
@@ -251,7 +251,7 @@
                                         <button name="compress_pdf" type="object" string="Compress PDF"/>
                                     </header> -->
                                     <group>
-                                        <field name="document" string="GR/SES Document Preview" widget="pdf_viewer" filename="filename"/>
+                                        <field name="document" string="GR/SES Document Preview" widget="pdf_viewer" filename="filename"  attrs="{'readonly': [('state', 'in', ('verified'))]}"/>
                                         <field name="filename" invisible="1"/>
                                         <field name="state" invisible="1"/>    
                                     </group>

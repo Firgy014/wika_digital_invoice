@@ -56,11 +56,17 @@
             <field name="app">SAP</field>
             <field name="url">https://fioriqas.wika.co.id/ywikafi025/listinvoicenonpo?sap-client=230</field>
         </record>
+        <record id="url_pr_login_sso" model="wika.integration">
+            <field name="name">Login WZONE</field>
+            <field name="app">WZONE</field>
+            <field name="url">https://new-portal.wika.co.id/app/sso/valid</field>
+            <field name="app_secret">bbcdac3c884ba59a188cd3aa18553152</field>
+        </record>
+        <record id="url_dp_payment_status" model="wika.integration">
+            <field name="name">URL_DP_PAYMENT_STATUS</field>
+            <field name="app">SAP</field>
+            <field name="url">http://wtapperp-dev.wika.co.id:8010/ywikafi027/dppaymentstatus?sap-client=110</field>
+            <field name="app_secret"></field>
+        </record>
     </data>
-    <record id="url_pr_login_sso" model="wika.integration">
-        <field name="name">Login WZONE</field>
-        <field name="app">WZONE</field>
-        <field name="url">https://new-portal.wika.co.id/app/sso/valid</field>
-        <field name="app_secret">bbcdac3c884ba59a188cd3aa18553152</field>
-    </record>
 </odoo>

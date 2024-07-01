@@ -7,3 +7,4 @@ access_wika_sap_integration,SAP Integration,model_wika_sap_integration,,1,1,1,1
 access_sap_integration_configure,SAP Integration Configuration,model_sap_integration_configure,,1,1,1,1
 access_wika_get_invoice_non_po,access_wika_get_invoice_non_po,model_wika_get_invoice_non_po,,1,1,1,1
 access_wika_get_payment_status,access_wika_get_payment_status,model_wika_get_payment_status,,1,1,1,1
+access_wika_get_dp_payment_status,access_wika_get_dp_payment_status,model_wika_get_dp_payment_status,,1,1,1,1

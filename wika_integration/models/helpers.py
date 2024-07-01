@@ -94,18 +94,20 @@ def _get_computed_query_scf():
 SELECT
     inv.name AS NO,
     inv.payment_reference AS DOC_NUMBER,
-    TO_CHAR(pricecutline.posting_date, 'YYYY') AS DOC_YEAR,
-    TO_CHAR(pricecutline.posting_date, 'YYYYMMDD') AS POSTING_DATE,
-    TO_CHAR(pricecutline.posting_date, 'MM') AS PERIOD,
+    CASE WHEN pricecutline.posting_date IS NULL THEN TO_CHAR(current_date, 'YYYY') ELSE TO_CHAR(pricecutline.posting_date, 'YYYY') END AS DOC_YEAR,
+    CASE WHEN pricecutline.posting_date IS NULL THEN TO_CHAR(current_date, 'YYYYMMDD') ELSE TO_CHAR(pricecutline.posting_date, 'YYYYMMDD') END AS POSTING_DATE,
+    CASE WHEN pricecutline.posting_date IS NULL THEN TO_CHAR(current_date, 'FMmm') ELSE TO_CHAR(pricecutline.posting_date, 'FMmm') END AS PERIOD,
     pricecutline.amount AS AMOUNT_SCF,
     pricecutline.wbs_project_definition AS WBS,
-    'Potongan SCF' AS ITEM_TEXT
+    product.name->>'en_US' AS ITEM_TEXT
 FROM
     account_move inv
 LEFT JOIN
     wika_account_move_pricecut_line pricecutline ON pricecutline.move_id = inv.id
+LEFT JOIN
+    product_template product ON product.name->>'en_US' = 'Potongan SCF'
 WHERE
-    pricecutline.wbs_project_definition IS NOT NULL
+    pricecutline.amount > 0
     AND pricecutline.wbs_project_definition != ''
     AND pricecutline.is_scf != true;
 """
@@ -223,4 +225,46 @@ WHERE
     AND inv.bap_type = 'retensi'  
     AND line.display_type = 'product'
     AND inv.payment_reference IS NULL;
+"""
+
+def _get_computed_query_reclass_ppn_waba(payment_id):
+    return f"""
+SELECT
+    inv.name AS NO,
+    inv.payment_reference AS DOC_NUMBER,
+    TO_CHAR(inv.date, 'YYYY') AS DOC_YEAR,
+    TO_CHAR(inv.date, 'YYYYMMDD') AS POSTING_DATE,
+    TO_CHAR(inv.date, 'FMmm') AS PERIOD
+FROM
+    wika_payment_request pay
+LEFT JOIN
+    account_move_wika_payment_request_rel rel ON pay.id = {payment_id.id}
+LEFT JOIN
+    account_move inv ON inv.id = rel.account_move_id
+WHERE
+    pay.id = {payment_id.id}
+    AND pay.is_sent_to_sap = false    
+    AND inv.payment_reference IS NOT NULL
+    AND inv.is_waba = true
+
+UNION
+
+SELECT
+    partial_inv.name AS NO,
+    partial_inv.payment_reference AS DOC_NUMBER,
+    TO_CHAR(partial_inv.date, 'YYYY') AS DOC_YEAR,
+    TO_CHAR(partial_inv.date, 'YYYYMMDD') AS POSTING_DATE,
+    TO_CHAR(partial_inv.date, 'FMmm') AS PERIOD
+FROM
+    wika_payment_request pay
+LEFT JOIN
+    wika_partial_payment_request_wika_payment_request_rel partial_rel ON pay.id = {payment_id.id}
+LEFT JOIN
+    wika_partial_payment_request partial_pay ON partial_pay.id = partial_rel.wika_partial_payment_request_id
+LEFT JOIN
+    account_move partial_inv ON partial_inv.id = partial_pay.invoice_id
+WHERE
+    pay.id = {payment_id.id}
+    AND partial_inv.payment_reference IS NOT NULL
+    AND partial_inv.is_waba = true;
 """

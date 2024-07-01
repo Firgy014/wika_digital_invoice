@@ -270,13 +270,13 @@
                             <field name="document_ids"  nolabel="1" colspan="2"  attrs="{'readonly': [('state', 'in', ('uploaded', 'approved'))]}">
                                 <tree string="List Document" create="0" delete="0">
                                     <field name="document_id"/>
-                                    <field name="document" widget="binary_button" filename="filename"  attrs="{'readonly': [('state', 'not in', ('verified', 'waiting'))]}"/>
+                                    <field name="document" widget="binary_button" filename="filename"  attrs="{'readonly': [('state', 'in', ('verified'))]}"/>
                                     <field name="filename" invisible="1"/>
                                     <field name="state"/>
                                 </tree>
                                 <form string="List Document">
                                     <group>
-                                        <field name="document" string="Purchase Orders Document Preview" widget="pdf_viewer" filename="filename"/>
+                                        <field name="document" string="Purchase Orders Document Preview" widget="pdf_viewer" filename="filename"  attrs="{'readonly': [('state', 'in', ('verified'))]}"/>
                                         <field name="filename" invisible="1"/>
                                         <field name="state" invisible="1"/>
                                     </group>

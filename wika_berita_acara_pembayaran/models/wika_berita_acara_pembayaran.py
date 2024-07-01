@@ -145,6 +145,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
     remain_val_po = fields.Float(string='Sisa BAP')
     fee_management = fields.Boolean('Rincian Fee Management?')
     is_fully_invoiced_temp = fields.Boolean(string='Fully Invoiced Temp', compute='_compute_fully_invoiced_temp', store=False)
+    is_paralel_rejection = fields.Boolean(string="BAP Included in Reject Paralel", default=False)
 
     @api.constrains('po_id', 'bap_type')
     def _check_product_dp_retensi(self):
@@ -156,7 +157,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
             elif record.bap_type == 'retensi' and record.po_id:
                 product_names = record.po_id.price_cut_ids.mapped('product_id.name')
                 if 'RETENSI' not in product_names:
-                    raise ValidationError("No PO tersebut tidak tersedia potongan lain-lain Retensi") 
+                    raise ValidationError("No PO tersebut tidak tersedia potongan lain-lain Retensi")       
                     
     # @api.constrains('po_id', 'bap_type', 'total_current_value', 'total_po')
     # def _check_total_amount(self):
@@ -421,8 +422,8 @@ class WikaBeritaAcaraPembayaran(models.Model):
                         [('po_id', '=', record.po_id.id), ('bap_type', '=', 'cut over')])
                     if bap:
                         pass
-                    else:
-                        raise ValidationError(_("Nomor PO tersebut sudah dicatat sebagai cut off di invoice terkait. Silahkan pilih jenis BAP 'Cut Over'."))
+                    # else:
+                    #     raise ValidationError(_("Nomor PO tersebut sudah dicatat sebagai cut off di invoice terkait. Silahkan pilih jenis BAP 'Cut Over'."))
             # if record.po_id and record.bap_type == 'cut over':
             #     account_moves = self.env['account.move.line'].search([
             #         ('purchase_id', '=', self.po_id.id),
@@ -1162,7 +1163,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
             model_id = self.env['ir.model'].search([('model', '=', 'wika.berita.acara.pembayaran')], limit=1)
             approval_id = self.env['wika.approval.setting'].sudo().search(
                 [('model_id', '=', model_id.id), ('level', '=', level),
-                 ('transaction_type', '=', self.po_id.transaction_type)], limit=1)
+                ('transaction_type', '=', self.po_id.transaction_type)], limit=1)
             if not approval_id:
                 raise ValidationError(
                     'Approval Setting untuk menu BAP tidak ditemukan. Silakan hubungi Administrator!')
@@ -1170,7 +1171,6 @@ class WikaBeritaAcaraPembayaran(models.Model):
                 ('sequence', '=', 1),
                 ('approval_id', '=', approval_id.id)
             ], limit=1)
-            print(approval_line_id)
             groups_id = approval_line_id.groups_id
             if groups_id:
                 for x in groups_id.users:
@@ -1203,9 +1203,10 @@ class WikaBeritaAcaraPembayaran(models.Model):
                         ('folder_id', '=', folder_id.id)
                     ], limit=1)
                     for doc in self.document_ids.filtered(lambda x: x.state in ('uploaded','rejected')):
+                        if doc.document_id.name == 'BAP' and not self.is_paralel_rejection:
+                            continue
 
                         if doc.document_id.name == 'BAP':
-                            # doc.state = 'verified'
                             attachment_id = self.env['ir.attachment'].sudo().create({
                                 'name': doc.filename,
                                 'datas': doc.document,
@@ -1267,6 +1268,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
                     self.sudo().push_bap()
         else:
             raise ValidationError('User Akses Anda tidak berhak Submit!')
+
 
     def action_approve(self):
         for record in self:

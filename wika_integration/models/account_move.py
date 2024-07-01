@@ -19,6 +19,7 @@ class AccountMoveInheritWika(models.Model):
     )
     sap_amount_payment = fields.Float('Amount Payment')
     amount_due = fields.Float('Amount Due')
+    amount_idr = fields.Float(string='Amount IDR', store=True)
 
     def _compute_amount_due(self):
         _logger.info("# === _compute_amount_due === #")
