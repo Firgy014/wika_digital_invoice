@@ -11,6 +11,7 @@ class AccountMoveInheritWika(models.Model):
     retensi_doc = fields.Char(string='Retensi Doc')
     sap_amount_payment = fields.Float('Amount Payment', tracking=True)
     amount_due = fields.Float('Amount Due', compute='_compute_amount_due')
+    amount_idr = fields.Float(string='Amount IDR', store=True)
 
     def _compute_amount_due(self):
         _logger.info("# === _compute_amount_due === #")
