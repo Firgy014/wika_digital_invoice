@@ -16,6 +16,7 @@
                     <button name="add_pricecut_scf" string="ADD POTONGAN SCF" type="object" attrs="{'invisible': [('state', 'not in', ['draft', 'rejected'])]}"/>
                     <button name="get_replace_pph_amount" string="Replace PPh Amount" type="object" class="oe_highlight"/>
                     <button name="get_dp_payment_status" string="Update DP Payment Status" type="object" groups="base.group_no_one" attrs="{'invisible': [('status_payment', '=', 'Paid')]}"/>
+                    <button name="get_payment_status" string="Update Payment Status" type="object" groups="base.group_no_one" attrs="{'invisible': [('status_payment', '=', 'Paid')]}"/>
                     <field name="state" widget="statusbar" statusbar_visible="draft,uploaded,approved"/>
                 </header>
                 <sheet>
@@ -127,6 +128,8 @@
                                             <field name="amount_total_payment" string="Total With PPN"/>
                                             <field name="invoice_payments_widget" invisible="1" colspan="2" nolabel="1" widget="payment"/>
                                             <field name="amount_residual" invisible="1" class="oe_subtotal_footer_separator" attrs="{'invisible': [('state', '=', 'draft')]}"/>
+                                            <field name="sap_amount_payment" readonly="1" class="oe_subtotal_footer_separator" groups="base.group_no_one"/>
+                                            <field name="amount_due" readonly="1" class="oe_subtotal_footer_separator" groups="base.group_no_one"/>
                                         </group>
                                         <field name="invoice_outstanding_credits_debits_widget"
                                             class="oe_invoice_outstanding_credits_debits"
