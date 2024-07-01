@@ -53,6 +53,7 @@ class WikaPartialPaymentRequest(models.Model):
         ('requested', 'Requested'),
     ], string='Payment State', default ='not request')
     payment_request_id = fields.Many2one('wika.payment.request', string='field_name')
+    amount_net = fields.Float(string='Net Amount')
 
     @api.constrains('partial_amount')
     def _constrains_partial_amount(self):

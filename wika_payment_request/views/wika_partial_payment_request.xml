@@ -96,6 +96,7 @@
                                 <field name="total_invoice" force_save="1" attrs="{'readonly': [('state', 'in', [ 'draft', 'requested', 'approved'])]}"/>
                                 <field name="sisa_partial_amount" attrs="{'readonly': [('state', 'in', [ 'requested', 'approved'])],'invisible': [('state', '!=', 'approve')]}"/>
                                 <field name="partial_amount" attrs="{'readonly': [('state', 'in', [ 'requested', 'approved'])]}"/>
+                                <field name="amount_net" attrs="{'readonly': [('state', 'in', [ 'requested', 'approved'])]}"/>
                                 <field name="step_approve" invisible="1" attrs="{'readonly': [('state', 'in', [ 'requested', 'approved'])]}"/>
                                 <field name="accounting_doc" invisible="1"/>
                             </group>
