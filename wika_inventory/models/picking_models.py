@@ -28,17 +28,17 @@ class PickingDocument(models.Model):
             if self.filename and not self.filename.lower().endswith('.pdf'):
                 self.document = False
                 self.filename = False
-                self.wika_state = 'waits'
+                self.state = 'waits'
                 raise ValidationError('Tidak dapat mengunggah file selain ekstensi PDF!')
             elif self.filename.lower().endswith('.pdf'):
                 self.check_file_size()
                 self.compress_pdf()
-                self.wika_state = 'uploaded'
+                self.state = 'uploaded'
 
         else:
             self.document = False
             self.filename = False
-            self.wika_state = 'waits'
+            self.state = 'waits'
 
     def check_file_size(self):
         self.ensure_one()
