@@ -9,6 +9,7 @@
             <xpath expr="//div[@class='o_td_label']" position="before">
                 <field name="branch_id" />
                 <field name="project_id" />
+                <field name="pick_type" invisible="1"/>
             </xpath>
 
             <page name="operations" position="after">

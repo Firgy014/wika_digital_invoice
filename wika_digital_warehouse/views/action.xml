@@ -20,7 +20,7 @@
             <field name="res_model">stock.picking</field>
             <field name="view_mode">tree,form</field>
             <field name="domain">[('picking_type_id.code', '=', 'outgoing')]</field>
-            <field name="context">{'default_wika_state': 'waits', 'default_picking_type_id': 2, 'default_immediate_transfer': False}</field>
+            <field name="context">{'default_wika_state': 'waits', 'default_picking_type_id': 2, 'default_immediate_transfer': False, 'default_pick_type': 'gi'}</field>
         </record>
 
         <!-- Transfer Stock Action -->

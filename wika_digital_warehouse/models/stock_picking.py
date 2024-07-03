@@ -11,7 +11,6 @@ class PickingInherit(models.Model):
 
     pick_type = fields.Selection(selection_add=[('gi', 'GI')])
     
-
     @api.onchange('branch_id')
     def _onchange_branch_id(self):
         self.ensure_one()

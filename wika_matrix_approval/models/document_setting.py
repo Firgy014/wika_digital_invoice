@@ -11,4 +11,5 @@ class DocumentSettingModels(models.Model):
         ('BL', 'BL'),
         ('gr', 'GR'),
         ('ses', 'SES'),
+        ('gi', 'GI'),
     ],string='Transaction Type')
