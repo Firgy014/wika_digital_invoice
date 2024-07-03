@@ -1,0 +1,22 @@
+<odoo>
+    <data>
+        <menuitem id="menu_widiw" name="Warehouse" sequence="3" web_icon="wika_digital_warehouse,static/description/icon.svg"/>
+
+        <!-- New Stock Picking Menu -->
+        <menuitem id="menu_goods_receipt" name="Goods Receipt (GR)" parent="menu_widiw" action="action_goods_receipt" sequence="1"/>
+        <menuitem id="menu_goods_issue" name="Goods Issue (GI)" parent="menu_widiw" action="action_goods_issue" sequence="2"/>
+        <menuitem id="menu_transfer_stock" name="Transfer Stock" parent="menu_widiw" action="action_transfer_stock" sequence="3"/>
+        <menuitem id="menu_stock_opname" name="Stock Opname" parent="menu_widiw" action="stock.action_view_inventory_tree" sequence="3"/>
+        <menuitem id="menu_widiw_reporting" name="Reporting" parent="menu_widiw" sequence="4"/>
+        <menuitem id="menu_widiw_master_data" name="Master Data" parent="menu_widiw" sequence="5"/>
+        
+        <menuitem id="menu_listing_stock" name="Stock" parent="menu_widiw_reporting" action="stock.action_product_stock_view" sequence="1"/>
+        <menuitem id="menu_stock_reservation" name="Reservation" parent="menu_widiw_reporting" action="action_reservation" sequence="3"/>
+
+        <menuitem id="menu_warehouse" name="Warehouse" parent="menu_widiw_master_data" action="stock.action_warehouse_form" sequence="1"/>
+        <menuitem id="menu_location" name="Location" parent="menu_widiw_master_data" action="stock.action_location_form" sequence="2"/>
+        <menuitem id="menu_product" name="Product" parent="menu_widiw_master_data" action="stock.product_template_action_product" sequence="3"/>
+        
+
+    </data>
+</odoo>

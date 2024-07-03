@@ -1,0 +1,21 @@
+<odoo>
+    <record id="documents_facet_transfer_gi" model="documents.facet">
+        <field name="name">Documents GI</field>
+    </record>
+
+    <record id="documents_tag_1st_transfer_gi" model="documents.tag">
+        <field name="name">GI</field>
+        <field name="facet_id" ref="wika_digital_warehouse.documents_facet_transfer_gi"/>
+    </record>
+    <!-- Update documents_facet_transfer with tag_ids -->
+    <record id="documents_facet_transfer_gi" model="documents.facet">
+        <field name="tag_ids" eval="[(6, 0, [ref('wika_digital_warehouse.documents_tag_1st_transfer_gi')])]"/>
+    </record>
+
+    <record id="documents_folder_gi" model="documents.folder">
+        <field name="name">GI</field>
+        <field name="facet_ids" eval="[(4, ref('wika_digital_warehouse.documents_facet_transfer_gi'))]"/>
+        <field name="group_ids" eval="[(6, 0, [ref('base.group_user')])]"/>
+        <field name="read_group_ids" eval="[(6, 0, [ref('base.group_user')])]"/>
+    </record>
+</odoo>

@@ -28,8 +28,6 @@
         'views/views.xml',
         'data/documents_folder_data.xml',
         'views/filter.xml',
-        'views/stock_warehouse_views.xml',
-        'views/stock_location_views.xml',
         'views/stock_picking_views.xml',
         'views/stock_move_views.xml',
         'views/action.xml',
