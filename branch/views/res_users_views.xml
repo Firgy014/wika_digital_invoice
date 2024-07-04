@@ -13,10 +13,8 @@
                         <field name="department_id" attrs="{'invisible': [('level','!=','Divisi Fungsi')]}"/>
                         <field name="project_id" invisible="1"/>
                         <field name="project_ids"  attrs="{'invisible': [('level','!=','Proyek')]}" widget="many2many_tags"/>
-                         <field name="branch_ids"  widget="many2many_tags"  attrs="{'invisible': [('level','=','Proyek')]}"/>
+                        <field name="branch_ids"  widget="many2many_tags"  attrs="{'invisible': [('level','=','Proyek')]}"/>
                     </group>
-
-
                 </group>
             </field>
         </record>

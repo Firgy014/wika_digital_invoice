@@ -6,12 +6,23 @@
         <field name="model">stock.picking</field>
         <field name="inherit_id" ref="stock.view_picking_form"/>
         <field name="arch" type="xml">
+            <button name="action_cancel" position="after">
+                <button name="action_submit_pick" type="object" attrs="{'invisible': [('wika_state', 'in', ('uploaded', 'approved'))]}" string="SUBMIT" class="oe_highlight" id="bid_submit"/>
+                <button name="action_approve" type="object" attrs="{'invisible': [('wika_state', '!=', 'uploaded')]}" string="APPROVE" context="{'validate_analytic': True}" class="oe_highlight" id="bid_approve"/>
+                <button name="action_reject" type="object" attrs="{'invisible': [('wika_state', '!=', 'uploaded')]}" string="REJECT" context="{'validate_analytic': True}" class="btn-danger" id="bid_reject"/>
+            </button>
+            <xpath expr="//div[@class='oe_title']" position="before">
+                <widget name="web_ribbon" title="Waiting" attrs="{'invisible': [('wika_state', '!=', 'waits')]}" bg_color="bg-warning"/>
+                <widget name="web_ribbon" title="Uploaded" attrs="{'invisible': [('wika_state', '!=', 'uploaded')]}" bg_color="bg-info"/>
+                <widget name="web_ribbon" title="Approved" attrs="{'invisible': [('wika_state', '!=', 'approved')]}" bg_color="bg-success"/>
+                <widget name="web_ribbon" title="Rejected" attrs="{'invisible': [('wika_state', '!=', 'rejected')]}" bg_color="bg-danger"/>
+            </xpath>
             <xpath expr="//div[@class='o_td_label']" position="before">
                 <field name="branch_id" />
                 <field name="project_id" />
                 <field name="pick_type" invisible="1"/>
+                <field name="wika_state" invisible="1"/>
             </xpath>
-
             <page name="operations" position="after">
                 <page string="History Approval">
                     <field name="history_approval_ids"  readonly="1">

@@ -28,7 +28,8 @@ class WikaApprovalSetting(models.Model):
         ('BL', 'BL'),
         ('gr', 'GR'),
         ('ses', 'SES'),
-        ('pr', 'Payment Request')
+        ('pr', 'Payment Request'),
+        ('gi', 'GI')
     ],string='Transaction Type')
 
 

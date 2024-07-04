@@ -216,16 +216,17 @@ class PickingInherit(models.Model):
         level=self.level
         if level:
             model_id = self.env['ir.model'].search([('model', '=', 'stock.picking')], limit=1)
-            approval_id = self.env['wika.approval.setting'].sudo().search(
+            approval_id = self.env['wika.approval.setting'].search(
                 [('model_id', '=', model_id.id), ('level', '=', level),('transaction_type','=',self.pick_type)], limit=1)
-            # if not approval_id:
-            #     raise ValidationError(
-            #         'Approval Setting untuk menu GR/SES tidak ditemukan. Silakan hubungi Administrator!')
+            if not approval_id:
+                raise ValidationError(
+                    'Approval Setting untuk menu GR/SES tidak ditemukan. Silakan hubungi Administrator!')
             approval_line_id = self.env['wika.approval.setting.line'].search([
                 ('sequence', '=', self.step_approve),
                 ('approval_id', '=', approval_id.id)
             ], limit=1)
             groups_id = approval_line_id.groups_id
+            _logger.info(str(self.activity_user_id.id) + "# === = === #" + str(self._uid))
             if self.activity_user_id.id == self._uid:
                 cek=True
 
@@ -269,7 +270,7 @@ class PickingInherit(models.Model):
                 if self.activity_ids:
                     for x in self.activity_ids.filtered(lambda x: x.status != 'approved'):
                         if x.user_id.id == self._uid:
-                            print(x.status)
+                            _logger.info("# === groups === #" + str(x.status))
                             x.status = 'approved'
                             x.action_done()
             else:
@@ -280,10 +281,10 @@ class PickingInherit(models.Model):
                     ('sequence', '=', self.step_approve+1),
                     ('approval_id', '=', approval_id.id)
                 ], limit=1)
-                print("groups", groups_line_next)
+                _logger.info("# === groups === #" + str(groups_line_next))
                 groups_id_next = groups_line_next.groups_id
                 if groups_id_next:
-                    print(groups_id_next.name)
+                    _logger.info("# === groups === #" + str(groups_id_next.name))
                     for x in groups_id_next.users:
                         if level == 'Proyek' and self.project_id in x.project_ids:
                             first_user = x.id
@@ -292,7 +293,7 @@ class PickingInherit(models.Model):
                         if level == 'Divisi Fungsi' and x.department_id == self.department_id:
                             first_user = x.id
 
-                    print(first_user)
+                    _logger.info("# === first_user === #" + str(first_user))
                     if first_user:
                         self.step_approve += 1
                         self.env['mail.activity'].sudo().create({
@@ -376,8 +377,10 @@ class PickingInherit(models.Model):
                     ('sequence', '=', 1),
                     ('approval_id', '=', approval_id.id)
                 ], limit=1)
+                _logger.info("# === approval_line_id === # "+ str(approval_line_id.groups_id))
                 groups_id = approval_line_id.groups_id
                 if groups_id:
+                    _logger.info(str(self.activity_user_id.id) + "# === #"+ str(self._uid))
                     if self.activity_user_id.id == self._uid:
                         cek = True
 
@@ -396,16 +399,16 @@ class PickingInherit(models.Model):
                         'note': 'Submit Document',
                         'picking_id': self.id
                     })
-                    print(self.step_approve)
+                    _logger.info("# === step_approve === # "+ str(self.step_approve))
                     groups_line = self.env['wika.approval.setting.line'].search([
                         ('level', '=', level),
                         ('sequence', '=', self.step_approve),
                         ('approval_id', '=', approval_id.id)
                     ], limit=1)
-                    print("groups", groups_line)
+                    _logger.info("# === groups === # "+ str(groups_line))
                     groups_id_next = groups_line.groups_id
                     if groups_id_next:
-                        print (groups_id_next.name)
+                        _logger.info("# === groups_id_next === # "+ str(groups_id_next.name))
                         for x in groups_id_next.users:
                             if level == 'Proyek' and self.project_id in x.project_ids:
                                 first_user = x.id
@@ -413,7 +416,7 @@ class PickingInherit(models.Model):
                                 first_user = x.id
                             if level == 'Divisi Fungsi' and x.department_id == self.department_id:
                                 first_user = x.id
-                        print (first_user)
+                        _logger.info("# === first_user === # "+ str(first_user))
                         if first_user:
                             self.env['mail.activity'].sudo().create({
                                 'activity_type_id': 4,

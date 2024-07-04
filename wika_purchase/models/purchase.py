@@ -54,7 +54,7 @@ class PurchaseOrderInherit(models.Model):
         ('Divisi Operasi', 'Divisi Operasi'),
         ('Divisi Fungsi', 'Divisi Fungsi'),
         ('Pusat', 'Pusat')
-    ], string='Level',compute='_compute_level')
+    ], string='Level', compute='_compute_level')
     is_qty_available = fields.Boolean(string='Qty Tersedia', compute='_compute_is_qty_available')
     payment_term_id = fields.Many2one('account.payment.term', string='Payment Term')
 
@@ -69,12 +69,14 @@ class PurchaseOrderInherit(models.Model):
     @api.depends('project_id','branch_id','department_id')
     def _compute_level(self):
         for res in self:
+            level = ''
             if res.project_id:
                 level = 'Proyek'
             elif res.branch_id and not res.department_id and not res.project_id:
                 level = 'Divisi Operasi'
             elif res.branch_id and res.department_id and not res.project_id:
                 level = 'Divisi Fungsi'
+
             res.level=level
 
 
@@ -538,6 +540,7 @@ class PurchaseOrderInherit(models.Model):
                         if level == 'Divisi Fungsi' and x.department_id == res.department_id:
                             first_user = x.id
                 #     # Createtodoactivity
+                _logger.info("# === first_user === #" + str(first_user))
                 if first_user:
                     self.env['mail.activity'].sudo().create({
                         'activity_type_id': 4,
@@ -726,28 +729,28 @@ class PurchaseOrderInherit(models.Model):
 
     def action_submit(self):
         if self.signatory_name and self.vendor_signatory_name and self.position and self.vendor_position and self.end_date and self.sap_doc_number:
-            if self.document_ids:
-                for doc_line in self.document_ids:
-                    if doc_line.document == False:
-                        raise ValidationError('Anda belum mengunggah dokumen yang diperlukan!')
-                cek = False
-                level=self.level
+            # if self.document_ids:
+            #     for doc_line in self.document_ids:
+            #         if doc_line.document == False:
+            #             raise ValidationError('Anda belum mengunggah dokumen yang diperlukan!')
+            cek = False
+            level = self.level
 
-                if level:
-                    model_id = self.env['ir.model'].search([('model', '=', 'purchase.order')], limit=1)
-                    approval_id = self.env['wika.approval.setting'].sudo().search(
-                        [('model_id', '=', model_id.id), ('level', '=', level),('transaction_type','=',self.transaction_type)], limit=1)
-                    if not approval_id:
-                        raise ValidationError(
-                            'Approval Setting untuk menu Purchase Orders tidak ditemukan. Silakan hubungi Administrator!')
-                    approval_line_id = self.env['wika.approval.setting.line'].search([
-                        ('sequence', '=', 1),
-                        ('approval_id', '=', approval_id.id)
-                    ], limit=1)
-                    groups_id = approval_line_id.groups_id
-                    if groups_id:
-                        if self.activity_user_id.id == self._uid:
-                            cek = True
+            if level:
+                model_id = self.env['ir.model'].search([('model', '=', 'purchase.order')], limit=1)
+                approval_id = self.env['wika.approval.setting'].sudo().search(
+                    [('model_id', '=', model_id.id), ('level', '=', level),('transaction_type','=',self.transaction_type)], limit=1)
+                if not approval_id:
+                    raise ValidationError(
+                        'Approval Setting untuk menu Purchase Orders tidak ditemukan. Silakan hubungi Administrator!')
+                approval_line_id = self.env['wika.approval.setting.line'].search([
+                    ('sequence', '=', 1),
+                    ('approval_id', '=', approval_id.id)
+                ], limit=1)
+                groups_id = approval_line_id.groups_id
+                if groups_id:
+                    if self.activity_user_id.id == self._uid:
+                        cek = True
             if cek == True:
                 if self.activity_ids:
                     for x in self.activity_ids.filtered(lambda x: x.status != 'approved'):

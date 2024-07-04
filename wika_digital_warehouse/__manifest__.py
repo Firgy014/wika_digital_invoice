@@ -20,6 +20,7 @@
     # always loaded
     'data': [
         'security/ir.model.access.csv',
+        'security/mail_activity_security.xml',
         'views/views.xml',
         'data/documents_folder_data.xml',
         'views/stock_warehouse_views.xml',
@@ -28,6 +29,5 @@
         'views/stock_quant_views.xml',
         'views/action.xml',
         'views/menu.xml',
-
     ],
 }

@@ -28,7 +28,7 @@ class PickingDocument(models.Model):
             if self.filename and not self.filename.lower().endswith('.pdf'):
                 self.document = False
                 self.filename = False
-                self.state = 'waits'
+                self.state = 'waiting'
                 raise ValidationError('Tidak dapat mengunggah file selain ekstensi PDF!')
             elif self.filename.lower().endswith('.pdf'):
                 self.check_file_size()
@@ -38,7 +38,7 @@ class PickingDocument(models.Model):
         else:
             self.document = False
             self.filename = False
-            self.state = 'waits'
+            self.state = 'waiting'
 
     def check_file_size(self):
         self.ensure_one()
@@ -95,5 +95,3 @@ class PickingApproval(models.Model):
     groups_id = fields.Many2one('res.groups', string='Groups')
     date = fields.Datetime(string='Date')
     note = fields.Char(string='Note')
-    
-    
