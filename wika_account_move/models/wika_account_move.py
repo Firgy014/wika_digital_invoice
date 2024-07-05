@@ -280,6 +280,25 @@ class WikaInheritedAccountMove(models.Model):
     bap_type = fields.Char(string='Jenis BAP', compute='_compute_bap_type', store=True)
     activity_user_id = fields.Many2one('res.users', string='ToDo User', store=True)
     error_narration = fields.Char(string='Error Narration')
+    is_paralel_rejection = fields.Boolean(string="Invoice Included in Reject Paralel", default=False)
+    sap_amount_payment = fields.Float('Amount Payment', tracking=True)
+    amount_due = fields.Float('Amount Due', compute='_compute_amount_due')
+
+    def _compute_amount_due(self):
+        _logger.info("# === _compute_amount_due === #")
+        for rec in self:
+            total_paid = 0
+            if rec.partial_request_ids:
+                tot_partial_amount = sum(rec.partial_request_ids.filtered(lambda x : x.payment_state == 'paid').mapped('partial_amount'))
+                residual_amount = rec.total_line - tot_partial_amount
+                # residual_amount = rec.sisa_partial
+            else:    
+                total_paid = rec.sap_amount_payment
+                residual_amount = rec.total_line - total_paid
+            
+            _logger.info("Total Paid %s Residual Amount %s" % (str(total_paid), str(residual_amount)))
+
+            rec.amount_due = residual_amount
 
     @api.depends('bap_id.bap_type')
     def _compute_bap_type(self):
@@ -730,8 +749,8 @@ class WikaInheritedAccountMove(models.Model):
 
     def write(self, values):
         for rec in self:
-            _logger.info("# === ACCOUNT MOVE WRITE === #")
-            _logger.info(str(values))
+            # _logger.info("# === ACCOUNT MOVE WRITE === #")
+            # _logger.info(str(values))
             record = super(WikaInheritedAccountMove, rec).write(values)
 
             if isinstance(record, bool):
@@ -923,6 +942,33 @@ class WikaInheritedAccountMove(models.Model):
             self.document_ids = document_list
         else:
             raise AccessError("Data dokumen tidak ada!")
+
+    def submit_rejected(self, folder_id):
+        facet_id = self.env['documents.facet'].sudo().search([
+            ('name', '=', 'Documents'),
+            ('folder_id', '=', folder_id.id)
+        ], limit=1)
+        for doc in self.document_ids:
+            documents_model = self.env['documents.document'].sudo()
+            attachment_id = self.env['ir.attachment'].sudo().create({
+                'name': doc.filename,
+                'datas': doc.document,
+                'res_model': 'documents.document',
+            })
+            if attachment_id:
+                tag = self.env['documents.tag'].sudo().search([
+                    ('facet_id', '=', facet_id.id),
+                    ('name', '=', doc.document_id.name)
+                ], limit=1)
+                documents_model.create({
+                    'attachment_id': attachment_id.id,
+                    'folder_id': folder_id.id,
+                    'tag_ids': tag.ids,
+                    'partner_id': doc.invoice_id.partner_id.id,
+                    'purchase_id': self.po_id.id,
+                    'invoice_id': self.id,
+                })
+
     
     def action_submit(self):
         for record in self:
@@ -950,7 +996,7 @@ class WikaInheritedAccountMove(models.Model):
                 if self.activity_user_id.id == self._uid:
                     cek = True
 
-        if cek == True:
+        if cek:
             first_user = False
             if self.activity_ids:
                 for x in self.activity_ids.filtered(lambda x: x.status != 'approved'):
@@ -970,6 +1016,7 @@ class WikaInheritedAccountMove(models.Model):
 
                 documents_model = self.env['documents.document'].sudo()
                 folder_id = self.env['documents.folder'].sudo().search([('name', '=', 'Invoicing')], limit=1)
+                is_continue_submit = False
                 if folder_id:
                     facet_id = self.env['documents.facet'].sudo().search([
                         ('name', '=', 'Documents'),
@@ -977,31 +1024,33 @@ class WikaInheritedAccountMove(models.Model):
                     ], limit=1)
                     for doc in self.document_ids.filtered(lambda x: x.state in ('uploaded','rejected')):
                         if doc.document_id.name in ['Invoice', 'Faktur Pajak']:
-                            attachment_id = self.env['ir.attachment'].sudo().create({
-                                'name': doc.filename,
-                                'datas': doc.document,
-                                'res_model': 'documents.document',
-                            })
-                            if attachment_id:
-                                tag = self.env['documents.tag'].sudo().search([
-                                    ('facet_id', '=', facet_id.id),
-                                    ('name', '=', doc.document_id.name)
-                                ], limit=1)
-                                documents_model.create({
-                                    'attachment_id': attachment_id.id,
-                                    'folder_id': folder_id.id,
-                                    'tag_ids': tag.ids,
-                                    'partner_id': doc.invoice_id.partner_id.id,
-                                    'purchase_id': self.po_id.id,
-                                    'invoice_id': self.id,
+                            if not doc.rejected_doc_id:
+                                attachment_id = self.env['ir.attachment'].sudo().create({
+                                    'name': doc.filename,
+                                    'datas': doc.document,
+                                    'res_model': 'documents.document',
                                 })
+                                if attachment_id:
+                                    tag = self.env['documents.tag'].sudo().search([
+                                        ('facet_id', '=', facet_id.id),
+                                        ('name', '=', doc.document_id.name)
+                                    ], limit=1)
+                                    documents_model.create({
+                                        'attachment_id': attachment_id.id,
+                                        'folder_id': folder_id.id,
+                                        'tag_ids': tag.ids,
+                                        'partner_id': doc.invoice_id.partner_id.id,
+                                        'purchase_id': self.po_id.id,
+                                        'invoice_id': self.id,
+                                    })
                         else:
-                            doc.rejected_doc_id.attachment_id.write({
-                                'name': doc.filename,
-                                'datas': doc.document,
-                                'res_model': 'documents.document'
-                            })
-                            doc.rejected_doc_id.write({'active': True})
+                            if doc.rejected_doc_id:
+                                doc.rejected_doc_id.attachment_id.write({
+                                    'name': doc.filename,
+                                    'datas': doc.document,
+                                    'res_model': 'documents.document'
+                                })
+                                doc.rejected_doc_id.write({'active': True})
 
                 groups_line = self.env['wika.approval.setting.line'].search([
                     ('level', '=', level),
