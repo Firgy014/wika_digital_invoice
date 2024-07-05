@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="stock_inventory_adjustment_name_form_view_wika" model="ir.ui.view">
+        <field name="name">stock.inventory.adjustment.name.form.view.wika</field>
+        <field name="model">stock.inventory.adjustment.name</field>
+        <field name="inherit_id" ref="stock.stock_inventory_adjustment_name_form_view"/>
+        <field name="arch" type="xml">
+            <field name="inventory_adjustment_name" position="before">
+                <field name="stock_opname_no" />
+                <field name="stock_opname_date" />
+            </field>
+        </field>
+    </record>
+
+    <record id="stock.action_stock_inventory_adjustement_name" model="ir.actions.act_window">
+        <field name="name">Stock Opname</field>
+    </record>
+</odoo>

@@ -25,6 +25,15 @@ class StockMoveInherit(models.Model):
     qty_bap = fields.Float('Total BAP', compute='_compute_qty_bap',digits='Product Unit of Measure')
     sisa_qty_bap = fields.Float('Sisa Qty BAP', compute='_compute_sisa_qty_bap',digits='Product Unit of Measure')
     active = fields.Boolean(default=True)
+    
+    #penambahan field utk widiw
+    no_doc_sap = fields.Char(compute='_compute_no_doc_sap', string="Nomor Doc. SAP", store=True)
+    is_from_sap = fields.Boolean('Is From SAP?')
+
+    @api.depends('picking_id')
+    def _compute_no_doc_sap(self):
+        for move in self:
+            move.reference = move.picking_id.no_doc_sap if move.picking_id else ''
 
 
     def _compute_qty_bap(self):
@@ -132,6 +141,10 @@ class StockMoveLineInherit(models.Model):
 
     ], string='Status', default='waits')
     active = fields.Boolean(default=True)
+    
+    #penambahan field utk widiw
+    sap_no_reservasi = fields.Integer('No. Reservasi SAP')
+    is_from_sap = fields.Boolean('Is From SAP?')
 
     @api.model_create_multi
     def create(self, vals_list):

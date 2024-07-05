@@ -6,12 +6,14 @@
         <menuitem id="menu_goods_receipt" name="Goods Receipt (GR)" parent="menu_widiw" action="action_goods_receipt" sequence="1"/>
         <menuitem id="menu_goods_issue" name="Goods Issue (GI)" parent="menu_widiw" action="action_goods_issue" sequence="2"/>
         <menuitem id="menu_transfer_stock" name="Transfer Stock" parent="menu_widiw" action="action_transfer_stock" sequence="3"/>
-        <menuitem id="menu_stock_opname" name="Stock Opname" parent="menu_widiw" action="stock.action_view_inventory_tree" sequence="3"/>
+        <menuitem id="menu_stock_opname" name="Stock Opname" parent="menu_widiw" action="action_view_inventory_tree_wika" sequence="3"/>
         <menuitem id="menu_widiw_reporting" name="Reporting" parent="menu_widiw" sequence="4"/>
         <menuitem id="menu_widiw_master_data" name="Master Data" parent="menu_widiw" sequence="5"/>
         
         <menuitem id="menu_listing_stock" name="Stock" parent="menu_widiw_reporting" action="stock.action_product_stock_view" sequence="1"/>
+        <menuitem id="menu_listing_stock_locations" name="Stock Locations" parent="menu_widiw_reporting" sequence="2" action="stock.action_view_quants" groups="stock.group_stock_multi_locations,stock.group_tracking_owner,base.group_no_one"/>
         <menuitem id="menu_stock_reservation" name="Reservation" parent="menu_widiw_reporting" action="action_reservation" sequence="3"/>
+        <menuitem id="menu_stock_move_wika" action="stock.stock_move_action" parent="menu_widiw_reporting" sequence="4" groups="base.group_no_one"/>
 
         <menuitem id="menu_warehouse" name="Warehouse" parent="menu_widiw_master_data" action="stock.action_warehouse_form" sequence="1"/>
         <menuitem id="menu_location" name="Location" parent="menu_widiw_master_data" action="stock.action_location_form" sequence="2"/>

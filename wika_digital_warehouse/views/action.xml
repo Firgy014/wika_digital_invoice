@@ -11,7 +11,7 @@
                 (0, 0, {'view_mode': 'tree', 'view_id': ref('wika_inventory.stock_picking_tree_wika')}),
                 (0, 0, {'view_mode': 'form', 'view_id': ref('wika_inventory.stock_picking_form_wika')}),
             ]"/>
-            <field name="context">{'default_wika_state': 'waits', 'default_picking_type_id': 1, 'default_immediate_transfer': True}</field>
+            <field name="context">{'default_wika_state': 'waits', 'default_picking_type_id': 1, 'default_immediate_transfer': True, 'default_pick_type': 'gr'}</field>
         </record>
 
         <!-- Goods Issue Action -->
@@ -48,7 +48,7 @@
                 (0, 0, {'view_mode': 'tree', 'view_id': ref('stock.vpicktree')}),
             ]"/>
             <field name="domain">[('picking_type_id.code', '=', 'internal')]</field>
-            <field name="context">{'default_wika_state': 'waits', 'default_picking_type_id': 5, 'default_immediate_transfer': False}</field>
+            <field name="context">{'default_wika_state': 'waits', 'default_picking_type_id': 5, 'default_immediate_transfer': False, 'default_pick_type': 'ts'}</field>
         </record>
 
         <record id="action_reservation" model="ir.actions.act_window">
@@ -67,6 +67,16 @@
                 </p>
             </field>
         </record>
+
+        <record model="ir.actions.server" id="action_view_inventory_tree_wika"> <!-- Menu + python -->
+            <field name="name">Stock Opname</field>
+            <field name="model_id" ref="model_stock_quant"/>
+            <field name="state">code</field>
+            <field name="groups_id" eval="[(4, ref('stock.group_stock_user'))]"/>
+            <field name="code">
+                action = model.action_view_inventory_wika()
+            </field>
+        </record>        
 
     </data>
 </odoo>

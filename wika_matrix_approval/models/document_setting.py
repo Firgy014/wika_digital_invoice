@@ -9,7 +9,8 @@ class DocumentSettingModels(models.Model):
     transaction_type = fields.Selection([
         ('BTL', 'BTL'),
         ('BL', 'BL'),
-        ('gr', 'GR'),
+        ('gr', 'Goods Receipt (GR)'),
         ('ses', 'SES'),
-        ('gi', 'GI'),
+        ('gi', 'Goods Issue (GI)'),
+        ('ts', 'Transfer Stock (TS)'),
     ],string='Transaction Type')

@@ -25,7 +25,9 @@ class PickingInherit(models.Model):
     ], string='Wika Status', default='waits')
     pick_type = fields.Selection([
         ('ses', 'SES'), 
-        ('gr', 'GR')
+        ('gr', 'Goods Receipt (GR)'),
+        ('gi', 'Goods Issue (GI)'),
+        ('ts', 'Transfer Stock (TS)')
     ], string='Type', store=True)
     no_gr_ses = fields.Char(string='Nomor GR/SES')
     start_date = fields.Date(string='Start Date')
@@ -90,6 +92,9 @@ class PickingInherit(models.Model):
         ('Divisi Fungsi', 'Divisi Fungsi'),
         ('Pusat', 'Pusat')
     ], string='Level', compute='_compute_level')
+
+    no_doc_sap = fields.Char(string='Nomor Doc. SAP')
+    is_from_sap = fields.Boolean('is_from_sap?')
 
     @api.depends('project_id', 'branch_id', 'department_id')
     def _compute_level(self):

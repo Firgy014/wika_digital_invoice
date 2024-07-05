@@ -17,13 +17,13 @@
                 <field name="priority" optional="show" widget="priority" nolabel="1"/>
                 <field name="pick_type"/>
                 <field name="name"/>
-                <field name="no_gr_ses"/>
                 <field name="branch_id"/>
                 <field name="department_id"/>
                 <field name="project_id"/>
                 <field name="partner_id" string="Vendor"/>
                 <field name="po_id" string="Nomor PO"/>
                 <field name="origin"/>
+                <field name="no_doc_sap"/>
                 <field name="wika_state"/>
                 <field name="state" optional="hide"/>
                 <field name="company_id" invisible="1"/>
@@ -107,9 +107,6 @@
                 </div>
                 <group>
                     <group>
-                        <field name="no_gr_ses" attrs="{
-                            'readonly': [('wika_state', 'in', ['uploaded', 'approved'])]
-                        }"/>
                         <field name="partner_id" string="Receive From" readonly="0"/>
                         <field name="po_id" string="Nomor PO"  readonly="0"/>
                         <field name="pick_type"  readonly="0"/>
@@ -129,6 +126,9 @@
                         <div class="o_row">
                             <field name="scheduled_date" string="Date" readonly="1" attrs="{'required': [('id', '!=', False)]}"/>
                         </div>
+                        <field name="no_doc_sap" attrs="{
+                            'readonly': [('wika_state', 'in', ['uploaded', 'approved'])]
+                        }"/>
                     </group>
                 </group>
                 <notebook>

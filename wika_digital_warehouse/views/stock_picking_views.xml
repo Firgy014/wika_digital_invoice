@@ -1,6 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
+    <record id="vpicktree_wika" model="ir.ui.view">
+        <field name="name">stock.picking.tree</field>
+        <field name="model">stock.picking</field>
+        <field name="inherit_id" ref="stock.vpicktree"/>
+        <field name="arch" type="xml">
+            <field name="origin" position="after">
+                <field name="no_doc_sap"/>
+            </field>
+        </field>
+    </record>
+
     <record id="view_picking_form_wika" model="ir.ui.view">
         <field name="name">stock.picking.form.wika</field>
         <field name="model">stock.picking</field>
@@ -22,7 +33,11 @@
                 <field name="project_id" />
                 <field name="pick_type" invisible="1"/>
                 <field name="wika_state" invisible="1"/>
+                <field name="step_approve" invisible="1"/>
             </xpath>
+            <field name="origin" position="after">
+                <field name="no_doc_sap"/>
+            </field>
             <page name="operations" position="after">
                 <page string="History Approval">
                     <field name="history_approval_ids"  readonly="1">

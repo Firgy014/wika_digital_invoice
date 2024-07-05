@@ -8,8 +8,6 @@ _logger = logging.getLogger(__name__)
 
 class PickingInherit(models.Model):
     _inherit = "stock.picking"
-
-    pick_type = fields.Selection(selection_add=[('gi', 'GI')])
     
     @api.onchange('branch_id')
     def _onchange_branch_id(self):
