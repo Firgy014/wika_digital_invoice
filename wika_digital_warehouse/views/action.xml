@@ -76,7 +76,64 @@
             <field name="code">
                 action = model.action_view_inventory_wika()
             </field>
-        </record>        
+        </record>   
+        
+        <record id="action_warehouse_form_wika" model="ir.actions.act_window">
+            <field name="name">Warehouses</field>
+            <field name="res_model">stock.warehouse</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="view_id" ref="stock.view_warehouse_tree"/>
+            <field name="context">{'create': 0, 'edit': 0, 'delete': 0}</field>
+            <field name="help" type="html">
+              <p class="o_view_nocontent_smiling_face">
+                Define a new warehouse
+              </p>
+            </field>
+        </record>
+
+        <record id="action_location_form_wika" model="ir.actions.act_window">
+            <field name="name">Locations</field>
+            <field name="res_model">stock.location</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="view_mode">tree,form</field>
+            <field name="view_id" ref="stock.view_location_tree2"/>
+            <field name="search_view_id" ref="stock.view_location_search"/>
+            <field name="context">{'search_default_in_location':1, 'create': 0, 'edit': 0, 'delete': 0}</field>
+            <field name="help" type="html">
+              <p class="o_view_nocontent_smiling_face">
+                Add a new location
+              </p><p>
+                Define your locations to reflect your warehouse structure and
+                organization. Odoo is able to manage physical locations
+                (warehouses, shelves, bin, etc), partner locations (customers,
+                vendors) and virtual locations which are the counterpart of
+                the stock operations like the manufacturing orders
+                consumptions, inventories, etc.
+              </p><p>
+                Every stock operation in Odoo moves the products from one
+                location to another one.  For instance, if you receive products
+                from a vendor, Odoo will move products from the Vendor
+                location to the Stock location. Each report can be performed on
+                physical, partner or virtual locations.
+              </p>
+            </field>
+        </record>
+
+        <record id="product_template_action_product_wika" model="ir.actions.act_window">
+            <field name="name">Products</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="res_model">product.template</field>
+            <field name="view_mode">kanban,tree,form</field>
+            <field name="search_view_id" ref="stock.product_template_search_form_view_stock"/>
+            <field name="context">{"search_default_consumable": 1, 'default_detailed_type': 'product', 'create': 0, 'edit': 0, 'delete': 0}</field>
+            <field name="help" type="html">
+                <p class="o_view_nocontent_smiling_face">
+                    No product found. Let's create one!
+                </p><p>
+                    Track your stock quantities by creating storable products.
+                </p>
+            </field>
+        </record>
 
     </data>
 </odoo>
