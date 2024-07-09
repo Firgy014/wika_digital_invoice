@@ -1275,6 +1275,94 @@ class WikaInheritedAccountMove(models.Model):
         else:
             raise UserError(_("Data Payment Status Tidak Tersedia!"))
             
+    def update_journal_item_sap(self):
+        _logger.info("# === GET API UPDATE JOURNAL ITEM SAP === #")
+        self.ensure_one()
+        url_config = self.env['wika.integration'].search([('name', '=', 'URL_INV_NON_PO')], limit=1).url
+        headers = {
+            'Authorization': 'Basic V0lLQV9JTlQ6SW5pdGlhbDEyMw==',
+            'Content-Type': 'application/json'
+        }
+
+        if not self.journal_item_sap_ids:
+            journal_item_sap_vals = []
+            try:
+                year = self.date.strftime('%Y')
+                date_format = '%Y-%m-%d'
+                date_from = datetime.strptime(year + '-01-01', date_format)
+                date_to = datetime.strptime(year + '-12-31', date_format)
+                payload = json.dumps({
+                    "COMPANY_CODE": "A000",
+                    "POSTING_DATE": {
+                        "LOW": "%s",
+                        "HIGH": "%s"
+                    },
+                    "DOC_NUMBER": "%s"
+                }) % (str(date_from), str(date_to), self.payment_reference)
+                payload = payload.replace('\n', '')
+
+                _logger.info("# === PAYLOAD === #")
+                _logger.info(payload)
+
+                response = requests.request("GET", url_config, data=payload, headers=headers)
+                result = json.loads(response.text)
+
+                if result['DATA']:
+                    _logger.info("# === RESPON DATA === #")
+                    company_id = self.env.company.id
+                    # diurutkan berdasarakan tahun dan doc number
+                    txt_data = sorted(result['DATA'], key=lambda x: (x["YEAR"], x["DOC_NUMBER"]))
+                    i = 0
+                    tot_pph_amount = 0
+                    for data in txt_data:
+                        _logger.info(data)
+                        doc_number = data["DOC_NUMBER"]
+                        line_item = data["LINE_ITEM"]
+                        year = str(data["YEAR"])
+                        currency = data["CURRENCY"]
+                        doc_type = data["DOC_TYPE"]
+                        doc_date = data["DOC_DATE"]
+                        posting_date = data["POSTING_DATE"]
+                        pph_cbasis = data["PPH_CBASIS"] * -1
+                        pph_accrual = data["PPH_ACCRUAL"] * -1
+                        wht_type = data["WHT_TYPE"]
+
+                        amount = data["AMOUNT"] * -1
+                        header_text = data["HEADER_TEXT"]
+                        reference = data["REFERENCE"]
+                        vendor = data["VENDOR"]
+                        top = data["TOP"]
+                        item_text = data["ITEM_TEXT"]
+                        profit_center = data["PROFIT_CENTER"]
+                        name = str(doc_number) + str(year)
+                        tot_pph_amount += pph_accrual
+
+                        journal_item_sap_vals.append({
+                            'invoice_id': self.id,
+                            'doc_number': doc_number,
+                            'amount': amount,
+                            'line': line_item,
+                            'project_id': self.project_id.id,
+                            'branch_id': self.branch_id.id,
+                            'partner_id': self.partner_id.id,
+                            'po_id': self.po_id.id,
+                            'status': 'not_req',
+                        })
+
+                    _logger.info('# === UPDATE JOURNAL ITEM SAP === #')
+                    journal_item_sap_created = self.env['wika.account.move.journal.sap'].create(journal_item_sap_vals)
+
+                else:
+                    raise UserError(_("Data Tidak Tersedia!"))
+
+            except Exception as e:
+                _logger.info("# === EXCEPTION === #")
+                _logger.info(e)
+                raise UserError(_("Terjadi Kesalahan! Update Invoice Gagal."))
+        else:
+            raise UserError(_("Terjadi Kesalahan! Journal Item SAP sudah ada"))
+        
+
     def action_approve(self):
         # self.write({'is_wizard_cancel': False})
         user = self.env['res.users'].search([('id', '=', self._uid)], limit=1)
