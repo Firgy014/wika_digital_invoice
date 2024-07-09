@@ -17,6 +17,7 @@
                     <button name="get_replace_pph_amount" string="Replace PPh Amount" type="object" class="oe_highlight"/>
                     <button name="get_dp_payment_status" string="Update DP Payment Status" type="object" groups="base.group_no_one" attrs="{'invisible': [('status_payment', '=', 'Paid')]}"/>
                     <button name="get_payment_status" string="Update Payment Status" type="object" groups="base.group_no_one" attrs="{'invisible': [('status_payment', '=', 'Paid')]}"/>
+                    <button name="update_journal_item_sap" string="Update Journal Item" type="object" class="oe_highlight"/>
                     <field name="state" widget="statusbar" statusbar_visible="draft,uploaded,approved"/>
                 </header>
                 <sheet>
