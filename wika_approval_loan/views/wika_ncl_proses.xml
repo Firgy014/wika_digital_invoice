@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <data>
+    
+        <record id="wika_ncl_p_view_tree" model="ir.ui.view">
+            <field name="name">wika.ncl.p.view.tree</field>
+            <field name="model">wika.noncash.loan</field>
+            <field name="arch" type="xml">
+                <tree string="">
+                    <field name="name" />
+                </tree>
+            </field>
+        </record>
+    
+        <record id="wika_ncl_p_action" model="ir.actions.act_window">
+            <field name="name">Action Name</field>
+            <field name="res_model">wika.noncash.loan</field>
+            <field name="view_mode">tree,form</field>           
+        </record>
+    </data>
+
+
+</odoo>

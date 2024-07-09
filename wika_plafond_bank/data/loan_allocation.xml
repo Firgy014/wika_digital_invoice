@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <record id="loan_allocation1" model="wika.loan.allocation">
+            <field name="name">Debt Payment</field>
+            <field name="code">AL01</field>
+        </record>
+        <record id="loan_allocation2" model="wika.loan.allocation">
+            <field name="name">Unallocated Debt</field>
+            <field name="code">AL02</field>
+        </record>
+        <record id="loan_allocation3" model="wika.loan.allocation">
+            <field name="name">Construction Project</field>
+            <field name="code">AL03</field>
+        </record>
+        <record id="loan_allocation4" model="wika.loan.allocation">
+            <field name="name">Corporate Investment</field>
+            <field name="code">AL04</field>
+        </record>
+        <record id="loan_allocation5" model="wika.loan.allocation">
+            <field name="name">Subsidary Investment</field>
+            <field name="code">AL05</field>
+        </record>
+        <record id="loan_allocation6" model="wika.loan.allocation">
+            <field name="name">Shareholder Loans</field>
+            <field name="code">AL06</field>
+        </record>
+    </data>
+</odoo>

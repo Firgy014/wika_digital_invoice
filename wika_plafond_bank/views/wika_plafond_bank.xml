@@ -1,0 +1,155 @@
+<odoo>
+
+    <data>
+
+        <record id="view_wika_plafond_bank_filter" model="ir.ui.view">
+            <field name="name">wika.plafond.bank.filter</field>
+            <field name="model">wika.plafond.bank</field>
+            <field name="arch" type="xml">
+                <search>
+                    <filter string="Cash" name="cash_filter" domain="[('tipe', '=', 'cash')]"/>
+                    <!-- Filter for Non Cash -->
+                    <filter string="Non Cash" name="non_cash_filter" domain="[('tipe', '=', 'non cash')]"/>
+                    <!-- Group by Tipe -->
+                    <group string="Tipe">
+                        <field name="tipe"/>
+                    </group>
+                </search>
+            </field>
+        </record>
+
+        <record id="wika_plafond_bank_graph" model="ir.ui.view">
+            <field name="name">wika.plafond.bank.view.graph</field>
+            <field name="model">wika.plafond.bank</field>
+            <field name="arch" type="xml">
+                <graph string="Plafond Bank" type="bar">
+                    <field name="nama_kontrak"/>
+                    <field name="Gsisa" type="measure"/>
+                </graph>
+            </field>
+        </record>
+
+        <record id="wika_plafond_bank_view_pivot" model="ir.ui.view" >
+            <field name="name">wika.plafond.bank.pivot</field>
+            <field name="model">wika.plafond.bank</field>
+            <field name="arch" type="xml">
+                <pivot disable_linking="True">
+                    <field name="nama_kontrak" type="row"/>
+                    <field name="jumlah" type="measure" />
+                    <field name="terpakai" type="measure" />
+                    <field name="sisa" type="measure" />
+                </pivot>
+            </field> 
+        </record> 
+
+        <record id="wika_plafond_bank_view_search" model="ir.ui.view" >
+		    <field name="name">wika.plafond.bank.search</field>
+		    <field name="model">wika.plafond.bank</field>
+		    <field name="arch" type="xml">
+                <search>
+                    <field name="nomor_kontrak"/>
+                    <field name="tgl_kontrak"/>
+                    <field name="tgl_mulai"/>
+                    <field name="tgl_akhir"/>
+                    <field name="bank_id"/>
+                    <field name="jumlah"/>
+                    <field name="sisa"/>
+                    <field name="terpakai"/>
+                    <field name="status"/>
+                </search>
+		    </field> 
+		</record>
+
+        <record id="wika_plafond_bank_view_tree" model="ir.ui.view">
+            <field name="name">wika.plafond.bank.view.tree</field>
+            <field name="model">wika.plafond.bank</field>
+            <field name="arch" type="xml">
+                <tree string="Plafond Bank">
+                    <field name="nomor_kontrak"/>
+                    <field name="tgl_mulai"/>
+                    <field name="tgl_akhir"/>
+                    <field name="bank_id"/>
+                    <field name="jumlah"/>
+                    <field name="terpakai"/>
+                    <field name="nilai_book"/>
+                    <field name="sisa"/>
+                    <field name="total_h5"/>
+                    <field name="status"/>
+                </tree>
+            </field>
+        </record>
+
+        <record id="wika_plafond_bank_view_form" model="ir.ui.view">
+            <field name="name">wika.plafond.bank.view.form</field>
+            <field name="model">wika.plafond.bank</field>
+            <field name="arch" type="xml">
+                <form string="Plafond Bank">
+                    <header>
+                		<button name="confirm" type="object"  string="Confirm" class="oe_highlight"/>
+                        <field name="status" widget="statusbar" statusbar_visible="draft,confirm"/>
+                	</header>
+                    <sheet>
+                        <group>
+                            <group>
+                                <field name="nomor_kontrak"/>
+                                <field name="tgl_kontrak"/>
+                                <field name="tipe"/>
+                                <field name="jumlah"/>
+                                <field name="sisa"/>
+                                <field name="covenant_terms"/>
+                                <field name="loan_cr"/>
+                                <field name="loan_gearing_ratio"/>
+                                <field name="catatan"/>
+                            </group>
+                            <group>
+                                <field name="nama_kontrak"/>
+                                <label for="tgl_mulai" string="Masa Berlaku"/>
+                                <div class="o_address_format">
+                                    <field name="tgl_mulai"/>-
+                                    <field name="tgl_akhir"/>
+                                </div>
+                                <field name="bank_id"/>
+                                <field name="terpakai"/>
+                                <field name="nilai_book"/>
+                                <field name="loan_der"/>
+                                <field name="loan_dscr"/>
+                                <field name="loan_lscr"/>
+                            </group>
+                        </group>
+                        <notebook>
+                            <page string="Detail Plafond">
+                                <field name="plafond_ids" mode="tree,kanban" nolabel="1" colspan="2" force_save="1">
+                                    <tree string="Detail Plafond" editable="top">
+                                        <field name="jenis_id"/>
+                                        <field name="tgl_mulai"/>
+                                        <field name="currency_id" />
+                                        <field name="nilai" />
+                                        <field name="nilai_book" />
+                                        <field name="terpakai" />
+                                        <field name="pengajuan" />
+                                        <field name="sisa" />
+                                    </tree>
+                                </field>
+                            </page>
+                        </notebook>
+                    </sheet>
+                    <div class="oe_chatter">
+                        <field name="message_follower_ids"/>
+                        <field name="activity_ids"/>
+                        <field name="message_ids"/>
+                    </div>
+                </form>
+            </field>
+        </record>
+        
+        <record id="wika_plafond_bank.action_window" model="ir.actions.act_window">
+            <field name="name">Plafond Bank</field>
+            <field name="res_model">wika.plafond.bank</field>
+            <field name="view_mode">tree,form,pivot,graph</field>
+            <field name="context">{'group_by': 'tipe'}</field>
+        </record>
+    
+    </data>
+    
+
+</odoo>

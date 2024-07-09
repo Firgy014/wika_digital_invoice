@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+     <!-- Status Non Cash  -->
+        <record id="loan_stage_1" model="wika.loan.stage">
+            <field name="name">Pembukaan</field>
+            <field name="sequence">5</field>
+            <field name="tipe">Non Cash</field>
+            <field name="scf">t</field>
+            <field name="bg">t</field>
+            <field name="jaminan">t</field>
+        </record>
+        <record id="loan_stage_2" model="wika.loan.stage">
+            <field name="name">Diajukan</field>
+            <field name="sequence">7</field>
+            <field name="tipe">Non Cash</field>
+            <field name="scf">t</field>
+            <field name="bg">t</field>
+            <field name="jaminan">t</field>            
+        </record>
+        <record id="loan_stage_2a" model="wika.loan.stage">
+            <field name="name">Proses Persetujuan</field>
+            <field name="sequence">8</field>
+            <field name="tipe">Non Cash</field>
+            <field name="scf">t</field>
+            <field name="bg">t</field>
+            <field name="jaminan">t</field>
+        </record>
+        <record id="loan_stage_3" model="wika.loan.stage">
+            <field name="name">Disetujui</field>
+            <field name="sequence">9</field>
+            <field name="tipe">Non Cash</field>
+            <field name="scf">t</field>
+            <field name="bg">t</field>
+            <field name="jaminan">t</field>
+        </record>
+        <record id="loan_stage_4" model="wika.loan.stage">
+            <field name="name">Ditolak</field>
+            <field name="sequence">9</field>
+            <field name="tipe">Non Cash</field>
+            <field name="scf">t</field>
+            <field name="bg">t</field>
+            <field name="jaminan">t</field>            
+        </record>
+        <record id="loan_stage_5" model="wika.loan.stage">
+            <field name="name">PENERBITAN</field>
+            <field name="sequence">10</field>
+            <field name="tipe">Non Cash</field>
+            <field name="scf">t</field>
+            <field name="bg">t</field>
+            <field name="jaminan">t</field>            
+        </record>
+        <record id="loan_stage_6" model="wika.loan.stage">
+            <field name="name">Cancel</field>
+            <field name="sequence">11</field>
+            <field name="tipe">Non Cash</field>
+            <field name="scf">t</field>
+            <field name="bg">t</field>
+            <field name="jaminan">t</field>              
+        </record>
+        <record id="loan_stage_6a" model="wika.loan.stage">
+            <field name="name">Setuju</field>
+            <field name="sequence">11</field>
+            <field name="tipe">Non Cash</field>
+            <field name="bg">t</field>
+            <field name="jaminan">t</field>              
+        </record>
+        <record id="loan_stage_9" model="wika.loan.stage">
+            <field name="name">Akseptasi</field>
+            <field name="sequence">11</field>
+            <field name="tipe">Non Cash</field>
+        </record>
+        <record id="loan_stage_10" model="wika.loan.stage">
+            <field name="name">Tidak Akseptasi</field>
+            <field name="sequence">11</field>
+            <field name="tipe">Non Cash</field>
+        </record>        
+        <record id="loan_stage_11" model="wika.loan.stage">
+            <field name="name">TR</field>
+            <field name="sequence">12</field>
+            <field name="tipe">Non Cash</field>
+            <field name="scf">t</field>
+        </record>
+        <record id="loan_stage_11a" model="wika.loan.stage">
+            <field name="name">Perpanjangan</field>
+            <field name="sequence">13</field>
+            <field name="tipe">Non Cash</field>
+            <field name="bg">t</field>
+            <field name="jaminan">t</field>  
+        </record>
+        <!-- Status  Cash Loan -->
+        <record id="loan_stage_12" model="wika.loan.stage">
+            <field name="name">Pengajuan</field>
+            <field name="sequence">1</field>
+            <field name="tipe">Cash</field>
+        </record>        
+        <record id="loan_stage_13" model="wika.loan.stage">
+            <field name="name">Diajukan</field>
+            <field name="sequence">2</field>
+            <field name="tipe">Cash</field>
+        </record> 
+        <record id="loan_stage_14" model="wika.loan.stage">
+            <field name="name">Disetujui</field>
+            <field name="sequence">3</field>
+            <field name="tipe">Cash</field>
+        </record>
+        <record id="loan_stage_15" model="wika.loan.stage">
+            <field name="name">Ditolak</field>
+            <field name="sequence">3</field>
+            <field name="tipe">Cash</field>
+        </record>
+        <record id="loan_stage_16" model="wika.loan.stage">
+            <field name="name">Penarikan</field>
+            <field name="sequence">4</field>
+            <field name="tipe">Cash</field>
+        </record>
+        <record id="loan_stage_16a" model="wika.loan.stage">
+            <field name="name">Lunas</field>
+            <field name="sequence">5</field>
+            <field name="tipe">Cash</field>
+        </record>
+        <record id="loan_stage_17" model="wika.loan.stage">
+            <field name="name">Perpanjangan</field>
+            <field name="sequence">5</field>
+            <field name="tipe">Cash</field>
+        </record> 
+    </data>
+</odoo>

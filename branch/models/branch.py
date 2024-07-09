@@ -27,6 +27,8 @@ class res_branch(models.Model):
                                string='Master Tanda Tangan')
     rk_ids          = fields.One2many(comodel_name='res.branch.rk', inverse_name='parent_id', ondelete='cascade')
     kode_coa_rk_id  = fields.Many2one(comodel_name='account.account', string='Kode Perkiraan RK')
+    eliminasi = fields.Boolean(string='Eliminasi?')
+    anak_perusahaan = fields.Boolean(string='Anak Perusahaan?')
 
     def _valid_field_parameter(self, field, name):
         # If the field has `task_dependency_tracking` on we track the changes made in the dependent task on the parent task
