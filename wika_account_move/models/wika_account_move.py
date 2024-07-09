@@ -115,7 +115,7 @@ class WikaInheritedAccountMove(models.Model):
     ], string='Payment State',default='Not Request')   
     payment_request_date= fields.Date(string='Payment Request Date')
     nomor_payment_request= fields.Char(string='Nomor Payment Request')
-    is_approval_checked = fields.Boolean(string="Approval Checked", compute='_compute_is_approval_checked' ,default=False)
+    is_approval_checked = fields.Boolean(string="Approval Checked", compute='_compute_is_approval_checked', default=False)
     is_wizard_cancel = fields.Boolean(string="Is cancel", default=True)
     is_upd_api_pph_amount = fields.Boolean(string="Is Update PPH From API?", default=False)
 
@@ -280,6 +280,25 @@ class WikaInheritedAccountMove(models.Model):
     bap_type = fields.Char(string='Jenis BAP', compute='_compute_bap_type', store=True)
     activity_user_id = fields.Many2one('res.users', string='ToDo User', store=True)
     error_narration = fields.Char(string='Error Narration')
+    is_paralel_rejection = fields.Boolean(string="Invoice Included in Reject Paralel", default=False)
+    sap_amount_payment = fields.Float('Amount Payment', tracking=True)
+    amount_due = fields.Float('Amount Due', compute='_compute_amount_due')
+
+    def _compute_amount_due(self):
+        _logger.info("# === _compute_amount_due === #")
+        for rec in self:
+            total_paid = 0
+            if rec.partial_request_ids:
+                tot_partial_amount = sum(rec.partial_request_ids.filtered(lambda x : x.payment_state == 'paid').mapped('partial_amount'))
+                residual_amount = rec.total_line - tot_partial_amount
+                # residual_amount = rec.sisa_partial
+            else:    
+                total_paid = rec.sap_amount_payment
+                residual_amount = rec.total_line - total_paid
+            
+            _logger.info("Total Paid %s Residual Amount %s" % (str(total_paid), str(residual_amount)))
+
+            rec.amount_due = residual_amount
 
     @api.depends('bap_id.bap_type')
     def _compute_bap_type(self):
@@ -730,8 +749,8 @@ class WikaInheritedAccountMove(models.Model):
 
     def write(self, values):
         for rec in self:
-            _logger.info("# === ACCOUNT MOVE WRITE === #")
-            _logger.info(str(values))
+            # _logger.info("# === ACCOUNT MOVE WRITE === #")
+            # _logger.info(str(values))
             record = super(WikaInheritedAccountMove, rec).write(values)
 
             if isinstance(record, bool):
@@ -923,6 +942,33 @@ class WikaInheritedAccountMove(models.Model):
             self.document_ids = document_list
         else:
             raise AccessError("Data dokumen tidak ada!")
+
+    def submit_rejected(self, folder_id):
+        facet_id = self.env['documents.facet'].sudo().search([
+            ('name', '=', 'Documents'),
+            ('folder_id', '=', folder_id.id)
+        ], limit=1)
+        for doc in self.document_ids:
+            documents_model = self.env['documents.document'].sudo()
+            attachment_id = self.env['ir.attachment'].sudo().create({
+                'name': doc.filename,
+                'datas': doc.document,
+                'res_model': 'documents.document',
+            })
+            if attachment_id:
+                tag = self.env['documents.tag'].sudo().search([
+                    ('facet_id', '=', facet_id.id),
+                    ('name', '=', doc.document_id.name)
+                ], limit=1)
+                documents_model.create({
+                    'attachment_id': attachment_id.id,
+                    'folder_id': folder_id.id,
+                    'tag_ids': tag.ids,
+                    'partner_id': doc.invoice_id.partner_id.id,
+                    'purchase_id': self.po_id.id,
+                    'invoice_id': self.id,
+                })
+
     
     def action_submit(self):
         for record in self:
@@ -950,7 +996,7 @@ class WikaInheritedAccountMove(models.Model):
                 if self.activity_user_id.id == self._uid:
                     cek = True
 
-        if cek == True:
+        if cek:
             first_user = False
             if self.activity_ids:
                 for x in self.activity_ids.filtered(lambda x: x.status != 'approved'):
@@ -970,6 +1016,7 @@ class WikaInheritedAccountMove(models.Model):
 
                 documents_model = self.env['documents.document'].sudo()
                 folder_id = self.env['documents.folder'].sudo().search([('name', '=', 'Invoicing')], limit=1)
+                is_continue_submit = False
                 if folder_id:
                     facet_id = self.env['documents.facet'].sudo().search([
                         ('name', '=', 'Documents'),
@@ -977,31 +1024,33 @@ class WikaInheritedAccountMove(models.Model):
                     ], limit=1)
                     for doc in self.document_ids.filtered(lambda x: x.state in ('uploaded','rejected')):
                         if doc.document_id.name in ['Invoice', 'Faktur Pajak']:
-                            attachment_id = self.env['ir.attachment'].sudo().create({
-                                'name': doc.filename,
-                                'datas': doc.document,
-                                'res_model': 'documents.document',
-                            })
-                            if attachment_id:
-                                tag = self.env['documents.tag'].sudo().search([
-                                    ('facet_id', '=', facet_id.id),
-                                    ('name', '=', doc.document_id.name)
-                                ], limit=1)
-                                documents_model.create({
-                                    'attachment_id': attachment_id.id,
-                                    'folder_id': folder_id.id,
-                                    'tag_ids': tag.ids,
-                                    'partner_id': doc.invoice_id.partner_id.id,
-                                    'purchase_id': self.po_id.id,
-                                    'invoice_id': self.id,
+                            if not doc.rejected_doc_id:
+                                attachment_id = self.env['ir.attachment'].sudo().create({
+                                    'name': doc.filename,
+                                    'datas': doc.document,
+                                    'res_model': 'documents.document',
                                 })
+                                if attachment_id:
+                                    tag = self.env['documents.tag'].sudo().search([
+                                        ('facet_id', '=', facet_id.id),
+                                        ('name', '=', doc.document_id.name)
+                                    ], limit=1)
+                                    documents_model.create({
+                                        'attachment_id': attachment_id.id,
+                                        'folder_id': folder_id.id,
+                                        'tag_ids': tag.ids,
+                                        'partner_id': doc.invoice_id.partner_id.id,
+                                        'purchase_id': self.po_id.id,
+                                        'invoice_id': self.id,
+                                    })
                         else:
-                            doc.rejected_doc_id.attachment_id.write({
-                                'name': doc.filename,
-                                'datas': doc.document,
-                                'res_model': 'documents.document'
-                            })
-                            doc.rejected_doc_id.write({'active': True})
+                            if doc.rejected_doc_id:
+                                doc.rejected_doc_id.attachment_id.write({
+                                    'name': doc.filename,
+                                    'datas': doc.document,
+                                    'res_model': 'documents.document'
+                                })
+                                doc.rejected_doc_id.write({'active': True})
 
                 groups_line = self.env['wika.approval.setting.line'].search([
                     ('level', '=', level),
@@ -1172,6 +1221,148 @@ class WikaInheritedAccountMove(models.Model):
         else:
             raise UserError(_("Data DP Payment Status Tidak Tersedia!"))
             
+    def get_payment_status(self):
+        self.ensure_one()
+        if not self.payment_reference:
+            raise UserError("Payment Reference harus diisi")
+
+        url_config = self.env['wika.integration'].search([('name', '=', 'URL_PAYMENT_STATUS')], limit=1).url
+        headers = {
+            'Authorization': 'Basic V0lLQV9JTlQ6SW5pdGlhbDEyMw==',
+            'Content-Type': 'application/json'
+        }
+
+        payload = json.dumps({
+            "COMPANY_CODE": "A000",
+            "CLEAR_DATE": 
+                {   
+                    "LOW": "",
+                    "HIGH":""
+                },
+            "DOC_NUMBER": "%s"
+        }) % (self.payment_reference)
+        payload = payload.replace('\n', '')
+        _logger.info("# === CEK PAYLOAD === #")
+        _logger.info(payload)
+
+        # try:
+        response = requests.request("GET", url_config, data=payload, headers=headers)
+        txt = json.loads(response.text)
+
+        if txt['DATA']:
+            _logger.info("# === IMPORT DATA === #")
+            company_id = self.env.company.id
+            # _logger.info(txt['DATA'])
+            txt_data0 = sorted(txt['DATA'], key=lambda x: x["DOC_NUMBER"])
+            txt_data = filter(lambda x: (x["STATUS"] == "X"), txt_data0)
+            # txt_data = txt['DATA']
+            for data in txt_data:
+                # _logger.info(data)
+                doc_number = data["DOC_NUMBER"]
+                year = str(data["YEAR"])
+                line_item = data["LINE_ITEM"]
+                amount = data["AMOUNT"]
+                clear_date = data["CLEAR_DATE"]
+                clear_doc = data["CLEAR_DOC"]
+                status = data["STATUS"]
+                new_name = doc_number+str(year)
+
+                if self.partner_id.company_id.id and self.status_payment != 'Paid':
+                    self.sap_amount_payment = abs(amount)
+                    self._compute_status_payment()
+
+            _logger.info("# === IMPORT DATA SUKSES === #")
+        else:
+            raise UserError(_("Data Payment Status Tidak Tersedia!"))
+            
+    def update_journal_item_sap(self):
+        _logger.info("# === GET API UPDATE JOURNAL ITEM SAP === #")
+        self.ensure_one()
+        url_config = self.env['wika.integration'].search([('name', '=', 'URL_INV_NON_PO')], limit=1).url
+        headers = {
+            'Authorization': 'Basic V0lLQV9JTlQ6SW5pdGlhbDEyMw==',
+            'Content-Type': 'application/json'
+        }
+
+        if not self.journal_item_sap_ids:
+            journal_item_sap_vals = []
+            try:
+                year = self.date.strftime('%Y')
+                date_format = '%Y-%m-%d'
+                date_from = datetime.strptime(year + '-01-01', date_format)
+                date_to = datetime.strptime(year + '-12-31', date_format)
+                payload = json.dumps({
+                    "COMPANY_CODE": "A000",
+                    "POSTING_DATE": {
+                        "LOW": "%s",
+                        "HIGH": "%s"
+                    },
+                    "DOC_NUMBER": "%s"
+                }) % (str(date_from), str(date_to), self.payment_reference)
+                payload = payload.replace('\n', '')
+
+                _logger.info("# === PAYLOAD === #")
+                _logger.info(payload)
+
+                response = requests.request("GET", url_config, data=payload, headers=headers)
+                result = json.loads(response.text)
+
+                if result['DATA']:
+                    _logger.info("# === RESPON DATA === #")
+                    company_id = self.env.company.id
+                    # diurutkan berdasarakan tahun dan doc number
+                    txt_data = sorted(result['DATA'], key=lambda x: (x["YEAR"], x["DOC_NUMBER"]))
+                    i = 0
+                    tot_pph_amount = 0
+                    for data in txt_data:
+                        _logger.info(data)
+                        doc_number = data["DOC_NUMBER"]
+                        line_item = data["LINE_ITEM"]
+                        year = str(data["YEAR"])
+                        currency = data["CURRENCY"]
+                        doc_type = data["DOC_TYPE"]
+                        doc_date = data["DOC_DATE"]
+                        posting_date = data["POSTING_DATE"]
+                        pph_cbasis = data["PPH_CBASIS"] * -1
+                        pph_accrual = data["PPH_ACCRUAL"] * -1
+                        wht_type = data["WHT_TYPE"]
+
+                        amount = data["AMOUNT"] * -1
+                        header_text = data["HEADER_TEXT"]
+                        reference = data["REFERENCE"]
+                        vendor = data["VENDOR"]
+                        top = data["TOP"]
+                        item_text = data["ITEM_TEXT"]
+                        profit_center = data["PROFIT_CENTER"]
+                        name = str(doc_number) + str(year)
+                        tot_pph_amount += pph_accrual
+
+                        journal_item_sap_vals.append({
+                            'invoice_id': self.id,
+                            'doc_number': doc_number,
+                            'amount': amount,
+                            'line': line_item,
+                            'project_id': self.project_id.id,
+                            'branch_id': self.branch_id.id,
+                            'partner_id': self.partner_id.id,
+                            'po_id': self.po_id.id,
+                            'status': 'not_req',
+                        })
+
+                    _logger.info('# === UPDATE JOURNAL ITEM SAP === #')
+                    journal_item_sap_created = self.env['wika.account.move.journal.sap'].create(journal_item_sap_vals)
+
+                else:
+                    raise UserError(_("Data Tidak Tersedia!"))
+
+            except Exception as e:
+                _logger.info("# === EXCEPTION === #")
+                _logger.info(e)
+                raise UserError(_("Terjadi Kesalahan! Update Invoice Gagal."))
+        else:
+            raise UserError(_("Terjadi Kesalahan! Journal Item SAP sudah ada"))
+        
+
     def action_approve(self):
         # self.write({'is_wizard_cancel': False})
         user = self.env['res.users'].search([('id', '=', self._uid)], limit=1)

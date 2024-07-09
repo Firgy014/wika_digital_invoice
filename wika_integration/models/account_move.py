@@ -9,16 +9,8 @@ class AccountMoveInheritWika(models.Model):
     year = fields.Char(string='Invoice Year')
     dp_doc = fields.Char(string='DP Doc')
     retensi_doc = fields.Char(string='Retensi Doc')
-    payment_move_ids = fields.One2many(
-        'account.payment',
-        'payment_move_id',
-        string='Payments',
-        copy=False,
-        readonly=True,
-        states={'draft': [('readonly', False)]},
-    )
-    sap_amount_payment = fields.Float('Amount Payment')
-    amount_due = fields.Float('Amount Due')
+    sap_amount_payment = fields.Float('Amount Payment', tracking=True)
+    amount_due = fields.Float('Amount Due', compute='_compute_amount_due')
     amount_idr = fields.Float(string='Amount IDR', store=True)
 
     def _compute_amount_due(self):
@@ -27,11 +19,11 @@ class AccountMoveInheritWika(models.Model):
             total_paid = 0
             if rec.partial_request_ids:
                 tot_partial_amount = sum(rec.partial_request_ids.filtered(lambda x : x.payment_state == 'paid').mapped('partial_amount'))
-                residual_amount = rec.amount_invoice - tot_partial_amount
+                residual_amount = rec.total_line - tot_partial_amount
                 # residual_amount = rec.sisa_partial
             else:    
                 total_paid = rec.sap_amount_payment
-                residual_amount = rec.amount_invoice - total_paid
+                residual_amount = rec.total_line - total_paid
             
             _logger.info("Total Paid %s Residual Amount %s" % (str(total_paid), str(residual_amount)))
 

@@ -422,8 +422,8 @@ class WikaBeritaAcaraPembayaran(models.Model):
                         [('po_id', '=', record.po_id.id), ('bap_type', '=', 'cut over')])
                     if bap:
                         pass
-                    # else:
-                    #     raise ValidationError(_("Nomor PO tersebut sudah dicatat sebagai cut off di invoice terkait. Silahkan pilih jenis BAP 'Cut Over'."))
+                    else:
+                        raise ValidationError(_("Nomor PO tersebut sudah dicatat sebagai cut off di invoice terkait. Silahkan pilih jenis BAP 'Cut Over'."))
             # if record.po_id and record.bap_type == 'cut over':
             #     account_moves = self.env['account.move.line'].search([
             #         ('purchase_id', '=', self.po_id.id),
@@ -1181,7 +1181,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
                     if level == 'Divisi Fungsi' and x.department_id == self.department_id and x.id == self._uid:
                         cek = True
 
-        if cek == True:
+        if cek:
             if self.activity_ids:
                 for x in self.activity_ids.filtered(lambda x: x.status != 'approved'):
                     if x.user_id.id == self._uid:
@@ -1196,42 +1196,44 @@ class WikaBeritaAcaraPembayaran(models.Model):
                     'note': 'Submit Document',
                     'bap_id': self.id
                 })
+
                 folder_id = self.env['documents.folder'].sudo().search([('name', '=', 'BAP')], limit=1)
                 if folder_id:
                     facet_id = self.env['documents.facet'].sudo().search([
                         ('name', '=', 'Documents'),
                         ('folder_id', '=', folder_id.id)
                     ], limit=1)
-                    for doc in self.document_ids.filtered(lambda x: x.state in ('uploaded','rejected')):
-                        if doc.document_id.name == 'BAP' and not self.is_paralel_rejection:
-                            continue
-
+                    for doc in self.document_ids.filtered(lambda x: x.state in ('uploaded', 'rejected')):
                         if doc.document_id.name == 'BAP':
-                            attachment_id = self.env['ir.attachment'].sudo().create({
-                                'name': doc.filename,
-                                'datas': doc.document,
-                                'res_model': 'documents.document',
-                            })
-                            if attachment_id:
-                                tag = self.env['documents.tag'].sudo().search([
-                                    ('facet_id', '=', facet_id.id),
-                                    ('name', '=', doc.document_id.name)
-                                ], limit=1)
-                                documents_model.create({
-                                    'attachment_id': attachment_id.id,
-                                    'folder_id': folder_id.id,
-                                    'tag_ids': tag.ids,
-                                    'partner_id': doc.bap_id.partner_id.id,
-                                    'purchase_id': self.po_id.id,
-                                    'bap_id': self.id,
+                            if not doc.rejected_doc_id:
+                                attachment_id = self.env['ir.attachment'].sudo().create({
+                                    'name': doc.filename,
+                                    'datas': doc.document,
+                                    'res_model': 'documents.document'
                                 })
+                                if attachment_id:
+                                    tag = self.env['documents.tag'].sudo().search([
+                                        ('facet_id', '=', facet_id.id),
+                                        ('name', '=', doc.document_id.name)
+                                    ], limit=1)
+                                    existing_document = documents_model.search([('name', '=', doc.filename)], limit=1)
+                                    if not existing_document:
+                                        documents_model.create({
+                                            'attachment_id': attachment_id.id,
+                                            'folder_id': folder_id.id,
+                                            'tag_ids': tag.ids,
+                                            'partner_id': doc.bap_id.partner_id.id,
+                                            'purchase_id': self.po_id.id,
+                                            'bap_id': self.id,
+                                        })
                         else:
-                            doc.rejected_doc_id.attachment_id.write({
-                                'name': doc.filename,
-                                'datas': doc.document,
-                                'res_model': 'documents.document'
-                            })
-                            doc.rejected_doc_id.write({'active': True})
+                            if doc.rejected_doc_id:
+                                doc.rejected_doc_id.attachment_id.write({
+                                    'name': doc.filename,
+                                    'datas': doc.document,
+                                    'res_model': 'documents.document'
+                                })
+                                doc.rejected_doc_id.write({'active': True})
 
                 groups_line = self.env['wika.approval.setting.line'].search([
                     ('level', '=', level),
@@ -1239,18 +1241,14 @@ class WikaBeritaAcaraPembayaran(models.Model):
                     ('approval_id', '=', approval_id.id)
                 ], limit=1)
                 groups_id_next = groups_line.groups_id
-                first_user = False
                 if groups_id_next:
                     for x in groups_id_next.users:
-                        if level == 'Proyek' and  self.project_id in x.project_ids:
+                        if level == 'Proyek' and self.project_id in x.project_ids:
                             first_user = x.id
                         if level == 'Divisi Operasi' and x.branch_id == self.branch_id:
                             first_user = x.id
                         if level == 'Divisi Fungsi' and x.department_id == self.department_id:
                             first_user = x.id
-
-                    if not first_user and groups_id_next.users:
-                        first_user = groups_id_next.users[0].id
                     if first_user:
                         self.env['mail.activity'].sudo().create({
                             'activity_type_id': 4,
@@ -1264,8 +1262,6 @@ class WikaBeritaAcaraPembayaran(models.Model):
                             'status': 'to_approve',
                             'summary': """Need Approval Document BAP"""
                         })
-
-                    self.sudo().push_bap()
         else:
             raise ValidationError('User Akses Anda tidak berhak Submit!')
 
@@ -1397,6 +1393,9 @@ class WikaBeritaAcaraPembayaran(models.Model):
                                     print(x.status)
                                     x.status = 'approved'
                                     x.action_done()
+                    
+                        self.sudo().push_bap()
+
                     else:
                         raise ValidationError('User Role Next Approval Belum di Setting!')
 
