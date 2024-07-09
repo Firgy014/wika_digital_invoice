@@ -19,6 +19,5 @@
         <menuitem id="menu_location" name="Location" parent="menu_widiw_master_data" action="action_location_form_wika" sequence="2"/>
         <menuitem id="menu_product" name="Product" parent="menu_widiw_master_data" action="product_template_action_product_wika" sequence="3"/>
         
-
     </data>
 </odoo>
