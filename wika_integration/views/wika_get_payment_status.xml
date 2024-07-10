@@ -1,0 +1,66 @@
+<odoo>
+    <data>
+
+        <record model="ir.ui.view" id="wika_get_payment_status_list">
+            <field name="name">wika_get_payment_status_list</field>
+            <field name="model">wika.get.payment.status</field>
+            <field name="arch" type="xml">
+                <tree>
+                    <field name="name" />
+                    <field name="tgl_mulai" />
+                    <field name="tgl_akhir" />
+                    <field name="state" />
+                </tree>
+            </field>
+        </record>
+
+        <record model="ir.ui.view" id="wika_get_payment_status_form">
+            <field name="name">wika_get_po_payment_status_form</field>
+            <field name="model">wika.get.payment.status</field>
+            <field name="arch" type="xml">
+                <form>
+                    <header>
+                        <button name="get_payment_status" type="object" string="Get Payment Status" class="oe_highlight" />
+                        <field name="state" widget="statusbar" readonly="1"/>
+                    </header>
+                    <sheet>
+                        <group>
+                            <field name="name" />
+                            <field name="tgl_mulai" />
+                            <field name="tgl_akhir" />
+                            <field name="state" invisible="1" />
+                        </group>
+
+                    </sheet>
+
+                </form>
+            </field>
+        </record>
+        
+        <record id="view_wika_get_payment_status_filter" model="ir.ui.view">
+            <field name="name">wika.get.payment.status.filter</field>
+            <field name="model">wika.get.payment.status</field>
+            <field name="arch" type="xml">
+                <search string="Search">
+                    <field name="name" />
+                </search>
+            </field>
+        </record>
+
+        <!-- actions opening views on models -->
+        <record model="ir.actions.act_window" id="wika_get_payment_status_action_window">
+            <field name="name">Wika Get Payment Status</field>
+            <field name="res_model">wika.get.payment.status</field>
+            <field name="context">{}</field>
+            <field name="domain">[]</field>
+            <field name="limit">80</field>
+            <field name="view_mode">tree,form</field>
+        </record>
+
+        <menuitem name="Get Payment Status" id="wika_get_payment_status_menu"
+            action="wika_get_payment_status_action_window"
+            parent="wika_integration.wika_app_setting_menu"
+            sequence="1" />
+
+    </data>
+</odoo>

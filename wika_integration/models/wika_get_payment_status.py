@@ -11,14 +11,30 @@ class wika_get_payment_status(models.Model):
     _name = 'wika.get.payment.status'
     _description='Wika Get Payment Status'
 
-    name = fields.Char(string="Nama")
+    name = fields.Char(string="Nama", required=True)
     tgl_mulai = fields.Date(string="Tgl Mulai")
     tgl_akhir = fields.Date(string="Tgl Akhir")
-    status=fields.Char(string='Status')
+    state = fields.Selection([
+        ('not_done', 'Not Done'),
+        ('done', 'Done')
+    ], string='State')
 
-    def _auto_get_payment_status(self, date_from, date_to, doc_number):
+    def get_payment_status(self):
+        self.ensure_one()
+        self._auto_get_payment_status()
+
+    def _auto_get_payment_status(self, date_from='', date_to='', doc_number=''):
         ''' This method is called from a cron job.
         '''
+        if not date_from and self.tgl_mulai:
+            date_from = str(self.tgl_mulai)
+
+        if not date_to and self.tgl_mulai:
+            date_to = str(self.tgl_akhir)
+
+        if not doc_number:
+            doc_number = self.name
+
         url_config = self.env['wika.integration'].search([('name', '=', 'URL_PAYMENT_STATUS')], limit=1).url
         headers = {
             'Authorization': 'Basic V0lLQV9JTlQ6SW5pdGlhbDEyMw==',
@@ -35,8 +51,8 @@ class wika_get_payment_status(models.Model):
             "DOC_NUMBER": "%s"
         }) % (date_from, date_to, doc_number)
         payload = payload.replace('\n', '')
-        # _logger.info("# === CEK PAYLOAD === #")
-        # _logger.info(payload)
+        _logger.info("# === CEK PAYLOAD === #")
+        _logger.info(payload)
 
         # try:
         response = requests.request("GET", url_config, data=payload, headers=headers)
@@ -164,7 +180,7 @@ class wika_get_payment_status(models.Model):
                         #             })
                         #             account_payment_created.action_post()
                                 
-
+            self.state = 'done'
             _logger.info("# === IMPORT DATA SUKSES === #")
         else:
             raise UserError(_("Data Payment Status Tidak Tersedia!"))

@@ -37,6 +37,7 @@
         'views/res_config_setting_views.xml',
         'views/wika_get_po.xml',
         'views/wika_get_gr.xml',
+        'views/wika_get_payment_status.xml',
         'views/purchase_order.xml',
         'views/templates.xml',
         'views/account_payment_views.xml',
