@@ -20,7 +20,6 @@ class PaymentRequestInherit(models.Model):
 
     def send_reclass_ppn_waba(self):
         _logger.warning("<<================== GENERATE REQUESTED WABA INVOICE TXT DATA OF WDIGI TO REMOTE DIRECTORY ==================>>")
-        # active_id = self.env.context.get('active_id')
         active_id = self.id
         if active_id:
             payment_id = self.sudo().browse([active_id])
@@ -30,10 +29,12 @@ class PaymentRequestInherit(models.Model):
                     N = 32
                     today = datetime.now().strftime("%Y%m%d%H%M%S")
                     res = ''.join(random.sample(string.ascii_uppercase + string.digits, k=N))
-                    dev_keys = ['YFII026', res, 'JAB0', 'AF00219I03', today]
+                    company_registry = payment_id.invoice_ids and payment_id.invoice_ids[0].company_id.company_registry or ''
+                    dev_keys = ['YFII026', res, company_registry, 'AF00219I03', today]
                     keys = ['NO','DOC_NUMBER','DOC_YEAR','POSTING_DATE','PERIOD']
                 
                     query = helpers._get_computed_query_reclass_ppn_waba(payment_id)
+                    print("TESSSSSQUERRRRRRRRR____", query)
 
                     self._cr.execute(query)
                     vals = self.env.cr.fetchall()
@@ -44,7 +45,8 @@ class PaymentRequestInherit(models.Model):
                     writer.writerow(keys)
 
                     for res in vals:
-                        writer.writerow(res)
+                        if all(res):
+                            writer.writerow(res)
 
                     out2 = buffer.getvalue().encode('utf-8')
                     filename = ('YFII026_' + today + '.txt')
