@@ -23,7 +23,7 @@ class AccountMoveInheritWika(models.Model):
                 # residual_amount = rec.sisa_partial
             else:    
                 total_paid = rec.sap_amount_payment
-                residual_amount = rec.total_line - total_paid
+                residual_amount = rec.amount_total_footer - total_paid
             
             _logger.info("Total Paid %s Residual Amount %s" % (str(total_paid), str(residual_amount)))
 
