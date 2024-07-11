@@ -33,8 +33,10 @@ class wika_get_payment_status(models.Model):
         doc_number = ''
         for rec in records:
             if rec.state != 'done':
-                date_from = str(rec.tgl_mulai)
-                date_to = str(rec.tgl_akhir)
+                if rec.tgl_mulai:
+                    date_from = str(rec.tgl_mulai)
+                if rec.tgl_akhir:
+                    date_to = str(rec.tgl_akhir)
                 doc_number = rec.name
 
                 url_config = self.env['wika.integration'].search([('name', '=', 'URL_PAYMENT_STATUS')], limit=1).url
