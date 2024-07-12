@@ -16,7 +16,7 @@ except ImportError:
 class PaymentRequestInherit(models.Model):
     _inherit = 'wika.payment.request'
 
-    is_sent_to_sap = fields.Boolean(string='Generated and Sent to SAP', default=False, store=True)
+    # is_sent_to_sap = fields.Boolean(string='Generated and Sent to SAP', default=False, store=True)
 
     def send_reclass_ppn_waba(self):
         _logger.warning("<<================== GENERATE REQUESTED WABA INVOICE TXT DATA OF WDIGI TO REMOTE DIRECTORY ==================>>")
@@ -29,7 +29,7 @@ class PaymentRequestInherit(models.Model):
                     N = 32
                     today = datetime.now().strftime("%Y%m%d%H%M%S")
                     res = ''.join(random.sample(string.ascii_uppercase + string.digits, k=N))
-                    company_registry = payment_id.invoice_ids and payment_id.invoice_ids[0].company_id.company_registry or ''
+                    company_registry = payment_id.move_ids and payment_id.move_ids[0].invoice_id.company_id.company_registry or ''
                     dev_keys = ['YFII026', res, company_registry, 'AF00219I03', today]
                     keys = ['NO','DOC_NUMBER','DOC_YEAR','POSTING_DATE','PERIOD']
                 
@@ -55,7 +55,8 @@ class PaymentRequestInherit(models.Model):
                     with open(file_path, 'wb') as fp:
                         fp.write(out2)
 
-                    payment_id.write({'is_sent_to_sap':True})
+                    for move in payment_id.move_ids:
+                        move.write({'is_verified_as_pr': 'yes'})
 
                 except Exception as e:
                     _logger.error(f"Error occurred while generating and sending data: {str(e)}")
