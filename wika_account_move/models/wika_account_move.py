@@ -1287,7 +1287,10 @@ class WikaInheritedAccountMove(models.Model):
                 status = data["STATUS"]
                 new_name = doc_number+str(year)
 
-                if self.partner_id.company_id.id and self.status_payment != 'Paid' and year == str(self.date.year):
+                if self.partner_id.company_id.id and self.status_payment != 'Paid' and year == str(self.year):
+                    self.sap_amount_payment = abs(amount)
+                    self._compute_status_payment()
+                elif self.partner_id.company_id.id and self.status_payment != 'Paid' and year == str(self.date.year):
                     self.sap_amount_payment = abs(amount)
                     self._compute_status_payment()
 
