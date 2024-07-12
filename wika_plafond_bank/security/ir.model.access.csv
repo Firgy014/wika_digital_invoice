@@ -1,0 +1,11 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_wika_plafond_bank, Plafond Bank,model_wika_plafond_bank,,1,1,1,1
+access_wika_loan_plafond_detail, Plafond Loan Detail,model_wika_loan_plafond_detail,,1,1,1,1
+access_wika_loan_jenis, Loan Jenis,model_wika_loan_jenis,,1,1,1,1
+access_wika_tipe_jenis, Tipe Jenis,model_wika_tipe_jenis,,1,1,1,1
+access_wika_loan_prognosa, Loan Prognosa,model_wika_loan_prognosa,,1,1,1,1
+access_wika_loan_prognosa_line, Loan Prognosa Line,model_wika_loan_prognosa_line,,1,1,1,1
+access_wika_loan_stage, Loan Stage,model_wika_loan_stage,,1,1,1,1
+access_wika_loan_stage_line, Loan Stage Line,model_wika_loan_stage_line,,1,1,1,1
+access_wika_loan_allocation, Loan Allocation,model_wika_loan_allocation,,1,1,1,1
+access_wika_loan_plafond_bloking, Loan Plafond Bloking,model_wika_loan_plafond_bloking,,1,1,1,1

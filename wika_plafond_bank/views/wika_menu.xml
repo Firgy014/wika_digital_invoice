@@ -1,0 +1,57 @@
+<odoo>
+
+    <data>
+
+        <!-- menu -->
+        <menuitem id="wika_loan_root" name="Loan" sequence="120"/>
+
+        <!-- sub menu -->
+        <menuitem id="wika_loan_menu_root" name="Plafond Bank" parent="wika_loan_root" sequence="1"/>
+        <menuitem id="wika_cl_menu_root" name="Cash Loan" parent="wika_loan_root" sequence="2"/>
+        <menuitem id="wika_ncl_menu_root" name="Non Cash Loan" parent="wika_loan_root" sequence="3"/>
+        <menuitem id="wika_config_menu_root" name="Konfigurasi" parent="wika_loan_root" sequence="4"/>
+
+        <menuitem 
+            id="main_menu_plafond_bank_menu" 
+            name="Plafond Bank" 
+            parent="wika_loan_menu_root" 
+            action="wika_plafond_bank.action_window" 
+            sequence="1"/>
+
+        <menuitem 
+            id="main_menu_prognosa_bank_menu" 
+            name="Prognosa" 
+            parent="wika_loan_menu_root" 
+            action="wika_loan_prognosa" 
+            sequence="2"/>
+
+        <menuitem 
+            id="main_menu_loan_jenis_menu" 
+            name="Jenis" 
+            parent="wika_config_menu_root" 
+            action="wika_loan_jenis_action"
+            sequence="1"/>
+            
+        <menuitem
+            id="main_menu_wika_tipe_jenis_menu"
+            name="Tipe Jenis"
+            action="wika_tipe_jenis_action"
+            parent="wika_config_menu_root"
+            sequence="2"/>
+
+        <menuitem
+            id="main_menu_wika_loan_stage_menu"
+            name="Stage"
+            action="wika_loan_stage_action"
+            parent="wika_config_menu_root"
+            sequence="3"/>
+
+        <menuitem
+            id="main_menu_wika_loan_allocation_menu"
+            name="Loan Allocation"
+            parent="wika_config_menu_root"
+            action="wika_loan_allocation_action"
+            sequence="4"/>
+    </data>
+    
+</odoo>

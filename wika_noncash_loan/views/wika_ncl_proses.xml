@@ -1,0 +1,71 @@
+<odoo>
+
+    <data>
+
+        <record id="wika_ncl_proses_view_tree" model="ir.ui.view">
+            <field name="name">wika.ncl.proses.view.tree</field>
+            <field name="model">wika.noncash.loan</field>
+            <field name="arch" type="xml">
+                <tree string="">
+                    <field name="no_swift"/>
+                </tree>
+            </field>
+        </record>
+
+        <record id="wika_ncl_proses_view_form" model="ir.ui.view">
+            <field name="name">wika.ncl.proses.view.form</field>
+            <field name="model">wika.noncash.loan</field>
+            <field name="arch" type="xml">
+                <form string="">
+                    <sheet>
+                        <group>
+                            <group string="Input Data">
+							    <!-- <field name="bank_id" options="{'no_mcreate':True,'no_open':True}"
+									attrs="{'readonly': [('stage_name','in',['Setuju','Akseptasi','Disetujui','TR','Perpanjangan'])],
+										'required':[('stage_name','not in',['Pengajuan','Submit','Approve','Reject'])]}"/>
+                                <field name="stage_name" invisible="1"/> -->
+								<!-- <field name="stage_name" invisible="1" />
+								<field name="jenis_id" options="{'no_create':True,'no_open':True}"  domain="[('type_loan', '=', 'Non Cash')]"
+									attrs="{'readonly': [('stage_name','in',['Setuju','Akseptasi','Disetujui','TR','Perpanjangan'])]}" required="1"/>
+								<field name="tipe_jenis"  attrs="{'required':[('nama_jenis','=','BG')]}" options="{'no_create':True,'no_open':True}" 
+                                    domain="[('type_id', '=', type_id)]" widget="selection"/>
+								<field name="branch_id" options="{'no_create':True,'no_open':True}"
+									attrs="{'readonly': [('stage_name','in',['Setuju','Akseptasi','Disetujui','TR','Perpanjangan'])]}"
+									domain="[('eliminasi','!=',True)]" required="1"/>
+								<field name="projek_id" options="{'no_create':True,'no_open':True}"
+									attrs="{'readonly': [('stage_name','in',['Akseptasi','Disetujui','TR'])],
+										'invisible': ['|','|',('anak_perusahaan','!=',False),('department_parent','!=',False),('tipe_jenis_name','in', 
+                                        ['USANCE Pengadaan','Tender'])]}"/>
+								<field name="partner_jo" attrs="{'invisible': [('nama_jenis','!=','BG')]}"/>
+								<field name="vendor_id" options="{'no_create':True,'no_open':True}"
+									attrs="{'readonly': [('stage_name','in',['Akseptasi','Disetujui','TR'])],
+										'invisible': [('anak_perusahaan','!=',False)]}"/>
+								<field name="nama_proyek" attrs="{'invisible': [('tipe_jenis_name','not in',['USANCE Pengadaan','Tender'])]}"/>
+								<field name="nama_vendor" attrs="{'invisible': ['|',('tipe_jenis_name','!=','Tender'),('nama_jenis','!=','BG')]}"/>
+								<field name="nama_nasabah" attrs="{'invisible': [('anak_perusahaan','!=',True)]}"/>
+								<field name="nomor_surat"/>
+								<label for="tenor" string="Tenor" attrs="{'invisible': [('nama_jenis','=','BG')]}"/>
+								<div class="o_address_format" attrs="{'invisible': [('nama_jenis','=','BG')]}">
+									<field name="tenor" class="o_address_city" attrs="{'invisible': [('nama_jenis','=','BG')]}"/>										
+										Hari ,terhitung sejak
+									<field name="sejak" class="o_address_city" attrs="{'invisible': [('nama_jenis','=','BG')]}"/>
+								</div>
+								<field name="sisa_plafond" invisible="1"/>
+								<field name="sisa_plafond_max" invisible="1"/>
+								<field name="tipe_jenis_name" invisible="1"/> -->
+							</group>
+                        </group>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+
+        <record id="wika_ncl_proses_action" model="ir.actions.act_window">
+            <field name="name">NCL Proses</field>
+            <field name="res_model">wika.noncash.loan</field>
+            <field name="view_mode">tree,form</field>
+        </record>
+
+    </data>
+
+</odoo>

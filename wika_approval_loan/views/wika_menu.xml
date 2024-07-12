@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <data>
+    
+        <menuitem
+            id="main_menu_ncl_p"
+            name="proses test"
+            action="wika_ncl_p_action"
+            parent="wika_plafond_bank.wika_ncl_menu_root"
+            sequence="10"/>        
+    
+    </data>
+    
+
+</odoo>

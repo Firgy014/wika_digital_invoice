@@ -590,6 +590,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
             'USD': {'lang': 'en', 'currency_name': 'US Dollar', 'cent_name': 'cents'},
             'GBP': {'lang': 'en', 'currency_name': 'British Pound', 'cent_name': 'pence'},
             'AUD': {'lang': 'en', 'currency_name': 'Australian Dollar', 'cent_name': 'cents'},
+            'JPY': {'lang': 'en', 'currency_name': 'Yen', 'cent_name': 'yen'},
         }
 
         return currency_info.get(currency_name, {'lang': 'id', 'currency_name': 'rupiah', 'cent_name': 'sen'})
@@ -1079,6 +1080,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
             # Get Document Setting
             document_list = []
             doc_setting_id = document_setting_model.search([('model_id', '=', model_id.id)])
+            # print("TESTTT CREATE DOCUMENT", doc_setting_id.name)
 
             if doc_setting_id:
                 for document_line in doc_setting_id:
@@ -1204,7 +1206,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
                         ('folder_id', '=', folder_id.id)
                     ], limit=1)
                     for doc in self.document_ids.filtered(lambda x: x.state in ('uploaded', 'rejected')):
-                        if doc.document_id.name == 'BAP':
+                        if doc.document_id.name in ['BAP', 'RPP']:
                             if not doc.rejected_doc_id:
                                 attachment_id = self.env['ir.attachment'].sudo().create({
                                     'name': doc.filename,

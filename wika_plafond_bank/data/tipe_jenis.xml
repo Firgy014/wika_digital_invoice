@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <data noupdate="1">
+        <!--  BG--> 
+        <record id="tipe_jenis_1" model="wika.tipe.jenis">
+            <field name="name">Tender</field>
+            <field name="jenis_id" ref="loan_jenis_8"/>
+        </record>
+        <record id="tipe_jenis_2" model="wika.tipe.jenis">
+            <field name="name">Pelaksanaan</field>
+            <field name="jenis_id" ref="loan_jenis_8"/>
+        </record>
+        <record id="tipe_jenis_3" model="wika.tipe.jenis">
+            <field name="name">Uang Muka</field>
+            <field name="jenis_id" ref="loan_jenis_8"/>            
+        </record>       
+        <record id="tipe_jenis_4" model="wika.tipe.jenis">
+            <field name="name">Pemeliharaan</field>
+            <field name="jenis_id" ref="loan_jenis_8"/> 
+        </record>  
+        <record id="tipe_jenis_5" model="wika.tipe.jenis">
+            <field name="name">Pembayaran</field>
+            <field name="jenis_id" ref="loan_jenis_8"/> 
+        </record>            
+        <record id="tipe_jenis_6" model="wika.tipe.jenis">
+            <field name="name">Custom Bon</field>
+            <field name="jenis_id" ref="loan_jenis_8"/> 
+        </record> 
+        <record id="tipe_jenis_7" model="wika.tipe.jenis">
+            <field name="name">SBLC</field>
+            <field name="jenis_id" ref="loan_jenis_8"/> 
+        </record> 
+
+        <!--  SKBDN-->    
+		<record id="tipe_jenis_8" model="wika.tipe.jenis">
+            <field name="name">USANCE</field>
+            <field name="jenis_id" ref="loan_jenis_7"/>
+        </record>           
+ 		<record id="tipe_jenis_08" model="wika.tipe.jenis">
+            <field name="name">USANCE Pengadaan</field>
+            <field name="jenis_id" ref="loan_jenis_7"/>
+        </record>  
+        <record id="tipe_jenis_9" model="wika.tipe.jenis">
+            <field name="name">UPAS</field>
+             <field name="jenis_id" ref="loan_jenis_7"/>
+        </record>           
+        <record id="tipe_jenis_10" model="wika.tipe.jenis">
+            <field name="name">UPAU</field>
+            <field name="jenis_id" ref="loan_jenis_7"/>
+        </record>  
+        <record id="tipe_jenis_11" model="wika.tipe.jenis">
+            <field name="name">SIGHT</field>
+             <field name="jenis_id" ref="loan_jenis_7"/>
+        </record>  
+        <record id="tipe_jenis_12" model="wika.tipe.jenis">
+            <field name="name">MIX</field>
+            <field name="jenis_id" ref="loan_jenis_7"/>            
+        </record> 
+        <!--  JAMINAN-->         
+        <record id="tipe_jenis_1a" model="wika.tipe.jenis">
+            <field name="name">Tender</field>
+            <field name="jenis_id" ref="loan_jenis_4"/>
+        </record>
+        <record id="tipe_jenis_2a" model="wika.tipe.jenis">
+            <field name="name">Pelaksanaan</field>
+            <field name="jenis_id" ref="loan_jenis_4"/>
+        </record>
+        <record id="tipe_jenis_3a" model="wika.tipe.jenis">
+            <field name="name">Uang Muka</field>
+            <field name="jenis_id" ref="loan_jenis_4"/>            
+        </record>       
+        <record id="tipe_jenis_4a" model="wika.tipe.jenis">
+            <field name="name">Pemeliharaan</field>
+            <field name="jenis_id" ref="loan_jenis_4"/> 
+        </record>  
+        <record id="tipe_jenis_5a" model="wika.tipe.jenis">
+            <field name="name">Pembayaran</field>
+            <field name="jenis_id" ref="loan_jenis_4"/> 
+        </record>            
+        <record id="tipe_jenis_6a" model="wika.tipe.jenis">
+            <field name="name">Custom Bon</field>
+            <field name="jenis_id" ref="loan_jenis_4"/> 
+        </record> 
+        <record id="tipe_jenis_7a" model="wika.tipe.jenis">
+            <field name="name">SBLC</field>
+            <field name="jenis_id" ref="loan_jenis_4"/> 
+        </record> 
+        <!--  SBLC -->         
+        <record id="tipe_jenis_7b" model="wika.tipe.jenis">
+            <field name="name">SBLC</field>
+            <field name="jenis_id" ref="loan_jenis_9a"/> 
+        </record> 
+    </data>
+    
+
+</odoo>

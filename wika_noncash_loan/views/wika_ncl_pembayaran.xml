@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <data>
+    
+        <record id="wika_ncl_pembayaran_view_tree" model="ir.ui.view">
+            <field name="name">wika.ncl.pembayaran.view.tree</field>
+            <field name="model">wika.ncl.pembayaran</field>
+            <field name="arch" type="xml">
+                <tree string="">
+                    <field name="nomor_swift"/>
+                    <field name="vendor_id"/>
+                    <field name="bank_id"/>
+                    <field name="branch_id"/>
+                    <field name="tgl_jatuh_tempo"/>
+                    <field name="jumlah_pengajuan"/>
+                    <field name="nilai_pokok"/>
+                    <field name="nilai_pokok_asing"/>
+                    <field name="total"/>
+                    <field name="state"/>
+                </tree>
+            </field>
+        </record>
+        
+        <record id="wika_ncl_pembayaran_view_form" model="ir.ui.view">
+            <field name="name">model_name.view.form</field>
+            <field name="model">wika.ncl.pembayaran</field>
+            <field name="arch" type="xml">
+                <form string="">
+                    <header>
+                        <field name="state" widget="statusbar" statusbar_visible="Belum Dibayar,Lunas,TR,Perpanjangan"/>
+                    </header>
+                    <sheet>
+                        <group>
+                            <group col="4">
+                                <field name="loan_id" readonly="1"/>
+                                <field name="nama_jenis" readonly="1"/>
+                                <field name="currency_id" attrs="{'readonly': [('state','=','Lunas')]}"/>
+                                <field name="tgl_jatuh_tempo" attrs="{'readonly': [('state','=','Lunas')]}"/>
+                                <field name="vendor_id" readonly="1"/>
+                                <field name="branch_id"  readonly="1" domain="[('eliminasi', '!=', True)]"/>
+                                <field name="nilai_pokok" attrs="{'readonly': [('state','=','Lunas')]}"/>
+                                <field name="bank_id" readonly="1"/>
+                                <field name="nilai_pokok_asing" attrs="{'readonly': [('state','=','Lunas')]}"/>
+
+                                <field name="nilai_bunga" readonly="1"/>
+                                <label for="keterangan" string="Keterangan"/>
+                                <div>
+                                    <field name="keterangan"/> <br/>
+                                    <field name="sel_over"/>
+                                </div>
+                                <field name="keterangan_jatuh_tempo"/>
+                                <field name="status_akseptasi" invisible="1"/>
+                            </group>
+                            <group col="4">
+                                <field name="kurs_awal" readonly="1"/>
+                                <field name="total" invisible="1"/>
+                                <field name="total" readonly="1"/>
+                                <field name="kurs_baru"/>
+                                <field name="nomor_memorial"/>
+                                <field name="no_sap"/>
+                                <field name="payment_proposal_id_sap"/>
+                                <field name="line_item_sap"/>
+                                <field name="fiscal_year_sap"/>                     			               	
+                            </group>
+                            <group col="4">
+                                <field name="no_swift_akseptasi"/>  
+                                <field name="tgl_swift_akseptasi"/> 
+                                <field name="no_swift_tr"/>
+                                <field name="tgl_swift_tr"/>
+                            </group>
+                        </group>
+                        <notebook>
+							<page string="History TR/Perpanjangan">
+								<field name="tr_ids">
+									<tree create="0" edit="0">
+										<field name="ke" string="TR Ke"/>
+										<field name="tgl_jatuh_tempo_lama"/>
+										<field name="no_swift_lama"/>
+										<field name="tgl_swift_lama"/>
+										<field name="tgl_eksekusi"/>
+									</tree>
+								</field>
+							</page>
+						</notebook>                                           	
+                    </sheet>
+                </form>
+            </field>
+        </record>
+
+        <record id="wika_ncl_pembayaran_action" model="ir.actions.act_window">
+            <field name="name">NCL Pembayaran</field>
+            <field name="res_model">wika.ncl.pembayaran</field>
+            <field name="view_mode">tree,form</field>
+        </record>
+    </data>
+    
+</odoo>

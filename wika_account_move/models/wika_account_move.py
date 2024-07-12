@@ -15,6 +15,7 @@ from io import BytesIO
 from PIL import Image
 import logging, json
 _logger = logging.getLogger(__name__)
+from num2words import num2words
 
 def convertToMbSize(binary_file_size):
     match_file = re.match(r'^(\d+(?:\.\d+)?)\s*([KMG]?)B?$', binary_file_size.decode("utf-8"), re.IGNORECASE)
@@ -118,6 +119,125 @@ class WikaInheritedAccountMove(models.Model):
     is_approval_checked = fields.Boolean(string="Approval Checked", compute='_compute_is_approval_checked', default=False)
     is_wizard_cancel = fields.Boolean(string="Is cancel", default=True)
     is_upd_api_pph_amount = fields.Boolean(string="Is Update PPH From API?", default=False)
+    total_pembayaran = fields.Float('Pembayaran', compute='compute_total_pembayaran')
+    total_pembayaran_um = fields.Float('Pembayaran uang muka', compute='compute_total_pembayaran_um')
+    total_pembayaran_retensi = fields.Float('Pembayaran retensi', compute='compute_total_pembayaran_retensi')
+    terbilang = fields.Char('Terbilang', compute='_compute_rupiah_terbilang')
+
+    # compute bap progress
+    @api.depends('bap_id.total_amount', 'bap_id.dp_total', 'bap_id.retensi_total', 'bap_id.total_tax', 'pph_amount')
+    def compute_total_pembayaran(self):
+        for record in self:
+            total_amount = record.bap_id.total_amount or 0.0
+            dp_total = record.bap_id.dp_total or 0.0
+            retensi_total = record.bap_id.retensi_total or 0.0
+            pph_amount = record.pph_amount or 0.0
+
+            if record.bap_id.total_tax:
+                total_tax = record.bap_id.total_tax
+            else:
+                total_tax = 0.0
+
+            total_tax_lines = 0.0
+            for line in record.bap_id.bap_ids:
+                total_tax_lines += sum(line.tax_ids.filtered(lambda tax: tax.name not in ('V3', 'VA', 'VB')).mapped('amount'))
+
+            total_tax = (total_amount - dp_total - retensi_total) * (total_tax_lines / 100)
+            record.total_pembayaran = total_amount - dp_total - retensi_total + total_tax - pph_amount
+
+    # compute bap uang muka
+    @api.depends('bap_id.dp_total', 'pph_amount')
+    def compute_total_pembayaran_um(self):
+        for record in self:
+            dp_total = record.bap_id.dp_total or 0.0
+            pph_amount = record.pph_amount or 0.0
+            persentase = 0.11
+            total_pembayaran_um = dp_total + (dp_total * persentase) - pph_amount
+            record.total_pembayaran_um = total_pembayaran_um
+
+    # compute bap retensi
+    @api.depends('bap_id.retensi_total', 'pph_amount')
+    def compute_total_pembayaran_retensi(self):
+        for record in self:
+            retensi_total = record.bap_id.retensi_total or 0.0
+            pph_amount = record.pph_amount or 0.0
+            total_pembayaran_retensi = retensi_total - pph_amount
+            record.total_pembayaran_retensi = total_pembayaran_retensi
+
+    # list currency
+    def _get_currency_info(self, currency_name):
+        currency_info = {
+            'EUR': {'lang': 'en', 'currency_name': 'Euro', 'cent_name': 'cents'},
+            'IDR': {'lang': 'id', 'currency_name': 'rupiah', 'cent_name': 'sen'},
+            'USD': {'lang': 'en', 'currency_name': 'US Dollar', 'cent_name': 'cents'},
+            'GBP': {'lang': 'en', 'currency_name': 'British Pound', 'cent_name': 'pence'},
+            'AUD': {'lang': 'en', 'currency_name': 'Australian Dollar', 'cent_name': 'cents'},
+            'JPY': {'lang': 'en', 'currency_name': 'Yen', 'cent_name': 'yen'},
+        }
+
+        return currency_info.get(currency_name, {'lang': 'id', 'currency_name': 'rupiah', 'cent_name': 'sen'})
+
+    # terbilang digabungkan
+    @api.depends('total_pembayaran', 'total_pembayaran_um', 'total_pembayaran_retensi', 'currency_id', 'bap_id.bap_type')
+    def _compute_rupiah_terbilang(self):
+        for record in self:
+            amount = 0.0
+            if record.bap_id.bap_type == 'uang muka':
+                amount = record.total_pembayaran
+            elif record.bap_id.bap_type == 'progress':
+                amount = record.total_pembayaran
+            elif record.bap_id.bap_type == 'retensi':
+                amount = record.total_pembayaran_retensi
+
+            if amount:
+                currency = self._get_currency_info(record.currency_id.name)
+                lang = currency['lang']
+                currency_name = currency['currency_name']
+                cent_name = currency['cent_name']
+
+                total_int = int(amount)
+                terbilang = num2words(total_int, lang=lang) + " " + currency_name
+                cents = int((amount - total_int) * 100)
+                if cents > 0:
+                    if lang == 'en':
+                        terbilang += " and " + num2words(cents, lang=lang) + " " + cent_name
+                    else:
+                        terbilang += " dan " + num2words(cents, lang=lang) + " " + cent_name
+                record.terbilang = terbilang
+            else:
+                record.terbilang = ""
+
+    @api.onchange('is_mp_approved')
+    def _onchange_is_mp_approved(self):
+        if not self.is_mp_approved:
+            # Hapus document_ids yang terkait dengan BAP
+            self.document_ids.filtered(lambda doc: doc.document_id.name == 'BAP').unlink()
+
+        if self.is_mp_approved:
+            model_model = self.env['ir.model'].sudo()
+            document_setting_model = self.env['wika.document.setting'].sudo()
+            model_id = model_model.search([('model', '=', 'account.move')], limit=1)
+            bap_document_setting = document_setting_model.search([('name', '=', 'BAP'), ('model_id', '=', model_id.id)], limit=1)
+
+            if bap_document_setting:
+                document_list = [(0, 0, {
+                    'invoice_id': self.id,
+                    'document_id': bap_document_setting.id,
+                    'state': 'waiting'
+                })]
+                self.document_ids = document_list
+            else:
+                raise AccessError("Setting dokumen BAP tidak ditemukan!")
+
+    def action_print_bap_invoice(self):
+        if self.bap_type == 'progress':
+            return self.env.ref('wika_account_move.report_bap_progress_action').report_action(self)
+        elif self.bap_type == 'uang muka':
+            return self.env.ref('wika_account_move.report_bap_uang_muka_action').report_action(self)
+        elif self.bap_type == 'retensi':
+            return self.env.ref('wika_account_move.report_bap_retensi_action').report_action(self)
+        else:
+            return super(WikaInheritedAccountMove, self).action_print_bap()
 
     # validasi posting date jika -1 bulan
     @api.constrains('posting_date')
@@ -934,12 +1054,13 @@ class WikaInheritedAccountMove(models.Model):
                 doc_setting_id = document_setting_model.search([('model_id', '=', model_id.id)])
                 if doc_setting_id:
                     for document_line in doc_setting_id:
-                        document_list.append((0, 0, {
-                            'invoice_id': self.id,
-                            'document_id': document_line.id,
-                            'state': 'waiting'
-                        }))
-                    self.document_ids = document_list
+                        if document_line.name != 'BAP':
+                            document_list.append((0, 0, {
+                                'invoice_id': res.id,
+                                'document_id': document_line.id,
+                                'state': 'waiting'
+                            }))
+                    res.document_ids = document_list
                 else:
                     raise AccessError("Data dokumen tidak ada!")
 
@@ -1388,6 +1509,10 @@ class WikaInheritedAccountMove(models.Model):
         
 
     def action_approve(self):
+        for record in self:
+            if any(not line.document for line in record.document_ids):
+                raise ValidationError('Document belum di unggah, mohon unggah file terlebih dahulu!')
+
         # self.write({'is_wizard_cancel': False})
         user = self.env['res.users'].search([('id', '=', self._uid)], limit=1)
         documents_model = self.env['documents.document'].sudo()
@@ -1472,6 +1597,64 @@ class WikaInheritedAccountMove(models.Model):
             if is_mp == True:
                 self.is_mp_approved = True
 
+            if self.is_mp_approved:
+                model_model = self.env['ir.model'].sudo()
+                document_setting_model = self.env['wika.document.setting'].sudo()
+                model_id = model_model.search([('model', '=', 'account.move')], limit=1)
+                bap_document_setting = document_setting_model.search([('name', '=', 'BAP'), ('model_id', '=', model_id.id)], limit=1)
+
+                # Cek apakah BAP sudah ada
+                existing_bap = self.document_ids.filtered(lambda doc: doc.document_id.name == 'BAP')
+                if not existing_bap and bap_document_setting:
+                    document_list = [(0, 0, {
+                        'invoice_id': self.id,
+                        'document_id': bap_document_setting.id,
+                        'state': 'waiting'
+                    })]
+                    self.document_ids = document_list
+                elif not bap_document_setting:
+                    raise AccessError("Setting dokumen BAP tidak ditemukan!")
+            
+                folder_id = self.env['documents.folder'].sudo().search([('name', '=', 'Invoicing')], limit=1)
+                if folder_id:
+                    facet_id = self.env['documents.facet'].sudo().search([
+                        ('name', '=', 'Documents'),
+                        ('folder_id', '=', folder_id.id)
+                    ], limit=1)
+                    for doc in self.document_ids.filtered(lambda x: x.state in ('uploaded', 'rejected')):
+                        if doc.document_id.name == 'BAP':
+                            if not doc.rejected_doc_id:
+                                attachment_id = self.env['ir.attachment'].sudo().create({
+                                    'name': doc.filename,
+                                    'datas': doc.document,
+                                    'res_model': 'documents.document'
+                                })
+                                if attachment_id:
+                                    tag = self.env['documents.tag'].sudo().search([
+                                        ('facet_id', '=', facet_id.id),
+                                        ('name', '=', doc.document_id.name)
+                                    ], limit=1)
+                                    print("CHECK DOC BAP DI INVOICING ADA APA ENGGAK!", doc.document_id.name)
+                                    # print("CHECK DOC BAP DI INVOICING ADA APA ENGGAK!", tag)
+                                    existing_document = documents_model.search([('name', '=', doc.filename)], limit=1)
+                                    if not existing_document:
+                                        documents_model.create({
+                                            'attachment_id': attachment_id.id,
+                                            'folder_id': folder_id.id,
+                                            'tag_ids': tag.ids,
+                                            'partner_id': doc.invoice_id.partner_id.id,
+                                            'purchase_id': self.po_id.id,
+                                            'invoice_id': self.id,
+                                        })
+                        else:
+                            if doc.rejected_doc_id:
+                                doc.rejected_doc_id.attachment_id.write({
+                                    'name': doc.filename,
+                                    'datas': doc.document,
+                                    'res_model': 'documents.document'
+                                })
+                                doc.rejected_doc_id.write({'active': True})
+                    
             if approval_id.total_approve == self.step_approve:
                 self.state = 'approved'
                 self.approval_stage = 'Pusat'

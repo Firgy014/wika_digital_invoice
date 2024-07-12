@@ -1,0 +1,116 @@
+<odoo>
+
+    <data>
+    
+        <record id="wika_ncl_input_view_tree" model="ir.ui.view">
+            <field name="name">wika.ncl.input.view.tree</field>
+            <field name="model">wika.noncash.loan</field>
+            <field name="arch" type="xml">
+                <tree string="">
+                    <field name="name"/>
+                    <field name="no_swift" />
+                    <field name="plafond_bank_id" />
+					<field name="vendor_id" />
+					<field name="tgl_mulai" />
+					<field name="tgl_akhir" />
+					<field name="branch_id" />
+					<field name="jumlah_pengajuan" sum="Total Pengajuan" />
+                    <field name="jumlah_pengajuan_asing" sum="Nilai Pengajuan Asing"/>
+					<field name="dalam_proses" sum="Total Oustanding"/>
+					<field name="sisa_outstanding" sum="Total Oustanding"/>
+					<field name="stage_id" />
+                    <field name="currency_id" readonly="1"/>
+                </tree>
+            </field>
+        </record>
+        
+        <record id="wika_ncl_input_view_form" model="ir.ui.view">
+            <field name="name">wika.ncl.input.view.form</field>
+            <field name="model">wika.noncash.loan</field>
+            <field name="arch" type="xml">
+                <form string="">
+                    <sheet>
+                        <div class="oe_title">
+							<h1>
+								<field name="name" nolabel="1" readonly="1"/>
+							</h1>
+						</div>
+						<group>
+							<group string="Input Data">
+                                <field name="jenis_nasabah"/>
+							    <field name="bank_id" readonly="0"/>													
+								<field name="jenis_id" readonly="0"/>
+                                <field name="plafond_bank_id" />
+								<field name="tipe_jenis" readonly="0"/>
+								<field name="branch_id"  readonly="0" domain="[('eliminasi', '!=', True)]"/>
+								<field name="projek_id" readonly="0"/>
+								<field name="vendor_id" readonly="0"/>
+								<field name="nama_proyek" readonly="1" attrs="{'invisible': [('anak_perusahaan','!=',True)]}"/>
+								<field name="nama_nasabah" readonly="1" attrs="{'invisible': [('anak_perusahaan','!=',True)]}"/>
+								<field name="nomor_surat" readonly="1"/>
+								<label for="tenor" string="Tenor" readonly="1"/>
+								<div class="o_address_format">
+									<field name="tenor" class="o_address_city" readonly="0"/>										
+										Hari ,terhitung sejak
+									<field name="sejak" class="o_address_city" readonly="0"/>
+								</div>
+                                <field name="catatan"/>
+                                <field name="invoice_id"/>
+								<field name="sisa_plafond" invisible="1"/>
+								<field name="sisa_plafond_max" invisible="1"/>
+                                <!-- <field name="stage_name" invisible="1" /> -->
+								<field name="nama_jenis" invisible="1" />
+								<field name="anak_perusahaan" invisible="1"/>
+								<field name="department_parent" invisible="1"/>
+								<field name="company_currency" invisible="1"/>
+							</group>
+							<group>
+								<field name="tgl_pembukaan" readonly="0"/>			
+								<field name="currency_id" readonly="0"/>
+                                <field name="nomor_bukti"/>
+                                <field name="tanggal_kontrak"/>
+                                <field name="nomor_kontrak"/>
+                                <field name="nilai_pokok_tagihan"/>
+                                <field name="ppn"/>
+                                <field name="nilai_pokok_ppn"/>
+                                <field name="potongan_pph_persen"/>
+                                <field name="potongan_pph"/>
+                                <field name="potongan_lain"/>
+                                <field name="nilai_tagihan_netto"/>
+								<field name="jumlah_pengajuan" readonly="0"/>
+								<!-- <field name="no_rekening"  readonly="0"/>
+								<field name="plafond_bank_id" readonly="0" />
+						
+								<field name="masa_klaim" readonly="0"/>
+								<field name="tgl_jatuh_tempo"/>					 -->
+							</group>
+                        </group>
+                        <!-- <notebook>
+                            <page name="audit_log" string="History Approval">
+                                <field name="audit_log_ids" nolabel="1" readonly="1">
+                                    <tree>
+                                        <field name="date"/>
+                                        <field name="level"/>
+                                        <field name="user_id"/>
+                                        <field name="groups_id"/>
+                                        <field name="description"/>
+                                    </tree>
+                                </field>
+                            </page>
+                        </notebook> -->
+                    </sheet>
+                </form>
+            </field>
+        </record>
+
+
+        <record id="wika_ncl_input_action" model="ir.actions.act_window">
+            <field name="name">NCL Input</field>
+            <field name="res_model">wika.noncash.loan</field>
+            <field name="view_mode">tree,form</field>
+        </record>
+
+    </data>
+    
+
+</odoo>

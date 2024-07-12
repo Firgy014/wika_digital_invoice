@@ -1,0 +1,4 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_wika_noncash_loan, Non Cash Loan,model_wika_noncash_loan,,1,1,1,1
+access_wika_ncl_pembayaran, NCL Pembayaran,model_wika_ncl_pembayaran,,1,1,1,1
+access_wika_loan_log_tr, Loan Log TR,model_wika_loan_log_tr,,1,1,1,1
