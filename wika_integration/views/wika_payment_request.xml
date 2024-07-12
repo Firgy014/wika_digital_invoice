@@ -7,7 +7,7 @@
             <field name="inherit_id" ref="wika_payment_request.wika_payment_request_view_form"/>
             <field name="arch" type="xml">
                 <xpath expr="//header/button[@name='action_approve']" position="after">
-                    <button name="send_reclass_ppn_waba" type="object" string="SEND RECLASS PPN WABA" states="request" class="btn-warning"/>
+                    <button name="send_reclass_ppn_waba" type="object" string="SEND RECLASS PPN WABA" states="verified" class="btn-warning"/>
                 </xpath>
             </field>
         </record>

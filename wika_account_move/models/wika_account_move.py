@@ -401,9 +401,19 @@ class WikaInheritedAccountMove(models.Model):
     activity_user_id = fields.Many2one('res.users', string='ToDo User', store=True)
     error_narration = fields.Char(string='Error Narration')
     is_paralel_rejection = fields.Boolean(string="Invoice Included in Reject Paralel", default=False)
+
+    #penambahan dari wika integration
+    is_generated = fields.Boolean(string='Generated to TXT File', default=False)
+    year = fields.Char(string='Invoice Year')
+    dp_doc = fields.Char(string='DP Doc')
+    retensi_doc = fields.Char(string='Retensi Doc')
     sap_amount_payment = fields.Float('Amount Payment', tracking=True)
     amount_due = fields.Float('Amount Due', compute='_compute_amount_due')
+    amount_idr = fields.Float(string='Amount IDR', store=True)
+    is_pr_sent_to_sap = fields.Boolean(string='Is Have a PR Sent to SAP', default=False, store=True)
+    is_verified_as_pr = fields.Char(string='Is Have a PR Sent to SAP', store=True, default='no')
 
+    @api.depends('amount_total_footer', 'sap_amount_payment', 'total_line')
     def _compute_amount_due(self):
         _logger.info("# === _compute_amount_due === #")
         for rec in self:
@@ -414,11 +424,22 @@ class WikaInheritedAccountMove(models.Model):
                 # residual_amount = rec.sisa_partial
             else:    
                 total_paid = rec.sap_amount_payment
-                residual_amount = rec.total_line - total_paid
+                residual_amount = rec.amount_total_footer - total_paid
             
-            _logger.info("Total Paid %s Residual Amount %s" % (str(total_paid), str(residual_amount)))
+            _logger.info("Total Footer %s Total Paid %s Residual Amount %s" % (str(rec.amount_total_footer), str(total_paid), str(residual_amount)))
 
             rec.amount_due = residual_amount
+    
+    def _compute_status_payment(self):
+        for rec in self:
+            rec._compute_amount_due()
+            if rec.state != 'draft':
+                if rec.amount_due <= 0:
+                    rec.status_payment = 'Paid'
+                else:
+                    rec.status_payment = 'Not Request'
+            else:
+                rec.status_payment = 'Not Request'
 
     @api.depends('bap_id.bap_type')
     def _compute_bap_type(self):
@@ -1388,7 +1409,10 @@ class WikaInheritedAccountMove(models.Model):
                 status = data["STATUS"]
                 new_name = doc_number+str(year)
 
-                if self.partner_id.company_id.id and self.status_payment != 'Paid':
+                if self.partner_id.company_id.id and self.status_payment != 'Paid' and year == str(self.year):
+                    self.sap_amount_payment = abs(amount)
+                    self._compute_status_payment()
+                elif self.partner_id.company_id.id and self.status_payment != 'Paid' and year == str(self.date.year):
                     self.sap_amount_payment = abs(amount)
                     self._compute_status_payment()
 
