@@ -293,6 +293,7 @@ class WikaInheritedAccountMove(models.Model):
     is_pr_sent_to_sap = fields.Boolean(string='Is Have a PR Sent to SAP', default=False, store=True)
     is_verified_as_pr = fields.Char(string='Is Have a PR Sent to SAP', store=True, default='no')
 
+    @api.depends('amount_total_footer', 'sap_amount_payment', 'total_line')
     def _compute_amount_due(self):
         _logger.info("# === _compute_amount_due === #")
         for rec in self:
@@ -305,7 +306,7 @@ class WikaInheritedAccountMove(models.Model):
                 total_paid = rec.sap_amount_payment
                 residual_amount = rec.amount_total_footer - total_paid
             
-            _logger.info("Total Paid %s Residual Amount %s" % (str(total_paid), str(residual_amount)))
+            _logger.info("Total Footer %s Total Paid %s Residual Amount %s" % (str(rec.amount_total_footer), str(total_paid), str(residual_amount)))
 
             rec.amount_due = residual_amount
     
