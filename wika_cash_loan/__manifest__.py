@@ -31,6 +31,7 @@
         'views/wika_cash_loan.xml',
         'views/wika_cl_payment.xml',
         'views/wika_cash_loan_inherit.xml',
+        'views/sequence.xml',
     ],
     # only loaded in demonstration mode
     'demo': [

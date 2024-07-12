@@ -9,6 +9,7 @@ from calendar import monthrange
 class WikaPlafondBank(models.Model):
     _name = 'wika.plafond.bank'
     _description = 'Wika Plafond Bank'
+    _rec_name = 'nama_kontrak'
     _inherit = ['mail.thread']
 
     nomor_kontrak = fields.Char(string='Nomor Kontrak', required=True)

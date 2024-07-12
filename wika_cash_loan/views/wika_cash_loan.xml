@@ -26,6 +26,16 @@
             <field name="arch" type="xml">
                 <form string="">
                     <header>
+                        <button name="request" type="object" string="Meminta Persetujuan" class="oe_highlight" 
+                            attrs="{'invisible': [('stage_name','!=','Pengajuan')]}"/>
+                        <button name="approve" type="object" string="Disetujui" class="oe_highlight" 
+                            attrs="{'invisible': [('stage_name','!=','Diajukan')]}"/>
+                        <button name="notapprove" type="object" string="Ditolak" 
+                            attrs="{'invisible': [('stage_name','!=','Diajukan')]}"/>
+                        <button name="penarikan" type="object" string="Penarikan" 
+                            attrs="{'invisible': [('stage_name','!=','Disetujui')]}"/>
+                        <button name="cancel" type="object" string="Batal"
+							attrs="{'invisible': [('stage_name','not in',['Disetujui','Penarikan'])]}" />
                         <field name="stage_id" widget="statusbar" />
                     </header>
                     <sheet>
@@ -70,7 +80,8 @@
                             </group>                 
                         </group>
                         <notebook>
-	                      	<page name="rencana_pembayaran" string="Rencana Pembayaran">
+	                      	<page name="rencana_pembayaran" string="Rencana Pembayaran" 
+                                attrs="{'invisible': [('stage_name','not in',['Penarikan','Perpanjangan','Lunas'])]}">
 								<field name="payment_ids" nolable="1">
                         			<tree editable="bottom">
                         				<field name="tgl_jatuh_tempo"/>

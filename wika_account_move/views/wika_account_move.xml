@@ -18,6 +18,7 @@
                     <button name="get_dp_payment_status" string="Update DP Payment Status" type="object" groups="base.group_no_one" attrs="{'invisible': [('status_payment', '=', 'Paid')]}"/>
                     <button name="get_payment_status" string="Update Payment Status" type="object" groups="base.group_no_one" attrs="{'invisible': [('status_payment', '=', 'Paid')]}"/>
                     <button name="update_journal_item_sap" string="Update Journal Item" type="object" class="oe_highlight"/>
+                    <button name="action_print_bap_invoice" type="object" string="Print BAP" states="draft" class="oe_highlight"/>
                     <field name="state" widget="statusbar" statusbar_visible="draft,uploaded,approved"/>
                 </header>
                 <sheet>
@@ -45,6 +46,10 @@
                            <field name="amount_invoice" style="background-color: #dddded;" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
                            <field name="no_faktur_pajak" style="background-color: #dddded;" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
                            <field name="currency_id" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}"/>
+                           <field name="total_pembayaran" invisible="1"/>
+                            <field name="total_pembayaran_um" invisible="1"/>
+                            <field name="total_pembayaran_retensi" invisible="1"/>
+                            <field name="terbilang" invisible="1"/>
                            <field name="status_payment" invisible="1"/>
 
                       </group>
@@ -156,8 +161,8 @@
                                 </group>
                             </page>
                             <page string="List Document">
-                                <field name="document_ids" attrs="{'readonly': [('state', 'not in', ['draft','rejected'])]}">
-                                    <tree create="0" delete="0">
+                                <field name="document_ids" attrs="{'readonly': [('state', 'not in', ['draft', 'uploaded', 'rejected'])]}">
+                                    <tree create="1" delete="1">
                                         <field name="document_id"/>
                                         <field name="picking_id" string="Rejected GR/SES No"/>
                                         <field name="document" force_save="1" attrs="{'readonly': [('state', 'not in', ['waiting','rejected'])]}" widget="binary_button" filename="filename"/>
