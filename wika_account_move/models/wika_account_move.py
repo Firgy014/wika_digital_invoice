@@ -290,6 +290,8 @@ class WikaInheritedAccountMove(models.Model):
     sap_amount_payment = fields.Float('Amount Payment', tracking=True)
     amount_due = fields.Float('Amount Due', compute='_compute_amount_due')
     amount_idr = fields.Float(string='Amount IDR', store=True)
+    is_pr_sent_to_sap = fields.Boolean(string='Is Have a PR Sent to SAP', default=False, store=True)
+    is_verified_as_pr = fields.Char(string='Is Have a PR Sent to SAP', store=True, default='no')
 
     def _compute_amount_due(self):
         _logger.info("# === _compute_amount_due === #")

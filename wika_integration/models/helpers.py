@@ -230,71 +230,50 @@ WHERE
 def _get_computed_query_reclass_ppn_waba(payment_id):
     return f"""
 SELECT
-  COALESCE(inv.name, partial_inv.name) AS NO,
-  COALESCE(inv.payment_reference, partial_inv.payment_reference) AS DOC_NUMBER,
-  TO_CHAR(COALESCE(inv.date, partial_inv.date), 'YYYY') AS DOC_YEAR,
-  TO_CHAR(COALESCE(inv.date, partial_inv.date), 'YYYYMMDD') AS POSTING_DATE,
-  TO_CHAR(COALESCE(inv.date, partial_inv.date), 'FMmm') AS PERIOD
-FROM wika_payment_request pay
-LEFT JOIN (
-  SELECT * FROM account_move_wika_payment_request_rel WHERE account_move_id IS NOT NULL
-) AS rel ON pay.id = {payment_id.id}
-LEFT JOIN account_move inv ON inv.id = rel.account_move_id
-LEFT JOIN wika_partial_payment_request_wika_payment_request_rel partial_rel ON pay.id = {payment_id.id}
-LEFT JOIN wika_partial_payment_request partial_pay ON partial_pay.id = partial_rel.wika_partial_payment_request_id
-LEFT JOIN account_move partial_inv ON partial_inv.id = partial_pay.invoice_id
-UNION ALL
-SELECT
-  partial_inv.name AS NO,
-  partial_inv.payment_reference AS DOC_NUMBER,
-  TO_CHAR(partial_inv.date, 'YYYY') AS DOC_YEAR,
-  TO_CHAR(partial_inv.date, 'YYYYMMDD') AS POSTING_DATE,
-  TO_CHAR(partial_inv.date, 'FMmm') AS PERIOD
-FROM wika_payment_request pay
-LEFT JOIN wika_partial_payment_request_wika_payment_request_rel partial_rel ON pay.id = {payment_id.id}
-LEFT JOIN wika_partial_payment_request partial_pay ON partial_pay.id = partial_rel.wika_partial_payment_request_id
-LEFT JOIN account_move partial_inv ON partial_inv.id = partial_pay.invoice_id
-WHERE pay.id = {payment_id.id}
-  AND (partial_inv.payment_reference IS NOT NULL)
-  AND (partial_inv.is_waba = true);
-    """
+    inv.name AS NO,
+    inv.payment_reference AS DOC_NUMBER,
+    TO_CHAR(inv.date, 'YYYY') AS DOC_YEAR,
+    TO_CHAR(pay.date, 'YYYYMMDD') AS POSTING_DATE,
+    TO_CHAR(pay.date, 'FMmm') AS PERIOD
+FROM
+    wika_payment_request pay
+LEFT JOIN
+    wika_payment_request_line line ON line.pr_id = pay.id
+LEFT JOIN
+    account_move inv ON inv.id = line.invoice_id
+WHERE
+    pay.id = {payment_id.id}
+    AND inv.is_verified_as_pr = 'no'
+    AND line.invoice_id IS NOT NULL;
+"""
+
 #     return f"""
 # SELECT
-#     inv.name AS NO,
-#     inv.payment_reference AS DOC_NUMBER,
-#     TO_CHAR(inv.date, 'YYYY') AS DOC_YEAR,
-#     TO_CHAR(inv.date, 'YYYYMMDD') AS POSTING_DATE,
-#     TO_CHAR(inv.date, 'FMmm') AS PERIOD
-# FROM
-#     wika_payment_request pay
-# LEFT JOIN
-#     account_move_wika_payment_request_rel rel ON pay.id = {payment_id.id}
-# LEFT JOIN
-#     account_move inv ON inv.id = rel.account_move_id
-# WHERE
-#     pay.id = {payment_id.id}
-#     AND pay.is_sent_to_sap = false    
-#     AND inv.payment_reference IS NOT NULL
-#     AND inv.is_waba = true
-
-# UNION
-
+#   COALESCE(inv.name, partial_inv.name) AS NO,
+#   COALESCE(inv.payment_reference, partial_inv.payment_reference) AS DOC_NUMBER,
+#   TO_CHAR(COALESCE(inv.date, partial_inv.date), 'YYYY') AS DOC_YEAR,
+#   TO_CHAR(COALESCE(inv.date, partial_inv.date), 'YYYYMMDD') AS POSTING_DATE,
+#   TO_CHAR(COALESCE(inv.date, partial_inv.date), 'FMmm') AS PERIOD
+# FROM wika_payment_request pay
+# LEFT JOIN (
+#   SELECT * FROM account_move_wika_payment_request_rel WHERE account_move_id IS NOT NULL
+# ) AS rel ON pay.id = {payment_id.id}
+# LEFT JOIN account_move inv ON inv.id = rel.account_move_id
+# LEFT JOIN wika_partial_payment_request_wika_payment_request_rel partial_rel ON pay.id = {payment_id.id}
+# LEFT JOIN wika_partial_payment_request partial_pay ON partial_pay.id = partial_rel.wika_partial_payment_request_id
+# LEFT JOIN account_move partial_inv ON partial_inv.id = partial_pay.invoice_id
+# UNION ALL
 # SELECT
-#     partial_inv.name AS NO,
-#     partial_inv.payment_reference AS DOC_NUMBER,
-#     TO_CHAR(partial_inv.date, 'YYYY') AS DOC_YEAR,
-#     TO_CHAR(partial_inv.date, 'YYYYMMDD') AS POSTING_DATE,
-#     TO_CHAR(partial_inv.date, 'FMmm') AS PERIOD
-# FROM
-#     wika_payment_request pay
-# LEFT JOIN
-#     wika_partial_payment_request_wika_payment_request_rel partial_rel ON pay.id = {payment_id.id}
-# LEFT JOIN
-#     wika_partial_payment_request partial_pay ON partial_pay.id = partial_rel.wika_partial_payment_request_id
-# LEFT JOIN
-#     account_move partial_inv ON partial_inv.id = partial_pay.invoice_id
-# WHERE
-#     pay.id = {payment_id.id}
-#     AND partial_inv.payment_reference IS NOT NULL
-#     AND partial_inv.is_waba = true;
-# """
+#   partial_inv.name AS NO,
+#   partial_inv.payment_reference AS DOC_NUMBER,
+#   TO_CHAR(partial_inv.date, 'YYYY') AS DOC_YEAR,
+#   TO_CHAR(partial_inv.date, 'YYYYMMDD') AS POSTING_DATE,
+#   TO_CHAR(partial_inv.date, 'FMmm') AS PERIOD
+# FROM wika_payment_request pay
+# LEFT JOIN wika_partial_payment_request_wika_payment_request_rel partial_rel ON pay.id = {payment_id.id}
+# LEFT JOIN wika_partial_payment_request partial_pay ON partial_pay.id = partial_rel.wika_partial_payment_request_id
+# LEFT JOIN account_move partial_inv ON partial_inv.id = partial_pay.invoice_id
+# WHERE pay.id = {payment_id.id}
+#   AND (partial_inv.payment_reference IS NOT NULL)
+#   AND (partial_inv.is_waba = true);
+    
