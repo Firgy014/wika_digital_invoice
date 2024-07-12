@@ -90,7 +90,7 @@ class wika_get_payment_status(models.Model):
                                 account_move2 = self.env['account.move'].search([
                                     ('move_type', '=', 'in_invoice'),
                                     ('payment_reference', '=', doc_number),
-                                    '|', ('date', '>=', date_from), ('date', '<=', date_to)], limit=1)
+                                    ('date', '>=', date_from), ('date', '<=', date_to)], limit=1)
                                 _logger.info("# === ACCOUNT MOVE 2 === #")
                                 if account_move2:
                                     account_move = account_move2
@@ -203,7 +203,7 @@ class wika_get_payment_status(models.Model):
                                 account_move2 = self.env['account.move'].search([
                                     ('move_type', '=', 'in_invoice'),
                                     ('payment_reference', '=', doc_number),
-                                    '|', ('date', '>=', date_from), ('date', '<=', date_to)], limit=1)
+                                    ('date', '>=', date_from), ('date', '<=', date_to)], limit=1)
                                 _logger.info("# === ACCOUNT MOVE 2 === #")
                                 if account_move2:
                                     account_move = account_move2
