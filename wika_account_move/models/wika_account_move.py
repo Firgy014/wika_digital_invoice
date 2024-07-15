@@ -151,8 +151,7 @@ class WikaInheritedAccountMove(models.Model):
         for record in self:
             dp_total = record.bap_id.dp_total or 0.0
             pph_amount = record.pph_amount or 0.0
-            persentase = 0.11
-            total_pembayaran_um = dp_total + (dp_total * persentase) - pph_amount
+            total_pembayaran_um = dp_total - pph_amount
             record.total_pembayaran_um = total_pembayaran_um
 
     # compute bap retensi
@@ -183,7 +182,7 @@ class WikaInheritedAccountMove(models.Model):
         for record in self:
             amount = 0.0
             if record.bap_id.bap_type == 'uang muka':
-                amount = record.total_pembayaran
+                amount = record.total_pembayara_um
             elif record.bap_id.bap_type == 'progress':
                 amount = record.total_pembayaran
             elif record.bap_id.bap_type == 'retensi':

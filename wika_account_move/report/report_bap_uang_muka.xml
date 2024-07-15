@@ -565,7 +565,7 @@
                                     <!-- <td style="text-align: left; padding: 1px;"><t t-esc="o.currency_id.symbol"/>.</td> -->
                                 </tr>
                                 <!-- <t t-set="total_pembayaran" t-value="jumlah_total_netto + o.total_tax - o.total_pph"/> -->
-                                <t t-set="total_pembayaran" t-value="o.bap_id.dp_total + ppn - o.pph_amount"/>
+                                <t t-set="total_pembayaran" t-value="o.bap_id.dp_total - o.pph_amount"/>
                                 <tr>
                                     <th style="padding: 1px;" scope="row">5.</th>
                                     <td style="padding: 1px;">
