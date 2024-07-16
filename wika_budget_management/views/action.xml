@@ -31,19 +31,18 @@
             <field name="target">current</field>
         </record>
 
-        <!-- <record id="setting_account_action_window_id" model="ir.actions.act_window">
+        <record id="setting_account_action_window_id" model="ir.actions.act_window">
             <field name="name">Master Status</field>
-            <field name="res_model">setting.account.expense</field>
+            <field name="res_model">wika.setting.account.expense</field>
             <field name="target">current</field>
             <field name="context">{}</field>
             <field name="domain">[]</field>
             <field name="limit">80</field>
-            <field name="view_type">form</field>
             <field name="view_mode">tree,form</field>
             <field name="help" type="html">
                 <p class="oe_view_nocontent_create">Tambahkan Data Setting Account</p>
             </field>
-        </record> -->
+        </record>
 
         <record id="tipe_budget_action_3_2" model="ir.actions.act_window">
             <field name="name">Tipe Budget</field>

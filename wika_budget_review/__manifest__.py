@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 {
-    'name': "wika_budget_management",
+    'name': "wika_budget_review",
 
     'summary': """
         Short (1 phrase/line) summary of the module's purpose, used as
@@ -20,22 +20,12 @@
     'version': '0.1',
 
     # any module necessary for this one to work correctly
-    'depends': [
-        'base',
-        'branch',
-        'account',
-        'account_asset'
-    ],
+    'depends': ['base'],
 
     # always loaded
     'data': [
-        'security/ir.model.access.csv',
+        # 'security/ir.model.access.csv',
         'views/views.xml',
-        'views/budget_views.xml',
-        'views/expense_account_setting_views.xml',
-        # 'views/review_views.xml',
-        'views/action.xml',
-        'views/menu.xml',
         'views/templates.xml',
     ],
     # only loaded in demonstration mode

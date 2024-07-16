@@ -20,11 +20,11 @@
                   parent="budget_menu_1_3"
                   action="grup_action"
                   sequence="2"/>
-        <!-- <menuitem id="setting_account_menu"
+        <menuitem id="setting_account_menu"
                   name="Setting Account"
                   parent="budget_menu_1_3"
                   action="setting_account_action_window_id"
-                  sequence="2"/> -->
+                  sequence="2"/>
         <menuitem id="tipe_budget_menu"
                   name="Tipe Budget"
                   parent="budget_menu_1_3"
