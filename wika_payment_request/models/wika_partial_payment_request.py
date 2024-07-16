@@ -51,9 +51,20 @@ class WikaPartialPaymentRequest(models.Model):
     payment_state = fields.Selection([
         ('not request', 'Not Request'),
         ('requested', 'Requested'),
+        ('paid', 'Paid'),
     ], string='Payment State', default ='not request')
     payment_request_id = fields.Many2one('wika.payment.request', string='field_name')
-    amount_net = fields.Float(string='Amount Net')
+    amount_net = fields.Float(string='Net Amount')
+    sap_amount_payment = fields.Float('SAP Amount Payment', tracking=True)
+    lpad_reference = fields.Char(string='LPAD Reference', compute='_compute_lpad_reference', store=True)
+
+    @api.depends('reference')
+    def _compute_lpad_reference(self):
+        for rec in self:
+            if rec.reference:
+                rec.lpad_reference = rec.reference.zfill(10)
+            else:
+                rec.lpad_reference = ''
 
     @api.constrains('partial_amount')
     def _constrains_partial_amount(self):
@@ -97,24 +108,6 @@ class WikaPartialPaymentRequest(models.Model):
 
     posting_date = fields.Date('Posting Date')
     is_already_pr = fields.Boolean('is_already_pr')
-    reference = fields.Char('Reference')
-    no_doc_sap = fields.Char('No Doc SAP')
-    year = fields.Char('Tahun')
-    line_item_char = fields.Char('Line Item Char')
-    partial_amount = fields.Float(string='Partial Amount')
-    remaining_amount = fields.Float(string='Remaining Amount', compute='_compute_remaining_amount')
-    payment_state = fields.Selection([
-        ('not request', 'Not Request'),
-        ('requested', 'Requested'),
-        ('paid', 'Paid'),
-    ], default='not request', string='Payment State', copy=False)
-    payment_request_id = fields.Many2one('wika.payment.request', string='Payment Request')
-    # === Payment fields === #
-    payment_id = fields.Many2one(
-        comodel_name='account.payment',
-        string="Payment",
-        copy=False,
-    )
     amount_scf = fields.Float(string='Amount SCF')
     price_cut_ids = fields.One2many('wika.partial.pr.pricecut.line', 'partial_id', string='Other Partial Payment Price Cut')
     total_scf_cut = fields.Float(string='Total Potongan SCF', compute='_compute_total_scf_cut')
@@ -140,11 +133,6 @@ class WikaPartialPaymentRequest(models.Model):
     #_sql_constraints = [
         #('name_partial_payment_request_uniq', 'unique (name)', 'The name of the partial payment request must be unique!')
     #]
-
-    @api.depends('total_invoice', 'partial_amount')
-    def _compute_remaining_amount(self):
-        for record in self:
-            record.remaining_amount = record.total_invoice - record.partial_amount
 
     # documents_count = fields.Integer(string='Total Doc', compute='_compute_documents_count')
     # @api.depends('invoice_ids')

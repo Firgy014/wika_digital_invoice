@@ -99,6 +99,7 @@
                                 <field name="amount_net" attrs="{'readonly': [('state', 'in', [ 'requested', 'approved'])]}"/>
                                 <field name="step_approve" invisible="1" attrs="{'readonly': [('state', 'in', [ 'requested', 'approved'])]}"/>
                                 <field name="accounting_doc" invisible="1"/>
+                                <field name="sap_amount_payment" invisible="1"/>
                             </group>
                             <group>
                                 <field name="check_biro" invisible="1"/>
