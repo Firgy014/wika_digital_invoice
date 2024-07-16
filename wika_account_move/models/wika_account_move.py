@@ -113,7 +113,7 @@ class WikaInheritedAccountMove(models.Model):
         ('Request Pusat', 'Request Pusat'),
         ('Ready To Pay', 'Ready To Pay'),
         ('Paid', 'Paid')
-    ], string='Payment State',default='Not Request')   
+    ], string='Payment State',default='Not Request', compute='_compute_status_payment', store=True)  
     payment_request_date= fields.Date(string='Payment Request Date')
     nomor_payment_request= fields.Char(string='Nomor Payment Request')
     is_approval_checked = fields.Boolean(string="Approval Checked", compute='_compute_is_approval_checked', default=False)
@@ -412,28 +412,29 @@ class WikaInheritedAccountMove(models.Model):
     amount_idr = fields.Float(string='Amount IDR', store=True)
     is_pr_sent_to_sap = fields.Boolean(string='Is Have a PR Sent to SAP', default=False, store=True)
     is_verified_as_pr = fields.Char(string='Is Have a PR Sent to SAP', store=True, default='no')
+    lpad_payment_reference = fields.Char(string='LPAD Payment Reference', compute='_compute_lpad_payment_reference', store=True)
+
+    @api.depends('payment_reference')
+    def _compute_lpad_payment_reference(self):
+        for rec in self:
+            if rec.payment_reference:
+                rec.lpad_payment_reference = rec.payment_reference.zfill(10)
+            else:
+                rec.lpad_payment_reference = ''
 
     @api.depends('amount_total_footer', 'sap_amount_payment', 'total_line')
     def _compute_amount_due(self):
         _logger.info("# === _compute_amount_due === #")
         for rec in self:
-            total_paid = 0
-            if rec.partial_request_ids:
-                tot_partial_amount = sum(rec.partial_request_ids.filtered(lambda x : x.payment_state == 'paid').mapped('partial_amount'))
-                residual_amount = rec.total_line - tot_partial_amount
-                # residual_amount = rec.sisa_partial
-            else:    
-                total_paid = rec.sap_amount_payment
-                residual_amount = rec.amount_total_footer - total_paid
-            
-            _logger.info("Total Footer %s Total Paid %s Residual Amount %s" % (str(rec.amount_total_footer), str(total_paid), str(residual_amount)))
-
-            rec.amount_due = residual_amount
+            amount_due = rec.amount_total_footer - rec.sap_amount_payment
+            _logger.info("Total Footer %s Total SAP Amount Payment %s Residual Amount %s" % (str(rec.amount_total_footer), str(rec.sap_amount_payment), str(amount_due)))
+            rec.amount_due = amount_due
     
+    @api.depends('amount_due')
     def _compute_status_payment(self):
         for rec in self:
-            rec._compute_amount_due()
             if rec.state != 'draft':
+                _logger.info("# === _compute_status_payment === #")
                 if rec.amount_due <= 0:
                     rec.status_payment = 'Paid'
                 else:
@@ -1382,7 +1383,7 @@ class WikaInheritedAccountMove(models.Model):
                     "HIGH":""
                 },
             "DOC_NUMBER": "%s"
-        }) % (self.payment_reference)
+        }) % (self.lpad_payment_reference)
         payload = payload.replace('\n', '')
         _logger.info("# === CEK PAYLOAD === #")
         _logger.info(payload)
@@ -1411,10 +1412,8 @@ class WikaInheritedAccountMove(models.Model):
 
                 if self.partner_id.company_id.id and self.status_payment != 'Paid' and year == str(self.year):
                     self.sap_amount_payment = abs(amount)
-                    self._compute_status_payment()
                 elif self.partner_id.company_id.id and self.status_payment != 'Paid' and year == str(self.date.year):
                     self.sap_amount_payment = abs(amount)
-                    self._compute_status_payment()
 
             _logger.info("# === IMPORT DATA SUKSES === #")
         else:
