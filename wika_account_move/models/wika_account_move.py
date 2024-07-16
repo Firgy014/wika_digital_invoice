@@ -429,12 +429,13 @@ class WikaInheritedAccountMove(models.Model):
             amount_due = rec.amount_total_footer - rec.sap_amount_payment
             _logger.info("Total Footer %s Total SAP Amount Payment %s Residual Amount %s" % (str(rec.amount_total_footer), str(rec.sap_amount_payment), str(amount_due)))
             rec.amount_due = amount_due
+            rec._compute_status_payment()
     
     @api.depends('amount_due')
     def _compute_status_payment(self):
         for rec in self:
+            _logger.info("# === _compute_status_payment === #")
             if rec.state != 'draft':
-                _logger.info("# === _compute_status_payment === #")
                 if rec.amount_due <= 0:
                     rec.status_payment = 'Paid'
                 else:

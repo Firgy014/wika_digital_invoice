@@ -210,8 +210,6 @@ class wika_get_payment_status(models.Model):
                                 account_move.write({
                                     'sap_amount_payment': abs(amount)
                                 })
-                                account_move._compute_status_payment()
-
                             else:
                                 _logger.info("# === CEK PARTIAL PAYMENT REQUEST === #" + year + doc_number )
                                 partial_payment_request = self.env['wika.partial.payment.request'].search([
