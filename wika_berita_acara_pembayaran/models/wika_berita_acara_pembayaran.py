@@ -10,6 +10,7 @@ from urllib.request import Request, urlopen
 import logging, json
 import base64
 import binascii
+from io import BytesIO
 _logger = logging.getLogger(__name__)
 
 # from terbilang import terbilang
@@ -590,6 +591,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
             'USD': {'lang': 'en', 'currency_name': 'US Dollar', 'cent_name': 'cents'},
             'GBP': {'lang': 'en', 'currency_name': 'British Pound', 'cent_name': 'pence'},
             'AUD': {'lang': 'en', 'currency_name': 'Australian Dollar', 'cent_name': 'cents'},
+            'JPY': {'lang': 'en', 'currency_name': 'Yen', 'cent_name': 'yen'},
         }
 
         return currency_info.get(currency_name, {'lang': 'id', 'currency_name': 'rupiah', 'cent_name': 'sen'})
@@ -1079,6 +1081,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
             # Get Document Setting
             document_list = []
             doc_setting_id = document_setting_model.search([('model_id', '=', model_id.id)])
+            # print("TESTTT CREATE DOCUMENT", doc_setting_id.name)
 
             if doc_setting_id:
                 for document_line in doc_setting_id:
@@ -1145,8 +1148,9 @@ class WikaBeritaAcaraPembayaran(models.Model):
             raise ValidationError('List BAP tidak boleh kosong. Mohon isi List BAP terlebih dahulu!')
 
         for record in self:
-            if any(not line.document for line in record.document_ids):
-                raise ValidationError('Document belum di unggah, mohon unggah file terlebih dahulu!')
+            rpp_document = self.env['wika.document.setting'].search([('name', '=', 'RPP')], limit=1)
+            if rpp_document and any(line.document_id.name != 'RPP' and not line.document for line in record.document_ids):
+                raise ValidationError('Dokumen belum diunggah, mohon unggah file terlebih dahulu!')
             if record.bap_type =='cut over' and any(not line.stock_move_id for line in record.bap_ids):
                 raise ValidationError('Data Invoice cut over belum di mapping!')
             if any(line.state == 'rejected' for line in record.document_ids):
@@ -1155,6 +1159,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
             if any(line.state =='rejected' for line in record.document_ids):
                 raise ValidationError('Document belum di ubah setelah reject, silahkan cek terlebih dahulu!')
 
+            record.upload_file()
         cek = False
         level = self.level
         documents_model = self.env['documents.document'].sudo()
@@ -1204,7 +1209,7 @@ class WikaBeritaAcaraPembayaran(models.Model):
                         ('folder_id', '=', folder_id.id)
                     ], limit=1)
                     for doc in self.document_ids.filtered(lambda x: x.state in ('uploaded', 'rejected')):
-                        if doc.document_id.name == 'BAP':
+                        if doc.document_id.name in ['BAP', 'RPP']:
                             if not doc.rejected_doc_id:
                                 attachment_id = self.env['ir.attachment'].sudo().create({
                                     'name': doc.filename,
@@ -1470,26 +1475,62 @@ class WikaBeritaAcaraPembayaran(models.Model):
 
     def action_print_bap(self):
         if self.bap_type == 'progress':
-            return self.env.ref('wika_berita_acara_pembayaran.report_wika_berita_acara_pembayaran_action').report_action(self)
+            return self.env.ref('wika_berita_acara_pembayaran.report_wika_rpp_progress_action').report_action(self)
         elif self.bap_type == 'uang muka':
-            return self.env.ref('wika_berita_acara_pembayaran.report_wika_berita_acara_pembayaran_um_action').report_action(self)
+            return self.env.ref('wika_berita_acara_pembayaran.report_wika_rpp_uang_muka_action').report_action(self)
         elif self.bap_type == 'retensi':
-            return self.env.ref('wika_berita_acara_pembayaran.report_wika_berita_acara_pembayaran_retensi_action').report_action(self)
+            return self.env.ref('wika_berita_acara_pembayaran.report_wika_rpp_retensi_action').report_action(self)
         elif self.bap_type == 'cut over':
             self._compute_cut_over()
             if self.bap_type =='cut over' and any(not line.stock_move_id for line in self.bap_ids):
                 raise ValidationError('Data Invoice cut over belum di mapping!')
-            return self.env.ref('wika_berita_acara_pembayaran.report_wika_berita_acara_pembayaran_cut_over_action').report_action(self)
+            return self.env.ref('wika_berita_acara_pembayaran.report_wika_rpp_cut_over_action').report_action(self)
         else:
             return super(WikaBeritaAcaraPembayaran, self).action_print_bap()
 
-    # @api.onchange('end_date')
-    # def _check_contract_expiry_on_save(self):
-    #     if self.end_date and self.end_date < fields.Date.today():
-    #         raise UserError(_("Tanggal akhir kontrak PO sudah kadaluarsa. Silakan perbarui kontrak segera!"))
-    #
-
-    #
+    # auto upload attachment
+    def upload_file(self):
+        for bap in self:
+            document_setting = self.env['wika.document.setting'].search([('name', '=', 'RPP')], limit=1)
+            
+            if document_setting:
+                existing_line = self.env['wika.bap.document.line'].search([
+                    ('bap_id', '=', bap.id),
+                    ('document_id', '=', document_setting.id),
+                ], limit=1)
+                
+                if existing_line and not existing_line.document:
+                    if bap.bap_type == 'progress':
+                        report_name = 'wika_berita_acara_pembayaran.report_wika_rpp_progress'
+                    elif bap.bap_type == 'uang muka':
+                        report_name = 'wika_berita_acara_pembayaran.report_wika_rpp_uang_muka'
+                    elif bap.bap_type == 'retensi':
+                        report_name = 'wika_berita_acara_pembayaran.report_wika_rpp_retensi'
+                    elif bap.bap_type == 'cut over':
+                        report_name = 'wika_berita_acara_pembayaran.report_wika_rpp_cut_over'
+                    else:
+                        continue
+                    
+                    report_action = self.env['ir.actions.report'].search([('report_name', '=', report_name)], limit=1)
+                    
+                    if report_action:
+                        content, _content_type = report_action._render_qweb_pdf(report_action.id, res_ids=bap.ids)
+                        
+                        attachment = self.env['ir.attachment'].create({
+                            'name': f'RPP {bap.bap_type.title()} Report.pdf',
+                            'type': 'binary',
+                            'mimetype': 'application/pdf',
+                            'datas': base64.b64encode(content),
+                            'res_model': 'wika.bap.document.line',
+                            'res_id': False,
+                        })
+                        
+                        existing_line.write({
+                            'document': attachment.datas,
+                            'filename': f'RPP {bap.bap_type.title()} Report.pdf',
+                            'state': 'uploaded',
+                        })
+    
 class WikaBeritaAcaraPembayaranLine(models.Model):
     _name = 'wika.berita.acara.pembayaran.line'
 

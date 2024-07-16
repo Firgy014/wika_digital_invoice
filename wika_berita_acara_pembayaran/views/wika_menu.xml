@@ -3,9 +3,9 @@
 
     <data>
     
-        <menuitem id="wika_berita_acara_pembayaran_menu_root" sequence="3" name="BAP &amp; Invoice"  web_icon="wika_berita_acara_pembayaran,static/description/icon.png"/>
+        <menuitem id="wika_berita_acara_pembayaran_menu_root" sequence="3" name="RPP &amp; Invoice(BAP)" web_icon="wika_berita_acara_pembayaran,static/description/icon.png"/>
         
-        <menuitem id="main_menu_wika_berita_acara_pembayaran" name="BAP"   
+        <menuitem id="main_menu_wika_berita_acara_pembayaran" name="RPP"   
             parent="wika_berita_acara_pembayaran_menu_root" 
             action="wika_berita_acara_pembayaran.action_window" sequence="1"/>
 

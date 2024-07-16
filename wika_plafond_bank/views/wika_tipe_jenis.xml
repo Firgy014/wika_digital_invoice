@@ -1,0 +1,22 @@
+<odoo>
+
+    <data>
+    
+        <record id="wika_tipe_jenis_view_tree" model="ir.ui.view">
+            <field name="name">wika.tipe.jenis.view.tree</field>
+            <field name="model">wika.tipe.jenis</field>
+            <field name="arch" type="xml">
+                <tree string="">
+                    <field name="name"/>
+                </tree>
+            </field>
+        </record>
+
+        <record id="wika_tipe_jenis_action" model="ir.actions.act_window">
+            <field name="name">Tipe Jenis</field>
+            <field name="res_model">wika.tipe.jenis</field>
+            <field name="view_mode">tree</field>       
+        </record>
+    </data>
+    
+</odoo>

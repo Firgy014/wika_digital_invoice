@@ -116,7 +116,6 @@
                         <button name="action_print_bap" type="object" string="Print BAP" states="draft" class="oe_highlight"/>
                         <button name="action_approve" type="object" string="APPROVE" states="uploaded" class="btn-success"/>
                         <button name="push_bap" type="object" string="PUSH BAP" states="draft,rejected,approved" class="btn-primary" groups="base.group_no_one"/>
-
                         <button name="action_submit" type="object" string="SUBMIT" states="draft,rejected" class="btn-primary"/>
                         <button name="action_reject" type="object" string="REJECT" states="uploaded" class="btn-danger"/>
                         <field name="state" widget="statusbar" statusbar_visible="draft,uploaded,approved"/>
@@ -161,7 +160,8 @@
                                 <field name="project_id" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}" options="{'no_create': True, 'no_create_edit':True}"/>
                                 <field name="end_date" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}" options="{'no_create': True, 'no_create_edit':True}"/>
                                 <field name="bap_date" attrs="{'readonly': [('state', 'in', ['uploaded', 'approved'])]}" style="background-color: #dddded;"/>
-                                <field name="pph_ids" options="{'no_create': True, 'no_create_edit':True}" domain="[('tax_group_id', '!=', 'PPN')]" widget="many2many_tags" style="background-color: #dddded;"/>
+                                <field name="pph_ids" options="{'no_create': True, 'no_create_edit':True}" domain="[('tax_group_id', '!=', 'PPN')]" 
+                                    widget="many2many_tags" style="background-color: #dddded;" invisible="1"/>
                                 <field name="guarantee_type" attrs="{'invisible': [('bap_type', '!=', 'uang muka')],
                                     'readonly': [('state', 'in', ['uploaded', 'approved'])]}" style="background-color: #dddded;"/>
                                 <field name="guarantee_value" attrs="{'invisible': [('bap_type', '!=', 'uang muka')],
@@ -268,8 +268,8 @@
                                         <field name="retensi_qty_total" groups="base.group_no_one"/>
                                         <field name="total_amount" attrs="{'invisible': [('bap_type', 'not in', ('progress', 'cut over'))]}" />
                                         <field name="total_tax" string="Total PPN"/>
-                                        <field name="amount_pph"  />
-                                        <field name="total_pph"/>
+                                        <field name="amount_pph" invisible="1"/>
+                                        <field name="total_pph" invisible="1"/>
                                         <field name="total_pembayaran" attrs="{'invisible': [('bap_type', 'not in', ('progress', 'cut over'))]}"/>
                                         <field name="total_pembayaran_retensi" attrs="{'invisible': [('bap_type', '!=', 'retensi')]}"/>
 
@@ -353,7 +353,7 @@
         
         <!-- action -->
         <record id="wika_berita_acara_pembayaran.action_window" model="ir.actions.act_window">
-            <field name="name">BAP</field>
+            <field name="name">RPP</field>
             <field name="res_model">wika.berita.acara.pembayaran</field>
             <field name="view_mode">tree,form,kanban,calendar,pivot</field>
         </record>

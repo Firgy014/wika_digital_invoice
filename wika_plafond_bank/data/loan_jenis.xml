@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        
+        <record id="loan_jenis_4" model="wika.loan.jenis">
+            <field name="nama">Jaminan</field>
+            <field name="kode">L004</field>
+            <field name="jenis">Jaminan</field>
+            <field name="tipe">Non Cash</field>
+        </record>
+        <record id="loan_jenis_7" model="wika.loan.jenis">
+            <field name="nama">SKBDN/LC</field>
+            <field name="kode">L007</field>
+            <field name="tipe">Non Cash</field>
+        </record>
+        <record id="loan_jenis_8" model="wika.loan.jenis">
+            <field name="nama">BG</field>
+            <field name="kode">L008</field>
+            <field name="tipe">Non Cash</field>
+        </record>
+         <record id="loan_jenis_9" model="wika.loan.jenis">
+            <field name="nama">SCF</field>
+            <field name="kode">L009</field>
+            <field name="tipe">Non Cash</field>
+        </record>
+         <record id="loan_jenis_9a" model="wika.loan.jenis">
+            <field name="nama">SBLC</field>
+            <field name="kode">L009A</field>
+            <field name="tipe">Non Cash</field>
+        </record>
+       <!-- cash LOAN -->      
+        <record id="loan_jenis_1" model="wika.loan.jenis">
+            <field name="nama">Project Base</field>
+            <field name="kode">L001</field>           
+            <field name="tipe">Cash</field>
+        </record>
+        <record id="loan_jenis_2" model="wika.loan.jenis">
+            <field name="nama">Pinjaman Rekening Koran</field>
+            <field name="kode">L002</field>           
+            <field name="tipe">Cash</field>
+        </record>
+        <record id="loan_jenis_3" model="wika.loan.jenis">
+            <field name="nama">Sindikasi</field>
+            <field name="kode">L003</field>           
+            <field name="tipe">Cash</field>
+        </record>  
+        <record id="loan_jenis_5" model="wika.loan.jenis">
+            <field name="nama">Briding Loan</field>
+            <field name="kode">L005</field>           
+            <field name="tipe">Cash</field>
+        </record>
+        <record id="loan_jenis_6" model="wika.loan.jenis">
+            <field name="nama">Berjangka</field>
+            <field name="kode">L006</field>           
+            <field name="tipe">Cash</field>
+        </record> 
+        <record id="loan_jenis_10" model="wika.loan.jenis">
+            <field name="nama">Global Bond</field>
+            <field name="kode">L010</field>           
+            <field name="tipe">Cash</field>
+        </record> 
+        <record id="loan_jenis_11" model="wika.loan.jenis">
+            <field name="nama">Investasi</field>
+            <field name="kode">L011</field>           
+            <field name="tipe">Cash</field>
+        </record> 
+         <record id="loan_jenis_12" model="wika.loan.jenis">
+            <field name="nama">Construction Pre Financing</field>
+            <field name="kode">CPF</field>           
+            <field name="tipe">Cash</field>
+        </record> 
+         <record id="loan_jenis_14" model="wika.loan.jenis">
+            <field name="nama">Multiporpose</field>
+            <field name="kode">Multi</field>           
+            <field name="tipe">Cash</field>
+        </record> 
+         <record id="loan_jenis_15" model="wika.loan.jenis">
+            <field name="nama">Fasilitas Pinjaman Jangka Pendek</field>
+            <field name="kode">FPJP</field>           
+            <field name="tipe">Cash</field>
+        </record>
+          <record id="loan_jenis_16" model="wika.loan.jenis">
+            <field name="nama">National Interest Account</field>
+            <field name="kode">NIA</field>           
+            <field name="tipe">Cash</field>
+        </record>
+         <record id="loan_jenis_17" model="wika.loan.jenis">
+            <field name="nama">Promes</field>
+            <field name="kode">Promes</field>           
+            <field name="tipe">Cash</field>
+        </record>
+ </data>
+ </odoo>

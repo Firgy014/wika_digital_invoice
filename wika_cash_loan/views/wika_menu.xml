@@ -1,0 +1,21 @@
+<odoo>
+
+    <data>
+
+        <menuitem
+            id="main_menu_cash_loan_menu"
+            name="Proses"
+            parent="wika_plafond_bank.wika_cl_menu_root"
+            action="wika_cash_loan_action"
+            sequence="1"/>
+    
+        <menuitem
+            id="main_menu_cl_payment_menu"
+            name="Cl Pembayaran"
+            action="wika_cl_payment_action"
+            parent="wika_plafond_bank.wika_cl_menu_root"
+            sequence="2"/>
+    </data>
+    
+
+</odoo>

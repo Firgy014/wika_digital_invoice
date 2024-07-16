@@ -1,0 +1,131 @@
+<odoo>
+
+    <data>
+    
+        <record id="wika_cash_loan_view_tree" model="ir.ui.view">
+            <field name="name">wika.cash.loan.view.tree</field>
+            <field name="model">wika.cash.loan</field>
+            <field name="arch" type="xml">
+                <tree string="">
+                    <field name="name"/>
+                    <field name="jenis_id"/>
+                    <field name="bank_id"/>
+                    <field name="plafond_bank_id"/>
+                    <field name="tgl_mulai"/>
+                    <field name="tgl_akhir"/>
+                    <field name="nilai_pengajuan"/>
+                    <field name="sisa_pengajuan"/>
+                    <field name="stage_id"/>
+                </tree>
+            </field>
+        </record>
+
+        <record id="wika_cash_loan_view_form" model="ir.ui.view">
+            <field name="name">wika.cash.loan.view.form</field>
+            <field name="model">wika.cash.loan</field>
+            <field name="arch" type="xml">
+                <form string="">
+                    <header>
+                        <button name="request" type="object" string="Meminta Persetujuan" class="oe_highlight" 
+                            attrs="{'invisible': [('stage_name','!=','Pengajuan')]}"/>
+                        <button name="approve" type="object" string="Disetujui" class="oe_highlight" 
+                            attrs="{'invisible': [('stage_name','!=','Diajukan')]}"/>
+                        <button name="notapprove" type="object" string="Ditolak" 
+                            attrs="{'invisible': [('stage_name','!=','Diajukan')]}"/>
+                        <button name="penarikan" type="object" string="Penarikan" 
+                            attrs="{'invisible': [('stage_name','!=','Disetujui')]}"/>
+                        <button name="cancel" type="object" string="Batal"
+							attrs="{'invisible': [('stage_name','not in',['Disetujui','Penarikan'])]}" />
+                        <field name="stage_id" widget="statusbar" />
+                    </header>
+                    <sheet>
+                        <div class="oe_title">
+				            <h1><field name="name" nolabel="1"/></h1>
+				        </div>
+                        <group string="Input Data">
+                            <group >
+                                <field name="bank_id"/>
+                                <field name="jenis_id"/>
+                                <label for="tgl_mulai" string="Jangka Waktu"/>
+                                <div class="o_address_format">
+                                    <field name="tgl_mulai"/>
+                                    -
+                                    <field name="tgl_akhir"/>
+                                </div>
+                                <field name="ket_alokasi" /> 
+                                <field name="nomor_surat"/>
+                                <label for="tenor" string="Tenor" />
+                                <div class="o_address_format">
+                                    <field name="tenor" required="1"/>
+                                        Bulan, terhitung sejak
+                                    <field name="sejak" />
+                                </div>                           
+                            </group>
+                            <group>
+                                <field name="tgl_pengajuan"/>
+                                <field name="currency_id"/>
+                                <field name="no_rekening"/>
+                                <field name="plafond_bank_id" required="1" options="{'no_create':True,'no_open':True}"/>
+                                <field name="nilai_pengajuan" widget="monetary"
+                                    options="{'currency_field': 'currency_id'}"
+                                    attrs="{'invisible': [('currency_id','=',13)]}" />
+                                <field name="kurs" nilai_pengajuan="{'invisible': [('currency_id','=',13)]}"/>
+                                <label for="nilai_pengajuan" string="Nilai Pengajuan" />
+                                <div class="o_address_format">
+                                    <field name="nilai_pengajuan" widget="monetary" options="{'currency_field': 'company_currency'}"/>
+                                </div>
+                                <field name="rate_bunga" />
+                                <field name="catatan" />
+                                <field name="stage_name" invisible="1"/>
+                            </group>                 
+                        </group>
+                        <notebook>
+	                      	<page name="rencana_pembayaran" string="Rencana Pembayaran" 
+                                attrs="{'invisible': [('stage_name','not in',['Penarikan','Perpanjangan','Lunas'])]}">
+								<field name="payment_ids" nolable="1">
+                        			<tree editable="bottom">
+                        				<field name="tgl_jatuh_tempo"/>
+										<field name="rate_bunga"/>
+										<field name="tenor" invisible="1"/>
+										<field name="nilai_pokok" widget="monetary"
+											options="{'currency_field': 'currency_id'}"/>
+										<field name="nilai_pokok_asing" widget="monetary"
+											options="{'currency_field': 'currency_id'}"/>
+	                        			<field name="nilai_bunga_asing" widget="monetary"
+											options="{'currency_field': 'company_currency'}"/>
+	                        			<field name="nilai_bunga" widget="monetary"
+											options="{'currency_field': 'company_currency'}"/>
+										<field name="currency_id"  invisible="1"/>
+	                        			<field name="keterangan"/>
+	                        			<field name="total" />
+	                        			<field name="jumlah_bayar" readonly="1"/>
+	                        			<field name="state" readonly="1"/>
+										<!-- <button type="object" name="action_perpanjangan"
+						                        string="Perpanjangan" class="oe_highlight"
+						                  />
+	                        			<button type="object" name="action_bayar_view"
+						                        string="Bayar" class="oe_highlight"
+						                   attrs="{'invisible': [('state','=','Lunas')]}"/> -->
+                        			</tree>
+                        		</field>
+	                        </page>
+                        </notebook>       	
+                    </sheet>
+                    <div class="oe_chatter">
+                        <field name="message_follower_ids"/>
+                        <field name="activity_ids"/>
+                        <field name="message_ids"/>
+                    </div>
+                </form>
+            </field>
+        </record>
+
+        <record id="wika_cash_loan_action" model="ir.actions.act_window">
+            <field name="name">CL Proses</field>
+            <field name="res_model">wika.cash.loan</field>
+            <field name="view_mode">tree,form</field>
+        </record>
+    </data>
+    
+
+</odoo>

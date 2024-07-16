@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <data>
+    
+        <record id="wika_plafond_bank_inherit" model="ir.ui.view">
+            <field name="name">wika.plafond.bank.view.form.inherit</field>
+            <field name="model">wika.plafond.bank</field>
+            <field name="inherit_id" ref="wika_plafond_bank.wika_plafond_bank_view_form"/>
+            <field name="arch" type="xml">
+                <xpath expr="//notebook/page[1]" position="after">
+                    <page name="detail_transaksi" string="Detail Transaksi NCL">
+                        <field name="plaf_bank_ids" nolabel="1">
+                            <tree editable="bottom" create="1" delete="1">
+                                <field name="name"/>
+                                <field name="jenis_id"/>
+                                <field name="plafond_bank_id"/>
+                                <field name="vendor_id"/>
+                                <field name="tgl_mulai"/>
+                                <field name="tgl_akhir"/>
+                            </tree>
+                        </field>
+                    </page>
+                </xpath>
+            </field>
+        </record>
+    
+    </data>
+    
+
+</odoo>

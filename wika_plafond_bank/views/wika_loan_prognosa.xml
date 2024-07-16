@@ -1,0 +1,69 @@
+<odoo>
+
+    <data>
+
+        <record id="wika_loan_prognosa_view_tree" model="ir.ui.view">
+            <field name="name">wika.loan.prognosa.view.tree</field>
+            <field name="model">wika.loan.prognosa</field>
+            <field name="arch" type="xml">
+                <tree string="Prognosa">
+                    <field name="name" />
+                    <field name="branch_id"/>
+                    <field name="bank_id"/>
+                    <field name="tipe_id"/>
+                    <field name="tgl_mulai"/>
+                    <field name="tgl_akhir"/>
+                </tree>
+            </field>
+        </record>
+
+        <record id="wika_loan_prognosa_view_form" model="ir.ui.view">
+            <field name="name">wika.loan.prognosa.view.form</field>
+            <field name="model">wika.loan.prognosa</field>
+            <field name="arch" type="xml">
+                <form string="Prognosa">
+                    <sheet>
+                        <group>
+                            <group>
+                                <field name="name"/>
+                                <field name="branch_id"/>
+                                <field name="tipe_id"/>
+                                <field name="tgl_mulai"/>
+                                <field name="tgl_akhir"/>
+                            </group>
+                            <group>
+                                <field name="bank_id"/>
+                                <field name="active"/>
+                            </group>
+                        </group>
+                        <notebook>
+                            <page string="Detail Prognosa">
+                                <field name="prognosa_ids" mode="tree,kanban" nolabel="1" colspan="2" force_save="1">
+                                    <tree string="Detail Plafond" editable="top">
+                                        <field name="bulan"/>
+                                        <field name="nilai_pembukaan"/>
+                                        <field name="nilai_tr"/>
+                                        <field name="terpakai"/>
+                                        <field name="terpakai_tr"/>
+                                    </tree>
+                                </field>
+                            </page>
+                        </notebook>
+                    </sheet>
+                    <div class="oe_chatter">
+                        <field name="message_follower_ids"/>
+                        <field name="activity_ids"/>
+                        <field name="message_ids"/>
+                    </div>
+                </form>
+            </field>
+        </record>
+        
+        <record id="wika_loan_prognosa" model="ir.actions.act_window">
+            <field name="name">Prognosa</field>
+            <field name="res_model">wika.loan.prognosa</field>
+            <field name="view_mode">tree,form</field>
+        </record>
+    </data>
+    
+</odoo>
