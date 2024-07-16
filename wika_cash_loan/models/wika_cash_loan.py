@@ -59,7 +59,14 @@ class WikaCashLoan(models.Model):
         inverse_name='cash_loan_id', ondelete='cascade', index="true",copy=False)
     stage_name  = fields.Char(related='stage_id.name' ,string='Status Name',store=True) 
     sisa_pengajuan = fields.Float(string='Outstanding')
-    plaf_id = fields.Many2one('wika.plafond.bank', string="Plafond Bank")
+    # plaf_id = fields.Many2one('wika.plafond.bank', string="Plafond Bank")
+    # plaf_id = fields.Many2one(related='plafond_bank_id.plafond_id',store=True)
+    plaf_id = fields.Many2one(
+        comodel_name='wika.plafond.bank', 
+        string="Plafond ID", 
+        related='plafond_bank_id.plafond_id', 
+        store=True
+    )
     # company_id        = fields.Many2one(comodel_name='res.company', string='Perusahaan', required=True,
     #                                   default=lambda self: self.env['res.company']._company_default_get('cash.loan'))
   
@@ -169,6 +176,34 @@ class WikaCashLoan(models.Model):
             record.sisa_bunga = sum(line.nilai_bunga for line in record.payment_ids)
             #if record.jumlah_bayar > record.nilai_pengajuan:
                 #raise Warning('Total Bayar tidak boleh lebih dari Nilai Pengajuan!')
+
+    @api.onchange('bank_id')
+    def domain_bank(self):
+        domain = {}
+        if self.bank_id:
+            self.plafond_bank_id = None
+            self.jenis_id = None
+            self.no_rekening = None
+            bank = self.env['wiak.loan.plafond.detail'].search([
+                ('plafond_id.bank_id', '=', self.bank_id.id)])
+            domain = {'domain':{'no_rekening':[('bank_id','=',self.bank_id.id),
+                ('currency_id','=',self.currency_id.id)],
+                'jenis_id' :[('id','in',[x.jenis_id.id for x in bank]),('tipe','=','Cash')]},}
+        return domain
+    
+    @api.onchange('jenis_id','bank_id')
+    def domain_all(self):
+        today = fields.Date.context_today(self)
+        domain ={}
+        if self.jenis_id and self.bank_id:
+            plafond = self.env['wika.loan.plafond.detail'].search([
+                ('plafond_id.bank_id', '=', self.bank_id.id),
+                ('jenis_id', '=', self.jenis_id.id),
+                ('sisa', '>', 0.0)])
+
+            plafond_id = [x.id for x in plafond]
+            domain = {'domain':{'plafond_bank_id':[('id','in',plafond_id)]}}
+        return domain
 
 class WikaCashLoanPembayaran(models.Model):
     _name = 'wika.cl.payment' 
