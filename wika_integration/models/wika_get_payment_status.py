@@ -32,7 +32,7 @@ class wika_get_payment_status(models.Model):
                     tgl_mulai = str(rec.tgl_mulai)
                 if rec.tgl_akhir:
                     tgl_akhir = str(rec.tgl_akhir)
-                doc_number = rec.name
+                doc_number = rec.name.zfill(10)
 
                 url_config = self.env['wika.integration'].search([('name', '=', 'URL_PAYMENT_STATUS')], limit=1).url
                 headers = {
@@ -76,22 +76,24 @@ class wika_get_payment_status(models.Model):
                             status = data["STATUS"]
                             new_name = doc_number+str(year)
 
-                            date_format = '%Y-%m-%d'
-                            date_from = datetime.strptime(year + '-01-01', date_format)
-                            date_to = datetime.strptime(year + '-12-31', date_format)
+                            date_from = f'{year}-01-01'
+                            date_to = f'{year}-12-31'
 
                             _logger.info("# === CEK ACCOUNT MOVE === #" + year + doc_number )
                             account_move = False
                             account_move1 = self.env['account.move'].search([
                                 ('move_type', '=', 'in_invoice'),
-                                ('payment_reference', '=', doc_number),
+                                ('lpad_payment_reference', '=', doc_number),
                                 ('year', '=', year)], limit=1)
+                            _logger.info(account_move1)
                             if not account_move1:
+                                _logger.info("# === CEK ACCOUNT MOVE 2=== #")
+                                _logger.info(doc_number + ' ' + str(date_from) + ' ' + str(date_to))
                                 account_move2 = self.env['account.move'].search([
                                     ('move_type', '=', 'in_invoice'),
-                                    ('payment_reference', '=', doc_number),
-                                    '|', ('date', '>=', date_from), ('date', '<=', date_to)], limit=1)
-                                _logger.info("# === ACCOUNT MOVE 2 === #")
+                                    ('lpad_payment_reference', '=', doc_number),
+                                    ('date', '>=', date_from), ('date', '<=', date_to)], limit=1)
+                                _logger.info("# === ACCOUNT MOVE 2 === #"+str(account_move2))
                                 if account_move2:
                                     account_move = account_move2
                             else:
@@ -102,20 +104,14 @@ class wika_get_payment_status(models.Model):
                                 account_move.write({
                                     'sap_amount_payment': abs(amount)
                                 })
-                                account_move._compute_status_payment()
-
                             else:
                                 _logger.info("# === CEK PARTIAL PAYMENT REQUEST === #" + year + doc_number )
                                 partial_payment_request = self.env['wika.partial.payment.request'].search([
-                                    ('reference', '=', doc_number),
+                                    ('lpad_reference', '=', doc_number),
                                     ('year', '=', year)], limit=1)
-                                if partial_payment_request and partial_payment_request.partner_id.company_id.id:
-                                    sap_amount_payment = partial_payment_request.invoice_id.sap_amount_payment
-                                    partial_payment_request.invoice_id.write({
-                                        'sap_amount_payment': sap_amount_payment+abs(amount)
-                                    })                                
-                                    partial_payment_request.invoice_id._compute_status_payment()                                
+                                if partial_payment_request and partial_payment_request.partner_id.company_id.id:                
                                     partial_payment_request.write({
+                                        'sap_amount_payment': abs(amount),
                                         'payment_state': 'paid',
                                         'no_doc_sap': clear_doc
                                     })
@@ -125,11 +121,10 @@ class wika_get_payment_status(models.Model):
                     else:
                         raise UserError(_("Data Payment Status Tidak Tersedia!"))
                     
-                except:
-                    # _logger.info("ERRORRRRRRR")
-                    # _logger.info(UserError)
+                except Exception as e:
+                    _logger.info("# === ERROR === #")
+                    _logger.info(e)
                     rec.state = 'not_done'
-                    pass
 
     def _auto_get_payment_status(self):
         ''' This method is called from a cron job.
@@ -145,7 +140,7 @@ class wika_get_payment_status(models.Model):
                     tgl_mulai = str(rec.tgl_mulai)
                 if rec.tgl_akhir:
                     tgl_akhir = str(rec.tgl_akhir)
-                doc_number = rec.name
+                doc_number = rec.name.zfill(10)
 
                 url_config = self.env['wika.integration'].search([('name', '=', 'URL_PAYMENT_STATUS')], limit=1).url
                 headers = {
@@ -189,22 +184,22 @@ class wika_get_payment_status(models.Model):
                             status = data["STATUS"]
                             new_name = doc_number+str(year)
 
-                            date_format = '%Y-%m-%d'
-                            date_from = datetime.strptime(year + '-01-01', date_format)
-                            date_to = datetime.strptime(year + '-12-31', date_format)
+                            date_from = f'{year}-01-01'
+                            date_to = f'{year}-12-31'
 
                             _logger.info("# === CEK ACCOUNT MOVE === #" + year + doc_number )
                             account_move = False
                             account_move1 = self.env['account.move'].search([
                                 ('move_type', '=', 'in_invoice'),
-                                ('payment_reference', '=', doc_number),
+                                ('lpad_payment_reference', '=', doc_number),
                                 ('year', '=', year)], limit=1)
+                            _logger.info(account_move1)
                             if not account_move1:
                                 account_move2 = self.env['account.move'].search([
                                     ('move_type', '=', 'in_invoice'),
-                                    ('payment_reference', '=', doc_number),
-                                    '|', ('date', '>=', date_from), ('date', '<=', date_to)], limit=1)
-                                _logger.info("# === ACCOUNT MOVE 2 === #")
+                                    ('lpad_payment_reference', '=', doc_number),
+                                    ('date', '>=', date_from), ('date', '<=', date_to)], limit=1)
+                                _logger.info("# === ACCOUNT MOVE 2 === #"+ str(account_move2))
                                 if account_move2:
                                     account_move = account_move2
                             else:
@@ -220,15 +215,11 @@ class wika_get_payment_status(models.Model):
                             else:
                                 _logger.info("# === CEK PARTIAL PAYMENT REQUEST === #" + year + doc_number )
                                 partial_payment_request = self.env['wika.partial.payment.request'].search([
-                                    ('reference', '=', doc_number),
+                                    ('lpad_reference', '=', doc_number),
                                     ('year', '=', year)], limit=1)
-                                if partial_payment_request and partial_payment_request.partner_id.company_id.id:
-                                    sap_amount_payment = partial_payment_request.invoice_id.sap_amount_payment
-                                    partial_payment_request.invoice_id.write({
-                                        'sap_amount_payment': sap_amount_payment+abs(amount)
-                                    })                                
-                                    partial_payment_request.invoice_id._compute_status_payment()                                
+                                if partial_payment_request and partial_payment_request.partner_id.company_id.id:                
                                     partial_payment_request.write({
+                                        'sap_amount_payment': abs(amount),
                                         'payment_state': 'paid',
                                         'no_doc_sap': clear_doc
                                     })
@@ -238,11 +229,10 @@ class wika_get_payment_status(models.Model):
                     else:
                         raise UserError(_("Data Payment Status Tidak Tersedia!"))
                     
-                except:
-                    # _logger.info("ERRORRRRRRR")
-                    # _logger.info(UserError)
+                except Exception as e:
+                    _logger.info("# === ERROR === #")
+                    _logger.info(e)
                     rec.state = 'not_done'
-                    pass
 
         self.env.ref('wika_integration.get_payment_status')._trigger()
     
