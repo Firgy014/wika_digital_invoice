@@ -2,7 +2,7 @@
  
     <!-- action report BAP -->
 
-    <record id="report_wika_berita_acara_pembayaran_action" model="ir.actions.report">
+    <!-- <record id="report_wika_berita_acara_pembayaran_action" model="ir.actions.report">
         <field name="name">BAP</field>
         <field name="model">wika.berita.acara.pembayaran</field>
         <field name="report_type">qweb-html</field>
@@ -11,9 +11,9 @@
         <field name="print_report_name">'Berita Acara Pembayaran - %s' % (object.name)</field>
         <field name="binding_model_id" ref="model_wika_berita_acara_pembayaran"/>
         <field name="binding_view_types">form</field>
-    </record>
+    </record> -->
 
-    <record id="report_wika_berita_acara_pembayaran_um_action" model="ir.actions.report">
+    <!-- <record id="report_wika_berita_acara_pembayaran_um_action" model="ir.actions.report">
         <field name="name">BAP Uang Muka</field>
         <field name="model">wika.berita.acara.pembayaran</field>
         <field name="report_type">qweb-html</field>
@@ -22,9 +22,9 @@
         <field name="print_report_name">'Berita Acara Pembayaran Uang Muka - %s' % (object.name)</field>
         <field name="binding_model_id" ref="model_wika_berita_acara_pembayaran"/>
         <field name="binding_view_types">form</field>
-    </record>
+    </record> -->
 
-    <record id="report_wika_berita_acara_pembayaran_retensi_action" model="ir.actions.report">
+    <!-- <record id="report_wika_berita_acara_pembayaran_retensi_action" model="ir.actions.report">
         <field name="name">BAP Retensi</field>
         <field name="model">wika.berita.acara.pembayaran</field>
         <field name="report_type">qweb-html</field>
@@ -33,9 +33,9 @@
         <field name="print_report_name">'Berita Acara Pembayaran Retensi - %s' % (object.name)</field>
         <field name="binding_model_id" ref="model_wika_berita_acara_pembayaran"/>
         <field name="binding_view_types">form</field>
-    </record>
+    </record> -->
 
-    <record id="report_wika_berita_acara_pembayaran_cut_over_action" model="ir.actions.report">
+    <!-- <record id="report_wika_berita_acara_pembayaran_cut_over_action" model="ir.actions.report">
         <field name="name">BAP Cut Over</field>
         <field name="model">wika.berita.acara.pembayaran</field>
         <field name="report_type">qweb-html</field>
@@ -44,7 +44,7 @@
         <field name="print_report_name">'Berita Acara Pembayaran Cut Over - %s' % (object.name)</field>
         <field name="binding_model_id" ref="model_wika_berita_acara_pembayaran"/>
         <field name="binding_view_types">form</field>
-    </record>
+    </record> -->
 
     <record id="report_wika_rpp_progress_action" model="ir.actions.report">
         <field name="name">Rekap Progress Pekerjaan</field>

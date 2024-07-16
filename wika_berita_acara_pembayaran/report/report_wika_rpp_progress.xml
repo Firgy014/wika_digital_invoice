@@ -1,5 +1,13 @@
 <odoo>
-
+    <!-- <report
+        id="report_wika_rpp_progress_id"
+        model="wika.berita.acara.pembayaran"
+        string="Report Wika RPP Progress"
+        report_type="qweb-pdf"
+        name="wika_berita_acara_pembayaran.report_wika_rpp_progress"
+        file="wika_berita_acara_pembayaran.report_wika_rpp_progress"
+        attachment_use="False"
+    /> -->
     <template id="report_wika_rpp_progress">
         <t t-foreach="docs" t-as="o">
         <t t-call="web.html_container">
@@ -74,16 +82,6 @@
                                 </tr>
                             </tbody>
                         </table>
-                    </div>
-                    <div style="margin-top: -10px;">
-                        <p style="text-align: left; font-size: 14px;">
-                            <t t-if="o.currency_id.name != 'IDR'">
-                                Both parties agree that the SECOND PARTY is fully entitled to receive from the FIRST PARTY with the following details:
-                            </t>
-                            <t t-if="o.currency_id.name == 'IDR'">
-                                Kedua belah pihak telah sepakat bahwa PIHAK KEDUA secara penuh berhak menerima dari PIHAK KESATU dengan rincian sebagai berikut:
-                            </t>
-                        </p>
                     </div>
                     <div style="margin-top: -20px;">
                         <style>
@@ -166,7 +164,7 @@
                                     </td>
                                 </tr>
                                 <tr>
-                                    <th scope="row" style="padding: 1px;">1.1</th>
+                                    <th scope="row" style="padding: 1px;">1.2</th>
                                     <td style="padding: 1px;">
                                         <t t-if="o.currency_id.name != 'IDR'">
                                             Currenty

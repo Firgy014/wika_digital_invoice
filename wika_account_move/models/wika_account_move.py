@@ -182,7 +182,7 @@ class WikaInheritedAccountMove(models.Model):
         for record in self:
             amount = 0.0
             if record.bap_id.bap_type == 'uang muka':
-                amount = record.total_pembayara_um
+                amount = record.total_pembayaran_um
             elif record.bap_id.bap_type == 'progress':
                 amount = record.total_pembayaran
             elif record.bap_id.bap_type == 'retensi':
