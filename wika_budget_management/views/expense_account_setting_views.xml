@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+         <record model="ir.ui.view" id="setting_account_view_tree_id">
+            <field name="name">setting.tree</field>
+            <field name="model">wika.setting.account.expense</field>
+            <field name="arch" type="xml">
+                <tree string="List Setting Account" editable="bottom">
+                    <field name="account_id" required="1"/>
+                    <field name="tipe_budget"/>
+                </tree>
+            </field> 
+        </record>
+		<record model="ir.ui.view" id="setting_account_view_search_id">
+		    <field name="name">setting.search</field>
+		    <field name="model">wika.setting.account.expense</field>
+		    <field name="arch" type="xml">
+			<search>
+	   	 		<field name="account_id"/>
+                <field name="tipe_budget"/>
+			</search>
+		    </field> 
+		</record> 
+    </data>
+</odoo>
+
