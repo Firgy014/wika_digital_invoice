@@ -113,7 +113,7 @@ class WikaInheritedAccountMove(models.Model):
         ('Request Pusat', 'Request Pusat'),
         ('Ready To Pay', 'Ready To Pay'),
         ('Paid', 'Paid')
-    ], string='Payment State',default='Not Request', compute='_compute_status_payment', store=True)  
+    ], string='Payment State',default='Not Request')  
     payment_request_date= fields.Date(string='Payment Request Date')
     nomor_payment_request= fields.Char(string='Nomor Payment Request')
     is_approval_checked = fields.Boolean(string="Approval Checked", compute='_compute_is_approval_checked', default=False)

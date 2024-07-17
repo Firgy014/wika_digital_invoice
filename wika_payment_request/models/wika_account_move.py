@@ -13,14 +13,6 @@ class InheritAccountMove(models.Model):
     total_partial_pr=fields.Float(string='Total Partial Payment Request', compute='_compute_amount_pr')
     amount_sisa_pr=fields.Float(string='Sisa Partial Payment Request', compute='_compute_amount_pr')
     is_partial_pr=fields.Boolean(string='Partial Payment Request',default=False,compute='_compute_is_partial_pr')
-    status_payment = fields.Selection([
-        ('Not Request', 'Not Request'),
-        ('Request Proyek', 'Request Proyek'),
-        ('Request Divisi', 'Request Divisi'),
-        ('Request Pusat', 'Request Pusat'),
-        ('Ready To Pay', 'Ready To Pay'),
-        ('Paid', 'Paid')
-    ], string='Payment State',default='Not Request')
     sisa_partial = fields.Float(string='Sisa Partial', compute='_compute_sisa_partial', default=lambda self: self.total_line, store=True)
     msg_sap = fields.Char(string='Message SAP')
     sap_amount_payment = fields.Float('Amount Payment', tracking=True, compute='_compute_sap_amount_payment', store=True)
