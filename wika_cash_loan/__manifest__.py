@@ -27,12 +27,12 @@
         'security/ir.model.access.csv',
         'views/views.xml',
         'views/templates.xml',
-        'views/wika_menu.xml',
         'views/wika_cash_loan.xml',
         'views/wika_cl_payment.xml',
         'views/wika_cash_loan_inherit.xml',
         'views/sequence.xml',
         'data/auto_bayar_bg.xml',
+        'views/wika_menu.xml',
     ],
     # only loaded in demonstration mode
     'demo': [
