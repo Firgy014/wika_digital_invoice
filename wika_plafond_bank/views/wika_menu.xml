@@ -1,57 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
     <data>
 
-        <!-- menu -->
-        <menuitem id="wika_loan_root" name="Loan" sequence="120"/>
+        <!-- menu utama -->
+        <menuitem
+            id="loan_menu_root"
+            name="Loan"
+            sequence="10" web_icon="wika_plafond_bank,static/src/img/icon.png"/>
 
-        <!-- sub menu -->
-        <menuitem id="wika_loan_menu_root" name="Plafond Bank" parent="wika_loan_root" sequence="1"/>
-        <menuitem id="wika_cl_menu_root" name="Cash Loan" parent="wika_loan_root" sequence="2"/>
-        <menuitem id="wika_ncl_menu_root" name="Non Cash Loan" parent="wika_loan_root" sequence="3"/>
-        <menuitem id="wika_config_menu_root" name="Konfigurasi" parent="wika_loan_root" sequence="4"/>
+        <!-- submenu -->
+        <menuitem
+            id="menu_loan"
+            name="Plafond Bank"
+            parent="wika_plafond_bank.loan_menu_root"
+            sequence="10"/>
 
-        <menuitem 
-            id="main_menu_plafond_bank_menu" 
-            name="Plafond Bank" 
-            parent="wika_loan_menu_root"
-            action ="wika_plafond_bank_action"
-            sequence="1"/>
+        <menuitem
+            id="menu_konfigurasi"
+            name="Konfigurasi"
+            parent="wika_plafond_bank.loan_menu_root"
+            sequence="50"/>
 
-        <menuitem 
-            id="main_menu_prognosa_bank_menu" 
-            name="Prognosa" 
-            parent="wika_loan_menu_root" 
-            action="wika_loan_prognosa" 
-            sequence="2"/>
-
-        <menuitem 
-            id="main_menu_loan_jenis_menu" 
-            name="Jenis" 
-            parent="wika_config_menu_root" 
-            action="wika_loan_jenis_action"
-            sequence="1"/>
+        <menuitem
+            id="menu_cash_loan"
+            name="Cash Loan"
+            parent="wika_plafond_bank.loan_menu_root"
+            sequence="20"/>
             
         <menuitem
-            id="main_menu_wika_tipe_jenis_menu"
-            name="Tipe Jenis"
-            action="wika_tipe_jenis_action"
-            parent="wika_config_menu_root"
+            id="menu_non_cash_loan"
+            name="Non Cash Loan"
+            parent="wika_plafond_bank.loan_menu_root"
+            sequence="30"/>
+
+        <!-- menu anak -->
+        <menuitem
+            id="plafond_bank_menu"
+            name="Plafond Bank"
+            action="wika_plafond_bank_action"
+            parent="wika_plafond_bank.menu_loan"
+            sequence="1"/>
+
+        <menuitem
+            id="prognosa_menu_plafond_bank"
+            name="Prognosa"
+            action="wika_loan_prognosa"
+            parent="wika_plafond_bank.menu_loan"
             sequence="2"/>
 
         <menuitem
-            id="main_menu_wika_loan_stage_menu"
+            id="jenis_menu_konfigurasi"
+            name="Jenis"
+            action="wika_loan_jenis_action"
+            parent="menu_konfigurasi"
+            sequence="1"/>
+
+        <menuitem
+            id="tipe_jenis_menu_konfigurasi"
+            name="Tipe Jenis"
+            action="wika_tipe_jenis_action"
+            parent="menu_konfigurasi"
+            sequence="2"/>
+
+        <menuitem
+            id="stage_menu_konfigurasi"
             name="Stage"
             action="wika_loan_stage_action"
-            parent="wika_config_menu_root"
+            parent="menu_konfigurasi"
             sequence="3"/>
 
         <menuitem
-            id="main_menu_wika_loan_allocation_menu"
-            name="Loan Allocation"
-            parent="wika_config_menu_root"
+            id="allocation_menu_konfigurasi"
+            name="Allocation"
             action="wika_loan_allocation_action"
+            parent="menu_konfigurasi"
             sequence="4"/>
+
     </data>
     
+
 </odoo>
