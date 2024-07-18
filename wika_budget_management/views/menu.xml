@@ -1,0 +1,54 @@
+<odoo>
+    <data>
+      <menuitem id="budget_menu_1"
+                  name="Budget"
+                  web_icon="wika_budget_management,static/src/img/icon.png"
+                  sequence="25"/>
+
+        <menuitem id="budget_menu_1_2_1"
+                  name="Rencana Per Perkiraan"
+                  parent="budget_menu_1"
+                  action="budget_action_3_1"
+                  sequence="1"/>
+
+        <menuitem id="budget_menu_1_3"
+                  name="Konfigurasi"
+                  parent="budget_menu_1"
+                  sequence="4"/>
+        <menuitem id="budget_menu_1_2_2"
+                  name="Master Grup"
+                  parent="budget_menu_1_3"
+                  action="grup_action"
+                  sequence="2"/>
+        <menuitem id="setting_account_menu"
+                  name="Setting Account"
+                  parent="budget_menu_1_3"
+                  action="setting_account_action_window_id"
+                  sequence="2"/>
+        <menuitem id="tipe_budget_menu"
+                  name="Tipe Budget"
+                  parent="budget_menu_1_3"
+                  action="tipe_budget_action_3_2"
+                  sequence="3"/>
+
+        <!-- <menuitem id="budget_menu_review"
+                  name="Review"
+                  parent="budget_menu_1"
+                  action="review_action"
+                  sequence="2"/> -->
+        <!-- <menuitem id="budget_menu_generate_rkap"
+                  name="Generate RKAP"
+                  parent="budget_menu_1"
+                  action="generate_rkap_action"
+                  sequence="2"/>          -->
+         <!-- <menuitem id="budget_menu_1_2"
+                  name="Laporan"
+                  parent="budget_menu_1"
+                  sequence="3"/> -->
+        <!-- <menuitem id="budget_biaya_usaha"
+                  name="Laporan Realisasi Biaya"
+                  parent="budget_menu_1_2"
+                  action="laporan_action_2"
+                  sequence="1"/> -->
+    </data>
+</odoo>

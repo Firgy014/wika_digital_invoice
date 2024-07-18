@@ -113,7 +113,7 @@ class WikaInheritedAccountMove(models.Model):
         ('Request Pusat', 'Request Pusat'),
         ('Ready To Pay', 'Ready To Pay'),
         ('Paid', 'Paid')
-    ], string='Payment State',default='Not Request', compute='_compute_status_payment', store=True)  
+    ], string='Payment State',default='Not Request')  
     payment_request_date= fields.Date(string='Payment Request Date')
     nomor_payment_request= fields.Char(string='Nomor Payment Request')
     is_approval_checked = fields.Boolean(string="Approval Checked", compute='_compute_is_approval_checked', default=False)
@@ -1366,59 +1366,127 @@ class WikaInheritedAccountMove(models.Model):
             
     def get_payment_status(self):
         self.ensure_one()
-        if not self.payment_reference:
-            raise UserError("Payment Reference harus diisi")
-
-        url_config = self.env['wika.integration'].search([('name', '=', 'URL_PAYMENT_STATUS')], limit=1).url
-        headers = {
-            'Authorization': 'Basic V0lLQV9JTlQ6SW5pdGlhbDEyMw==',
-            'Content-Type': 'application/json'
-        }
-
-        payload = json.dumps({
-            "COMPANY_CODE": "A000",
-            "CLEAR_DATE": 
-                {   
-                    "LOW": "",
-                    "HIGH":""
-                },
-            "DOC_NUMBER": "%s"
-        }) % (self.lpad_payment_reference)
-        payload = payload.replace('\n', '')
-        _logger.info("# === CEK PAYLOAD === #")
-        _logger.info(payload)
-
-        # try:
-        response = requests.request("GET", url_config, data=payload, headers=headers)
-        txt = json.loads(response.text)
-
-        if txt['DATA']:
-            _logger.info("# === IMPORT DATA === #")
-            company_id = self.env.company.id
-            # _logger.info(txt['DATA'])
-            txt_data0 = sorted(txt['DATA'], key=lambda x: x["DOC_NUMBER"])
-            txt_data = filter(lambda x: (x["STATUS"] == "X"), txt_data0)
-            # txt_data = txt['DATA']
-            for data in txt_data:
-                # _logger.info(data)
-                doc_number = data["DOC_NUMBER"]
-                year = str(data["YEAR"])
-                line_item = data["LINE_ITEM"]
-                amount = data["AMOUNT"]
-                clear_date = data["CLEAR_DATE"]
-                clear_doc = data["CLEAR_DOC"]
-                status = data["STATUS"]
-                new_name = doc_number+str(year)
-
-                if self.partner_id.company_id.id and self.status_payment != 'Paid' and year == str(self.year):
-                    self.sap_amount_payment = abs(amount)
-                elif self.partner_id.company_id.id and self.status_payment != 'Paid' and year == str(self.date.year):
-                    self.sap_amount_payment = abs(amount)
-
-            _logger.info("# === IMPORT DATA SUKSES === #")
+        if self.partial_request_ids:
+            self.get_payment_status_partial()
         else:
-            raise UserError(_("Data Payment Status Tidak Tersedia!"))
+            if not self.payment_reference:
+                raise UserError("Payment Reference harus diisi")
+
+            url_config = self.env['wika.integration'].search([('name', '=', 'URL_PAYMENT_STATUS')], limit=1).url
+            headers = {
+                'Authorization': 'Basic V0lLQV9JTlQ6SW5pdGlhbDEyMw==',
+                'Content-Type': 'application/json'
+            }
+
+            payload = json.dumps({
+                "COMPANY_CODE": "A000",
+                "CLEAR_DATE": 
+                    {   
+                        "LOW": "",
+                        "HIGH":""
+                    },
+                "DOC_NUMBER": "%s"
+            }) % (self.lpad_payment_reference)
+            payload = payload.replace('\n', '')
+            _logger.info("# === CEK PAYLOAD === #")
+            _logger.info(payload)
+
+            # try:
+            response = requests.request("GET", url_config, data=payload, headers=headers)
+            txt = json.loads(response.text)
+
+            if txt['DATA']:
+                _logger.info("# === IMPORT DATA === #")
+                company_id = self.env.company.id
+                # _logger.info(txt['DATA'])
+                txt_data0 = sorted(txt['DATA'], key=lambda x: x["DOC_NUMBER"])
+                txt_data = filter(lambda x: (x["STATUS"] == "X"), txt_data0)
+                # txt_data = txt['DATA']
+                tot_amount = 0
+                for data in txt_data:
+                    # _logger.info(data)
+                    doc_number = data["DOC_NUMBER"]
+                    year = str(data["YEAR"])
+                    line_item = data["LINE_ITEM"]
+                    amount = data["AMOUNT"]
+                    clear_date = data["CLEAR_DATE"]
+                    clear_doc = data["CLEAR_DOC"]
+                    status = data["STATUS"]
+                    new_name = doc_number+str(year)
+                    tot_amount += abs(amount)
+
+                    if self.partner_id.company_id.id and self.status_payment != 'Paid' and year == str(self.year):
+                        self.sap_amount_payment = tot_amount
+                    elif self.partner_id.company_id.id and self.status_payment != 'Paid' and year == str(self.date.year):
+                        self.sap_amount_payment = tot_amount
+
+                _logger.info("# === IMPORT DATA SUKSES === #")
+            else:
+                raise UserError(_("Data Payment Status Tidak Tersedia!"))
             
+    def get_payment_status_partial(self):
+        _logger.info("# === get_payment_status_partial === #")
+        for rec in self.partial_request_ids:
+            tgl_mulai = f'{rec.year}/01/01'
+            tgl_akhir = f'{rec.year}/12/31'
+            doc_number = rec.lpad_no_doc_sap
+
+            url_config = self.env['wika.integration'].search([('name', '=', 'URL_PAYMENT_STATUS')], limit=1).url
+            headers = {
+                'Authorization': 'Basic V0lLQV9JTlQ6SW5pdGlhbDEyMw==',
+                'Content-Type': 'application/json'
+            }
+
+            payload = json.dumps({
+                "COMPANY_CODE": "A000",
+                "CLEAR_DATE": 
+                    {   
+                        "LOW": "%s",
+                        "HIGH":"%s"
+                    },
+                "DOC_NUMBER": "%s"
+            }) % (tgl_mulai, tgl_akhir, doc_number)
+            payload = payload.replace('\n', '')
+            _logger.info("# === CEK PAYLOAD === #")
+            _logger.info(payload)
+
+            try:
+                response = requests.request("GET", url_config, data=payload, headers=headers)
+                txt = json.loads(response.text)
+
+                if txt['DATA']:
+                    _logger.info("# === IMPORT DATA === #")
+                    company_id = self.env.company.id
+                    # _logger.info(txt['DATA'])
+                    txt_data0 = sorted(txt['DATA'], key=lambda x: x["DOC_NUMBER"])
+                    txt_data = filter(lambda x: (x["STATUS"] == "X"), txt_data0)
+                    
+                    # txt_data = txt['DATA']
+                    tot_amount = 0 
+                    for data in txt_data:
+                        # _logger.info(data)
+                        doc_number = data["DOC_NUMBER"]
+                        year = str(data["YEAR"])
+                        line_item = data["LINE_ITEM"]
+                        amount = data["AMOUNT"]
+                        clear_date = data["CLEAR_DATE"]
+                        clear_doc = data["CLEAR_DOC"]
+                        status = data["STATUS"]
+                        new_name = doc_number+str(year)
+                        tot_amount += abs(amount)
+
+                        rec.write({
+                            'sap_amount_payment': tot_amount,
+                            'payment_state': 'paid',
+                            'accounting_doc': clear_doc
+                        })
+                    _logger.info("# === IMPORT DATA SUKSES === #")
+                else:
+                    raise UserError(_("Data Payment Status Tidak Tersedia!"))
+            except Exception as e:
+                    _logger.info("# === ERROR === #")
+                    _logger.info(e)
+
     def update_journal_item_sap(self):
         _logger.info("# === GET API UPDATE JOURNAL ITEM SAP === #")
         self.ensure_one()

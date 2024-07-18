@@ -1,0 +1,10 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_wika_mcs_budget_bulan,MCS Budget Bulan,model_wika_mcs_budget_bulan,,1,1,1,1
+access_wika_mcs_budget_coa,MCS Budget COA,model_wika_mcs_budget_coa,,1,1,1,1
+access_wika_mcs_budget_parent,MCS Budget Parent,model_wika_mcs_budget_parent,,1,1,1,1
+access_wika_mcs_budget_coa_detail,MCS Budget COA Detail,model_wika_mcs_budget_coa_detail,,1,1,1,1
+access_wika_mcs_budget_coa_detail_beban,MCS Budget COA Detail Beban,model_wika_mcs_budget_coa_detail_beban,,1,1,1,1
+access_wika_mcs_budget_coa_detail_line,MCS Budget COA Detail Line,model_wika_mcs_budget_coa_detail_line,,1,1,1,1
+access_wika_mcs_budget_print,MCS Budget Print,model_wika_mcs_budget_print,,1,1,1,1
+access_wika_tipe_budget,Tipe Budget,model_wika_tipe_budget,,1,1,1,1
+access_wika_setting_account_expense,Expense Accounts Setting,model_wika_setting_account_expense,,1,1,1,1

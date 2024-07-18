@@ -65,6 +65,7 @@ class wika_get_payment_status(models.Model):
                         txt_data = filter(lambda x: (x["STATUS"] == "X"), txt_data0)
                         
                         # txt_data = txt['DATA']
+                        tot_amount = 0
                         for data in txt_data:
                             # _logger.info(data)
                             doc_number = data["DOC_NUMBER"]
@@ -76,6 +77,7 @@ class wika_get_payment_status(models.Model):
                             status = data["STATUS"]
                             new_name = doc_number+str(year)
 
+                            tot_amount += abs(amount)
                             date_from = f'{year}-01-01'
                             date_to = f'{year}-12-31'
 
@@ -102,18 +104,18 @@ class wika_get_payment_status(models.Model):
                             _logger.info(account_move)
                             if account_move and account_move.partner_id.company_id.id:
                                 account_move.write({
-                                    'sap_amount_payment': abs(amount)
+                                    'sap_amount_payment': tot_amount
                                 })
                             else:
                                 _logger.info("# === CEK PARTIAL PAYMENT REQUEST === #" + year + doc_number )
                                 partial_payment_request = self.env['wika.partial.payment.request'].search([
-                                    ('lpad_reference', '=', doc_number),
+                                    ('lpad_no_doc_sap', '=', doc_number),
                                     ('year', '=', year)], limit=1)
                                 if partial_payment_request and partial_payment_request.partner_id.company_id.id:                
                                     partial_payment_request.write({
-                                        'sap_amount_payment': abs(amount),
+                                        'sap_amount_payment': tot_amount,
                                         'payment_state': 'paid',
-                                        'no_doc_sap': clear_doc
+                                        'accounting_doc': clear_doc
                                     })
                                             
                         rec.state = 'done'
@@ -173,6 +175,7 @@ class wika_get_payment_status(models.Model):
                         txt_data = filter(lambda x: (x["STATUS"] == "X"), txt_data0)
                         
                         # txt_data = txt['DATA']
+                        tot_amount = 0
                         for data in txt_data:
                             # _logger.info(data)
                             doc_number = data["DOC_NUMBER"]
@@ -184,6 +187,7 @@ class wika_get_payment_status(models.Model):
                             status = data["STATUS"]
                             new_name = doc_number+str(year)
 
+                            tot_amount += abs(amount)
                             date_from = f'{year}-01-01'
                             date_to = f'{year}-12-31'
 
@@ -208,18 +212,18 @@ class wika_get_payment_status(models.Model):
                             _logger.info(account_move)
                             if account_move and account_move.partner_id.company_id.id:
                                 account_move.write({
-                                    'sap_amount_payment': abs(amount)
+                                    'sap_amount_payment': tot_amount
                                 })
                             else:
                                 _logger.info("# === CEK PARTIAL PAYMENT REQUEST === #" + year + doc_number )
                                 partial_payment_request = self.env['wika.partial.payment.request'].search([
-                                    ('lpad_reference', '=', doc_number),
+                                    ('lpad_no_doc_sap', '=', doc_number),
                                     ('year', '=', year)], limit=1)
                                 if partial_payment_request and partial_payment_request.partner_id.company_id.id:                
                                     partial_payment_request.write({
-                                        'sap_amount_payment': abs(amount),
+                                        'sap_amount_payment': tot_amount,
                                         'payment_state': 'paid',
-                                        'no_doc_sap': clear_doc
+                                        'accounting_doc': clear_doc
                                     })
                                             
                         rec.state = 'done'

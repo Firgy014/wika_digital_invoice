@@ -1,0 +1,6 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_wika_mcs_budget_review,MCS Budget Review,model_wika_mcs_budget_review,,1,1,1,1
+access_wika_review_line_detail,MCS Budget Review Line Detail,model_wika_review_line_detail,,1,1,1,1
+access_wika_mcs_budget_review_line_prognosa,MCS Budget Review Line Prognosa,model_wika_mcs_budget_review_line_prognosa,,1,1,1,1
+access_wika_review_beban,MCS Review Beban,model_wika_review_beban,,1,1,1,1
+access_wika_vendor_bills_report,Vendor Bills Report,model_wika_vendor_bills_report,,1,1,1,1

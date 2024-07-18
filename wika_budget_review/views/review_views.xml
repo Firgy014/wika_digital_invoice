@@ -1,0 +1,234 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+
+        <!-- Review -->
+        <record id="review_tree_view" model="ir.ui.view">
+            <field name="name">Review Tree View</field>
+            <field name="model">wika.mcs.budget.review</field>
+            <field name="priority">1</field>
+            <field name="arch" type="xml">
+                <tree string="Review" create="1" edit="1">
+                    <field name="department"/>
+                    <field name="biro"/>
+                    <field name="tahun"/>
+                    <field name="bulan"/>
+					<field name="state"/>
+                </tree>
+            </field>
+        </record>
+
+        <record id="review_search" model="ir.ui.view">
+            <field name="name">Review Search View</field>
+            <field name="model">wika.mcs.budget.review</field>
+            <field name="arch" type="xml">
+                <search>
+                    <field name="department"/>
+                    <field name="biro"/>
+                    <field name="tahun"/>
+                    <field name="bulan"/>
+					<group expand="0" string="Group By...">
+                        <filter name="department" string="Divisi"
+                            domain="[]" context="{'group_by':'department'}" />
+                        <filter name="state" string="Status"
+                            domain="[]" context="{'group_by':'state'}" />
+                        <filter name="tahun" string="Tahun"
+                            domain="[]" context="{'group_by':'tahun'}" />
+                        <filter name="biro" string="Department"
+                            domain="[]" context="{'group_by':'biro'}" />
+                    </group>
+                </search>
+            </field>
+        </record>
+
+        <record id="review_form_view" model="ir.ui.view">
+            <field name="name">Review Form View</field>
+            <field name="model">wika.mcs.budget.review</field>
+            <field name="priority">2</field>
+            <field name="arch" type="xml">
+                <form string="Review">
+                    <header>
+                        <button name="act_draft" states="draft" type="object"
+                                string="Confirm" class="oe_highlight"
+                                attrs="{'invisible': [('state','!=','draft')]}"/>
+                        <button name="act_confirm" string="Lock" states="confirm"
+                                type="object" class="oe_highlight"
+                                attrs="{'invisible': [('state','!=','confirm')]}"
+                                confirm="Apakah anda yakin akan menggunakan review ini untuk RKAP?"/>
+                        <field name="state" widget="statusbar" statusbar_visible="draft,confirm,reviewed"/>
+                    </header>
+
+                    <sheet>
+                        <group col="4">
+                            <field name="tahun" attrs="{'readonly': [('state','!=','draft')]}"/>
+                            <field name="bulan" attrs="{'readonly': [('state','!=','draft')]}"/>
+                            <field name="persentase_turun"/>
+                            <field name="department" required="1"  options="{'no_create':True,'no_open':True}" attrs="{'readonly': [('state','!=','draft')]}"/>
+                            <field name="check_biro" invisible="1"/>
+                            <field name="biro" domain="[('parent_id', '=', department)]"
+                                   attrs="{'invisible': [('check_biro', '=', False)],
+                                   'required': [('check_biro', '=', True)],'readonly': [('state','!=','draft')]}" options="{'no_create':True,'no_open':True}"/>
+                            <field name="type" invisible="1"/> 
+                        </group>
+                        <field name="status_generate" invisible="1"/>
+                        <button name="act_generate" attrs="{'invisible': ['|','&amp;',('status_generate','=',True),
+                                                                          ('state','!=','draft'),
+                                                                          ('state','=','draft')]}" type="object"
+                                string="Generate Prognosa" class="oe_highlight"/>
+                        <notebook>
+                            <page name="Detail" string="Detail">
+                                <field name="review_ids" nolable="1"  attrs="{'readonly': [('state', '=', 'reviewed')]}">
+                                    <tree editable="bottom" create="0"
+                                          decoration-danger="ts_persen &gt; persentase+100">
+                                        <field name="budget_id" invisible="1"/>
+                                        <field name="kode_perkiraan" readonly="1"/>
+                                        <field name="rkap" sum="Total Anggaran" readonly="1"/>
+                                        <field name="rkap_review" sum="Total RKAP Review" readonly="1"/>
+                                        <field name="realisasi" readonly="1" sum="Total RKAP Review"/>
+                                        <field name="realisasi_persen" readonly="1" sum="Total %ri thdp RKAP"/>
+                                         <field name="sisa_anggaran" readonly="1" sum="Total Sisa Anggaran"/>
+                                         <field name="prognosa" readonly="1" sum="Total Sisa biaya s/d Des"/>
+                                        <field name="prognosa_sd" readonly="1" sum="Total RKAP Review"/>
+
+
+                                        <field name="rkap_ts" invisible="1"/>
+                                         <field name="status_generate" invisible="1"/>
+                                        <field name="ts_persen"  invisible="1"/>
+                                        <field name="persentase" invisible="1"/>
+                                        <button name="act_detail_pekerjaan" type="object" string="Detail"
+                                               attrs="{'invisible': [('status_generate', '=', False)]}"
+                                                class="oe_highlight"/>
+                                    </tree>
+                                </field>
+                            </page>
+                        </notebook>
+                    </sheet>
+                </form>
+            </field> <!-- end arch -->
+        </record>
+
+        <record id="review_line_detail_form_view" model="ir.ui.view">
+            <field name="name">Review Line Detail Form View</field>
+            <field name="model">wika.review.line.detail</field>
+            <field name="priority">2</field>
+            <field name="arch" type="xml">
+                <form string="Per Bulan" create="0" edit="0">
+                    <sheet>
+                        <group col="4">
+                            <field name="product_id" readonly="1"/>
+                            <field name="vol" readonly="1"/>
+                            <field name="anggaran" readonly="1"/>
+                            <field name="satuan" readonly="1"/>
+                            <field name="total_anggaran" readonly="1"/>
+
+                        </group>
+                        <notebook>
+                            <page name="detail" string="Detail">
+                                <field name="line_ids" nolable="1">
+                                    <tree editable="bottom" create="0" delete="0">
+                                        <field name="bulan" readonly="1"/>
+                                        <field name="rencana" readonly="1" sum="Total Rencana"/>
+                                        <field name="realisasi" readonly="1" sum="Total Realisasi"/>
+                                        <field name="prognosa" sum="Total Prognosa" />
+
+                                    </tree>
+                                </field>
+                            </page>
+                        </notebook>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+
+        <record id="review_line_detail_form_beban_view" model="ir.ui.view">
+            <field name="name">Review Line Detail Form Beban View</field>
+            <field name="model">wika.review.line.detail</field>
+            <field name="priority">2</field>
+            <field name="arch" type="xml">
+                <form string="Per Bulan" create="0" edit="0">
+                    <sheet>
+                        <group col="4">
+                            <field name="total_rencana"/>
+                            <field name="anggaran" string="Anggaran Yang Dibebankan"/>
+                            <field name="beban"/>
+                            <field name="total_beban"/>
+                            <button name="compute_anggaran_beban" type="object" string="Recompute" class="oe_highlight"/>
+                        </group>
+                        <notebook>
+                            <page name="beban" string="Beban">
+                                <field name="beban_ids" nolable="1" context="{'default_detail_id':id}">
+                                    <tree editable="bottom">
+                                        <field name="branch_id" required="1" options="{'no_create':True,'no_open':True}" domain="[('biro','=',False),('eliminasi','=',False)]"/>
+                                        <field name="persen"/>
+                                        <field name="anggaran"/>
+                                    </tree>
+                                </field>
+                            </page>
+                        </notebook>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+
+        <record id="budget_bad_tree_view" model="ir.ui.view">
+            <field name="name">Budget Tree View</field>
+            <field name="model">wika.mcs.budget.coa</field>
+            <field name="arch" type="xml">
+                <tree string="Rencana Per Bulan">
+                    <field name="tahun"/>
+                    <field name="kode_coa"/>
+                    <field name="department"/>
+                    <field name="biro"/>
+                </tree>
+            </field>
+        </record>
+
+        <record id="budget_bad_form_view" model="ir.ui.view">
+            <field name="name">Budget BAD Form View</field>
+            <field name="model">wika.mcs.budget.coa</field>
+            <field name="arch" type="xml">
+                <form string="BAD">
+                   <header>
+                       <field name="state" widget="statusbar" statusbar_visible="Draft,Confirm"  />
+                        <button name="action_report_divisi" type="object" string="Print Lembar Kendali DIV" class="oe_highlight" attrs="{'invisible': [('state','!=','Confirm')]}"/>
+                        <button name="action_report_biro" type="object" string="Print Lembar Kendali DEPT" class="oe_highlight"  attrs="{'invisible': ['|',('biro', '=', False),('state','!=','Confirm')]}"/>
+                        <button name="confirm" type="object" string="Confirm" class="oe_highlight" attrs="{'invisible': [('state','!=','Draft')]}"/>
+                        <button name="set_to_draft" type="object" string="Set To Draft" attrs="{'invisible': [('state','!=','Confirm')]}" groups="base.group_no_one"/>
+                	</header>
+                    <sheet>
+                        <group col="4">
+                            <field name="tipe_budget" readonly="1" />
+                            <field name="tahun" required="1" widget="selection" attrs="{'readonly': [('state','=','Confirm')]}"/>
+                            <field name="kode_coa" required="1" attrs="{'readonly': [('state','=','Confirm')]}" options="{'no_create':False,'no_open':False}"/>
+                            <field name="tanggal_bad" required="1"/>
+                            <field name="department" required="1" domain="[('biro', '=', False)]" attrs="{'readonly': [('state','=','Confirm')]}" options="{'no_create':True,'no_open':True}"/>
+                            <field name="check_biro" invisible="1" attrs="{'readonly': [('state','=','Confirm')]}"/>
+                            <field name="biro" domain="[('parent_id', '=', department)]" attrs="{'invisible': [('check_biro', '=', False)], 'required': [('check_biro', '=', True)],'readonly': [('state','=','Confirm')]}" options="{'no_create':True,'no_open':True}"/>
+                            <field name="nomor_budget"/>
+                        </group>
+                        <notebook>
+                            <page name="detail" string="Detail Pekerjaan">
+                                <field name="detail_ids" nolable="1" attrs="{'readonly': [('state','=','Confirm')]}">
+                                    <tree editable="bottom">
+                                        <field name="pekerjaan" options="{'no_create':False,'no_open':False}" />
+                                        <field name="account_id" required="1" options="{'no_create':True,'no_open':True}" />
+                                        <field name="total_anggaran" readonly="0" sum="Anggaran"/>
+                                        <field name="is_beban"/>
+                                        <field name="total_beban" readonly="0"  sum="Total Beban"/>
+                                        <button name="act_beban" type="object" string="Pembebanan" class="oe_highlight" attrs="{'invisible': [('is_beban', '=', False)]}"/>
+                                        <field name="is_beban" invisible="1"/>
+                                        <field name="coa_id" invisible="1"/>
+                                    </tree>
+                                </field>
+                            </page>
+                            <page name="note" string="Note">
+                                <field name="note"/>
+                            </page>
+                        </notebook>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+
+    </data>
+</odoo>

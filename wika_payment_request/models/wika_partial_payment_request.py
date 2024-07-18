@@ -56,15 +56,15 @@ class WikaPartialPaymentRequest(models.Model):
     payment_request_id = fields.Many2one('wika.payment.request', string='field_name')
     amount_net = fields.Float(string='Net Amount')
     sap_amount_payment = fields.Float('SAP Amount Payment', tracking=True)
-    lpad_reference = fields.Char(string='LPAD Reference', compute='_compute_lpad_reference', store=True)
+    lpad_no_doc_sap = fields.Char(string='LPAD No Doc SAP', compute='_compute_lpad_no_doc_sap', store=True)
 
-    @api.depends('reference')
-    def _compute_lpad_reference(self):
+    @api.depends('no_doc_sap')
+    def _compute_lpad_no_doc_sap(self):
         for rec in self:
-            if rec.reference:
-                rec.lpad_reference = rec.reference.zfill(10)
+            if rec.no_doc_sap:
+                rec.lpad_no_doc_sap = rec.no_doc_sap.zfill(10)
             else:
-                rec.lpad_reference = ''
+                rec.lpad_no_doc_sap = ''
 
     @api.constrains('partial_amount')
     def _constrains_partial_amount(self):
