@@ -1,0 +1,318 @@
+<odoo>
+	<data>
+		<template id="print_lembar_kendali_cl">
+			<t t-call="web.html_container">
+				<t t-foreach="docs" t-as="o">
+					<t t-call="wika_report_lembar_kendali.temp_lembar_kendali">
+						<div class="page">
+							<style type="text/css">
+                                #sidebar-right{
+                                    float:right;
+                                    width:50%;
+                                    }
+                                #sidebar-left{
+                                        float:left;
+                                        width:45%;
+                                    }
+                                .tabor{
+                                    border: 1px solid black;
+                                    border-top: 1px solid black;
+                                    padding :3px;
+                                }
+                                .twid2{
+                                    width: 15%;
+                                }
+                                .twid4{
+                                    width: 40%;
+                                }
+                                .thei{
+                                    height: 40%;
+                                }
+                                table.table1 {
+                                    border: 1px solid #000000;
+                                    width: 100%; margin:0 auto;
+                                    padding :3px;
+                                }
+
+                                .table1 td {
+                                    border: 1px solid #000000;
+                                    padding :3px;
+                                }
+                                .table1 th{
+                                        background-color : #CACACA;
+                                        border: 1px solid #000000;
+                                        padding :3px;
+                                }
+                                table.table2 {
+                                    border: 0px;
+                                    width: 100%; margin:0 auto;
+                                    padding :3px;
+                                }
+                            </style>
+							<h3 class="text-center">
+								<strong>LAPORAN LEMBAR KENDALI BANK 
+									<span t-esc="o.bank_id.name"/> KMK
+								</strong>
+							</h3>
+							<h4 class="text-center">Per Tanggal 
+								<span t-esc="time.strftime('%d %B %Y')"/>
+							</h4>
+							<font size="9" >
+								<table class="table1">
+									<thead>
+										<tr>
+											<th rowspan="2" class="text-center" style="vertical-align:middle;">No</th>
+											<th rowspan="2" class="text-center" style="vertical-align:middle;">Tanggal</th>
+											<th rowspan="2" class="text-center" style="vertical-align:middle;">Keterangan Alokasi</th>
+											<th colspan="2" class="text-center">Jangka Waktu</th>
+											<th rowspan="2" class="text-center" style="vertical-align:middle;">Rate</th>
+											<t t-if="o.currency_id.id!=13">
+												<th rowspan="2" class="text-center" style="vertical-align:middle;">Nilai Pengajuan Asing (
+													<span t-field="o.currency_id"/>)
+										
+												</th>
+											</t>
+											<th colspan="5" class="text-center">Nilai</th>
+											<th rowspan="2" class="text-center" style="vertical-align:middle;">Catatan</th>
+										</tr>
+										<tr>
+											<th rowspan="1" class="text-center">Awal</th>
+											<th rowspan="1" class="text-center">Akhir</th>
+											<th rowspan="1" class="text-center">Nominal</th>
+											<th rowspan="1" class="text-center">Angsuran</th>
+											<th rowspan="1" class="text-center">Outstanding</th>
+											<th rowspan="1" class="text-center">Jatuh Tempo</th>
+											<th rowspan="1" class="text-center">Rate(%)</th>
+										</tr>
+									</thead>
+									<tbody>
+										<tr>
+											<td>1.</td>
+											<td>
+												<span t-field="o.tgl_pengajuan" t-field-options='{"format": "d MMM y"}'/>
+											</td>
+											<td>
+												<span t-field="o.ket_alokasi"/>
+											</td>
+											<td class="text-center">
+												<span t-field="o.tgl_mulai" t-field-options='{"format": "d MMM y"}'/>
+											</td>
+											<td class="text-center">
+												<span t-field="o.tgl_akhir" t-field-options='{"format": "d MMM y"}'/>
+											</td>
+											<td class="text-center">
+												<span t-esc="'{0:,.2f}'.format(o.rate_bunga).replace(',','.')"/>%
+											</td>
+											<t t-if="o.currency_id.id!=13">
+												<td class="text-right">
+													<span t-esc="'{0:,.0f}'.format(o.nilai_pengajuan_asing).replace(',','.')"/>
+												</td>
+											</t>
+											<td class="text-right">
+												<span t-esc="'{0:,.0f}'.format(o.nilai_pengajuan).replace(',','.')"/>
+											</td>
+											<t t-set="i" t-value="0"/>
+											<t t-set="outstanding" t-value="0"/>
+											<t t-foreach="o.get_report_satu()" t-as="line">
+												<t t-if="i==0">
+													<t t-if="line.get('state')=='Lunas'">
+														<t t-set="outstanding" t-value="o.nilai_pengajuan-line.get('nilai')"/></t>
+													<td class="text-right">
+														<span t-esc="'{0:,.0f}'.format(line.get('nilai')).replace(',','.')"/>
+													</td>
+													<td class="text-right">
+														<span t-esc="'{0:,.0f}'.format(o.nilai_pengajuan-line.get('nilai')).replace(',','.')"/>
+													</td>
+													<td class="text-right">
+														<span t-esc="line.get('tgl_jatuh_tempo')" t-field-options='{"format": "d MMM y"}'/>
+													</td>
+													<td class="text-right">
+														<span t-esc="line.get('rate_bunga')"/>
+													</td>
+													<td></td>
+												</t>
+												<t t-if="i==1">
+													<t t-if="line.get('state')=='Lunas'">
+														<t t-set="outstanding" t-value="outstanding-line.get('nilai')"/></t>
+													<tr>
+														<td colspan="8"></td>
+														<td class="text-right">
+															<span t-esc="'{0:,.0f}'.format(line.get('nilai')).replace(',','.')"/>
+														</td>
+														<td class="text-right">
+															<span t-esc="'{0:,.0f}'.format(outstanding).replace(',','.')"/>
+														</td>
+														<td class="text-right">
+															<span t-esc="line.get('tgl_jatuh_tempo')" t-field-options='{"format": "d MMM y"}'/>
+														</td>
+														<td class="text-right">
+															<span t-esc="line.get('rate_bunga')"/>
+														</td>
+														<td></td>
+													</tr>
+												</t>
+											<t t-set="i" t-value="1"/></t>
+										</tr>
+									</tbody>
+								</table>
+								<br></br>
+								<br></br>
+								<div>
+									<div id="sidebar-right">
+										<br></br>
+										<br></br>
+										<table class="table2">
+											<tr>
+												<td>Catatan :</td>
+												<td></td>
+												<td></td>
+											</tr>
+											<t t-foreach="o.get_catatan()" t-as="line_cat">
+												<tr>
+													<t t-if="line_cat.get('kol')==3">
+														<td class="tabor text-left">
+															<span t-esc="line_cat.get('jenis')"/>
+														</td>
+														<td class="tabor text-right">
+															<span t-esc="'{0:,.0f}'.format(line_cat.get('nilai')).replace(',','.')"/>
+														</td>
+														<t t-if="line_cat.get('seq')==3">
+															<td class="tabor text-right">
+																<span t-esc="'{0:,.0f}'.format(line_cat.get('nilai')).replace(',','.')"/>
+															</td>
+														</t>
+														<t t-if="line_cat.get('seq')!=3">
+															<td class="tabor text-right"></td>
+														</t>
+													</t>
+												</tr>
+											</t>
+										</table>
+									</div>
+									<div id="sidebar-left">
+										<table class="table2">
+											<t t-foreach="o.get_depart()" t-as="depart">
+												<tr>
+													<td>
+														<![CDATA[&nbsp;]]>
+													</td>
+													<td></td>
+													<td></td>
+												</tr>
+												<tr>
+													<td>
+														<![CDATA[&nbsp;]]>
+													</td>
+													<td></td>
+													<td></td>
+												</tr>
+												<tr>
+													<td>
+														<![CDATA[&nbsp;]]>
+													</td>
+													<td></td>
+													<td></td>
+												</tr>
+												<tr>
+													<td></td>
+													<td></td>
+													<td class="text-center">Jakarta,
+														<span t-esc="time.strftime('%d %B %Y')"/>
+													</td>
+                                                    <!-- <span t-esc="depart.company_id"/> -->
+												</tr>
+												<tr>
+													<td>
+														<![CDATA[&nbsp;]]>
+													</td>
+													<td></td>
+													<td></td>
+												</tr>
+												<tr>
+													<td class="text-center"></td>
+													<td class="text-center">Menyetujui</td>
+													<td class="text-center">PT WIJAYA KARYA</td>
+												</tr>
+												<tr>
+													<td></td>
+													<td>
+														<![CDATA[&nbsp;]]>
+													</td>
+													<td></td>
+												</tr>
+												<tr>
+													<td></td>
+													<td></td>
+													<td>
+														<![CDATA[&nbsp;]]>
+													</td>
+												</tr>
+												<tr>
+													<td>
+														<![CDATA[&nbsp;]]>
+													</td>
+													<td></td>
+													<td></td>
+												</tr>
+												<tr>
+													<td>
+														<![CDATA[&nbsp;]]>
+													</td>
+													<td></td>
+													<td></td>
+												</tr>
+												<tr>
+													<td>
+														<![CDATA[&nbsp;]]>
+													</td>
+													<td></td>
+													<td></td>
+												</tr>
+												<tr>
+													<td>
+														<![CDATA[&nbsp;]]>
+													</td>
+													<td></td>
+													<td></td>
+												</tr>
+												<tr>
+													<td></td>
+													<td>
+														<![CDATA[&nbsp;]]>
+													</td>
+													<td></td>
+												</tr>
+												<tr>
+													<td class="text-center">
+														<span t-esc="depart.get_ttd('lembar_kendali_loan','1').partner_id.name"/>
+													</td>
+													<td class="text-center">
+														<span t-esc="depart.get_ttd('lembar_kendali_loan','2').partner_id.name"/>
+													</td>
+													<td class="text-center">
+														<span t-esc="request.env.user.name"/>
+													</td>
+												</tr>
+												<tr>
+													<td class="text-center">
+														<span t-esc="depart.get_ttd('lembar_kendali_loan','1').partner_id.function"/>
+													</td>
+													<td class="text-center">
+														<span t-esc="depart.get_ttd('lembar_kendali_loan','2').partner_id.function"/>
+													</td>
+													<td class="text-center"></td>
+												</tr>
+											</t>
+										</table>
+										<br></br>
+										<br></br>
+									</div>
+								</div>
+							</font>
+						</div>
+					</t>
+				</t>
+			</t>
+		</template>
+	</data>
+</odoo>

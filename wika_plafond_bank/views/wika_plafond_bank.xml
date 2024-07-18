@@ -2,21 +2,19 @@
 
     <data>
 
-        <record id="view_wika_plafond_bank_filter" model="ir.ui.view">
+        <!-- <record id="view_wika_plafond_bank_filter" model="ir.ui.view">
             <field name="name">wika.plafond.bank.filter</field>
             <field name="model">wika.plafond.bank</field>
             <field name="arch" type="xml">
                 <search>
                     <filter string="Cash" name="cash_filter" domain="[('tipe', '=', 'cash')]"/>
-                    <!-- Filter for Non Cash -->
                     <filter string="Non Cash" name="non_cash_filter" domain="[('tipe', '=', 'non cash')]"/>
-                    <!-- Group by Tipe -->
                     <group string="Tipe">
                         <field name="tipe"/>
                     </group>
                 </search>
             </field>
-        </record>
+        </record> -->
 
         <record id="wika_plafond_bank_graph" model="ir.ui.view">
             <field name="name">wika.plafond.bank.view.graph</field>
@@ -128,6 +126,7 @@
                                         <field name="terpakai" />
                                         <field name="pengajuan" />
                                         <field name="sisa" />
+                                        <button type="object" name="action_book_view" string="Blooking" class="oe_highlight"/>
                                     </tree>
                                 </field>
                             </page>
@@ -142,11 +141,17 @@
             </field>
         </record>
         
-        <record id="wika_plafond_bank.action_window" model="ir.actions.act_window">
+        <!-- <record id="wika_plafond_bank.action_window" model="ir.actions.act_window">
             <field name="name">Plafond Bank</field>
             <field name="res_model">wika.plafond.bank</field>
             <field name="view_mode">tree,form,pivot,graph</field>
             <field name="context">{'group_by': 'tipe'}</field>
+        </record> -->
+
+        <record id="wika_plafond_bank_action" model="ir.actions.act_window">
+            <field name="name">Plafond Bank</field>
+            <field name="res_model">wika.plafond.bank</field>
+            <field name="view_mode">tree,form,pivot,graph</field>
         </record>
     
     </data>

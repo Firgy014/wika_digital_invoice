@@ -50,7 +50,7 @@ class WikaPlafondBank(models.Model):
     Csisa = fields.Float(string="Sisa (Dalam Miliar)", store=True, compute="_compute_sisa")
     today = fields.Date(string='Today', default=fields.Date.context_today)
     days5 = fields.Date(string='Days 5', compute='_compute_days5')
-
+    
     @api.depends('today')
     def _compute_days5(self):
         for record in self:
@@ -97,8 +97,8 @@ class WikaLoanPlafondDetail(models.Model):
     tgl_akhir = fields.Date(related='plafond_id.tgl_mulai', string='Tanggal Akhir')
     bank_id = fields.Many2one(related='plafond_id.bank_id', string='Bank')
     tipe = fields.Selection(related='plafond_id.tipe', string='Tipe',store=True)
-    bloking_ids = fields.One2many(comodel_name='loan.plafond.bloking',inverse_name='plafond_id')
     bloking_ids = fields.One2many(comodel_name='wika.loan.plafond.bloking', inverse_name='plafond_id')
+    bank_id = fields.Many2one(related='plafond_id.bank_id', string='Bank')
 
     def name_get(self):
         res = []
@@ -117,7 +117,7 @@ class WikaLoanPlafondDetail(models.Model):
         return categories.name_get()
 
     def action_book_view(self):
-        form_id = self.env.ref('mcs_loan.plafond_bank_detail_formview_id')
+        form_id = self.env.ref('wika_plafond_bank.plafond_bank_detail_formview_id')
         return {
             'name': 'Book Plafond',
             'view_type': 'form',
@@ -144,14 +144,20 @@ class WikaLoanPlafondDetail(models.Model):
         self.plafond_id.nilai_book = sum(x.nilai_book for x in plafond)
         self.plafond_id.sisa =   self.plafond_id.jumlah - self.plafond_id.terpakai - self.plafond_id.nilai_book
 
+    def unlink(self):
+        for x in self:
+            if x.terpakai >0 or x.pengajuan>0 :
+                raise UserError(_('Plafond tidak bisa dihapus karena sudah terpakai di transaksi'))
+        return super(WikaLoanPlafondDetail, self).unlink()
+
 class WikaLoanPlafondBlocking(models.Model):
     _name = 'wika.loan.plafond.bloking'
     _description = 'Loan Plafond Bloking'
 
     plafond_id = fields.Many2one(comodel_name='wika.loan.plafond.detail',string='Plafond')
     department_id = fields.Many2one(comodel_name='hr.department',string='Divisi Lama')
-    branch_id = fields.Many2one(comodel_name='res.branch', string='Divisi')
-    proyek_id = fields.Many2one(comodel_name='wika.project',string='Proyek')
+    branch_id = fields.Many2one('res.branch', string='Divisi')
+    proyek_id = fields.Many2one('project.project',string='Proyek')
 
     jenis_id = fields.Many2one(related='plafond_id.jenis_id',string='Jenis')
     bank_id = fields.Many2one(related='plafond_id.bank_id',string='Bank')

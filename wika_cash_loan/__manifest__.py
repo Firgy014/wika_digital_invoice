@@ -32,6 +32,7 @@
         'views/wika_cl_payment.xml',
         'views/wika_cash_loan_inherit.xml',
         'views/sequence.xml',
+        'data/auto_bayar_bg.xml',
     ],
     # only loaded in demonstration mode
     'demo': [

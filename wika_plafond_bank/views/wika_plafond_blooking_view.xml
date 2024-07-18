@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+    <data>
+    	
+        <record id="plafond_bank_detail_formview_id" model="ir.ui.view" >
+            <field name="name">plafond_bank Detail.form</field>
+            <field name="model">wika.loan.plafond.detail</field>
+            <field name="arch" type="xml">
+                <form string="Plafond Bank Detail Form">
+                    <sheet >
+				        <group cols="4" col="4">
+				        	<field name="jenis_id" readonly="1"/>
+				        	<field name="bank_id" readonly="1"/>
+                            <field name="currency_id" readonly="1"/>                            
+                        </group>
+                        <group cols="4" col="4">  
+                       		<field name="nilai" readonly="1"/>                          
+                            <field name="nilai_book" readonly="1"/>
+                            <field name="sisa"/>
+                            <field name="terpakai"/>
+                        </group>
+                        <notebook>
+                        	<page string='Bloking Plafond'>
+                        		<field name="bloking_ids" nolabel="1">
+                        			<tree editable="bottom">
+                                        <field name="branch_id"/>
+                        				<field name="proyek_id"/>
+                        				<field name="jumlah"/>                        			
+                        			</tree>
+                        		</field>
+                        	
+                        	</page>
+                        </notebook>
+                        <footer>
+                        	<button type="object" name="book" string="Confirm" class="oe_highlight"/>
+						    <button string="Cancel" class="btn btn-sm btn-default" special="cancel"/>               
+                        </footer>
+                    </sheet>
+                </form>
+            </field> 
+        </record>
+ 
+    </data>
+</odoo>

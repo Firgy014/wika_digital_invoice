@@ -5,7 +5,6 @@
         <record id="loan_jenis_4" model="wika.loan.jenis">
             <field name="nama">Jaminan</field>
             <field name="kode">L004</field>
-            <field name="jenis">Jaminan</field>
             <field name="tipe">Non Cash</field>
         </record>
         <record id="loan_jenis_7" model="wika.loan.jenis">
@@ -84,10 +83,10 @@
             <field name="kode">NIA</field>           
             <field name="tipe">Cash</field>
         </record>
-         <record id="loan_jenis_17" model="wika.loan.jenis">
+        <record id="loan_jenis_17" model="wika.loan.jenis">
             <field name="nama">Promes</field>
             <field name="kode">Promes</field>           
             <field name="tipe">Cash</field>
         </record>
- </data>
- </odoo>
+    </data>
+</odoo>

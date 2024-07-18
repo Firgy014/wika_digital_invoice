@@ -14,8 +14,8 @@
         <menuitem 
             id="main_menu_plafond_bank_menu" 
             name="Plafond Bank" 
-            parent="wika_loan_menu_root" 
-            action="wika_plafond_bank.action_window" 
+            parent="wika_loan_menu_root"
+            action ="wika_plafond_bank_action"
             sequence="1"/>
 
         <menuitem 

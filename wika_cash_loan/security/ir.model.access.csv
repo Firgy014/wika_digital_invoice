@@ -1,3 +1,4 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_wika_cash_loan, Cash Loan,model_wika_cash_loan,,1,1,1,1
 access_wika_cl_payment, Cash Loan Pembayaran Allocation,model_wika_cl_payment,,1,1,1,1
+access_wika_loan_log_perpanjangan, Loan Log Perpanjangan,model_wika_loan_log_perpanjangan,,1,1,1,1
