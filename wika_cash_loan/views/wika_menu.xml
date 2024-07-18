@@ -5,14 +5,14 @@
         <menuitem
             id="cl_pengajuan_menu_loan"
             name="Proses"
-            action="wika_cash_loan_action"
+            action="wika_cash_loan.wika_cash_loan_action"
             parent="wika_plafond_bank.menu_cash_loan"
             sequence="1"/>
 
         <menuitem
             id="cl_pembayaran_menu_loan"
             name="Cl Pembayaran"
-            action="payment_cl_action_window_id"
+            action="wika_cash_loan.payment_cl_action_window_id"
             parent="wika_plafond_bank.menu_cash_loan"
             sequence="2"/>
     </data>
