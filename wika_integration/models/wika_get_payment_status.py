@@ -107,13 +107,13 @@ class wika_get_payment_status(models.Model):
                             else:
                                 _logger.info("# === CEK PARTIAL PAYMENT REQUEST === #" + year + doc_number )
                                 partial_payment_request = self.env['wika.partial.payment.request'].search([
-                                    ('lpad_reference', '=', doc_number),
+                                    ('lpad_no_doc_sap', '=', doc_number),
                                     ('year', '=', year)], limit=1)
                                 if partial_payment_request and partial_payment_request.partner_id.company_id.id:                
                                     partial_payment_request.write({
                                         'sap_amount_payment': abs(amount),
                                         'payment_state': 'paid',
-                                        'no_doc_sap': clear_doc
+                                        'accounting_doc': clear_doc
                                     })
                                             
                         rec.state = 'done'
@@ -213,13 +213,13 @@ class wika_get_payment_status(models.Model):
                             else:
                                 _logger.info("# === CEK PARTIAL PAYMENT REQUEST === #" + year + doc_number )
                                 partial_payment_request = self.env['wika.partial.payment.request'].search([
-                                    ('lpad_reference', '=', doc_number),
+                                    ('lpad_no_doc_sap', '=', doc_number),
                                     ('year', '=', year)], limit=1)
                                 if partial_payment_request and partial_payment_request.partner_id.company_id.id:                
                                     partial_payment_request.write({
                                         'sap_amount_payment': abs(amount),
                                         'payment_state': 'paid',
-                                        'no_doc_sap': clear_doc
+                                        'accounting_doc': clear_doc
                                     })
                                             
                         rec.state = 'done'
