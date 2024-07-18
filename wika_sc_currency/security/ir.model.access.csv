@@ -1,0 +1,2 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_wika_sc_currency_wika_sc_currency,wika_sc_currency.wika_sc_currency,model_wika_sc_currency_wika_sc_currency,base.group_user,1,1,1,1

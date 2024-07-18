@@ -1,0 +1,20 @@
+<odoo>
+
+    <data>
+    
+        <record id="buttonReportCL_view_form_inherited_id" model="ir.ui.view">
+            <field name="name">buttonReportCL.form</field>
+            <field name="model">wika.cash.loan</field>
+            <field name="inherit_id" ref="wika_cash_loan.wika_cash_loan_view_form"/>
+            <field name="arch" type="xml">
+                <xpath expr="//button[@name='request']" position="before">
+					<button name="action_report" type="object" string="Print Lembar Kendali" 
+                        class="oe_highlight"/>				                           
+                </xpath>
+            </field>
+        </record>
+    
+    </data>
+    
+
+</odoo>

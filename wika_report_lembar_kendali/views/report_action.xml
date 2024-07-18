@@ -1,0 +1,62 @@
+<odoo>
+    <data>
+        <template id="temp_lembar_kendali">
+            <!-- Multicompany -->
+            <t t-if="o and 'company_id' in o">
+                <t t-set="company" t-value="o.company_id"/>
+            </t>
+            <t t-if="not o or not 'company_id' in o">
+                <t t-set="company" t-value="res_company"/>
+            </t>
+
+
+            <div class="article">
+                <t t-raw="0"/>
+            </div>
+            <div class="footer">
+                <div class="row">
+                    <div class="col-xs-3">
+                        <span t-esc="context_timestamp(datetime.datetime.now()).strftime('%Y-%m-%d %H:%M')"/>
+                        <span t-esc="request.env.user.name"/>
+                    </div>
+                </div>
+            </div>
+
+        </template>
+        <record id="report_qweb_paperformat" model="report.paperformat">
+            <field name="name">F4 Landscape</field>
+            <field name="default" eval="True"/>
+            <field name="format">custom</field>
+            <field name="page_height">330</field>
+            <field name="page_width">210</field>
+            <field name="orientation">Landscape</field>
+            <field name="margin_top">5</field>
+            <field name="margin_bottom">5</field>
+            <field name="margin_left">7</field>
+            <field name="margin_right">7</field>
+            <field name="header_line" eval="False"/>
+            <field name="header_spacing">35</field>
+            <field name="dpi">90</field>
+        </record>
+
+        <!-- <report
+            string="Print Lembar Kendali"
+            id="report_print_lembar_kendali"
+            model="noncash.loan"
+            menu="True"
+            report_type="qweb-pdf"
+            name="report_lembar_kendali.print_lembar_kendali"
+            file="report_lembar_kendali.print_lembar_kendali"
+            paperformat="report_lembar_kendali.report_qweb_paperformat"/> -->
+
+        <report
+            string="Print Lembar Kendali"
+            id="report_print_lembar_kendali_cl"
+            model="wika.cash.loan"
+            menu="False"
+            report_type="qweb-pdf"
+            name="wika_report_lembar_kendali.print_lembar_kendali_cl"
+            file="wika_report_lembar_kendali.print_lembar_kendali_cl"/>
+
+    </data>
+</odoo>

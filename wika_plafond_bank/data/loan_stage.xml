@@ -124,5 +124,10 @@
             <field name="sequence">5</field>
             <field name="tipe">Cash</field>
         </record> 
+        <record id="loan_stage_17a" model="wika.loan.stage">
+            <field name="name">Cancel</field>
+            <field name="sequence">5</field>
+            <field name="tipe">Cash</field>
+        </record> 
     </data>
 </odoo>

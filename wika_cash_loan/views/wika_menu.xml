@@ -12,7 +12,7 @@
         <menuitem
             id="main_menu_cl_payment_menu"
             name="Cl Pembayaran"
-            action="wika_cl_payment_action"
+            action="payment_cl_action_window_id"
             parent="wika_plafond_bank.wika_cl_menu_root"
             sequence="2"/>
     </data>
