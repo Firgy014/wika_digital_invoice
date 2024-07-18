@@ -30,6 +30,12 @@ class res_branch(models.Model):
     eliminasi = fields.Boolean(string='Eliminasi?')
     anak_perusahaan = fields.Boolean(string='Anak Perusahaan?')
 
+    # FMS REQUIRED FIELDS
+    address = fields.Text('Address', size=252)
+    telephone_no = fields.Char("Telephone No")
+    alias = fields.Char(string='Alias', size=2)
+    kode_jurnal = fields.Char(string='Kode Digit Jurnal', index=True)
+
     def _valid_field_parameter(self, field, name):
         # If the field has `task_dependency_tracking` on we track the changes made in the dependent task on the parent task
         return name == 'ondelete' or super()._valid_field_parameter(field, name)

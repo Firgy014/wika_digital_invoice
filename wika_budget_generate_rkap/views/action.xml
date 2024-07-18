@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+
+        <record id="generate_rkap_action" model="ir.actions.act_window">
+            <field name="name">Generate RKAP</field>
+            <field name="res_model">wika.mcs.budget.review</field>
+            <field name="context">{'default_type': 'rkap'}</field>
+            <field name="domain">[('type','=','rkap')]</field>
+            <field name="view_mode">tree,form</field>
+            <field name="view_ids" eval="[(5, 0, 0),
+                (0, 0, {'view_mode': 'tree', 'view_id': ref('wika_budget_generate_rkap.generate_rkap_tree_view')}),
+                (0, 0, {'view_mode': 'form', 'view_id': ref('wika_budget_generate_rkap.generate_rkap_form_view')})]"/>
+        </record>
+
+    </data>
+</odoo>

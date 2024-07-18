@@ -2,13 +2,13 @@
 <odoo>
     <data>
 
-        <!--        Review-->
+        <!-- Review -->
         <record id="review_tree_view" model="ir.ui.view">
             <field name="name">Review Tree View</field>
-            <field name="model">mcs.budget.review</field>
+            <field name="model">wika.mcs.budget.review</field>
             <field name="priority">1</field>
             <field name="arch" type="xml">
-                <tree string="Review" create="0" edit="0">
+                <tree string="Review" create="1" edit="1">
                     <field name="department"/>
                     <field name="biro"/>
                     <field name="tahun"/>
@@ -20,7 +20,7 @@
 
         <record id="review_search" model="ir.ui.view">
             <field name="name">Review Search View</field>
-            <field name="model">mcs.budget.review</field>
+            <field name="model">wika.mcs.budget.review</field>
             <field name="arch" type="xml">
                 <search>
                     <field name="department"/>
@@ -43,7 +43,7 @@
 
         <record id="review_form_view" model="ir.ui.view">
             <field name="name">Review Form View</field>
-            <field name="model">mcs.budget.review</field>
+            <field name="model">wika.mcs.budget.review</field>
             <field name="priority">2</field>
             <field name="arch" type="xml">
                 <form string="Review">
@@ -107,29 +107,128 @@
             </field> <!-- end arch -->
         </record>
 
-        <record id="review_action" model="ir.actions.act_window">
-            <field name="name">Review</field>
-            <field name="res_model">wika.mcs.budget.review</field>
-            <field name="context">{'default_type': 'review'}</field>
-            <field name="domain">[('type','=','review')]</field>
-            <!-- <field name="view_type">form</field> -->
-            <field name="view_mode">tree,form</field>
-            <field name="view_ids" eval="[(5, 0, 0),
-                (0, 0, {'view_mode': 'tree', 'view_id': ref('wika_budget_management.review_tree_view')}),
-                (0, 0, {'view_mode': 'form', 'view_id': ref('wika_budget_management.review_form_view')})]"/>
+        <record id="review_line_detail_form_view" model="ir.ui.view">
+            <field name="name">Review Line Detail Form View</field>
+            <field name="model">wika.review.line.detail</field>
+            <field name="priority">2</field>
+            <field name="arch" type="xml">
+                <form string="Per Bulan" create="0" edit="0">
+                    <sheet>
+                        <group col="4">
+                            <field name="product_id" readonly="1"/>
+                            <field name="vol" readonly="1"/>
+                            <field name="anggaran" readonly="1"/>
+                            <field name="satuan" readonly="1"/>
+                            <field name="total_anggaran" readonly="1"/>
+
+                        </group>
+                        <notebook>
+                            <page name="detail" string="Detail">
+                                <field name="line_ids" nolable="1">
+                                    <tree editable="bottom" create="0" delete="0">
+                                        <field name="bulan" readonly="1"/>
+                                        <field name="rencana" readonly="1" sum="Total Rencana"/>
+                                        <field name="realisasi" readonly="1" sum="Total Realisasi"/>
+                                        <field name="prognosa" sum="Total Prognosa" />
+
+                                    </tree>
+                                </field>
+                            </page>
+                        </notebook>
+                    </sheet>
+                </form>
+            </field>
         </record>
 
-        <!-- <record id="review_action" model="ir.actions.act_window">
-            <field name="name">Review</field>
-            <field name="res_model">wika.mcs.budget.review</field>
-            <field name="domain">[('type','=','review')]</field>
-            <field name="view_mode">tree,form</field>
-            <field name="view_ids" eval="[(5, 0, 0),
-                (0, 0, {'view_mode': 'tree', 'view_id': ref('wika_budget_management.review_tree_view')}),
-                (0, 0, {'view_mode': 'form', 'view_id': ref('wika_budget_management.review_form_view')}),
-            ]"/>
-            <field name="context">{'default_type': 'review'}</field>
-        </record> -->
+        <record id="review_line_detail_form_beban_view" model="ir.ui.view">
+            <field name="name">Review Line Detail Form Beban View</field>
+            <field name="model">wika.review.line.detail</field>
+            <field name="priority">2</field>
+            <field name="arch" type="xml">
+                <form string="Per Bulan" create="0" edit="0">
+                    <sheet>
+                        <group col="4">
+                            <field name="total_rencana"/>
+                            <field name="anggaran" string="Anggaran Yang Dibebankan"/>
+                            <field name="beban"/>
+                            <field name="total_beban"/>
+                            <button name="compute_anggaran_beban" type="object" string="Recompute" class="oe_highlight"/>
+                        </group>
+                        <notebook>
+                            <page name="beban" string="Beban">
+                                <field name="beban_ids" nolable="1" context="{'default_detail_id':id}">
+                                    <tree editable="bottom">
+                                        <field name="branch_id" required="1" options="{'no_create':True,'no_open':True}" domain="[('biro','=',False),('eliminasi','=',False)]"/>
+                                        <field name="persen"/>
+                                        <field name="anggaran"/>
+                                    </tree>
+                                </field>
+                            </page>
+                        </notebook>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+
+        <record id="budget_bad_tree_view" model="ir.ui.view">
+            <field name="name">Budget Tree View</field>
+            <field name="model">wika.mcs.budget.coa</field>
+            <field name="arch" type="xml">
+                <tree string="Rencana Per Bulan">
+                    <field name="tahun"/>
+                    <field name="kode_coa"/>
+                    <field name="department"/>
+                    <field name="biro"/>
+                </tree>
+            </field>
+        </record>
+
+        <record id="budget_bad_form_view" model="ir.ui.view">
+            <field name="name">Budget BAD Form View</field>
+            <field name="model">wika.mcs.budget.coa</field>
+            <field name="arch" type="xml">
+                <form string="BAD">
+                   <header>
+                       <field name="state" widget="statusbar" statusbar_visible="Draft,Confirm"  />
+                        <button name="action_report_divisi" type="object" string="Print Lembar Kendali DIV" class="oe_highlight" attrs="{'invisible': [('state','!=','Confirm')]}"/>
+                        <button name="action_report_biro" type="object" string="Print Lembar Kendali DEPT" class="oe_highlight"  attrs="{'invisible': ['|',('biro', '=', False),('state','!=','Confirm')]}"/>
+                        <button name="confirm" type="object" string="Confirm" class="oe_highlight" attrs="{'invisible': [('state','!=','Draft')]}"/>
+                        <button name="set_to_draft" type="object" string="Set To Draft" attrs="{'invisible': [('state','!=','Confirm')]}" groups="base.group_no_one"/>
+                	</header>
+                    <sheet>
+                        <group col="4">
+                            <field name="tipe_budget" readonly="1" />
+                            <field name="tahun" required="1" widget="selection" attrs="{'readonly': [('state','=','Confirm')]}"/>
+                            <field name="kode_coa" required="1" attrs="{'readonly': [('state','=','Confirm')]}" options="{'no_create':False,'no_open':False}"/>
+                            <field name="tanggal_bad" required="1"/>
+                            <field name="department" required="1" domain="[('biro', '=', False)]" attrs="{'readonly': [('state','=','Confirm')]}" options="{'no_create':True,'no_open':True}"/>
+                            <field name="check_biro" invisible="1" attrs="{'readonly': [('state','=','Confirm')]}"/>
+                            <field name="biro" domain="[('parent_id', '=', department)]" attrs="{'invisible': [('check_biro', '=', False)], 'required': [('check_biro', '=', True)],'readonly': [('state','=','Confirm')]}" options="{'no_create':True,'no_open':True}"/>
+                            <field name="nomor_budget"/>
+                        </group>
+                        <notebook>
+                            <page name="detail" string="Detail Pekerjaan">
+                                <field name="detail_ids" nolable="1" attrs="{'readonly': [('state','=','Confirm')]}">
+                                    <tree editable="bottom">
+                                        <field name="pekerjaan" options="{'no_create':False,'no_open':False}" />
+                                        <field name="account_id" required="1" options="{'no_create':True,'no_open':True}" />
+                                        <field name="total_anggaran" readonly="0" sum="Anggaran"/>
+                                        <field name="is_beban"/>
+                                        <field name="total_beban" readonly="0"  sum="Total Beban"/>
+                                        <button name="act_beban" type="object" string="Pembebanan" class="oe_highlight" attrs="{'invisible': [('is_beban', '=', False)]}"/>
+                                        <field name="is_beban" invisible="1"/>
+                                        <field name="coa_id" invisible="1"/>
+                                    </tree>
+                                </field>
+                            </page>
+                            <page name="note" string="Note">
+                                <field name="note"/>
+                            </page>
+                        </notebook>
+                    </sheet>
+                </form>
+            </field>
+        </record>
 
     </data>
 </odoo>
