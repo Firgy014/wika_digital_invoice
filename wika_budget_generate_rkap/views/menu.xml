@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <menuitem id="budget_menu_generate_rkap"
+                  name="Generate RKAP"
+                  parent="wika_budget_management.budget_menu_1"
+                  action="generate_rkap_action"
+                  sequence="2"/>
+    </data>
+</odoo>

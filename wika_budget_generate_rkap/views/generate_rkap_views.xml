@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>        
+        <record id="generate_rkap_tree_view" model="ir.ui.view">
+            <field name="name">Generate RKAP Tree View</field>
+            <field name="model">wika.mcs.budget.review</field>
+            <field name="priority">1</field>
+            <field name="arch" type="xml">
+                <tree string="Generate RKAP" create="1" edit="1">
+                    <field name="department"/>
+                    <field name="biro"/>
+                    <field name="tahun"/>
+                    <field name="bulan"/>
+					<field name="state"/>
+                </tree>
+            </field>
+        </record>
+
+        <record id="generate_rkap_search" model="ir.ui.view">
+            <field name="name">Generate RKAP Search View</field>
+            <field name="model">wika.mcs.budget.review</field>
+            <field name="arch" type="xml">
+                <search>
+                    <field name="department"/>
+                    <field name="biro"/>
+                    <field name="tahun"/>
+                    <field name="bulan"/>
+					<group expand="0" string="Group By...">
+                        <filter name="department" string="Divisi"
+                            domain="[]" context="{'group_by':'department'}" />
+                        <filter name="state" string="Status"
+                            domain="[]" context="{'group_by':'state'}" />
+                        <filter name="tahun" string="Tahun"
+                            domain="[]" context="{'group_by':'tahun'}" />
+                        <filter name="biro" string="Department"
+                            domain="[]" context="{'group_by':'biro'}" />
+                    </group>
+                </search>
+            </field>
+        </record>
+
+        <record id="generate_rkap_form_view" model="ir.ui.view">
+            <field name="name">Generate RKAP Form View</field>
+            <field name="model">wika.mcs.budget.review</field>
+            <field name="priority">2</field>
+            <field name="arch" type="xml">
+                <form string="Review">
+                    <header>
+                        <button name="act_draft" states="draft" type="object"
+                                string="Confirm" class="oe_highlight"
+                                attrs="{'invisible': [('state','!=','draft')]}"/>
+                        <button name="act_confirm" string="Lock" states="confirm"
+                                type="object" class="oe_highlight"
+                                attrs="{'invisible': [('state','!=','confirm')]}"
+                                confirm="Apakah anda yakin akan menggunakan review ini untuk RKAP?"/>
+                        <field name="state" widget="statusbar" statusbar_visible="draft,confirm,rkap"/>
+                    </header>
+
+                    <sheet>
+                        <group col="4">
+                            <field name="tahun" attrs="{'readonly': [('state','!=','draft')]}" />
+                            <field name="bulan" attrs="{'readonly': [('state','!=','draft')]}"/>
+                            <field name="persentase"/>                        
+                            <field name="department" required="1" domain="[('eliminasi', '=', False)]" options="{'no_create':True,'no_open':True}" attrs="{'readonly': [('state','!=','draft')]}"/>
+                            <field name="check_biro" invisible="1"/>
+                            <field name="biro" domain="[('parent_id', '=', department)]"
+                                   attrs="{'invisible': [('check_biro', '=', False)],
+                                   'required': [('check_biro', '=', True)],'readonly': [('state','!=','draft')]}" options="{'no_create':True,'no_open':True}"/>
+                            <field name="type" invisible="1"/>   
+                        </group>
+                        <field name="status_generate" invisible="1"/>
+                        <button name="act_generate" attrs="{'invisible': ['|','&amp;',('status_generate','=',True),
+                                                                          ('state','!=','draft'),
+                                                                          ('state','=','draft')]}" type="object"
+                                string="Generate Prognosa" class="oe_highlight"/>
+                        <notebook>
+                            <page name="Detail" string="Detail">
+                                <field name="review_ids" nolable="1"  attrs="{'readonly': [('state', '=', 'reviewed')]}">
+                                    <tree>
+                                         
+                                        <field name="budget_id" invisible="1"/>
+                                         <field name="kode_perkiraan"  invisible="1"/>
+                                        <field name="kode_perkiraan_id"   />
+                                        <field name="rkap" sum="Total Anggaran" readonly="1"/>
+                                        <field name="rkap_review" string="Simulasi RKAP Selanjutnya" readonly="1" sum="Total RKAP Review"/>
+                                        <field name="realisasi"  sum="Total RKAP Review" readonly="1"/>
+                                        <field name="realisasi_persen"  sum="Total %ri thdp RKAP" readonly="1"/>
+                                        <field name="prognosa" string="Prognosa s/d Des" sum="Total Sisa biaya s/d Des" readonly="1"/>
+                                         <field name="sisa_anggaran"  string="Sisa Anggaran"  sum="Total Sisa Anggaran" readonly="1"/>
+                                      
+                                        <field name="prognosa_sd" invisible="1"  sum="Total RKAP Review" readonly="1"/>
+
+
+                                        <field name="rkap_ts" sum="Total RKAP Selanjutnya" readonly="1"/>
+                                         <field name="ts_persen"  sum="Total"/>
+                                         <field name="ts_persen_rkap" sum="Total" />
+                                         <field name="status_generate" invisible="1"/>
+                      
+                                        <field name="persentase" invisible="1"/>
+                                        <button name="act_detail_pekerjaan" type="object" string="Detail"
+                                               attrs="{'invisible': [('status_generate', '=', False)]}"
+                                                class="oe_highlight"/>
+                                    </tree>
+
+                                </field>
+                            </page>
+                        </notebook>
+                    </sheet>
+                </form>
+            </field> 
+        </record>
+
+    </data>
+</odoo>

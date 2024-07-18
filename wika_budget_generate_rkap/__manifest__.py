@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 {
-    'name': "wika_budget_review",
+    'name': "wika_budget_generate_rkap",
 
     'summary': """
         Short (1 phrase/line) summary of the module's purpose, used as
@@ -22,15 +22,14 @@
     # any module necessary for this one to work correctly
     'depends': [
         'base',
-        'account',
         'wika_budget_management',
+        'wika_budget_review'
     ],
 
     # always loaded
     'data': [
-        'security/ir.model.access.csv',
-        'views/views.xml',
-        'views/review_views.xml',
+        # 'security/ir.model.access.csv',
+        'views/generate_rkap_views.xml',
         'views/action.xml',
         'views/menu.xml',
         'views/templates.xml',

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <menuitem id="budget_menu_review"
+                  name="Review"
+                  parent="wika_budget_management.budget_menu_1"
+                  action="review_action"
+                  sequence="2"/>
+        <menuitem id="budget_bad_menu"
+                  name="Input BAD"
+                  parent="wika_budget_management.budget_menu_1"
+                  action="budget_bad_action"
+                  sequence="2"/>
+    </data>
+</odoo>
