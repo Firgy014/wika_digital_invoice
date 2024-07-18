@@ -1402,6 +1402,7 @@ class WikaInheritedAccountMove(models.Model):
                 txt_data0 = sorted(txt['DATA'], key=lambda x: x["DOC_NUMBER"])
                 txt_data = filter(lambda x: (x["STATUS"] == "X"), txt_data0)
                 # txt_data = txt['DATA']
+                tot_amount = 0
                 for data in txt_data:
                     # _logger.info(data)
                     doc_number = data["DOC_NUMBER"]
@@ -1412,11 +1413,12 @@ class WikaInheritedAccountMove(models.Model):
                     clear_doc = data["CLEAR_DOC"]
                     status = data["STATUS"]
                     new_name = doc_number+str(year)
+                    tot_amount += abs(amount)
 
                     if self.partner_id.company_id.id and self.status_payment != 'Paid' and year == str(self.year):
-                        self.sap_amount_payment = abs(amount)
+                        self.sap_amount_payment = tot_amount
                     elif self.partner_id.company_id.id and self.status_payment != 'Paid' and year == str(self.date.year):
-                        self.sap_amount_payment = abs(amount)
+                        self.sap_amount_payment = tot_amount
 
                 _logger.info("# === IMPORT DATA SUKSES === #")
             else:
@@ -1460,6 +1462,7 @@ class WikaInheritedAccountMove(models.Model):
                     txt_data = filter(lambda x: (x["STATUS"] == "X"), txt_data0)
                     
                     # txt_data = txt['DATA']
+                    tot_amount = 0 
                     for data in txt_data:
                         # _logger.info(data)
                         doc_number = data["DOC_NUMBER"]
@@ -1470,9 +1473,10 @@ class WikaInheritedAccountMove(models.Model):
                         clear_doc = data["CLEAR_DOC"]
                         status = data["STATUS"]
                         new_name = doc_number+str(year)
+                        tot_amount += abs(amount)
 
                         rec.write({
-                            'sap_amount_payment': abs(amount),
+                            'sap_amount_payment': tot_amount,
                             'payment_state': 'paid',
                             'accounting_doc': clear_doc
                         })

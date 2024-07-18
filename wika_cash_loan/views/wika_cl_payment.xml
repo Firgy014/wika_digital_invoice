@@ -1,6 +1,55 @@
 <odoo>
 
     <data>
+        
+        <record id="cl_pembayaran_form_view_perpanjangan" model="ir.ui.view">
+            <field name="name">cl.pembayaran.form.perpanjangan</field>
+            <field name="model">wika.cl.payment</field>
+            <field name="arch" type="xml">
+                <form string="Form Perpanjangan">
+                    <sheet >
+				        <group cols="4" col="4">
+				        	<field name="tgl_jatuh_tempo_new" required="1" attrs="{'invisible': [('state','=','Lunas')]}"/>
+                            <field name="rate_bunga_new" required="1" attrs="{'invisible': [('state','=','Lunas')]}"/>
+							<field name="nilai_bunga_new" required="1" attrs="{'invisible': [('state','=','Lunas')]}"/>
+                            <field name="nilai_bunga_asing_new" required="1" attrs="{'invisible': ['|',('currency_id','=',13),('state','=','Lunas')]}"/>
+                     	</group>
+                     	<group>
+                            <field name="cash_loan_id" readonly="1"/>
+                            <field name="tgl_jatuh_tempo" readonly="1"/>
+                            <field name="plafond_bank_id" readonly="1"/>
+                            <field name="rate_bunga" readonly="1"/>
+                            <field name="nilai_pokok" readonly="1"/>
+                            <field name="nilai_bunga" readonly="1"/>
+                            <field name="nilai_pokok_asing" readonly="1" attrs="{'invisible': [('currency_id','=',13)]}"/>
+                            <field name="nilai_bunga_asing" readonly="1" attrs="{'invisible': [('currency_id','=',13)]}"/>
+                            <field name="currency_id" readonly="1"/>
+                            <field name="state" invisible="1"/>
+                        </group>
+						<notebook>
+							<page string="History Perpanjangan">
+								<field name="perpanjangan_ids">
+									<tree create="0" edit="0">
+										<field name="ke" string="Perpanjangan Ke"/>
+										<field name="tgl_jatuh_tempo_lama"/>
+										<field name="bunga_lama"/>
+										<field name="nilai_bunga_lama"/>
+                                        <field name="nilai_pokok_lama"/>
+                                        <field name="nilai_bunga_lama_asing"/>
+                                        <field name="nilai_pokok_lama_asing"/>
+										<field name="tgl_eksekusi"/>
+									</tree>
+								</field>
+							</page>
+						</notebook>
+                        <footer>
+							<button type="object" name="perpanjangan" string="Perpanjangan" class="oe_highlight" attrs="{'invisible': [('state','=','Lunas')]}"/>
+						    <button string="Batal" class="btn btn-sm btn-default" special="cancel"/>
+                        </footer>
+                    </sheet>
+                </form>
+            </field>
+        </record>
 
         <record id="wika_cl_payment_view_tree" model="ir.ui.view">
             <field name="name">wika.cl.payment.view.tree</field>
@@ -19,14 +68,14 @@
             </field>
         </record>
 
-        <record id="wika_cl_paymentview_form" model="ir.ui.view">
+        <record id="wika_cl_payment_view_form1" model="ir.ui.view">
             <field name="name">wika.cl.payment.view.form</field>
             <field name="model">wika.cl.payment</field>
             <field name="arch" type="xml">
                 <form string="Cash Pembayaran Form">
                     <header>
-                        <!-- <button type="object" name="lunas" string="Bayar" class="oe_highlight"
-                            attrs="{'invisible': [('state','=','Lunas')]}"/> -->
+                        <button type="object" name="lunas" string="Bayar" class="oe_highlight"
+                            attrs="{'invisible': [('state','=','Lunas')]}"/>
                         <field name="state" widget="statusbar" 
                             statusbar_visible="Belum Dibayar,Lunas,Perpanjangan"/>
                     </header>
@@ -48,11 +97,54 @@
                 </form>
             </field>
         </record>
+
+        <record id="wika_cl_payment_view_form2" model="ir.ui.view">
+            <field name="name">wika.cl.payment.form2</field>
+            <field name="model">wika.cl.payment</field>
+            <field name="arch" type="xml">
+                <form string="Form Pembayaran">
+                    <sheet >
+				        <group cols="4" col="4">
+				        	<field name="jumlah_bayar"/>
+                            <field name="currency_id" readonly="1"/>
+                            <field name="total" invisible="1"/>  
+                            <field name="nilai_pokok" invisible="1"/> 
+                            <field name="plafond_bank_id" invisible="1"/>                                                   
+                        </group>
+                        <!-- <group cols="4" col="4" attrs="{'invisible': [('selisih_bayar', '=', 0.0)]}">
+                            <label for="selisih_bayar"/>
+                            <div>
+                                <field name="selisih_bayar"/>                                    
+                            </div>
+                            <field name="tipe_bayar" invisible="1"/>                               
+                            <field name="rate_bunga_new" attrs="{'required': [('tipe_bayar', '=', True)]}"/>                                
+                            <field name="tgl_jatuh_tempo_new" attrs="{'required': [('tipe_bayar', '=', True)]}"/>
+                            <field name="nilai_bunga_new" attrs="{'required': [('tipe_bayar', '=', True)]}"/>                                                             	
+                            <field name="currency_new"/>
+                        </group> -->
+                        <footer>
+                         	<button type="object" name="bayar" string="Bayar" class="oe_highlight"/>
+						    <button string="Cancel" class="btn btn-sm btn-default" special="cancel"/>               
+                        </footer>
+                    </sheet>
+                </form>
+            </field> 
+        </record>
         
-        <record id="wika_cl_payment_action" model="ir.actions.act_window">
-            <field name="name">CL Pembayaran</field>
+        <record id="payment_cl_action_window_id" model="ir.actions.act_window">
+            <field name="name">Pembayaran</field>
             <field name="res_model">wika.cl.payment</field>
+            <field name="target">current</field>
+            <field name="context">{}</field>
+            <field name="domain">[]</field>
+            <field name="limit">80</field>
             <field name="view_mode">tree,form</field>
+            <field name="view_ids" eval="[(5, 0, 0),
+                (0, 0, {'view_mode': 'tree', 'view_id': ref('wika_cl_payment_view_tree')}),
+                (0, 0, {'view_mode': 'form', 'view_id': ref('wika_cl_payment_view_form1')})]"/>                     
+            <field name="help" type="html">
+                <p class="oe_view_nocontent_create">Tambahkan Data Melalui Loan</p>
+            </field>
         </record>
     </data>
     
