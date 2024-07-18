@@ -28,7 +28,6 @@
         'views/views.xml',
         'views/templates.xml',
         'views/wika_loan_jenis.xml',
-        'views/wika_menu.xml',
         'views/wika_plafond_bank.xml',
         'views/wika_loan_prognosa.xml',
         'views/wika_tipe_jenis.xml',
@@ -39,6 +38,8 @@
         'views/wika_loan_stage.xml',
         'views/wika_loan_allocation.xml',
         'views/wika_plafond_blooking_view.xml',
+        'views/wika_menu.xml',
+
     ],
     # only loaded in demonstration mode
     'demo': [

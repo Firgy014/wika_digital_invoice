@@ -6,13 +6,13 @@
             id="main_menu_ncl_input_menu"
             name="Input"
             action="wika_ncl_input_action"
-            parent="wika_plafond_bank.wika_ncl_menu_root"
+            parent="wika_plafond_bank.menu_non_cash_loan"
             sequence="1"/>
 
         <menuitem
             id="main_menu_ncl_proses_menu"
             name="Proses"
-            parent="wika_plafond_bank.wika_ncl_menu_root"
+            parent="wika_plafond_bank.menu_non_cash_loan"
             sequence="2"
             action="wika_ncl_proses_action"/>
 
@@ -20,7 +20,7 @@
             id="main_menu_ncl_pembayaran_menu"
             name="Pembayaran"
             action="wika_ncl_pembayaran_action"
-            parent="wika_plafond_bank.wika_ncl_menu_root"
+            parent="wika_plafond_bank.menu_non_cash_loan"
             sequence="99"/>
 
     </data>
