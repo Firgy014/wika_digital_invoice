@@ -44,11 +44,11 @@ class wika_get_payment_status(models.Model):
                     "COMPANY_CODE": "A000",
                     "CLEAR_DATE": 
                         {   
-                            "LOW": "%s",
-                            "HIGH":"%s"
+                            "LOW": "",
+                            "HIGH":""
                         },
                     "DOC_NUMBER": "%s"
-                }) % (tgl_mulai, tgl_akhir, doc_number)
+                }) % (doc_number)
                 payload = payload.replace('\n', '')
                 _logger.info("# === CEK PAYLOAD === #")
                 _logger.info(payload)
@@ -63,7 +63,7 @@ class wika_get_payment_status(models.Model):
                         txt_data0 = sorted(txt['DATA'], key=lambda x: x["DOC_NUMBER"])
                         txt_data = filter(lambda x: (x["STATUS"] == "X"), txt_data0)
                         
-                        _logger.info(txt_data)
+                        # _logger.info(txt_data)
                         tot_amount = 0
                         for data in txt_data:
                             # _logger.info(data)
@@ -154,11 +154,11 @@ class wika_get_payment_status(models.Model):
                     "COMPANY_CODE": "A000",
                     "CLEAR_DATE": 
                         {   
-                            "LOW": "%s",
-                            "HIGH":"%s"
+                            "LOW": "",
+                            "HIGH":""
                         },
                     "DOC_NUMBER": "%s"
-                }) % (tgl_mulai, tgl_akhir, doc_number)
+                }) % (doc_number)
                 payload = payload.replace('\n', '')
                 _logger.info("# === CEK PAYLOAD === #")
                 _logger.info(payload)
