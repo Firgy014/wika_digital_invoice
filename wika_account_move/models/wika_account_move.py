@@ -1312,7 +1312,7 @@ class WikaInheritedAccountMove(models.Model):
         self.ensure_one()
         if not self.payment_reference:
             raise UserError("Payment Reference harus diisi")
-
+        
         url_config = self.env['wika.integration'].search([('name', '=', 'URL_DP_PAYMENT_STATUS')], limit=1).url
         headers = {
             'Authorization': 'Basic V0lLQV9JTlQ6SW5pdGlhbDEyMw==',
@@ -1372,6 +1372,15 @@ class WikaInheritedAccountMove(models.Model):
             if not self.payment_reference:
                 raise UserError("Payment Reference harus diisi")
 
+            if self.year:
+                tgl_mulai = f'{self.year}/01/01'
+                tgl_akhir = f'{self.year}/12/31'
+            else:
+                tgl_mulai = f'{self.date.year}/01/01'
+                tgl_akhir = f'{self.date.year}/12/31'
+
+            doc_number = self.lpad_payment_reference
+
             url_config = self.env['wika.integration'].search([('name', '=', 'URL_PAYMENT_STATUS')], limit=1).url
             headers = {
                 'Authorization': 'Basic V0lLQV9JTlQ6SW5pdGlhbDEyMw==',
@@ -1382,11 +1391,11 @@ class WikaInheritedAccountMove(models.Model):
                 "COMPANY_CODE": "A000",
                 "CLEAR_DATE": 
                     {   
-                        "LOW": "",
-                        "HIGH":""
+                        "LOW": "%s",
+                        "HIGH":"%s"
                     },
                 "DOC_NUMBER": "%s"
-            }) % (self.lpad_payment_reference)
+            }) % (tgl_mulai, tgl_akhir, doc_number)
             payload = payload.replace('\n', '')
             _logger.info("# === CEK PAYLOAD === #")
             _logger.info(payload)
@@ -1398,26 +1407,24 @@ class WikaInheritedAccountMove(models.Model):
             if txt['DATA']:
                 _logger.info("# === IMPORT DATA === #")
                 company_id = self.env.company.id
-                # _logger.info(txt['DATA'])
+                
                 txt_data0 = sorted(txt['DATA'], key=lambda x: x["DOC_NUMBER"])
                 txt_data = filter(lambda x: (x["STATUS"] == "X"), txt_data0)
-                # txt_data = txt['DATA']
+                _logger.info(txt_data)
                 tot_amount = 0
                 for data in txt_data:
                     # _logger.info(data)
                     doc_number = data["DOC_NUMBER"]
                     year = str(data["YEAR"])
                     line_item = data["LINE_ITEM"]
-                    amount = data["AMOUNT"]
+                    amount = data["AMOUNT"] * -1
                     clear_date = data["CLEAR_DATE"]
                     clear_doc = data["CLEAR_DOC"]
                     status = data["STATUS"]
                     new_name = doc_number+str(year)
-                    tot_amount += abs(amount)
+                    tot_amount += amount
 
-                    if self.partner_id.company_id.id and self.status_payment != 'Paid' and year == str(self.year):
-                        self.sap_amount_payment = tot_amount
-                    elif self.partner_id.company_id.id and self.status_payment != 'Paid' and year == str(self.date.year):
+                    if self.partner_id.company_id.id and self.status_payment != 'Paid':
                         self.sap_amount_payment = tot_amount
 
                 _logger.info("# === IMPORT DATA SUKSES === #")

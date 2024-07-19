@@ -7,7 +7,18 @@
             <field name="model">wika.noncash.loan</field>
             <field name="arch" type="xml">
                 <tree string="">
-                    <field name="no_swift"/>
+                    <field name="no_swift" />
+                    <field name="plafond_bank_id" />
+					<field name="vendor_id" />
+					<field name="tgl_mulai" />
+					<field name="tgl_akhir" />
+					<field name="branch_id" />
+					<field name="jumlah_pengajuan" sum="Total Pengajuan" />
+                    <field name="jumlah_pengajuan_asing" sum="Nilai Pengajuan Asing"/>
+					<field name="dalam_proses" sum="Total Oustanding"/>
+					<field name="sisa_outstanding" sum="Total Oustanding"/>
+					<field name="stage_id" />
+                    <field name="currency_id" readonly="1"/>
                 </tree>
             </field>
         </record>
@@ -16,30 +27,67 @@
             <field name="name">wika.ncl.proses.view.form</field>
             <field name="model">wika.noncash.loan</field>
             <field name="arch" type="xml">
+                <header>
+						<!-- <button name="request" type="object" string="Meminta Persetujuan"
+							class="oe_highlight" attrs="{'invisible': [('stage_name','!=','Dok Diterima')]}" />
+						<button name="proses" type="object" string="PENERBITAN"
+							class="oe_highlight" attrs="{'invisible': [('stage_name','!=','Disetujui')]}" />
+						<button name="setuju" type="object" string="Setuju" class="oe_highlight"
+							attrs="{'invisible': ['|',('stage_name','!=','PENERBITAN'),('nama_jenis','=','SKBDN/LC')]}" /> -->
+							   <!-- Jika Jenis SKBDN -->
+						<!-- <button name="proses_akseptasi" type="object" string="AKSEPTASI" class="oe_highlight"
+							attrs="{'invisible': ['|',('nama_jenis','in',['BG','SCF','Jaminan','SBLC']),('stage_name','!=','PENERBITAN')]}"/>
+						<button name="action_pp" type="object" string="Perpanjangan" class="oe_highlight"
+							attrs="{'invisible': ['|',('stage_name','not in',['Setuju','Perpanjangan']),('nama_jenis','!=','BG')]}" groups="mcs_loan.group_loan"/>
+						<button name="cancel" type="object" string="Batal"
+							attrs="{'invisible': [('stage_name','=','Cancel')]}" groups="mcs_loan.group_loan"/> -->
+			 	
+						<!-- Fields Stage by Kondisi Jenis -->
+						<field name="stage_id" widget="statusbar"
+							attrs="{'invisible': [('nama_jenis','not in',['SKBDN/LC',False])]}"  domain="[('tipe','=','Non Cash'),('request','!=',True),('name','not in',['Tidak Akseptasi','Cancel','Setuju','Ditolak','Perpanjangan','Discrepency'])]"
+							/>
+						<field name="stage_id1" widget="statusbar"
+							attrs="{'invisible': [('nama_jenis','not in',('BG','Jaminan','SBLC'))]}"
+							domain="[('tipe','=','Non Cash'),                                  
+                                    ('bg','=',True),
+                                    ('jaminan','=',True),
+                                   ('name','not in',['Ditolak','Cancel','Tidak Akseptasi','Akseptasi','Discrepency']),
+                                   ('request','!=',True),('tipe','=','Non Cash'),]" />
+						<field name="stage_id2" widget="statusbar"
+							attrs="{'invisible': [('nama_jenis','!=','SCF')]}" 
+							domain="[('tipe','=','Non Cash'),
+									('request','!=',True),
+                                    ('scf','=',True),('name','not in',['Ditolak','Cancel','Tidak Akseptasi','Akseptasi','Discrepency'])]"/>
+
+				</header>
                 <form string="">
                     <sheet>
-                        <group>
-                            <group string="Input Data">
-							    <!-- <field name="bank_id" options="{'no_mcreate':True,'no_open':True}"
+						<div class="oe_title">
+							<h1>
+								<field name="name" nolabel="1" />
+								<!-- <button type="object" name="action_amandemen" string="Amandemen" groups="mcs_loan.group_loan"
+								    attrs="{'invisible': [('stage_name','not in',['PENERBITAN','Setuju','Akseptasi','TR','Perpanjangan'])]}"/> -->
+							</h1>
+						</div>
+						<group>
+							<group string="Input Data">
+							    <field name="bank_id" options="{'no_create':True,'no_open':True}"
 									attrs="{'readonly': [('stage_name','in',['Setuju','Akseptasi','Disetujui','TR','Perpanjangan'])],
 										'required':[('stage_name','not in',['Pengajuan','Submit','Approve','Reject'])]}"/>
-                                <field name="stage_name" invisible="1"/> -->
-								<!-- <field name="stage_name" invisible="1" />
-								<field name="jenis_id" options="{'no_create':True,'no_open':True}"  domain="[('type_loan', '=', 'Non Cash')]"
+								<field name="jenis_id" options="{'no_create':True,'no_open':True}"  domain="[('tipe', '=', 'Non Cash')]"
 									attrs="{'readonly': [('stage_name','in',['Setuju','Akseptasi','Disetujui','TR','Perpanjangan'])]}" required="1"/>
-								<field name="tipe_jenis"  attrs="{'required':[('nama_jenis','=','BG')]}" options="{'no_create':True,'no_open':True}" 
-                                    domain="[('type_id', '=', type_id)]" widget="selection"/>
+								<field name="tipe_jenis"  attrs="{'required':[('nama_jenis','=','BG')]}" options="{'no_create':True,'no_open':True}"  domain="[('jenis_id', '=', jenis_id)]" widget="selection"/>
 								<field name="branch_id" options="{'no_create':True,'no_open':True}"
 									attrs="{'readonly': [('stage_name','in',['Setuju','Akseptasi','Disetujui','TR','Perpanjangan'])]}"
-									domain="[('eliminasi','!=',True)]" required="1"/>
+									   domain="[('eliminasi','!=',True)]" required="1"/>
 								<field name="projek_id" options="{'no_create':True,'no_open':True}"
 									attrs="{'readonly': [('stage_name','in',['Akseptasi','Disetujui','TR'])],
-										'invisible': ['|','|',('anak_perusahaan','!=',False),('department_parent','!=',False),('tipe_jenis_name','in', 
-                                        ['USANCE Pengadaan','Tender'])]}"/>
+										'invisible': ['|','|',('anak_perusahaan','!=',False),('department_parent','!=',False),('tipe_jenis_name','in',['USANCE Pengadaan','Tender'])]}"
+									 domain="[('sap_code','!=',False)]"/>
 								<field name="partner_jo" attrs="{'invisible': [('nama_jenis','!=','BG')]}"/>
 								<field name="vendor_id" options="{'no_create':True,'no_open':True}"
 									attrs="{'readonly': [('stage_name','in',['Akseptasi','Disetujui','TR'])],
-										'invisible': [('anak_perusahaan','!=',False)]}"/>
+									    'invisible': [('anak_perusahaan','!=',False)]}"/>
 								<field name="nama_proyek" attrs="{'invisible': [('tipe_jenis_name','not in',['USANCE Pengadaan','Tender'])]}"/>
 								<field name="nama_vendor" attrs="{'invisible': ['|',('tipe_jenis_name','!=','Tender'),('nama_jenis','!=','BG')]}"/>
 								<field name="nama_nasabah" attrs="{'invisible': [('anak_perusahaan','!=',True)]}"/>
@@ -52,10 +100,121 @@
 								</div>
 								<field name="sisa_plafond" invisible="1"/>
 								<field name="sisa_plafond_max" invisible="1"/>
-								<field name="tipe_jenis_name" invisible="1"/> -->
+								<field name="tipe_jenis_name" invisible="1"/>
 							</group>
-                        </group>
-                    </sheet>
+							<group>
+								<field name="tgl_pembukaan" attrs="{'readonly': [('stage_name','in',['Setuju','Akseptasi','Disetujui','TR','Perpanjangan'])]}"/>
+								<label for="tgl_mulai_perkiraan" string="Jangka Waktu Perkiraan" />
+								<div class="o_address_format">
+									<field name="tgl_mulai_perkiraan"
+										attrs="{'readonly': [('stage_name','in',['Setuju','Akseptasi','Disetujui','TR','Perpanjangan'])],
+									    'required':[('stage_name','not in',['Pengajuan','Submit','Approve','Reject'])]}"/>
+									-
+									<field name="tgl_akhir_perkiraan" attrs="{'readonly': [('stage_name','in',['TR','Perpanjangan'])],
+									    'required':[('stage_name','not in',['Pengajuan','Submit','Approve','Reject'])]}"/>
+								</div><![CDATA[]]>
+                                <field name="currency_id" options="{'no_create':True,'no_open':True}"
+								    attrs="{'readonly': [('stage_name','in',['TR','Perpanjangan'])]}"/>
+								<field name="no_rekening" options="{'no_create':True,'no_open':True}"
+									   attrs="{'readonly': [('stage_name','in',['TR','Perpanjangan'])]}"/>
+								<field name="plafond_bank_id"
+									attrs="{'readonly': [('stage_name','in',['Setuju','Akseptasi','Disetujui','TR','Perpanjangan'])],
+											'required':[('stage_name','not in',['Pengajuan','Submit','Approve','Reject'])]}"
+									   options="{'no_create':True,'no_open':True}" />
+								<field name="jumlah_pengajuan_asing" widget="monetary"
+									options="{'currency_field': 'currency_id'}"
+									attrs="{'invisible': [('currency_id','=',13)]}" />
+								<field name="kurs" attrs="{'invisible': [('currency_id','=',13)]}"/>								
+								<label for="jumlah_pengajuan" string="Nilai Pengajuan" />
+								<div class="o_address_format">
+									<field name="jumlah_pengajuan" widget="monetary" options="{'currency_field': 'company_currency'}"
+										attrs="{'readonly': [('stage_name','in',['Setuju','Akseptasi','Disetujui','TR','Perpanjangan'])]}" />
+								</div>
+								<field name="tgl_akhir" invisible="1"/>
+								<field name="rate_bunga" attrs="{'invisible': [('nama_jenis','=','BG')]}"/>
+								<field name="masa_klaim" attrs="{'invisible': [('nama_jenis','!=','BG')]}"/>
+								<field name="tgl_jatuh_tempo" attrs="{'invisible': [('nama_jenis','!=','BG')]}"/>
+								<field name="sisa_outstanding" groups="base.group_no_one"/>
+								<field name="dalam_proses" groups="base.group_no_one"/>
+								<field name="status_loan" groups="base.group_no_one"/>
+								<field name="catatan_sistem" groups="base.group_no_one" readonly="1"/>
+								<field name="stage_name" invisible="1" />
+								<field name="nama_jenis" invisible="1" />
+								<field name="anak_perusahaan" invisible="1"/>
+								<field name="department_parent" invisible="1"/>
+								<field name="company_currency" invisible="1"/>
+							</group>
+							<group string="Input Nomor Swift"
+								attrs="{'invisible': [('stage_name','not in',['PENERBITAN','Setuju','Cancel','Akseptasi','Tidak Akseptasi','TR','Perpanjangan'])]}">
+
+								<field name="tgl_swift"
+									attrs="{'required': [('stage_name','in',['PENERBITAN','Setuju','Akseptasi','TR','Perpanjangan'])]}" />
+								<label for="tgl_mulai" string="Jangka Waktu" />
+								<div class="o_address_format">
+									<field name="tgl_mulai"
+										attrs="{'readonly': [('stage_name','in',['Setuju','Akseptasi','Disetujui','TR','Perpanjangan'])],'required': [('stage_name','in',['PENERBITAN','Setuju','Akseptasi','TR','Perpanjangan'])]}" /><![CDATA[&nbsp;]]><field name="keterangan_hari_mulai" readonly="1"/>
+									<field name="keterangan_hari_mulai" invisible="1"/>
+									-
+									<field name="tgl_akhir" attrs="{'readonly': [('stage_name','in',['TR','Perpanjangan'])],'required': [('stage_name','in',['PENERBITAN','Setuju','Akseptasi','TR','Perpanjangan'])]}"/><![CDATA[&nbsp;]]><field name="keterangan_hari_akhir" readonly="1"/>
+									<field name="keterangan_hari_akhir" invisible="1"/>
+								</div>
+								<field name="no_swift"
+									attrs="{'required': [('stage_name','in',['PENERBITAN','Setuju','Akseptasi','TR','Perpanjangan'])]}" />
+							</group>
+                            <group>
+                                <field name="catatan"/>
+                            </group>
+							<gorup string="Detail Bayar" attrs="{'invisible': ['|',('stage_name','not in',['Setuju','Perpanjangan']),('nama_jenis','!=','BG')]}">
+								<field name="payment_id" readonly="1"/>
+								<field name="payment_keterangan" readonly="1"/>
+								<field name="tgl_bayar" readonly="1"/>
+							</gorup>
+						</group>
+						<notebook>
+							<page name="rencana_pembayaran" string="Rencana Pembayaran" 
+                                attrs="{'invisible': ['|',('stage_name','not in',['Setuju','Cancel','Akseptasi','Tidak Akseptasi','TR','Perpanjangan']), ('nama_jenis','=','BG')]}">															
+								<field name="payment_ids" nolable="1" attrs="{'readonly': [('nama_jenis','=','SCF')]}">
+									<tree editable="bottom">
+										<field name="tgl_jatuh_tempo" attrs="{'readonly': [('state','=','Lunas')]}" />
+										<field name="currency_id" invisible="1"/>
+										<field name="company_currency" invisible="1"/>
+                                        <field name="keterangan_jatuh_tempo"/>
+										<field name="no_swift_akseptasi"/>
+										<field name="tgl_swift_akseptasi"/>
+										<field name="projek_id" options="{'no_create':True,'no_open':True}" />
+										<field name="nilai_pokok" widget="monetary"
+											options="{'currency_field': 'company_currency'}" attrs="{'readonly': ['|',('state','=','Lunas'),('status_akseptasi','=','Akseptasi')]}" sum="Nilai Pokok" />
+										<field name="nilai_pokok_asing" widget="monetary"
+											options="{'currency_field': 'currency_id'} " attrs="{'readonly': ['|',('state','=','Lunas'),('currency_id','=',13)]}"  sum="Nilai Pokok Asing" />
+										<field name="nilai_bunga" widget="monetary"
+											options="{'currency_field': 'currency_id'}" attrs="{'readonly': [('state','=','Lunas')]}" />
+										<field name="status_comdisc"/>
+										<field name="total" invisible="1"/>
+										<field name="total" widget="monetary"
+											options="{'currency_field': 'company_currency'}" readonly="1" sum="Total"/>
+										<field name="state" readonly="1" />
+										<field name="keterangan" attrs="{'readonly': [('state','=','Lunas')]}" />
+										<field name="stage_name" invisible="1"/>
+										<field name="status_akseptasi" invisible="1"/>
+										<field name="nama_jenis" invisible="1"/>
+										<field name="branch_id" invisible="1"/>
+										<!-- <button type="object" name="akseptasi" string="Aksep" groups="mcs_loan.group_loan"
+						                   attrs="{'invisible': ['|','|',('status_akseptasi','=','Akseptasi'),('state','=','Lunas'),('nama_jenis','in',['SCF','Jaminan'])]}"/>
+										<button type="object" name="tidakakseptasi" string="Tidak Aksep" groups="mcs_loan.group_loan"
+						                   attrs="{'invisible': ['|','|',('status_akseptasi','in',['Akseptasi','Tidak Akseptasi']),('state','=','Lunas'),('nama_jenis','in',['SCF','Jaminan'])]}"/>
+										<button type="object" name="action_bayar_view" groups="mcs_loan.group_loan" string="Bayar" class="oe_highlight"
+						                   attrs="{'invisible': ['|','|',('state','=','Lunas'),('nama_jenis','!=','SKBDN/LC'),('status_akseptasi','!=','Akseptasi')]}"/>
+										<button name="action_tr" groups="mcs_loan.group_loan" type="object" string="TR" class="oe_highlight"
+											attrs="{'invisible': ['|','|',('status_akseptasi','!=','Akseptasi'),('state','=','Lunas'),('nama_jenis','in',('BG','Jaminan','SCF','SBLC'))]}" />
+										<button name="action_tr" groups="mcs_loan.group_loan" type="object" string="TR" class="oe_highlight"
+											attrs="{'invisible': ['|',('state','=','Lunas'),('nama_jenis','!=','SCF')]}" />
+										<button type="object" groups="mcs_loan.group_loan" name="action_bayar_view" string="Bayar" class="oe_highlight"
+						                    attrs="{'invisible': ['|',('state','=','Lunas'),('nama_jenis','=','SKBDN/LC')]}"/> -->
+									</tree>
+								</field>
+							</page>
+						</notebook>
+					</sheet>
                 </form>
             </field>
         </record>
@@ -63,9 +222,18 @@
         <record id="wika_ncl_proses_action" model="ir.actions.act_window">
             <field name="name">NCL Proses</field>
             <field name="res_model">wika.noncash.loan</field>
+            <field name="target">current</field>
+            <field name="context">{}</field>
+            <field name="domain">[]</field>
+            <field name="limit">80</field>
             <field name="view_mode">tree,form</field>
+            <field name="view_ids" eval="[(5, 0, 0),
+                (0, 0, {'view_mode': 'tree', 'view_id': ref('wika_ncl_proses_view_tree')}),
+                (0, 0, {'view_mode': 'form', 'view_id': ref('wika_ncl_proses_view_form')})]"/>                     
+            <field name="help" type="html">
+                <p class="oe_view_nocontent_create">Tambahkan Data</p>
+            </field>
         </record>
-
     </data>
 
 </odoo>
