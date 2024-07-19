@@ -2,12 +2,12 @@
 
     <data>
     
-        <menuitem
+        <!-- <menuitem
             id="main_menu_ncl_input_menu"
             name="Input"
             action="wika_ncl_input_action"
             parent="wika_plafond_bank.menu_non_cash_loan"
-            sequence="1"/>
+            sequence="1"/> -->
 
         <menuitem
             id="main_menu_ncl_proses_menu"
