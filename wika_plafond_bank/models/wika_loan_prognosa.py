@@ -8,45 +8,50 @@ class WikaLoanPrognosa(models.Model):
     _description    = 'wika loan prognosa'
     _inherit        = 'mail.thread'
 
+    @api.model
     def get_default_year(self):
         return pytz.UTC.localize(datetime.now()).astimezone(timezone('Asia/Jakarta')).year
 
+    @api.model
     def _get_default_mulai(self):
         mulai = "%s-01-01"%self.get_default_year()
         return mulai
 
+    @api.model
     def _get_default_akhir(self):
         mulai = "%s-12-31" % self.get_default_year()
         return mulai
 
-    name = fields.Char(string='Name')
-    branch_id = fields.Many2one(comodel_name='res.branch', string='Divisi')
-    department_id = fields.Many2one(comodel_name='hr.department', string='Divisi Lama')
-    bank_id = fields.Many2one(comodel_name='res.bank',string='Bank')
-    tipe_id = fields.Many2one(comodel_name='wika.loan.jenis', string='Jenis')
+    name = fields.Char(index=True, compute="_compute_field")
+    branch_id = fields.Many2one('res.branch', string='Divisi')
+    department_id = fields.Many2one('hr.department', string='Divisi Lama')
+    bank_id = fields.Many2one('res.bank',string='Bank')
+    tipe_id = fields.Many2one('wika.loan.jenis', string='Jenis')
     tgl_mulai = fields.Date(string='Tanggal Mulai', default=_get_default_mulai)
     tgl_akhir = fields.Date(string='Tanggal Akhir', default=_get_default_akhir)
-    active = fields.Boolean('active')
+    active = fields.Boolean(string="Active",default=True, store=True)
     message_follower_ids = fields.One2many(
         'mail.followers', 'res_id', string='Followers', groups='base.group_user')
     activity_ids = fields.One2many(
         'mail.activity', 'res_id', 'Activities',
         auto_join=True,
         groups="base.group_user",)
-    prognosa_ids = fields.One2many(comodel_name='wika.loan.prognosa.line',  
+    prognosa_ids = fields.One2many('wika.loan.prognosa.line',  
         ondelete='cascade', inverse_name='prognosa_id')
 
     @api.depends('branch_id', 'tgl_mulai', 'tgl_akhir', 'bank_id', 'tipe_id')
     def _compute_field(self):
-        for x in self:
-            if x.branch_id and x.bank_id and x.tipe_id:
-                tahun_mulai = datetime.strptime(x.tgl_mulai, '%Y-%m-%d')
-                tahun_akhir = datetime.strptime(x.tgl_akhir, '%Y-%m-%d')
+        for record in self:
+            if record.branch_id and record.bank_id and record.tipe_id and record.tgl_mulai and record.tgl_akhir:
+                tahun_mulai = datetime.strptime(record.tgl_mulai.strftime('%Y-%m-%d'), '%Y-%m-%d')
+                tahun_akhir = datetime.strptime(record.tgl_akhir.strftime('%Y-%m-%d'), '%Y-%m-%d')
                 if tahun_mulai.year == tahun_akhir.year:
-                    tahun="%s"%tahun_mulai.year
+                    tahun = "%s" % tahun_mulai.year
                 else:
-                    tahun="%s - %s"%(tahun_mulai.year,tahun_akhir.year)
-                x.name="%s/%s/%s/%s"%(x.branch_id.code,x.bank_id.name, x.tipe_id.nama,tahun)
+                    tahun = "%s - %s" % (tahun_mulai.year, tahun_akhir.year)
+                record.name = "%s/%s/%s/%s" % (record.branch_id.code, record.bank_id.name, record.tipe_id.nama, tahun)
+            else:
+                record.name = ""
 
     def update_branch(self):
         ncl=self.env['wika.loan.prognosa'].search([])
