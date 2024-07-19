@@ -1391,11 +1391,11 @@ class WikaInheritedAccountMove(models.Model):
                 "COMPANY_CODE": "A000",
                 "CLEAR_DATE": 
                     {   
-                        "LOW": "%s",
-                        "HIGH":"%s"
+                        "LOW": "",
+                        "HIGH":""
                     },
                 "DOC_NUMBER": "%s"
-            }) % (tgl_mulai, tgl_akhir, doc_number)
+            }) % (doc_number)
             payload = payload.replace('\n', '')
             _logger.info("# === CEK PAYLOAD === #")
             _logger.info(payload)
@@ -1422,10 +1422,15 @@ class WikaInheritedAccountMove(models.Model):
                     clear_doc = data["CLEAR_DOC"]
                     status = data["STATUS"]
                     new_name = doc_number+str(year)
-                    tot_amount += amount
 
-                    if self.partner_id.company_id.id and self.status_payment != 'Paid':
+                    if self.partner_id.company_id.id and self.status_payment != 'Paid' and year == str(self.year):
+                        tot_amount += amount
                         self.sap_amount_payment = tot_amount
+                    elif self.partner_id.company_id.id and self.status_payment != 'Paid' and year == str(self.date.year):
+                        tot_amount += amount
+                        self.sap_amount_payment = tot_amount
+
+
 
                 _logger.info("# === IMPORT DATA SUKSES === #")
             else:
