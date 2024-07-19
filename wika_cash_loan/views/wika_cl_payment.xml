@@ -111,7 +111,7 @@
                             <field name="nilai_pokok" invisible="1"/> 
                             <field name="plafond_bank_id" invisible="1"/>                                                   
                         </group>
-                        <!-- <group cols="4" col="4" attrs="{'invisible': [('selisih_bayar', '=', 0.0)]}">
+                        <group cols="4" col="4" attrs="{'invisible': [('selisih_bayar', '=', 0.0)]}">
                             <label for="selisih_bayar"/>
                             <div>
                                 <field name="selisih_bayar"/>                                    
@@ -121,7 +121,7 @@
                             <field name="tgl_jatuh_tempo_new" attrs="{'required': [('tipe_bayar', '=', True)]}"/>
                             <field name="nilai_bunga_new" attrs="{'required': [('tipe_bayar', '=', True)]}"/>                                                             	
                             <field name="currency_new"/>
-                        </group> -->
+                        </group>
                         <footer>
                          	<button type="object" name="bayar" string="Bayar" class="oe_highlight"/>
 						    <button string="Cancel" class="btn btn-sm btn-default" special="cancel"/>               

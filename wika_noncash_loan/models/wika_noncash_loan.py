@@ -22,13 +22,13 @@ class WikaNonCashLoan(models.Model):
     jumlah_pengajuan_asing = fields.Float(string='Nilai Pengajuan Asing', copy=False)
     dalam_proses = fields.Float(string='Dalam Proses', default=0, copy=False)
     sisa_outstanding = fields.Float(string='Outstanding', default=0, copy=False)
-    stage_id = fields.Many2one(comodel_name='wika.loan.stage', domain=[('tipe','=','Non Cash'),
-        ],string='Status', copy=False, track_visibility='onchange', index=True)
+    stage_id = fields.Many2one(comodel_name='wika.loan.stage', domain=[('tipe','=','Non Cash'),],
+        string='Status', copy=False, track_visibility='onchange', index=True)
     currency_id = fields.Many2one(comodel_name='res.currency', string='Currency')
     stage_name = fields.Char(related='stage_id.name', string='Status Name', store=True, index=True)
     bank_id = fields.Many2one(comodel_name='res.bank', string="Bank", index=True)
     jenis_id = fields.Many2one(comodel_name='wika.loan.jenis',
-        string="Kriteria", required=True)
+        string="Kriteria")
     projek_id = fields.Many2one(comodel_name='project.project', string="Proyek")
     partner_jo = fields.Char(string='Partner JO')
     nama_proyek = fields.Char(string='Nama Proyek')
@@ -42,32 +42,32 @@ class WikaNonCashLoan(models.Model):
     #                           string="Divisi")
     # audit_log_ids = fields.One2many(comodel_name='wika.ncl.audit.log', inverse_name='ncl_id')
     tgl_mulai_perkiraan = fields.Date(string='Tanggal Mulai Perkiraan')
-    # tgl_akhir_perkiraan = fields.Date(string='Tanggal Akhir Perkiraan')
+    tgl_akhir_perkiraan = fields.Date(string='Tanggal Akhir Perkiraan')
     # tgl_akseptasi   = fields.Date(string='Tanggal Akseptasi')
-    # rate_bunga      = fields.Float(string='Rate Bunga (%)')
+    rate_bunga      = fields.Float(string='Rate Bunga (%)')
     # total_bunga     = fields.Float(
     #                         compute='_cal_amount_all',
     #                         string='Nominal Bunga',
     #                         store=True
     #                         )
     #                      )
-    # stage_id1       = fields.Many2one(related='stage_id',store=False)
-    # stage_id2       = fields.Many2one(related='stage_id',store=False)
+    stage_id1       = fields.Many2one(related='stage_id',store=False)
+    stage_id2       = fields.Many2one(related='stage_id',store=False)
     
 
     tipe_jenis = fields.Many2one(string='Tipe Kriteria', comodel_name='wika.tipe.jenis')                    
     tipe_jenis_name = fields.Char(related='tipe_jenis.name')
     catatan = fields.Text(string='Catatan') 
-    # tgl_swift                   = fields.Date(string='Tanggal Swift',copy=False)
-    # payment_ids                 = fields.One2many(comodel_name='ncl.pembayaran', string="Rencana Pembayaran",
-    #                               inverse_name='loan_id', ondelete='cascade', index="true",copy=False)
+    tgl_swift                   = fields.Date(string='Tanggal Swift',copy=False)
+    payment_ids                 = fields.One2many(comodel_name='wika.ncl.pembayaran', string="Rencana Pembayaran",
+                                  inverse_name='loan_id', ondelete='cascade', index="true",copy=False)
     # payment_ids2                 = fields.One2many(comodel_name='ncl.pembayaran', string="Rencana Pembayaran",
     #                               inverse_name='loan_id', ondelete='cascade', index="true",copy=False)
     # payment_ids3 = fields.One2many(comodel_name='ncl.pembayaran', string="Rencana Pembayaran",
     #                                inverse_name='loan_id', ondelete='cascade', index="true", copy=False)
     # payment_ids4 = fields.One2many(comodel_name='ncl.pembayaran', string="Rencana Pembayaran",
     #                                inverse_name='loan_id', ondelete='cascade', index="true", copy=False)
-    # payment_id                  = fields.Many2one('ncl.pembayaran',string='Pembayaran',copy=False)
+    payment_id                  = fields.Many2one('wika.ncl.pembayaran',string='Pembayaran',copy=False)
     # total_pokok                 = fields.Float(string='Total Pokok', compute='_compute_total',copy=False)
     # total_bunga                 = fields.Float(string='Total Bunga', compute='_compute_total',copy=False)
     anak_perusahaan = fields.Boolean(related='branch_id.anak_perusahaan',store=False)
@@ -76,8 +76,8 @@ class WikaNonCashLoan(models.Model):
     nama_nasabah = fields.Char(string='Nama Nasabah') 
     masa_klaim = fields.Integer(string='Masa Klaim (Hari)')
     tgl_jatuh_tempo = fields.Date(string='Tanggal Jatuh Tempo')
-    # payment_keterangan          = fields.Char(related='payment_id.keterangan',string='Keterangan Bayar',copy=False)
-    # tgl_bayar                   = fields.Date(related='payment_id.tgl_bayar',string='Tanggal Bayar',copy=False)
+    payment_keterangan          = fields.Char(related='payment_id.keterangan',string='Keterangan Bayar',copy=False)
+    tgl_bayar                   = fields.Date(related='payment_id.tgl_bayar',string='Tanggal Bayar',copy=False)
     kurs                        = fields.Float(string='Kurs')                    
     nomor_surat = fields.Char(string='Nomor Surat')
     tenor = fields.Integer(string='Tenor Hari')
@@ -87,11 +87,11 @@ class WikaNonCashLoan(models.Model):
     # plaf_id                     = fields.Many2one(related='plafond_bank_id.plafond_id',store=True)
     company_currency = fields.Many2one(string='Currency', comodel_name="res.currency")
 
-    # status_loan = fields.Selection(string="Status Aktif Loan", selection=[
-    #     ('Aktif', 'Aktif'),
-    #     ('Tidak Aktif', 'Tidak Aktif')], default='Aktif',copy=False)
-    # keterangan_hari_mulai       = fields.Char(string="Keterangan Hari Mulai", store=True)
-    # keterangan_hari_akhir       = fields.Char(string="Keterangan Hari Akhir", store=True)
+    status_loan = fields.Selection(string="Status Aktif Loan", selection=[
+        ('Aktif', 'Aktif'),
+        ('Tidak Aktif', 'Tidak Aktif')], default='Aktif',copy=False)
+    keterangan_hari_mulai       = fields.Char(string="Keterangan Hari Mulai", store=True)
+    keterangan_hari_akhir       = fields.Char(string="Keterangan Hari Akhir", store=True)
 
     # amandemen_ids               = fields.One2many(comodel_name='loan.amandemen', string="History Amandemen",
     #                               inverse_name='loan_id', ondelete='cascade', index="true",copy=False)
@@ -105,7 +105,7 @@ class WikaNonCashLoan(models.Model):
     # tgl_jatuh_tempo_baru = fields.Date(string='Tanggal Jatuh Tempo')
     # keterangan_hari_mulai_baru       = fields.Char(string="Keterangan Hari Mulai", store=True)
     # keterangan_hari_akhir_baru       = fields.Char(string="Keterangan Hari Akhir", store=True)
-    # catatan_sistem                   = fields.Text(string="Catatan Sistem")
+    catatan_sistem                   = fields.Text(string="Catatan Sistem")
 
 
 
@@ -115,7 +115,7 @@ class WikaNonCashLoan(models.Model):
     ], string='Jenis Nasabah')
     nomor_bukti = fields.Char('Nomor Bukti')
     nomor_kontrak = fields.Char('Nomor Kontrak')
-    # nama_barang = fields.Char('Nama Barang')
+    nama_barang = fields.Char('Nama Barang')
     tanggal_kontrak = fields.Date('Tanggal Kontrak')
     nilai_pokok_tagihan = fields.Float('Nilai Pokok Tagihan')
     ppn = fields.Float('PPN')
@@ -124,10 +124,10 @@ class WikaNonCashLoan(models.Model):
     potongan_pph = fields.Float('Potongan PPH (Rp)')
     potongan_lain = fields.Float('Potongan Lain')
     nilai_tagihan_netto = fields.Float('Nilai Tagihan Netto')
-    # nilai_progress = fields.Float('Nilai Progress')
-    # potongan_um = fields.Float('Potongan Uang Muka')
-    # is_pmcs = fields.Boolean(string="Dari PMCS", default=False)
-
+    nilai_progress = fields.Float('Nilai Progress')
+    potongan_um = fields.Float('Potongan Uang Muka')
+    is_pmcs = fields.Boolean(string="Dari PMCS", default=False)
+    step_approve       = fields.Integer(string='Step Approve',default=1,copy=False)
     # default_debit_acc = fields.Many2one(comodel_name='account.account', string="Default Debit Account",
     #                                     domain="[('user_type_id','=',1)]")
     # default_credit_acc = fields.Many2one(comodel_name='account.account', string="Default Credit Account",
@@ -150,6 +150,32 @@ class WikaNonCashLoan(models.Model):
 #     level = fields.Char(string='Level')
 #     ncl_id = fields.Many2one(comodel_name='wika.noncash.loan')
 
+    # def action_input(self):
+    #     # stage_default = self.env['wika.loan.stage'].search([('tipe','=','Non Cash'),('name','=','Pengajuan'),('request','=',True)],limit=1)
+    #     action = {
+    #         'name': ('NCL Input'),
+    #         'type': "ir.actions.act_window",
+    #         'res_model': "wika.noncash.loan",
+    #         'view_type': "form",
+    #         'limit': 20,
+    #         'view_mode': "tree,form",
+    #         'view_id': False,
+    #         'views': [
+    #                 (self.env.ref('wika_noncash_loan.wika_ncl_input_view_tree').id, 'tree'),
+    #                 (self.env.ref('wika_noncash_loan.wika_ncl_input_view_form').id, 'form'),
+
+    #                 ],
+    #     }
+
+    #     # usr = self.env['res.users'].search([('id', '=', self._uid)])
+    #     # for x in usr:
+    #     #     if x.branch_ids:
+    #     #         action['domain'] = [('branch_id', 'in', [b.id for b in x.branch_ids]),
+    #     #                             ('stage_name','in',['Pengajuan','Proses Approval','Approve','Reject'])]
+    #     #     else:
+    #     #         action['domain'] = [('stage_name','in',['Pengajuan','Proses Approval','Approve','Reject'])]
+    #     return action
+
 class WikaNclPembayaran(models.Model):
     _name = 'wika.ncl.pembayaran' 
     _description = 'Non Cash Loan Pembayaran'
@@ -167,7 +193,7 @@ class WikaNclPembayaran(models.Model):
     plafond_bank_id         = fields.Many2one(related='loan_id.plafond_bank_id', string="Plafond Bank", store=True)
     vendor_id               = fields.Many2one(related='loan_id.vendor_id',string="Vendor") 
     nomor_swift = fields.Char(related='loan_id.no_swift',string="Nomor Swift",store=True) 
-    # stage_name              = fields.Char(related='loan_id.stage_name',string="Stage Name",store=True) 
+    stage_name              = fields.Char(related='loan_id.stage_name',string="Stage Name",store=True) 
     no_swift_akseptasi      = fields.Char(string='Nomor Swift Akseptasi')   
     tgl_swift_akseptasi     = fields.Date(string='Tanggal Swift Akseptasi')
     no_swift_tr             = fields.Char(string='Nomor Swift TR/Perpanjangan')
@@ -179,8 +205,8 @@ class WikaNclPembayaran(models.Model):
     #                           string="Divisi Lama", store=True, index=True, readonly=True)
     branch_id               = fields.Many2one(related='loan_id.branch_id',
                               string="Divisi", store=True, index=True, readonly=True)
-    # company_currency        = fields.Many2one(related='loan_id.company_currency',
-    #                                           string='Currency')
+    company_currency        = fields.Many2one(related='loan_id.company_currency',
+                                              string='Currency')
     currency_id             = fields.Many2one(related='loan_id.currency_id',
                                               string='Currency',store=True)
     # currency_diff           = fields.Many2one(comodel_name="res.currency",string='Currency') 
@@ -197,7 +223,7 @@ class WikaNclPembayaran(models.Model):
     # jumlah_bayar            = fields.Float(string='Jumlah Bayar')
 
     tgl_jatuh_tempo         = fields.Date(string='Tanggal Jatuh Tempo', index=True, required=True)
-    # tgl_bayar               = fields.Date(string='Tanggal Bayar')
+    tgl_bayar               = fields.Date(string='Tanggal Bayar')
     keterangan              = fields.Char(string='Ket')
     state = fields.Selection(string='Status', selection=[
         ('Belum Dibayar', 'Belum Dibayar'),
@@ -213,8 +239,8 @@ class WikaNclPembayaran(models.Model):
     status_akseptasi        = fields.Selection(string='Status Akseptasi', selection=[
                                 ('Akseptasi', 'Akseptasi'),
                                 ('Tidak Akseptasi', 'Tidak Akseptasi')])            
-    # projek_id               = fields.Many2one(comodel_name='wika.project',
-    #                                       string="Proyek", ondelete='set null', index=True)
+    projek_id               = fields.Many2one(comodel_name='wika.project',
+                                          string="Proyek", ondelete='set null', index=True)
 
     # nomor_swift_baru = fields.Char(string="Nomor Swift Baru", store=True)
     # tgl_swift_baru = fields.Date(string='Tanggal Swift Baru', store=True)
@@ -229,9 +255,9 @@ class WikaNclPembayaran(models.Model):
     plaf_id     = fields.Many2one('wika.plafond.bank',store=True)
     # Csisa       = fields.Float(string="Total (Dalam Juta)",store=True,compute="_compute_sisa")
     # Gsisa       = fields.Float(related='Csisa', store=True)
-    # status_comdisc = fields.Selection(string="COMP/DISC", selection=[
-    #     ('Comply', 'Comply'),
-    #     ('Discrepency', 'Discrepency')])
+    status_comdisc = fields.Selection(string="COMP/DISC", selection=[
+        ('Comply', 'Comply'),
+        ('Discrepency', 'Discrepency')])
     sel_over= fields.Selection(selection=[
         ('Toleransi', 'Toleransi'),
         ('Overdraft', 'Overdraft')])

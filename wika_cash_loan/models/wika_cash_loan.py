@@ -189,19 +189,19 @@ class WikaCashLoan(models.Model):
                 'jenis_id' :[('id','in',[x.jenis_id.id for x in bank]),('tipe','=','Cash')]},}
         return domain
     
-    @api.onchange('jenis_id','bank_id')
-    def domain_all(self):
-        today = fields.Date.context_today(self)
-        domain ={}
-        if self.jenis_id and self.bank_id:
-            plafond = self.env['wika.loan.plafond.detail'].search([
-                ('plafond_id.bank_id', '=', self.bank_id.id),
-                ('jenis_id', '=', self.jenis_id.id),
-                ('sisa', '>', 0.0)])
+    # @api.onchange('jenis_id','bank_id')
+    # def domain_all(self):
+    #     today = fields.Date.context_today(self)
+    #     domain ={}
+    #     if self.jenis_id and self.bank_id:
+    #         plafond = self.env['wika.loan.plafond.detail'].search([
+    #             ('plafond_id.bank_id', '=', self.bank_id.id),
+    #             ('jenis_id', '=', self.jenis_id.id),
+    #             ('sisa', '>', 0.0)])
 
-            plafond_id = [x.id for x in plafond]
-            domain = {'domain':{'plafond_bank_id':[('id','in',plafond_id)]}}
-        return domain
+    #         plafond_id = [x.id for x in plafond]
+    #         domain = {'domain':{'plafond_bank_id':[('id','in',plafond_id)]}}
+    #     return domain
 
     @api.depends('currency_id', 'nilai_pengajuan_asing')
     def auto_kurs(self):
@@ -251,13 +251,27 @@ class WikaCashLoan(models.Model):
                     nilai=nilai+z.jumlah_bayar
                 x.sisa_pengajuan=x.nilai_pengajuan-nilai
 
-    @api.onchange('plafond_bank_id')
-    def warning_plafond(self):
-        if self.plafond_bank_id and self.plafond_bank_id.sisa <= 0.0:
+    @api.onchange('plafond_bank_id', 'nilai_pengajuan')
+    def _onchange_warning_plafond(self):
+        if self.plafond_bank_id and self.nilai_pengajuan > self.plafond_bank_id.sisa:
             return {
-                'warning': {'title': _('Warning!'), 
-                    'message': _('Sisa Plafond anda "%s".\n Apakah akan dilanjutkan?')%self.plafond_bank_id.sisa}
-                }      
+                'warning': {
+                    'title': _('Warning!'),
+                    'message': _('Nilai pengajuan tidak boleh melebihi nilai sisa max plafond')
+                }
+            }
+
+    @api.constrains('plafond_bank_id', 'nilai_pengajuan')
+    def _check_plafond_bank_sisa(self):
+        for record in self:
+            if record.plafond_bank_id and record.nilai_pengajuan > record.plafond_bank_id.sisa:
+                raise ValidationError('Nilai pengajuan tidak boleh melebihi nilai sisa max plafond')
+    
+    @api.constrains('nilai_pengajuan')
+    def _check_nilai_pengajuan(self):
+        for record in self:
+            if record.nilai_pengajuan == 0:
+                raise ValidationError('Nilai pengajuan tidak boleh 0')
 
     def perpanjangan(self):
         stage_sekarang = self.stage_id.sequence
@@ -331,9 +345,9 @@ class WikaCashLoanPembayaran(models.Model):
     # company_currency    = fields.Many2one(related='loan_id.company_currency',
     #                      string='Currency',store=True
     #                      )
-    # currency_new        = fields.Many2one(comodel_name='res.currency',
-    #                      string='New Currency'
-    #                      )
+    currency_new        = fields.Many2one(comodel_name='res.currency',
+                         string='New Currency'
+                         )
     # kurs_awal           = fields.Float(related='loan_id.kurs',string='Kurs Pembukaan')    
     tgl_jatuh_tempo_new = fields.Date(string='Tanggal Jatuh Tempo')
 
@@ -351,7 +365,7 @@ class WikaCashLoanPembayaran(models.Model):
     perpanjangan_ids = fields.One2many(comodel_name='wika.loan.log.perpanjangan', string="History Perpanjangan",
         inverse_name='pembayaran_id', ondelete='cascade', index="true", copy=False)
 
-    @api.depends('loan_id.plafond_bank_id.terpakai')
+    @api.depends('cash_loan_id.plafond_bank_id.terpakai')
     def lunas(self):
         stage_next = self.env['wika.loan.stage'].search([
             ('name', '=', 'Lunas'),
@@ -363,7 +377,7 @@ class WikaCashLoanPembayaran(models.Model):
             x.plafond_bank_id.sisa = x.plafond_bank_id.nilai - x.plafond_bank_id.terpakai
             x.plafond_bank_id.plafond_id.terpakai = sum(x.terpakai for x in self.plafond_bank_id.plafond_id.plafond_ids)                                 
             x.plafond_bank_id.plafond_id.sisa = x.plafond_bank_id.plafond_id.jumlah - x.plafond_bank_id.plafond_id.terpakai        
-        self.loan_id.stage_id=stage_next.id
+        self.cash_loan_id.stage_id=stage_next.id
         self.state      = 'Lunas'
         self.jumlah_bayar = self.nilai_pokok
         self.tgl_bayar  = today
@@ -487,9 +501,11 @@ class WikaCashLoanPembayaran(models.Model):
 
     @api.depends('nilai_pokok', 'jumlah_bayar')
     def _compute_selisih(self):
-        for x in self:
-            if x.jumlah_bayar:
-                x.selisih_bayar = x.nilai_pokok - x.jumlah_bayar
+        for record in self:
+            if record.jumlah_bayar:
+                record.selisih_bayar = record.nilai_pokok - record.jumlah_bayar
+            else:
+                record.selisih_bayar = 0.0
     
     @api.depends('total')
     def _compute_sisa(self):

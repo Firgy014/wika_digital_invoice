@@ -20,14 +20,14 @@
     'version': '0.1',
 
     # any module necessary for this one to work correctly
-    'depends': ['base'],
+    'depends': ['base', 'wika_plafond_bank', 'wika_noncash_loan', 'wika_cash_loan'],
 
     # always loaded
     'data': [
         # 'security/ir.model.access.csv',
         'views/views.xml',
         'views/templates.xml',
-        # 'views/wika_ncl_proses.xml',
+        # 'views/non_cash_loan_view.xml',
         # 'views/wika_menu.xml',
     ],
     # only loaded in demonstration mode
