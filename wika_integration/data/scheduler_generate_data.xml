@@ -13,11 +13,22 @@
       <field name="doall" eval="False" />
     </record>
     <record id="wika_update_payment_ref" model="ir.cron">
-      <field name="name">Update Invoice</field>
+      <field name="name">Update Invoice Outbound YFII015 | TXT-based</field>
       <field name="active" eval="True" />
       <field name="model_id" ref="wika_integration.model_sap_integration_configure" />
       <field name="state">code</field>
-      <field name="code">model._update_invoice()</field>
+      <field name="code">model._update_invoice_txt()</field>
+      <field name="interval_number">1</field>
+      <field name="interval_type">days</field>
+      <field name="numbercall">1</field>
+      <field name="doall" eval="False" />
+    </record>
+    <record id="wika_update_payment_ref" model="ir.cron">
+      <field name="name">Update Invoice Outbound YFII015 | JSON-based</field>
+      <field name="active" eval="True" />
+      <field name="model_id" ref="wika_integration.model_sap_integration_configure" />
+      <field name="state">code</field>
+      <field name="code">model._update_invoice_json()</field>
       <field name="interval_number">1</field>
       <field name="interval_type">days</field>
       <field name="numbercall">1</field>
