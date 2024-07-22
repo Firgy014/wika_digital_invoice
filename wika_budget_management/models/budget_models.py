@@ -35,8 +35,10 @@ class WikaMCSBudgetBulan(models.Model):
     total_anggaran = fields.Float(string='Rencana (RKAP)', compute='_compute_total_anggaran',store=True)
     anggaran_sd = fields.Float(string="Akumulasi Anggaran", compute='_compute_anggaran_sd')
     sisa_anggaran = fields.Float(string='Sisa Anggaran', compute='_compute_sisa_anggaran', store=True)
-    terpakai_vb = fields.Float(string="Realisasi Vendor Bills", compute='_compute_terpakai_vendorbills')
-    terpakai_vb_sd = fields.Float(string="Akumulasi Realisasi Vendor Bills", compute='_compute_terpakai_vendorbills_sd')
+    # terpakai_vb = fields.Float(string="Realisasi Vendor Bills", compute='_compute_terpakai_vendorbills')
+    terpakai_vb = fields.Float(string="Realisasi Vendor Bills", default=0.0)
+    # terpakai_vb_sd = fields.Float(string="Akumulasi Realisasi Vendor Bills", compute='_compute_terpakai_vendorbills_sd')
+    terpakai_vb_sd = fields.Float(string="Akumulasi Realisasi Vendor Bills", default=0.0)
     persen = fields.Float(string="% RI Terhadap RA", compute="_compute_percent", store=True)
     persen_hd = fields.Float(string="Persen", compute="_compute_percent_hd")
     bulan = fields.Selection([('1', 'Januari'), ('2', 'Februari'), ('3', 'Maret'), ('4', 'April'),
@@ -61,21 +63,21 @@ class WikaMCSBudgetBulan(models.Model):
             if x.coa_id.biro:
                 anggaran = self.env['wika.mcs.budget.bulan'].search(
                     [('kode_coa', '=', x.coa_id.kode_coa.id), ('bulan', '=', x.bulan),
-                    ('state', '=', x.coa_id.state),('tahun', '=', x.coa_id.tahun-1),
+                    ('state', '=', x.coa_id.state),('tahun', '=', str(int(x.coa_id.tahun) - 1)),
                     ('tipe_budget', '=', x.coa_id.tipe_budget),
                     ('department', '=', x.coa_id.department.id),
                     ('biro', '=', x.coa_id.biro.id)])
             else:
                  anggaran = self.env['wika.mcs.budget.bulan'].search(
                     [('kode_coa', '=', x.coa_id.kode_coa.id), ('bulan', '=', x.bulan),
-                    ('state', '=', x.coa_id.state),('tahun', '=', x.coa_id.tahun-1),
+                    ('state', '=', x.coa_id.state),('tahun', '=', str(int(x.coa_id.tahun) - 1)),
                     ('tipe_budget', '=', x.coa_id.tipe_budget),
                     ('department', '=', x.coa_id.department.id)])
 
             if anggaran:
                 rencana_sebelumnya = 0
                 for z in anggaran:
-                    print (z)
+                    print(z)
                     rencana_sebelumnya += z.prognosa
                 x.rencana_sebelumnya = rencana_sebelumnya
 
@@ -142,11 +144,69 @@ class WikaMCSBudgetBulan(models.Model):
             anggaran = self.env['wika.mcs.budget.coa.detail.line'].search(
                 [('coa_id', '=', x.coa_id.id), ('bulan', '=', x.bulan)])
             if anggaran:
+                print(anggaran, "--------> ANGGARAN IS EXIST")
                 total_anggaran = 0
                 for z in anggaran:
                     total_anggaran += z.anggaran
                 x.total_anggaran = total_anggaran
                 x.prognosa = total_anggaran
+
+    # def global_compute_terpakai_vendorbills(self, bulan, tahun, coa, dept, biro, biro_id, ket):
+    #     if bulan and dept:
+    #         if ket == "Bulan Ini":
+    #             tgl = '%s-%s-1' % (tahun, bulan)
+    #         else:
+    #             tgl = '%s-1-1' % (tahun)
+    #         bln_next = bulan + 1
+    #         if bln_next > 12:
+    #             bln_next -= 12
+    #             tahun += 1
+    #         tgl_next = '%s-%s-1' % (tahun, bln_next)
+
+    #         branch = self.env['res.branch'].search([('id', '=', dept)], limit=1)
+    #         print (biro_id)
+    #         print(dept)
+    #         if biro==True:
+    #             branch_id=branch.id
+    #             query =  """
+    #                 SELECT
+    #                     sum(ri.price_subtotal)
+    #                     FROM vendor_bills_report ri
+    #                     WHERE ri.tipe_budget = 'opex' and ri.branch_id= """ + branch_id + """ and ri.account_id = """ + coa + """
+    #                     and ri.date_invoice >= '"""+tgl+"""' and ri.date_invoice <'"""+tgl_next+"""'
+    #             group by ri.account_id, ri.branch_id"""
+    #             self._cr.execute(query)
+    #             intems = self._cr.fetchall()
+    #         elif dept!='262':
+    #             query = """
+    #                                 SELECT
+    #                                     sum(ri.price_subtotal)
+    #                                     FROM vendor_bills_report ri
+    #                                     WHERE ri.tipe_budget = 'opex' and ri.biro = """ + str(biro_id)+ """ 
+    #                                     and ri.account_id = """ + str(coa) + """ and ri.date_invoice >= '"""+str(tgl)+"""' and ri.date_invoice <'"""+str(tgl_next)+"""'
+    #                             group by ri.account_id, ri.biro"""
+    #             self._cr.execute(query)
+    #             intems = self._cr.fetchall()
+    #         elif dept=='262':
+    #             query = """
+    #                                 SELECT
+    #                                     sum(ri.price_subtotal)
+    #                                     FROM vendor_bills_report ri
+    #                                     WHERE ri.tipe_budget = 'opex' and ri.branch_id =262
+    #                                     and ri.account_id = """ + str(coa) + """ and ri.date_invoice >= '"""+str(tgl)+"""' and ri.date_invoice <'"""+str(tgl_next)+"""'
+    #                             group by ri.account_id, ri.branch_id"""
+    #             self._cr.execute(query)
+    #             intems = self._cr.fetchall()
+
+    #         terpakai = 0
+    #         for intem in intems:
+
+    #             terpakai+=intem[0]
+
+    #         # Terpakai itu cari dept biro coa yang ada di account invoice yang masih draft
+    #         # dan di account move line yang ref nya sama dengan kode jurnal. Jadi walau divalidate
+    #         # jika refnya tidak sama dengan kode jurnal dept / biro tsb maka tidak akan muncul angka tsb
+    #         return terpakai
 
 class WikaMCSBudgetCOA(models.Model):
     _name = 'wika.mcs.budget.coa'
@@ -183,7 +243,10 @@ class WikaMCSBudgetCOA(models.Model):
     state = fields.Selection([('Draft', 'Draft'), ('Confirm', 'RKAP'), ('Review', 'Review')], string='Status', default='Draft', index=True)
     sequence = fields.Integer(string='Sequence')
     total_depres = fields.Float(string="Nilai Depresiasi Per Tahun", compute='_compute_depresiasi')
-    bulan_review = fields.Selection([('1', 'Januari'), ('2', 'Februari'), ('3', 'Maret'), ('4', 'April'), ('5', 'Mei'), ('6', 'Juni'), ('7', 'Juli'), ('8', 'Agustus'), ('9', 'September'), ('10', 'Oktober'), ('11', 'November'), ('12', 'Desember')], string='Month')
+    bulan_review = fields.Selection([('1', 'Januari'), ('2', 'Februari'), ('3', 'Maret'), ('4', 'April'),
+                                     ('5', 'Mei'), ('6', 'Juni'), ('7', 'Juli'), ('8', 'Agustus'), ('9', 'September'),
+                                     ('10', 'Oktober'), ('11', 'November'), ('12', 'Desember')
+                                     ], string='Month')
 
     aktif = fields.Boolean(string='Active', default=True)
     asset_category_id = fields.Many2one('account.asset', string='Kategori Asset')
@@ -320,17 +383,21 @@ class WikaMCSBudgetCOA(models.Model):
         for x in self.detail_ids:
             if x.status_generate==False:
                 for i in range(12):
+                    bulan = i + 1
+                    str_bulan = str(bulan)
                     self.env['wika.mcs.budget.coa.detail.line'].create({
                         'detail_id': x.id,
-                        'bulan': i + 1,
+                        'bulan': str_bulan,
                         'sequence': i + 1,
                     })
                 x.status_generate = True
         if not self.detail_ids2:
             for i in range(12):
+                bulan = i + 1
+                str_bulan = str(bulan)
                 self.env['wika.mcs.budget.bulan'].create({
                     'coa_id': self.id,
-                    'bulan': i + 1,
+                    'bulan': str_bulan,
                 })
 
     def name_get(self):
@@ -444,10 +511,11 @@ class WikaMCSBudgetCOADetail(models.Model):
     @api.onchange('anggaran', 'total_rencana','total_beban','tipe_budget')
     def onchange_anggaran_beban(self):
         if self.tipe_budget != 'bad':
-            if self.total_rencana < (self.total_beban + self.anggaran) :
-                raise ValidationError('Total beban melebihi total rencana yang ditentukan.'
-                                      '(lebih %.2f)!' % (
-                                              (self.total_beban + self.anggaran) - self.total_rencana ))
+            if self.total_rencana < (self.total_beban + self.anggaran):
+                pass
+                # raise ValidationError('Total beban melebihi total rencana yang ditentukan.'
+                #                       '(lebih %.2f)!' % (
+                #                               (self.total_beban + self.anggaran) - self.total_rencana))
     @api.depends('line_ids')
     def _compute_total_bulan(self):
         for x in self:
@@ -552,7 +620,7 @@ class WikaMCSBudgetCOADetailLine(models.Model):
     bulan = fields.Selection([('1', 'Januari'), ('2', 'Februari'), ('3', 'Maret'), ('4', 'April'),
                               ('5', 'Mei'), ('6', 'Juni'), ('7', 'Juli'), ('8', 'Agustus'),
                               ('9', 'September'), ('10', 'Oktober'), ('11', 'November'), ('12', 'Desember')],
-                             string='Bulan',index=True)
+                             string='Bulan', index=True)
 
     def replace_lower(self):
         if self.bulan:
