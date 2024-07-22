@@ -57,27 +57,34 @@
                         <field name="state" widget="statusbar" statusbar_visible="Draft,Confirm,Review"/>
                     </header>
                     <sheet>
-                        <group col="4">
-                            <!-- <field name="tipe_budget_id" required="1" widget="radio" domain="[('code','!=','bad')]"/> -->
-                            <field name="tahun" required="1" widget="selection" attrs="{'readonly': [('state','!=','Draft')]}"/>
-                            <field name="kode_coa" required="1" attrs="{'readonly': [('state','!=','Draft')]}" options="{'no_create': True, 'no_open': True}"/>
-                            <field name="grup_akun" required="1" attrs="{'readonly': [('state','!=','Draft')]}" options="{'no_create': False, 'no_open': True}"/>
-                            <field name="total_anggaran"/>
-                            <field name="total_anggaran_sap" readonly="1"/>
-                            <field name="check_biro" invisible="1"/>
-                            <field name="sequence" invisible="1"/>
-                            <field name="department" required="1" attrs="{'readonly': [('state','!=','Draft')]}" options="{'no_create': True, 'no_open': True}"/>
-                            <field name="available_amount_sap" readonly="1"/>
-                            <field name="biro" domain="[('parent_id', '=', department)]" attrs="{'invisible': [('check_biro', '=', False)], 'required': [('check_biro', '=', True)], 'readonly': [('state','!=','Draft')]}" options="{'no_create': True, 'no_open': True}"/>
-                            <field name="terpakai_sap" readonly="1"/>
-                            <field name="aktif"/>
-                            <field name="terpakai_vb"/>
-                            <field name="bulan_review" attrs="{'invisible': [('state', '!=', 'Review')], 'readonly': [('state','!=','Draft')]}"/>
-                            <field name="tipe_budget"/>
-                            <field name="asset_category_id" attrs="{'invisible': [('tipe_budget', '=', 'opex')], 'readonly': [('state','!=','Draft')]}" options="{'no_create': True, 'no_open': True}"/>
-                            <field name="sisa" invisible="1"/>
-                            <field name="from_sap" readonly="1"/>
+                        <group>
+                            <group>
+                                <!-- <field name="tipe_budget_id" readonly="0" required="1" domain="[('code','!=','bad')]"/> -->
+                                <field name="tipe_budget_id" readonly="0" required="1"/>
+                                <field name="kode_coa" required="1" attrs="{'readonly': [('state','!=','Draft')]}" options="{'no_create': True, 'no_open': True}"/>
+                                <field name="total_anggaran"/>
+                                <field name="check_biro" invisible="1"/>
+                                <field name="sequence" invisible="1"/>
+                                <field name="department" required="1" attrs="{'readonly': [('state','!=','Draft')]}" options="{'no_create': True, 'no_open': True}"/>
+                                <field name="biro" domain="[('parent_id', '=', department)]" attrs="{'invisible': [('check_biro', '=', False)], 'required': [('check_biro', '=', True)], 'readonly': [('state','!=','Draft')]}" options="{'no_create': True, 'no_open': True}"/>
+                                <field name="aktif"/>
+                                <field name="bulan_review" attrs="{'invisible': [('state', '!=', 'Review')], 'readonly': [('state','!=','Draft')]}"/>
+                                <field name="tipe_budget" invisible="1"/>
+                                <field name="asset_category_id" attrs="{'invisible': [('tipe_budget', '=', 'opex')], 'readonly': [('state','!=','Draft')]}" options="{'no_create': True, 'no_open': True}"/>
+                                <field name="sisa" invisible="1"/>
+                                <field name="from_sap" readonly="1"/>
+                            </group>
+
+                            <group>
+                                <field name="tahun" required="1" widget="selection" attrs="{'readonly': [('state','!=','Draft')]}"/>
+                                <field name="grup_akun" required="1" attrs="{'readonly': [('state','!=','Draft')]}" options="{'no_create': False, 'no_open': True}"/>
+                                <field name="total_anggaran_sap" readonly="1"/>
+                                <field name="available_amount_sap" readonly="1"/>
+                                <field name="terpakai_sap" readonly="1"/>
+                                <field name="terpakai_vb"/>
+                            </group>
                         </group>
+
                         <button name="act_generate" type="object" string="Generate Bulan" class="oe_highlight" attrs="{'invisible': [('state','!=','Draft')]}"/>
                         <notebook>
                             <page name="detail" string="Detail Pekerjaan">
