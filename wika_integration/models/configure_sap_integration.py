@@ -803,7 +803,8 @@ class sap_integration_configure(models.Model):
                         update_vals = {
                             'name': dig_code,
                             'payment_reference': belnr,
-                            'year': gjahr
+                            'year': gjahr,
+                            'is_verified_as_pr': 'yes'
                         }
                         
                         invoice_id.write(update_vals)
