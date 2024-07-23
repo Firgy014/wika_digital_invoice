@@ -1411,8 +1411,8 @@ class WikaInheritedAccountMove(models.Model):
                 txt_data = sorted(txt['DATA'], key=lambda x: x["DOC_NUMBER"])
                 tot_amount = 0
                 for data in txt_data:
-                    _logger.info(data)
-                    _logger.info(self.status_payment)
+                    # _logger.info(data)
+                    # _logger.info(self.status_payment)
                     doc_number = data["DOC_NUMBER"]
                     year = str(data["YEAR"])
                     line_item = data["LINE_ITEM"]
