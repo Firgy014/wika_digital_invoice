@@ -9,6 +9,7 @@
                     <field name="name" />
                     <field name="tgl_mulai" />
                     <field name="tgl_akhir" />
+                    <field name="year" />
                     <field name="state" />
                 </tree>
             </field>
@@ -28,6 +29,7 @@
                             <field name="name" />
                             <field name="tgl_mulai" />
                             <field name="tgl_akhir" />
+                            <field name="year" />
                             <field name="state" invisible="1" />
                         </group>
 
@@ -43,6 +45,7 @@
             <field name="arch" type="xml">
                 <search string="Search">
                     <field name="name" />
+                    <field name="year" />
                 </search>
             </field>
         </record>
