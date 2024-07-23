@@ -1372,14 +1372,12 @@ class WikaInheritedAccountMove(models.Model):
             if not self.payment_reference:
                 raise UserError("Payment Reference harus diisi")
 
-            if self.year:
-                tgl_mulai = f'{self.year}/01/01'
-                tgl_akhir = f'{self.year}/12/31'
-            else:
-                tgl_mulai = f'{self.date.year}/01/01'
-                tgl_akhir = f'{self.date.year}/12/31'
-
             doc_number = self.lpad_payment_reference
+            param_year = ""
+            if self.year:
+                param_year = str(self.year)
+            elif self.date.year:
+                param_year = str(self.date.year)
 
             url_config = self.env['wika.integration'].search([('name', '=', 'URL_PAYMENT_STATUS')], limit=1).url
             headers = {
@@ -1391,11 +1389,13 @@ class WikaInheritedAccountMove(models.Model):
                 "COMPANY_CODE": "A000",
                 "CLEAR_DATE": 
                     {   
-                        "LOW": "%s",
-                        "HIGH":"%s"
+                        "LOW": "",
+                        "HIGH":""
                     },
-                "DOC_NUMBER": "%s"
-            }) % (tgl_mulai, tgl_akhir, doc_number)
+                "DOC_NUMBER": "%s",
+                "DOC_YEAR": "%s",
+                "STATUS": "X"
+            }) % (doc_number, param_year)
             payload = payload.replace('\n', '')
             _logger.info("# === CEK PAYLOAD === #")
             _logger.info(payload)
@@ -1408,12 +1408,11 @@ class WikaInheritedAccountMove(models.Model):
                 _logger.info("# === IMPORT DATA === #")
                 company_id = self.env.company.id
                 
-                txt_data0 = sorted(txt['DATA'], key=lambda x: x["DOC_NUMBER"])
-                txt_data = filter(lambda x: (x["STATUS"] == "X"), txt_data0)
-                _logger.info(txt_data)
+                txt_data = sorted(txt['DATA'], key=lambda x: x["DOC_NUMBER"])
                 tot_amount = 0
                 for data in txt_data:
-                    # _logger.info(data)
+                    _logger.info(data)
+                    _logger.info(self.status_payment)
                     doc_number = data["DOC_NUMBER"]
                     year = str(data["YEAR"])
                     line_item = data["LINE_ITEM"]
@@ -1422,10 +1421,15 @@ class WikaInheritedAccountMove(models.Model):
                     clear_doc = data["CLEAR_DOC"]
                     status = data["STATUS"]
                     new_name = doc_number+str(year)
-                    tot_amount += amount
 
-                    if self.partner_id.company_id.id and self.status_payment != 'Paid':
+                    if self.partner_id.company_id.id and self.status_payment != 'Paid' and year == str(self.year):
+                        tot_amount += amount
                         self.sap_amount_payment = tot_amount
+                    elif self.partner_id.company_id.id and self.status_payment != 'Paid' and year == str(self.date.year):
+                        tot_amount += amount
+                        self.sap_amount_payment = tot_amount
+
+
 
                 _logger.info("# === IMPORT DATA SUKSES === #")
             else:
@@ -1434,9 +1438,11 @@ class WikaInheritedAccountMove(models.Model):
     def get_payment_status_partial(self):
         _logger.info("# === get_payment_status_partial === #")
         for rec in self.partial_request_ids:
-            tgl_mulai = f'{rec.year}/01/01'
-            tgl_akhir = f'{rec.year}/12/31'
             doc_number = rec.lpad_no_doc_sap
+
+            param_year = ""
+            if rec.year:
+                param_year = str(rec.year)
 
             url_config = self.env['wika.integration'].search([('name', '=', 'URL_PAYMENT_STATUS')], limit=1).url
             headers = {
@@ -1448,11 +1454,13 @@ class WikaInheritedAccountMove(models.Model):
                 "COMPANY_CODE": "A000",
                 "CLEAR_DATE": 
                     {   
-                        "LOW": "%s",
-                        "HIGH":"%s"
+                        "LOW": "",
+                        "HIGH":""
                     },
-                "DOC_NUMBER": "%s"
-            }) % (tgl_mulai, tgl_akhir, doc_number)
+                "DOC_NUMBER": "%s",
+                "DOC_YEAR": "%s",
+                "STATUS": "X"
+            }) % (doc_number, param_year)
             payload = payload.replace('\n', '')
             _logger.info("# === CEK PAYLOAD === #")
             _logger.info(payload)
@@ -1465,28 +1473,26 @@ class WikaInheritedAccountMove(models.Model):
                     _logger.info("# === IMPORT DATA === #")
                     company_id = self.env.company.id
                     # _logger.info(txt['DATA'])
-                    txt_data0 = sorted(txt['DATA'], key=lambda x: x["DOC_NUMBER"])
-                    txt_data = filter(lambda x: (x["STATUS"] == "X"), txt_data0)
-                    
-                    # txt_data = txt['DATA']
+                    txt_data = sorted(txt['DATA'], key=lambda x: x["DOC_NUMBER"])
                     tot_amount = 0 
                     for data in txt_data:
                         # _logger.info(data)
                         doc_number = data["DOC_NUMBER"]
                         year = str(data["YEAR"])
                         line_item = data["LINE_ITEM"]
-                        amount = data["AMOUNT"]
+                        amount = data["AMOUNT"] * -1
                         clear_date = data["CLEAR_DATE"]
                         clear_doc = data["CLEAR_DOC"]
                         status = data["STATUS"]
                         new_name = doc_number+str(year)
-                        tot_amount += abs(amount)
-
-                        rec.write({
-                            'sap_amount_payment': tot_amount,
-                            'payment_state': 'paid',
-                            'accounting_doc': clear_doc
-                        })
+                        
+                        if param_year == year:
+                            tot_amount += amount
+                            rec.write({
+                                'sap_amount_payment': tot_amount,
+                                'payment_state': 'paid',
+                                'accounting_doc': clear_doc
+                            })
                     _logger.info("# === IMPORT DATA SUKSES === #")
                 else:
                     raise UserError(_("Data Payment Status Tidak Tersedia!"))
