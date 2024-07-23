@@ -85,7 +85,7 @@
         <record id="url_new_outbound_json_based_error" model="wika.integration">
             <field name="name">URL_NEW_OUTBOUND_015_ERROR</field>
             <field name="app">SAP</field>
-            <field name="url">http://wtapperp-dev.wika.co.id:8010/ywikaoutbound/data?sap-client=110</field>
+            <field name="url">http://wtapperp-dev.wika.co.id:8010/ywikaoutbound/error_message?sap-client=110</field>
             <field name="app_secret"></field>
         </record>
     </data>

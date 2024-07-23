@@ -478,7 +478,7 @@ class sap_integration_configure(models.Model):
             else:
                 _logger.warning("No matching invoice found for DIG_INV: %s", dig_inv)
 
-        error_url = 'http://wtapperp-dev.wika.co.id:8010/ywikaoutbound/error_message?sap-client=110'
+        error_url = error_id.url
         error_body = {
             "DIG_CODE": docnos,
             "AWTYP": ["YFI15"],
