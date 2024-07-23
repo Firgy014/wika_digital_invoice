@@ -75,6 +75,7 @@ class DocApNonPO(models.Model):
                             if pph_cbasis <= 0:
                                 pph_cbasis = data["PPH_ACCRUAL"] * -1
 
+                            ppn = data["PPN"]
                             amount = data["AMOUNT"] * -1
                             header_text = data["HEADER_TEXT"]
                             reference = data["REFERENCE"]
@@ -177,6 +178,9 @@ class DocApNonPO(models.Model):
                                             'invoice_id': account_move_id,
                                             'doc_number': doc_number,
                                             'amount': amount,
+                                            'ppn': ppn,
+                                            'pph_cbasis': pph_cbasis,
+                                            'pph_accrual': pph_accrual,
                                             'line': line_item,
                                             'project_id': project.id,
                                             'branch_id': project.branch_id.id,
@@ -197,6 +201,8 @@ class DocApNonPO(models.Model):
                             account_move_line_created.move_id.compute_amount_invoice()
                         
                         if journal_item_sap_vals:
+                            _logger.info('# === Insert Journal SAP === #')
+                            _logger.info(journal_item_sap_vals)
                             journal_item_sap_created = self.env['wika.account.move.journal.sap'].create(journal_item_sap_vals)
 
                         doc.state = "done"
