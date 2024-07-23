@@ -1373,6 +1373,11 @@ class WikaInheritedAccountMove(models.Model):
                 raise UserError("Payment Reference harus diisi")
 
             doc_number = self.lpad_payment_reference
+            param_year = ""
+            if self.year:
+                param_year = str(self.year)
+            elif self.date.year:
+                param_year = str(self.date.year)
 
             url_config = self.env['wika.integration'].search([('name', '=', 'URL_PAYMENT_STATUS')], limit=1).url
             headers = {
@@ -1387,8 +1392,10 @@ class WikaInheritedAccountMove(models.Model):
                         "LOW": "",
                         "HIGH":""
                     },
-                "DOC_NUMBER": "%s"
-            }) % (doc_number)
+                "DOC_NUMBER": "%s",
+                "DOC_YEAR": "%s",
+                "STATUS": "X"
+            }) % (doc_number, param_year)
             payload = payload.replace('\n', '')
             _logger.info("# === CEK PAYLOAD === #")
             _logger.info(payload)
@@ -1401,9 +1408,7 @@ class WikaInheritedAccountMove(models.Model):
                 _logger.info("# === IMPORT DATA === #")
                 company_id = self.env.company.id
                 
-                txt_data0 = sorted(txt['DATA'], key=lambda x: x["DOC_NUMBER"])
-                txt_data = filter(lambda x: (x["STATUS"] == "X"), txt_data0)
-                _logger.info(txt_data)
+                txt_data = sorted(txt['DATA'], key=lambda x: x["DOC_NUMBER"])
                 tot_amount = 0
                 for data in txt_data:
                     # _logger.info(data)
@@ -1434,6 +1439,10 @@ class WikaInheritedAccountMove(models.Model):
         for rec in self.partial_request_ids:
             doc_number = rec.lpad_no_doc_sap
 
+            param_year = ""
+            if rec.year:
+                param_year = str(rec.year)
+
             url_config = self.env['wika.integration'].search([('name', '=', 'URL_PAYMENT_STATUS')], limit=1).url
             headers = {
                 'Authorization': 'Basic V0lLQV9JTlQ6SW5pdGlhbDEyMw==',
@@ -1447,8 +1456,10 @@ class WikaInheritedAccountMove(models.Model):
                         "LOW": "",
                         "HIGH":""
                     },
-                "DOC_NUMBER": "%s"
-            }) % (doc_number)
+                "DOC_NUMBER": "%s",
+                "DOC_YEAR": "%s",
+                "STATUS": "X"
+            }) % (doc_number, param_year)
             payload = payload.replace('\n', '')
             _logger.info("# === CEK PAYLOAD === #")
             _logger.info(payload)
@@ -1461,10 +1472,7 @@ class WikaInheritedAccountMove(models.Model):
                     _logger.info("# === IMPORT DATA === #")
                     company_id = self.env.company.id
                     # _logger.info(txt['DATA'])
-                    txt_data0 = sorted(txt['DATA'], key=lambda x: x["DOC_NUMBER"])
-                    txt_data = filter(lambda x: (x["STATUS"] == "X"), txt_data0)
-                    
-                    # txt_data = txt['DATA']
+                    txt_data = sorted(txt['DATA'], key=lambda x: x["DOC_NUMBER"])
                     tot_amount = 0 
                     for data in txt_data:
                         # _logger.info(data)
@@ -1477,7 +1485,7 @@ class WikaInheritedAccountMove(models.Model):
                         status = data["STATUS"]
                         new_name = doc_number+str(year)
                         
-                        if rec.year:
+                        if param_year == year:
                             tot_amount += amount
                             rec.write({
                                 'sap_amount_payment': tot_amount,
