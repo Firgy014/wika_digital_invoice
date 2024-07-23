@@ -400,10 +400,13 @@ class sap_integration_configure(models.Model):
     # Update Invoice Outbound YFII015 - JSON based
     def _update_invoice_json(self):
         invoice_model = self.env['account.move'].sudo()
+        token_id = self.env['wika.integration'].sudo().search([('name', '=', 'URL_NEW_OUTBOUND_015_TOKEN')], limit=1)
+        data_id = self.env['wika.integration'].sudo().search([('name', '=', 'URL_NEW_OUTBOUND_015_DATA')], limit=1)
+        error_id = self.env['wika.integration'].sudo().search([('name', '=', 'URL_NEW_OUTBOUND_015_DATA')], limit=1)
 
-        token_url = 'http://wtapperp-dev.wika.co.id:8010/ywikaoutbound/token?sap-client=110'
+        token_url = token_id.url
         headers = {'x-csrf-token': 'fetch'}
-        auth = HTTPBasicAuth('WIKA_INT', 'Initial123')
+        auth = HTTPBasicAuth(token_id.api_user, token_id.api_pword)
 
         try:
             token_response = requests.get(token_url, headers=headers, auth=auth)
@@ -415,7 +418,7 @@ class sap_integration_configure(models.Model):
         if not token:
             raise ValidationError(_("Failed to retrieve CSRF token"))
 
-        data_url = 'http://wtapperp-dev.wika.co.id:8010/ywikaoutbound/data?sap-client=110'
+        data_url = data_id.url
         data_headers = {'x-csrf-token': token}
         
         docnos = list(set(
