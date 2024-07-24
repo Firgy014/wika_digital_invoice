@@ -1,0 +1,19 @@
+<odoo>
+
+    <data>
+    
+        <record id="seq_noncash_loan" model="ir.sequence">
+            <field name="name">Sequence Non Cash Loan</field>
+            <field name="code">wika.noncash.loan</field>
+            <field name="prefix">NCL/%(range_year)s/</field>
+            <field eval="1" name="number_next"/>
+            <field eval="1" name="number_increment"/>
+            <field name="padding">5</field>
+            <field name="company_id" eval="False" />
+            <field eval="True" name="use_date_range"/>
+        </record>        
+    
+    </data>
+    
+
+</odoo>

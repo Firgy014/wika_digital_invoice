@@ -9,6 +9,7 @@
                     <field name="name"/>
                     <field name="model_id"/>
                     <field name="transaction_type"/>
+                    <field name="active"/>
 
                 </tree>
             </field>
