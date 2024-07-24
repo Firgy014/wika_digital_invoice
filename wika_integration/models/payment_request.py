@@ -55,8 +55,8 @@ class PaymentRequestInherit(models.Model):
                     with open(file_path, 'wb') as fp:
                         fp.write(out2)
 
-                    for move in payment_id.move_ids:
-                        move.write({'is_verified_as_pr': 'yes'})
+                    #for move in payment_id.move_ids:
+                     #   move.write({'is_verified_as_pr': 'yes'})
 
                 except Exception as e:
                     _logger.error(f"Error occurred while generating and sending data: {str(e)}")

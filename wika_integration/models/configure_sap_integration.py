@@ -307,101 +307,106 @@ class sap_integration_configure(models.Model):
             if 'transport' in locals():
                 transport.close()
 
-    # def _update_invoice(self):
-    #     invoice_model = self.env['account.move'].sudo()
-    #     conf_model = self.env['sap.integration.configure'].sudo()
-
-    #     conf_id = conf_model.search([('sftp_folder_archive', '!=', False)], limit=1)
-    #     file_path = None
-    #     file_is_error = False
-
-    #     if conf_id:
-    #         outbound_dir = conf_id.sftp_folder
-    #         file_name_prefix = 'YFII015A'
-    #         for file_name in os.listdir(outbound_dir):
-    #             if file_name.startswith(file_name_prefix):
-    #                 file_path = os.path.join(outbound_dir, file_name)
-    #                 if file_name.endswith('_error.txt'):
-    #                     file_is_error = True
-    #                 break
-
-    #     if not file_path:
-    #         raise ValidationError(_("No file found with prefix {} in directory {}".format(file_name_prefix, outbound_dir)))
-
-    #     updated_invoices = []
-    #     try:
-    #         with open(file_path, 'r') as file:
-    #             print('TEST PATTTTHHHH', file_path)
-    #             if file_is_error:
-    #                 next(file)
-    #                 next(file)
-    #                 for line in file:
-    #                     if line.strip():
-    #                         invoice_data = line.strip().split('|')
-    #                         if len(invoice_data) == 3:
-    #                             dig_inv = invoice_data[0]
-    #                             error_narration = invoice_data[2]
-    #                             invoice_id = invoice_model.search([('name', '=', dig_inv)], limit=1)
-    #                             if invoice_id:
-    #                                 invoice_id.write({'error_narration': error_narration})
-    #                                 updated_invoices.append(dig_inv)
-    #                             else:
-    #                                 _logger.warning("No matching invoice found for DIG_INV: %s", dig_inv)
-    #             else:
-    #                 next(file)
-    #                 next(file)
-    #                 for line in file:
-    #                     invoice_data = line.strip().split('|')
-                        
-    #                     if len(invoice_data) < 7:
-    #                         _logger.error("Invalid invoice data format: %s", invoice_data)
-    #                         continue
-                        
-    #                     no_inv = invoice_data[0]
-    #                     invoice_id = invoice_model.search([('name', '=', no_inv)], limit=1)
-
-    #                     if invoice_id:
-    #                         update_vals = {
-    #                             'invoice_number': invoice_data[1],
-    #                             'year': invoice_data[2],
-    #                             'dp_doc': invoice_data[4],
-    #                             'retensi_doc': invoice_data[5],
-    #                         }
-                            
-    #                         if invoice_data[6]:  # If AP_DOC exist
-    #                             update_vals['payment_reference'] = invoice_data[6]
-    #                             update_vals['no_doc_sap'] = invoice_data[3]
-    #                             update_vals['dp_doc'] = invoice_data[4]
-    #                             update_vals['retensi_doc'] = invoice_data[5]
-    #                         else:  # If AP_DOC not exists
-    #                             update_vals['payment_reference'] = invoice_data[3]
-    #                             update_vals['no_doc_sap'] = ''
-                            
-    #                         invoice_id.write(update_vals)
-    #                         updated_invoices.append(no_inv)
-    #                     else:
-    #                         _logger.warning("No matching invoice found for no_inv: %s", no_inv)
-
-    #             shutil.move(file_path, os.path.join(conf_id.sftp_folder_archive, file_name))
-    #             _logger.info("File moved to archive: %s", file_name)
-    #     except FileNotFoundError:
-    #         _logger.error("File not found: %s", file_path)
-    #         raise ValidationError(_("File TXT dari SAP atas invoice yang dituju tidak ditemukan!"))
-    #     except Exception as e:
-    #         _logger.error("An error occurred: %s", str(e))
-    #         raise ValidationError(_("An error occurred while updating invoices: %s" % str(e)))
-
-    #     if updated_invoices:
-    #         _logger.info("Successfully updated invoices: %s", updated_invoices)
-    #     else:
-    #         _logger.info("No invoices were updated.")
-    
-    def _update_invoice(self):
+    # Update Invoice Outbound YFII015 - TXT based
+    def _update_invoice_txt(self):
         invoice_model = self.env['account.move'].sudo()
+        conf_model = self.env['sap.integration.configure'].sudo()
 
-        token_url = 'http://wtapperp-dev.wika.co.id:8010/ywikaoutbound/token?sap-client=110'
+        conf_id = conf_model.search([('sftp_folder_archive', '!=', False)], limit=1)
+        file_path = None
+        file_is_error = False
+
+        if conf_id:
+            outbound_dir = conf_id.sftp_folder
+            file_name_prefix = 'YFII015A'
+            for file_name in os.listdir(outbound_dir):
+                if file_name.startswith(file_name_prefix):
+                    file_path = os.path.join(outbound_dir, file_name)
+                    if file_name.endswith('_error.txt'):
+                        file_is_error = True
+                    break
+
+        if not file_path:
+            raise ValidationError(_("No file found with prefix {} in directory {}".format(file_name_prefix, outbound_dir)))
+
+        updated_invoices = []
+        try:
+            with open(file_path, 'r') as file:
+                print('TEST PATTTTHHHH', file_path)
+                if file_is_error:
+                    next(file)
+                    next(file)
+                    for line in file:
+                        if line.strip():
+                            invoice_data = line.strip().split('|')
+                            if len(invoice_data) == 3:
+                                dig_inv = invoice_data[0]
+                                error_narration = invoice_data[2]
+                                invoice_id = invoice_model.search([('name', '=', dig_inv)], limit=1)
+                                if invoice_id:
+                                    invoice_id.write({'error_narration': error_narration})
+                                    updated_invoices.append(dig_inv)
+                                else:
+                                    _logger.warning("No matching invoice found for DIG_INV: %s", dig_inv)
+                else:
+                    next(file)
+                    next(file)
+                    for line in file:
+                        invoice_data = line.strip().split('|')
+                        
+                        if len(invoice_data) < 7:
+                            _logger.error("Invalid invoice data format: %s", invoice_data)
+                            continue
+                        
+                        no_inv = invoice_data[0]
+                        invoice_id = invoice_model.search([('name', '=', no_inv)], limit=1)
+
+                        if invoice_id:
+                            update_vals = {
+                                'invoice_number': invoice_data[1],
+                                'year': invoice_data[2],
+                                'dp_doc': invoice_data[4],
+                                'retensi_doc': invoice_data[5],
+                            }
+                            
+                            if invoice_data[6]:  # If AP_DOC exist
+                                update_vals['payment_reference'] = invoice_data[6]
+                                update_vals['no_doc_sap'] = invoice_data[3]
+                                update_vals['dp_doc'] = invoice_data[4]
+                                update_vals['retensi_doc'] = invoice_data[5]
+                            else:  # If AP_DOC not exists
+                                update_vals['payment_reference'] = invoice_data[3]
+                                update_vals['no_doc_sap'] = ''
+                            
+                            invoice_id.write(update_vals)
+                            updated_invoices.append(no_inv)
+                        else:
+                            _logger.warning("No matching invoice found for no_inv: %s", no_inv)
+
+                shutil.move(file_path, os.path.join(conf_id.sftp_folder_archive, file_name))
+                _logger.info("File moved to archive: %s", file_name)
+        except FileNotFoundError:
+            _logger.error("File not found: %s", file_path)
+            raise ValidationError(_("File TXT dari SAP atas invoice yang dituju tidak ditemukan!"))
+        except Exception as e:
+            _logger.error("An error occurred: %s", str(e))
+            raise ValidationError(_("An error occurred while updating invoices: %s" % str(e)))
+
+        if updated_invoices:
+            _logger.info("Successfully updated invoices: %s", updated_invoices)
+        else:
+            _logger.info("No invoices were updated.")
+
+    # Update Invoice Outbound YFII015 - JSON based
+    def _update_invoice_json(self):
+        invoice_model = self.env['account.move'].sudo()
+        token_id = self.env['wika.integration'].sudo().search([('name', '=', 'URL_NEW_OUTBOUND_015_TOKEN')], limit=1)
+        data_id = self.env['wika.integration'].sudo().search([('name', '=', 'URL_NEW_OUTBOUND_015_DATA')], limit=1)
+        error_id = self.env['wika.integration'].sudo().search([('name', '=', 'URL_NEW_OUTBOUND_015_DATA')], limit=1)
+
+        token_url = token_id.url
         headers = {'x-csrf-token': 'fetch'}
-        auth = HTTPBasicAuth('WIKA_INT', 'Initial123')
+        auth = HTTPBasicAuth(token_id.api_user, token_id.api_pword)
 
         try:
             token_response = requests.get(token_url, headers=headers, auth=auth)
@@ -413,7 +418,7 @@ class sap_integration_configure(models.Model):
         if not token:
             raise ValidationError(_("Failed to retrieve CSRF token"))
 
-        data_url = 'http://wtapperp-dev.wika.co.id:8010/ywikaoutbound/data?sap-client=110'
+        data_url = data_id.url
         data_headers = {'x-csrf-token': token}
         
         docnos = list(set(
@@ -473,7 +478,7 @@ class sap_integration_configure(models.Model):
             else:
                 _logger.warning("No matching invoice found for DIG_INV: %s", dig_inv)
 
-        error_url = 'http://wtapperp-dev.wika.co.id:8010/ywikaoutbound/error_message?sap-client=110'
+        error_url = error_id.url
         error_body = {
             "DIG_CODE": docnos,
             "AWTYP": ["YFI15"],
@@ -803,7 +808,8 @@ class sap_integration_configure(models.Model):
                         update_vals = {
                             'name': dig_code,
                             'payment_reference': belnr,
-                            'year': gjahr
+                            'year': gjahr,
+                            'is_verified_as_pr': 'yes'
                         }
                         
                         invoice_id.write(update_vals)

@@ -68,5 +68,25 @@
             <field name="url">http://wtapperp-dev.wika.co.id:8010/ywikafi027/dppaymentstatus?sap-client=110</field>
             <field name="app_secret"></field>
         </record>
+        <record id="url_new_outbound_json_based_token" model="wika.integration">
+            <field name="name">URL_NEW_OUTBOUND_015_TOKEN</field>
+            <field name="app">SAP</field>
+            <field name="url">http://wtapperp-dev.wika.co.id:8010/ywikaoutbound/token?sap-client=110</field>
+            <field name="app_secret"></field>
+            <field name="api_user">WIKA_INT</field>
+            <field name="api_pword">Initial123</field>
+        </record>
+        <record id="url_new_outbound_json_based_data" model="wika.integration">
+            <field name="name">URL_NEW_OUTBOUND_015_DATA</field>
+            <field name="app">SAP</field>
+            <field name="url">http://wtapperp-dev.wika.co.id:8010/ywikaoutbound/data?sap-client=110</field>
+            <field name="app_secret"></field>
+        </record>
+        <record id="url_new_outbound_json_based_error" model="wika.integration">
+            <field name="name">URL_NEW_OUTBOUND_015_ERROR</field>
+            <field name="app">SAP</field>
+            <field name="url">http://wtapperp-dev.wika.co.id:8010/ywikaoutbound/error_message?sap-client=110</field>
+            <field name="app_secret"></field>
+        </record>
     </data>
 </odoo>
