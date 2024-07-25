@@ -1,5 +1,5 @@
 <odoo>
-    <!-- <report
+    <report
         id="report_wika_rpp_progress_id"
         model="wika.berita.acara.pembayaran"
         string="Report Wika RPP Progress"
@@ -7,14 +7,11 @@
         name="wika_berita_acara_pembayaran.report_wika_rpp_progress"
         file="wika_berita_acara_pembayaran.report_wika_rpp_progress"
         attachment_use="False"
-    /> -->
+        paperformat="wika_berita_acara_pembayaran.report_qweb_paperformat"/>
+
     <template id="report_wika_rpp_progress">
         <t t-foreach="docs" t-as="o">
         <t t-call="web.html_container">
-            <t t-set="data_report_margin_top" t-value="8"/>
-            <t t-set="data_report_header_spacing" t-value="9"/>
-            <t t-set="data_report_dpi" t-value="110"/>
-
             <t t-call="web.internal_layout">
                 <div class="page">
                     <div style="text-align: center; margin-top: 80px; font-size: 14px;">
