@@ -24,6 +24,7 @@
                             <field name="name"/>
                             <field name="tipe"/>
                             <field name="sequence"/>
+                            <field name="request"/>
                         </group>
                         <notebook>
                             <page string='Groups'>

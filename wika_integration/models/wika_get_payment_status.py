@@ -14,6 +14,7 @@ class wika_get_payment_status(models.Model):
     name = fields.Char(string="Nama", required=True)
     tgl_mulai = fields.Date(string="Tgl Mulai")
     tgl_akhir = fields.Date(string="Tgl Akhir")
+    year = fields.Char('Year')
     state = fields.Selection([
         ('not_done', 'Not Done'),
         ('done', 'Done')
@@ -27,12 +28,15 @@ class wika_get_payment_status(models.Model):
             tgl_mulai = ''
             tgl_akhir = ''
             doc_number = ''
+            param_year = ''
             if rec.state != 'done':
                 if rec.tgl_mulai:
                     tgl_mulai = str(rec.tgl_mulai)
                 if rec.tgl_akhir:
                     tgl_akhir = str(rec.tgl_akhir)
                 doc_number = rec.name.zfill(10)
+                if rec.year:
+                    param_year = rec.year
 
                 url_config = self.env['wika.integration'].search([('name', '=', 'URL_PAYMENT_STATUS')], limit=1).url
                 headers = {
@@ -47,8 +51,10 @@ class wika_get_payment_status(models.Model):
                             "LOW": "",
                             "HIGH":""
                         },
-                    "DOC_NUMBER": "%s"
-                }) % (doc_number)
+                    "DOC_NUMBER": "%s",
+                    "DOC_YEAR": "%s",
+                    "STATUS": "X"
+                }) % (doc_number, param_year)
                 payload = payload.replace('\n', '')
                 _logger.info("# === CEK PAYLOAD === #")
                 _logger.info(payload)
@@ -60,10 +66,7 @@ class wika_get_payment_status(models.Model):
                     if txt['DATA']:
                         _logger.info("# === IMPORT DATA === #")
                         company_id = self.env.company.id
-                        txt_data0 = sorted(txt['DATA'], key=lambda x: x["DOC_NUMBER"])
-                        txt_data = filter(lambda x: (x["STATUS"] == "X"), txt_data0)
-                        
-                        # _logger.info(txt_data)
+                        txt_data = sorted(txt['DATA'], key=lambda x: x["DOC_NUMBER"])
                         tot_amount = 0
                         for data in txt_data:
                             # _logger.info(data)
@@ -137,12 +140,15 @@ class wika_get_payment_status(models.Model):
             tgl_mulai = ''
             tgl_akhir = ''
             doc_number = ''
+            param_year = ''
             if rec.state != 'done':
                 if rec.tgl_mulai:
                     tgl_mulai = str(rec.tgl_mulai)
                 if rec.tgl_akhir:
                     tgl_akhir = str(rec.tgl_akhir)
                 doc_number = rec.name.zfill(10)
+                if rec.year:
+                    param_year = rec.year
 
                 url_config = self.env['wika.integration'].search([('name', '=', 'URL_PAYMENT_STATUS')], limit=1).url
                 headers = {
@@ -157,8 +163,10 @@ class wika_get_payment_status(models.Model):
                             "LOW": "",
                             "HIGH":""
                         },
-                    "DOC_NUMBER": "%s"
-                }) % (doc_number)
+                    "DOC_NUMBER": "%s",
+                    "DOC_YEAR": "%s",
+                    "STATUS": "X"
+                }) % (doc_number, param_year)
                 payload = payload.replace('\n', '')
                 _logger.info("# === CEK PAYLOAD === #")
                 _logger.info(payload)
@@ -171,10 +179,7 @@ class wika_get_payment_status(models.Model):
                         _logger.info("# === IMPORT DATA === #")
                         company_id = self.env.company.id
                         # _logger.info(txt['DATA'])
-                        txt_data0 = sorted(txt['DATA'], key=lambda x: x["DOC_NUMBER"])
-                        txt_data = filter(lambda x: (x["STATUS"] == "X"), txt_data0)
-                        
-                        # txt_data = txt['DATA']
+                        txt_data = sorted(txt['DATA'], key=lambda x: x["DOC_NUMBER"])
                         tot_amount = 0
                         for data in txt_data:
                             # _logger.info(data)

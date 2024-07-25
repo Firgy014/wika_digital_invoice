@@ -1148,9 +1148,9 @@ class WikaBeritaAcaraPembayaran(models.Model):
             raise ValidationError('List BAP tidak boleh kosong. Mohon isi List BAP terlebih dahulu!')
 
         for record in self:
-            rpp_document = self.env['wika.document.setting'].search([('name', '=', 'RPP')], limit=1)
-            if rpp_document and any(line.document_id.name != 'RPP' and not line.document for line in record.document_ids):
-                raise ValidationError('Dokumen belum diunggah, mohon unggah file terlebih dahulu!')
+            # rpp_document = self.env['wika.document.setting'].search([('name', '=', 'RPP')], limit=1)
+            # if rpp_document and any(line.document_id.name != 'RPP' and not line.document for line in record.document_ids):
+            #     raise ValidationError('Dokumen belum diunggah, mohon unggah file terlebih dahulu!')
             if record.bap_type =='cut over' and any(not line.stock_move_id for line in record.bap_ids):
                 raise ValidationError('Data Invoice cut over belum di mapping!')
             if any(line.state == 'rejected' for line in record.document_ids):
