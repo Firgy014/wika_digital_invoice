@@ -1,5 +1,5 @@
 <odoo>
- 
+
     <!-- action report BAP -->
 
     <!-- <record id="report_wika_berita_acara_pembayaran_action" model="ir.actions.report">
@@ -46,16 +46,16 @@
         <field name="binding_view_types">form</field>
     </record> -->
 
-    <record id="report_wika_rpp_progress_action" model="ir.actions.report">
+    <!-- <record id="report_wika_rpp_progress_action" model="ir.actions.report">
         <field name="name">Rekap Progress Pekerjaan</field>
         <field name="model">wika.berita.acara.pembayaran</field>
-        <field name="report_type">qweb-html</field>
+        <field name="report_type">qweb-pdf</field>
         <field name="report_name">wika_berita_acara_pembayaran.report_wika_rpp_progress</field>
         <field name="report_file">wika_berita_acara_pembayaran.report_wika_rpp_progress</field>
         <field name="print_report_name">'Rekap Progress Pekerjaan - %s' % (object.name)</field>
         <field name="binding_model_id" ref="model_wika_berita_acara_pembayaran"/>
         <field name="binding_view_types">form</field>
-    </record>
+    </record> -->
 
     <record id="report_wika_rpp_uang_muka_action" model="ir.actions.report">
         <field name="name">Rekap Progress Pekerjaan Uang Muka</field>
@@ -90,5 +90,20 @@
         <field name="binding_view_types">form</field>
     </record>
 
+    <record id="report_qweb_paperformat" model="report.paperformat">
+        <field name="name">F4 Landscape</field>
+        <field name="default" eval="True"/>
+        <field name="format">custom</field>
+        <field name="page_height">297</field>
+        <field name="page_width">210</field>
+        <field name="orientation">Portrait</field>
+        <field name="margin_top">30</field>
+        <field name="margin_bottom">10</field>
+        <field name="margin_left">7</field>
+        <field name="margin_right">7</field>
+        <field name="header_line" eval="False"/>
+        <field name="header_spacing">10</field>
+        <field name="dpi">90</field>
+    </record>
 
 </odoo>
