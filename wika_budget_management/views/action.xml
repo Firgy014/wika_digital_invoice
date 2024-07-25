@@ -7,6 +7,7 @@
             <field name="context">{'default_tipe_budget': 'opex'}</field>
             <field name="domain">[('tipe_budget','!=','bad')]</field>
             <field name="view_mode">tree,form,pivot</field>
+            <field name="search_view_id" ref="wika_budget_management.budget_search_view_3_1"/>
             <field name="view_ids" eval="[(5, 0, 0),
                 (0, 0, {'view_mode': 'tree', 'view_id': ref('wika_budget_management.budget_tree_view_3_1')}),
                 (0, 0, {'view_mode': 'form', 'view_id': ref('wika_budget_management.budget_form_view_3_1')}),
