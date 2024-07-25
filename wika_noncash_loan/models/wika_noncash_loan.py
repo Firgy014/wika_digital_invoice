@@ -1,10 +1,14 @@
 from odoo import api, fields, models, _
 from datetime import datetime, timedelta
+import logging
+_logger = logging.getLogger(__name__)
+from odoo.exceptions import UserError, ValidationError, Warning, AccessError
+
 
 class WikaNonCashLoan(models.Model):
     _name = 'wika.noncash.loan'
     _description = 'Non Cash Loan'
-    # _inherit = 'mail.thread'
+    _inherit = 'mail.thread'
     _order = 'sisa_outstanding desc'
 
     plaf_id = fields.Many2one('wika.plafond.bank', string="Plafond Bank")
@@ -18,6 +22,7 @@ class WikaNonCashLoan(models.Model):
     tgl_mulai = fields.Date(string='Tanggal Mulai')
     tgl_akhir = fields.Date(string='Tanggal Akhir')
     branch_id = fields.Many2one(comodel_name='res.branch', index=True, string='Divisi')
+    department_id = fields.Many2one(comodel_name='res.branch', index=True, string='Divisi')
     jumlah_pengajuan = fields.Float(string='Nilai Pengajuan', index=True)
     jumlah_pengajuan_asing = fields.Float(string='Nilai Pengajuan Asing', copy=False)
     dalam_proses = fields.Float(string='Dalam Proses', default=0, copy=False)
@@ -29,7 +34,7 @@ class WikaNonCashLoan(models.Model):
     bank_id = fields.Many2one(comodel_name='res.bank', string="Bank", index=True)
     jenis_id = fields.Many2one(comodel_name='wika.loan.jenis',
         string="Kriteria")
-    projek_id = fields.Many2one(comodel_name='project.project', string="Proyek")
+    project_id = fields.Many2one(comodel_name='project.project', string="Proyek")
     partner_jo = fields.Char(string='Partner JO')
     nama_proyek = fields.Char(string='Nama Proyek')
     tgl_pembukaan = fields.Date(string='Tanggal Pembukaan', required="True", index=True,
@@ -56,7 +61,7 @@ class WikaNonCashLoan(models.Model):
     
 
     tipe_jenis = fields.Many2one(string='Tipe Kriteria', comodel_name='wika.tipe.jenis')                    
-    tipe_jenis_name = fields.Char(related='tipe_jenis.name')
+    tipe_jenis_name = fields.Char(related='tipe_jenis.name', string="Tipe jenis Name")
     catatan = fields.Text(string='Catatan') 
     tgl_swift                   = fields.Date(string='Tanggal Swift',copy=False)
     payment_ids                 = fields.One2many(comodel_name='wika.ncl.pembayaran', string="Rencana Pembayaran",
@@ -107,8 +112,6 @@ class WikaNonCashLoan(models.Model):
     # keterangan_hari_akhir_baru       = fields.Char(string="Keterangan Hari Akhir", store=True)
     catatan_sistem                   = fields.Text(string="Catatan Sistem")
 
-
-
     jenis_nasabah = fields.Selection([
         ('SUPPLIER', 'Supplier'),
         ('SUBKONT', 'Subkon')
@@ -128,6 +131,7 @@ class WikaNonCashLoan(models.Model):
     potongan_um = fields.Float('Potongan Uang Muka')
     is_pmcs = fields.Boolean(string="Dari PMCS", default=False)
     step_approve       = fields.Integer(string='Step Approve',default=1,copy=False)
+    history_approval_ids = fields.One2many('wika.noncash.loan.approval.line', 'ncl_id', string='List Approval')
     # default_debit_acc = fields.Many2one(comodel_name='account.account', string="Default Debit Account",
     #                                     domain="[('user_type_id','=',1)]")
     # default_credit_acc = fields.Many2one(comodel_name='account.account', string="Default Credit Account",
@@ -138,6 +142,438 @@ class WikaNonCashLoan(models.Model):
     # active = fields.Boolean('Active',
     #                         help="If the active field is set to False, it will allow you to hide the account without removing it.",
     #                         default=True)
+    keterangan_html = fields.Html(compute='_compute_keterangan_html')
+    # @api.model
+    # def create(self, vals):
+    #     res = super(WikaNonCashLoan, self).create(vals)
+    #     res.name= self.env['ir.sequence'].next_by_code('wika.berita.acara.pembayaran')
+    #     res.assign_todo_first()
+    #     res._compute_cut_over()
+    #     return res
+    message_follower_ids = fields.One2many(
+        'mail.followers', 'res_id', string='Followers', groups='base.group_user')
+    activity_ids = fields.One2many(
+        'mail.activity', 'res_id', 'Activities',
+        auto_join=True,
+        groups="base.group_user",)
+    level = fields.Selection([
+        ('Proyek', 'Proyek'),
+        ('Divisi Operasi', 'Divisi Operasi'),
+        ('Divisi Fungsi', 'Divisi Fungsi'),
+        ('Pusat', 'Pusat')
+    ], string='Level',compute='_compute_level')
+    nomor_memorial = fields.Char('Nomor Memorial')
+    nilai_akutansi      = fields.Float(string='Nilai Akutansi')
+    no_sap = fields.Char('No Doc SAP')
+    payment_proposal_id_sap              = fields.Char(string='Payment Proposal Id SAP')
+    line_item_sap = fields.Char(string='Line Item SAP')
+    fiscal_year_sap = fields.Char(string='Fiscal Year SAP')
+    run_date_sap= fields.Date(string='Run Date SAP',copy=False)
+    from_sap            = fields.Boolean(string='From SAP',default=False,copy=False)
+    upload_to_sap       = fields.Boolean(string='Upload to SAP',default=False)
+    send= fields.Boolean(string='Send to SAP',default=False,copy=False)
+    identifier          = fields.Char(string='Identifier',copy=False)
+
+    @api.onchange('jenis_id')
+    def onchange_jenis(self):
+        self.nama_jenis=self.jenis_id.nama
+
+    @api.depends('project_id', 'branch_id', 'department_id')
+    def _compute_level(self):
+        for res in self:
+            level=''
+            if res.project_id:
+                level = 'Proyek'
+            elif res.branch_id and not res.department_id and not res.project_id:
+                level = 'Divisi Operasi'
+            elif res.branch_id and res.department_id and not res.project_id:
+                level = 'Divisi Fungsi'
+            res.level = level
+            
+    @api.model
+    def create(self, vals):
+        res = super(WikaNonCashLoan, self).create(vals)
+        if vals.get('name', _('New')) == _('New'):
+            res.name = self.env['ir.sequence'].next_by_code('wika.noncash.loan') or  _('New')
+            res.assign_todo_first()
+        return res
+
+    def assign_todo_first(self):
+        model_model = self.env['ir.model'].sudo()
+        document_setting_model = self.env['wika.document.setting'].sudo()
+        model_id = model_model.search([('model', '=', 'wika.noncash.loan')], limit=1)
+
+        for res in self:
+            level = res.level
+            first_user = False
+
+            if level:
+                approval_id = self.env['wika.approval.setting'].sudo().search(
+                    [('model_id', '=', model_id.id), ('level', '=', level)], limit=1)
+                
+                if not approval_id:
+                    _logger.warning("Approval setting not found for level %s", level)
+                    continue
+
+                approval_line_id = self.env['wika.approval.setting.line'].search([
+                    ('sequence', '=', 1),
+                    ('approval_id', '=', approval_id.id)
+                ], limit=1)
+
+                if not approval_line_id:
+                    _logger.warning("Approval line not found for approval_id %s", approval_id.id)
+                    continue
+
+                groups_id = approval_line_id.groups_id
+
+                if groups_id:
+                    for x in groups_id.users:
+                        if level == 'Proyek' and res.project_id in x.project_ids:
+                            first_user = x.id
+                        elif level == 'Divisi Operasi' and x.branch_id == res.branch_id:
+                            first_user = x.id
+                        elif level == 'Divisi Fungsi' and x.department_id == res.department_id:
+                            first_user = x.id
+
+                _logger.info("First user assigned: %s", first_user)
+
+                # Create todo activity
+                if first_user:
+                    self.env['mail.activity'].sudo().create({
+                        'activity_type_id': 4,  # Ensure this ID corresponds to the correct activity type
+                        'res_model_id': model_id.id,
+                        'res_id': res.id,
+                        'user_id': first_user,
+                        'date_deadline': fields.Date.today() + timedelta(days=2),
+                        'state': 'planned',
+                        'summary': f"Need to ask for approval {model_id.name}!"
+                    })
+                else:
+                    _logger.warning("No valid user found for activity assignment.")
+
+    def action_input(self):
+        stage_default = self.env['wika.loan.stage'].search([
+            ('tipe', '=', 'Non Cash'),
+            ('name', '=', 'Pengajuan'),
+            ('request', '=', True)
+        ], limit=1)
+        _logger.info('CHECKK DEFAULT STAGE Action Input - Default Stage ID: %s', stage_default.id)
+        action = {
+            'name': 'NCL Input',
+            'type': 'ir.actions.act_window',
+            'res_model': 'wika.noncash.loan',
+            'view_mode': 'tree,form',
+            'view_type': "form",
+            'view_id': False,
+            'views': [
+                (self.env.ref('wika_noncash_loan.wika_ncl_input_view_tree').id, 'tree'),
+                (self.env.ref('wika_noncash_loan.wika_ncl_input_view_form').id, 'form')
+            ],
+            'context': {'default_stage_id': stage_default.id},
+            'domain': [('stage_id.name', 'in', ['Pengajuan', 'Proses Approval', 'Approve', 'Reject'])]
+        }
+        return action
+
+    def action_submit(self):
+        if self.jenis_id.lock_date and self.tgl_pembukaan:
+            today = datetime.today().strftime('%Y-%m-')
+            end_date3 = self.tgl_pembukaan.strftime('%Y-%m-')
+            if end_date3 != today:
+                raise ValidationError('Periksa Kembali Tanggal Pembukaan anda!')
+
+        if self.nama_jenis in ['SCF', 'SKBDN/LC']:
+            jenis = self.env['wika.loan.jenis'].search([('nama', '=', self.nama_jenis), ('tipe', '=', 'Non Cash')], limit=1)
+            tgl_formatted = self.tgl_pembukaan
+            tgl_mulai = "%s-01-01" % tgl_formatted.year
+            tgl_akhir = "%s-12-31" % tgl_formatted.year
+            prognos = self.env['wika.loan.prognosa'].search([
+                ('bank_id', '=', self.bank_id.id),
+                ('tipe_id', '=', jenis.id),
+                ('branch_id', '=', self.branch_id.id),
+                ('tgl_mulai', '>=', tgl_mulai),
+                ('tgl_akhir', '<=', tgl_akhir),
+            ], limit=1)
+            progline = self.env['wika.loan.prognosa.line'].search([
+                ('prognosa_id', '=', prognos.id),
+                ('bulan', '=', tgl_formatted.month)
+            ], limit=1)
+            if not progline:
+                raise ValidationError("Tidak ada prognosa di bulan pembukaan yang diisi!")
+            else:
+                sisa = progline.nilai_pembukaan - progline.terpakai
+                if sisa < self.jumlah_pengajuan:
+                    raise ValidationError("Prognosa di bulan pembukaan yang diisi tidak mencukupi!")
+
+        cek = False
+        level = self.level
+        model_id = self.env['ir.model'].search([('model', '=', 'wika.noncash.loan')], limit=1)
+        if level:
+            approval_id = self.env['wika.approval.setting'].sudo().search(
+                [('model_id', '=', model_id.id), ('level', '=', level)], limit=1)
+            _logger.info('CHECK APPROVAL ID: %s', approval_id.id)
+            if not approval_id:
+                raise ValidationError(
+                    'Approval Setting untuk menu NCL  tidak ditemukan. Silakan hubungi Administrator!')
+            approval_line_id = self.env['wika.approval.setting.line'].search([
+                ('sequence', '=', 1),
+                ('approval_id', '=', approval_id.id)
+            ], limit=1)
+            groups_id = approval_line_id.groups_id
+            if groups_id:
+                for x in groups_id.users:
+                    if level == 'Proyek' and self.project_id in x.project_ids and x.id == self._uid:
+                        cek = True
+                    if level == 'Divisi Operasi' and x.branch_id == self.branch_id and x.id == self._uid:
+                        cek = True
+                    if level == 'Divisi Fungsi' and x.department_id == self.department_id and x.id == self._uid:
+                        cek = True
+
+        if cek:
+            if self.activity_ids:
+                for x in self.activity_ids.filtered(lambda x: x.status != 'approved'):
+                    if x.user_id.id == self._uid:
+                        x.status = 'approved'
+                        x.action_done()
+                stage_sekarang = self.stage_id.sequence
+                stage_next = self.env['wika.loan.stage'].search([('sequence', '=', stage_sekarang + 1),
+                    ('tipe', '=', 'Non Cash'),
+                    ('name', '=', 'Proses Approval')], limit=1)
+                if stage_next:
+                    self.stage_id = stage_next.id
+                else:
+                    raise ValidationError('Tahap berikutnya tidak ditemukan!')
+
+                self.step_approve += 1
+
+                # Create history approval
+                self.env['wika.noncash.loan.approval.line'].sudo().create({
+                    'user_id': self._uid,
+                    'groups_id': groups_id.id,
+                    'date': datetime.now(),
+                    'note': 'Submit NCL',
+                    'ncl_id': self.id
+                })
+
+                groups_line = self.env['wika.approval.setting.line'].search([
+                    ('level', '=', level),
+                    ('sequence', '=', self.step_approve),
+                    ('approval_id', '=', approval_id.id)
+                ], limit=1)
+                groups_id_next = groups_line.groups_id
+                if groups_id_next:
+                        for x in groups_id_next.users:
+                            if level == 'Proyek' and self.project_id in x.project_ids:
+                                first_user = x.id
+                            if level == 'Divisi Operasi' and x.branch_id == self.branch_id:
+                                first_user = x.id
+                            if level == 'Divisi Fungsi' and x.department_id == self.department_id:
+                                first_user = x.id
+                        if first_user:
+                            self.env['mail.activity'].sudo().create({
+                                'activity_type_id': 4,
+                                'res_model_id': self.env['ir.model'].sudo().search(
+                                    [('model', '=', 'wika.noncash.loan')], limit=1).id,
+                                'res_id': self.id,
+                                'user_id': first_user,
+                                'date_deadline': fields.Date.today() + timedelta(days=2),
+                                'state': 'planned',
+                                'status': 'to_approve',
+                                'summary': """Need Approve"""
+                            })
+        else:
+            raise ValidationError('User Akses Anda tidak berhak Submit!')
+
+    def action_approve_input(self):
+        cek = False
+        model_id = self.env['ir.model'].search([('model', '=', 'wika.noncash.loan')], limit=1)
+        level = self.level
+        if level:
+            approval_id = self.env['wika.approval.setting'].sudo().search(
+                [('model_id', '=', model_id.id), ('level', '=', level)], limit=1)
+            if not approval_id:
+                raise ValidationError(
+                    'Approval Setting untuk menu BAP tidak ditemukan. Silakan hubungi Administrator!')
+
+            approval_line_id = self.env['wika.approval.setting.line'].search([
+                ('sequence', '=', self.step_approve),
+                ('approval_id', '=', approval_id.id)
+            ], limit=1)
+            print(approval_line_id)
+            groups_id = approval_line_id.groups_id
+            if groups_id:
+                print(groups_id.name)
+                for x in groups_id.users:
+                    if level == 'Proyek' and  self.project_id in x.project_ids and x.id == self._uid:
+                        cek = True
+                    if level == 'Divisi Operasi' and x.branch_id == self.branch_id and x.id == self._uid:
+                        cek = True
+                    if level == 'Divisi Fungsi' and x.department_id == self.department_id and x.id == self._uid:
+                        cek = True
+
+        if cek:
+            # Proses approval
+            self.env['wika.noncash.loan.approval.line'].create({
+                'user_id': self._uid,
+                'groups_id': groups_id.id,
+                'date': datetime.now(),
+                'note': 'Approved',
+                'ncl_id': self.id
+            })
+
+            if approval_id.total_approve == self.step_approve:
+                # Proses akhir persetujuan
+                stage_next = self.env['wika.loan.stage'].search([
+                    ('tipe', '=', 'Non Cash'),
+                    ('name', '=', 'Pembukaan')
+                ], limit=1)
+                self.stage_id = stage_next.id
+                self.step_approve = 1
+            else:
+                # Update stage dan step approval
+                self.step_approve += 1
+                stage_next = self.env['wika.loan.stage'].search([
+                    ('sequence', '=', self.stage_id.sequence + 1),
+                    ('tipe', '=', 'Non Cash'),
+                    ('name', '=', 'Approve')
+                ], limit=1)
+                if stage_next:
+                    self.stage_id = stage_next.id
+
+                # Cari approval setting line berikutnya
+                groups_line_next = self.env['wika.approval.setting.line'].search([
+                    ('level', '=', level),
+                    ('sequence', '=', self.step_approve),
+                    ('approval_id', '=', approval_id.id)
+                ], limit=1)
+                print("groups", groups_line_next)
+                groups_id_next = groups_line_next.groups_id
+
+                first_user = False
+                if groups_id_next:
+                    print(groups_id_next.name)
+                    for x in groups_id_next.users:
+                        if level == 'Proyek' and  self.project_id in x.project_ids:
+                            first_user = x.id
+                        if level == 'Divisi Operasi' and x.branch_id == self.branch_id:
+                            first_user = x.id
+                        if level == 'Divisi Fungsi' and x.department_id == self.department_id:
+                            first_user = x.id
+
+                    if first_user:
+                        # Buat aktivitas approval untuk user berikutnya
+                        self.env['mail.activity'].sudo().create({
+                            'activity_type_id': 4,
+                            'res_model_id': model_id.id,
+                            'res_id': self.id,
+                            'user_id': first_user,
+                            'date_deadline': fields.Date.today() + timedelta(days=2),
+                            'state': 'planned',
+                            'status': 'to_approve',
+                            'summary': "Need Approval Document BAP"
+                        })
+                    else:
+                        raise ValidationError('User Role Next Approval Belum di Setting!')
+
+            # Update status aktivitas yang sudah ada
+            if self.activity_ids:
+                for activity in self.activity_ids.filtered(lambda a: a.status != 'approved'):
+                    if activity.user_id.id == self._uid:
+                        activity.status = 'approved'
+                        activity.action_done()
+        else:
+            raise ValidationError('User Akses Anda tidak berhak Approve!')
+
+    def action_reject_input(self):
+        user = self.env['res.users'].search([('id', '=', self._uid)], limit=1)
+        cek = False
+        level=self.level
+        if level:
+            model_id = self.env['ir.model'].search([('model', '=', 'wika.noncash.loan')], limit=1)
+            approval_id = self.env['wika.approval.setting'].sudo().search(
+                [('model_id', '=', model_id.id), ('level', '=', level)], limit=1)
+            if not approval_id:
+                raise ValidationError(
+                'Approval Setting untuk menu Non cash loan tidak ditemukan. Silakan hubungi Administrator!')
+            approval_line_id = self.env['wika.approval.setting.line'].search([
+                ('sequence', '=', self.step_approve),
+                ('approval_id', '=', approval_id.id)
+            ], limit=1)
+            groups_id = approval_line_id.groups_id
+            if groups_id:
+                for x in groups_id.users:
+                    if level == 'Proyek' and self.project_id in x.project_ids and x.id == self._uid:
+                        cek = True
+                    if level == 'Divisi Operasi' and x.branch_id == self.branch_id and x.id == self._uid:
+                        cek = True
+                    if level == 'Divisi Fungsi' and x.department_id == self.department_id and x.id == self._uid:
+                        cek = True
+                print (cek)
+        if cek == True:
+            action = {
+                'name': ('Reject Reason'),
+                'type': "ir.actions.act_window",
+                'res_model': "reject.wizard",
+                'view_type': "form",
+                'target': 'new',
+                'view_mode': "form",
+                'context': {'groups_id': groups_id.id, 'default_ncl_id': self.id},
+                'view_id': self.env.ref('wika_noncash_loan.ncl_input_reject_wizard_form').id,
+            }
+            return action
+        else:
+            raise ValidationError('User Akses Anda tidak berhak Reject!')
+
+
+
+    def action_proses(self):
+        stage_default = self.env['wika.loan.stage'].search([
+            ('tipe','=','Non Cash'),('name','=','Pembukaan'),
+            ('request','=',False)],limit=1)
+        _logger.info('CHECKK DEFAULT STAGE Action Proses - Default Stage ID: %s', stage_default.id)
+        action = {
+            'name': ('NCL Proses'),
+            'type': "ir.actions.act_window",
+            'res_model': "wika.noncash.loan",
+            'view_type': "form",
+            'limit': 20,
+            'view_mode': "tree,form",
+            'view_id': False,
+            'views': [
+                (self.env.ref('wika_noncash_loan.wika_ncl_proses_view_tree').id, 'tree'),
+                (self.env.ref('wika_noncash_loan.wika_ncl_proses_view_form').id, 'form'),
+            ],
+            'context': {'default_stage_id': stage_default.id},
+            'domain': [('stage_id.name', 'not in', ['Pengajuan','Proses Approval'])]
+        }
+        return action
+
+    @api.depends('jenis_id')
+    def _compute_keterangan_html(self):
+        for record in self:
+            keterangan_html = ''
+
+            if record.jenis_id.nama == 'SCF':
+                keterangan_html += '''
+                <div style="background-color: aliceblue;">
+                    <h4>Keterangan :</h4>
+                    <ul>
+                        <li>Nilai Tagihan Netto = Nilai Pokok + PPN - Potongan PPh - Potongan Lain</li>
+                        <li>Nilai Pengajuan = Nilai Pokok Tagihan - Potongan PPh - Potongan Lain</li>
+                    </ul>  
+                </div>'''
+
+            elif record.jenis_id.nama == 'SKBDN/LC':
+                keterangan_html += '''
+                <div style="background-color: aliceblue;">
+                    <h4>Keterangan :</h4>
+                    <ul>
+                        <li>Nilai Pokok = Nilai Progress - Potongan Uang Muka</li>
+                        <li>Nilai Tagihan Netto = Nilai Pokok + PPN - Potongan PPh</li>
+                        <li>Nilai Pengajuan = Nilai Pokok Tagihan - Potongan PPh</li>
+                    </ul>
+                </div>'''
+
+            record.keterangan_html = keterangan_html
 
 # class WikAuditLog(models.Model):
 #     _name = 'wika.ncl.audit.log'
@@ -239,7 +675,7 @@ class WikaNclPembayaran(models.Model):
     status_akseptasi        = fields.Selection(string='Status Akseptasi', selection=[
                                 ('Akseptasi', 'Akseptasi'),
                                 ('Tidak Akseptasi', 'Tidak Akseptasi')])            
-    projek_id               = fields.Many2one(comodel_name='wika.project',
+    project_id               = fields.Many2one(comodel_name='project.project',
                                           string="Proyek", ondelete='set null', index=True)
 
     # nomor_swift_baru = fields.Char(string="Nomor Swift Baru", store=True)
@@ -264,10 +700,18 @@ class WikaNclPembayaran(models.Model):
     tr_ids = fields.One2many(comodel_name='wika.loan.log.tr', string="History TR",
         inverse_name='pembayaran_id', ondelete='cascade', index="true", copy=False)
     nomor_memorial = fields.Char('Nomor Memorial')
+    nilai_akutansi      = fields.Float(string='Nilai Akutansi')
+
     no_sap = fields.Char('No Doc SAP')
     payment_proposal_id_sap              = fields.Char(string='Payment Proposal Id SAP')
     line_item_sap = fields.Char(string='Line Item SAP')
     fiscal_year_sap = fields.Char(string='Fiscal Year SAP')
+    run_date_sap= fields.Date(string='Run Date SAP',copy=False)
+    from_sap            = fields.Boolean(string='From SAP',default=False,copy=False)
+    upload_to_sap       = fields.Boolean(string='Upload to SAP',default=False)
+    send= fields.Boolean(string='Send to SAP',default=False,copy=False)
+    identifier          = fields.Char(string='Identifier',copy=False)
+
 
 class WikaLogTr(models.Model):
     _name ='wika.loan.log.tr'
@@ -281,3 +725,11 @@ class WikaLogTr(models.Model):
     tgl_swift_lama = fields.Date(string='Tanggal Swift TR')
     tgl_jatuh_tempo_lama = fields.Date(string='Tanggal Jatuh Tempo')
     
+class WikaNclApprovalLine(models.Model):
+    _name = 'wika.noncash.loan.approval.line'
+
+    ncl_id = fields.Many2one('wika.noncash.loan', string='')
+    user_id = fields.Many2one('res.users', string='User', readonly=True)
+    groups_id = fields.Many2one('res.groups', string='Groups', readonly=True)
+    date = fields.Datetime('Date', readonly=True)
+    note = fields.Char('Note', readonly=True)

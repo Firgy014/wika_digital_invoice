@@ -27,11 +27,13 @@
         'security/ir.model.access.csv',
         'views/views.xml',
         'views/templates.xml',
-        # 'views/wika_ncl_input.xml',
+        'views/wika_ncl_input.xml',
         'views/wika_ncl_proses.xml',
         'views/wika_ncl_pembayaran.xml',
         'views/wika_plafond_bank_inherit.xml',
         'views/wika_menu.xml',
+        'views/sequence_data.xml',
+        'wizard/wika_reject_reason.xml',
     ],
     # only loaded in demonstration mode
     'demo': [

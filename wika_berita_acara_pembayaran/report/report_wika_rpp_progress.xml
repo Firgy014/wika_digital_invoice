@@ -1,5 +1,5 @@
 <odoo>
-    <!-- <report
+    <report
         id="report_wika_rpp_progress_id"
         model="wika.berita.acara.pembayaran"
         string="Report Wika RPP Progress"
@@ -7,17 +7,14 @@
         name="wika_berita_acara_pembayaran.report_wika_rpp_progress"
         file="wika_berita_acara_pembayaran.report_wika_rpp_progress"
         attachment_use="False"
-    /> -->
+        paperformat="wika_berita_acara_pembayaran.report_qweb_paperformat"/>
+
     <template id="report_wika_rpp_progress">
         <t t-foreach="docs" t-as="o">
         <t t-call="web.html_container">
-            <t t-set="data_report_margin_top" t-value="8"/>
-            <t t-set="data_report_header_spacing" t-value="9"/>
-            <t t-set="data_report_dpi" t-value="110"/>
-
             <t t-call="web.internal_layout">
                 <div class="page">
-                    <div style="text-align: center; margin-top: -5px; font-size: 14px;">
+                    <div style="text-align: center; margin-top: 80px; font-size: 14px;">
                         <t t-if="o.currency_id.name != 'IDR'">
                             <h4>Work Progress Recap</h4>
                         </t>
@@ -25,7 +22,7 @@
                             <h4>Rekap Progress Pekerjaan</h4>
                         </t>
                     </div>
-                    <div class="d-flex justify-content-center" style="margin-top: -8px; width: 100%;">
+                    <div class="d-flex justify-content-center" style="margin-top: 80px; width: 100%;">
                         <table class="table table-borderless" style="width:100%;">
                             <tbody>
                                 <tr style="text-align: left;">
@@ -38,7 +35,7 @@
                                     <td style="padding: 1px;"><t t-esc="o.job"/></td>
                                 </tr>
                                 <tr style="text-align: left;">
-                                    <td style="padding: 1px;">
+                                    <td style="padding: 10px 1px 1px 1px;">
                                         <t t-if="o.currency_id.name != 'IDR'">Project</t>
                                         <t t-if="o.currency_id.name == 'IDR'">Proyek</t>
                                     </td>
@@ -47,7 +44,7 @@
                                 </tr>
                                 <tr style="text-align: left;">
                                     <td rowspan="4" style="padding: 3px;">2.</td>
-                                    <td style="padding: 1px;">
+                                    <td style="padding: 10px 1px 1px 1px;">
                                         <t t-if="o.currency_id.name != 'IDR'">Contract Date</t>
                                         <t t-if="o.currency_id.name == 'IDR'">Tanggal Kontrak</t>
                                     </td>
@@ -55,7 +52,7 @@
                                     <td style="padding: 1px;"><t t-esc="o.begin_date"/></td>
                                 </tr>
                                 <tr style="text-align: left;">
-                                    <td style="padding: 1px;">
+                                    <td style="padding: 10px 1px 1px 1px;">
                                         <t t-if="o.currency_id.name != 'IDR'">PO Number</t>
                                         <t t-if="o.currency_id.name == 'IDR'">Nomor PO</t>
                                     </td>
@@ -63,7 +60,7 @@
                                     <td style="padding: 1px;"><t t-esc="o.po_id.name"/></td>
                                 </tr>
                                 <tr style="text-align: left;">
-                                    <td style="padding: 1px;">
+                                    <td style="padding: 10px 1px 1px 1px;">
                                         <t t-if="o.currency_id.name != 'IDR'">Contract Number</t>
                                         <t t-if="o.currency_id.name == 'IDR'">Nomor Kontrak</t>
                                     </td>
@@ -71,7 +68,7 @@
                                     <td style="padding: 1px;"><t t-esc="o.sap_doc_number"/></td>
                                 </tr>
                                 <tr style="text-align: left;">
-                                    <td style="padding: 1px;">
+                                    <td style="padding: 10px 1px 1px 1px;">
                                         <t t-if="o.currency_id.name != 'IDR'">Contract Value</t>
                                         <t t-if="o.currency_id.name == 'IDR'">Nilai Kontrak</t>
                                     </td>
@@ -83,7 +80,7 @@
                             </tbody>
                         </table>
                     </div>
-                    <div style="margin-top: -20px;">
+                    <div style="margin-top: 50px;">
                         <style>
                             .table tbody th,
                             .table tbody td,

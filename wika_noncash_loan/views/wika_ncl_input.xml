@@ -31,20 +31,18 @@
             <field name="arch" type="xml">
                 <form string="Loan Form">
                     <header>
-                        <!-- <button name="submit" type="object" string="Meminta Persetujuan"
-                                class="oe_highlight" attrs="{'invisible': [('stage_name','!=','Pengajuan')]}"/>
-                        <button name="approve_input" type="object" string="Approve"
-                                class="oe_highlight"
-                                attrs="{'invisible': [('stage_name','not in',['Proses Approval','Reject','Approve'])]}"/>
-                        <button name="reject_input" type="object" string="Reject"
-                                attrs="{'invisible': [('stage_name','not in',['Proses Approval','Reject','Approve'])]}"/>
-                        <button name="cancel" type="object" string="Batal"
+                        <button name="action_submit" type="object" string="Meminta Persetujuan"
+                            class="oe_highlight" attrs="{'invisible': [('stage_name','!=','Pengajuan')]}"/>
+                        <button name="action_approve_input" type="object" string="Approve"
+                            class="oe_highlight"
+                            attrs="{'invisible': [('stage_name','not in',['Proses Approval','Reject','Approve'])]}"/>
+                        <button name="action_reject_input" type="object" string="Reject"
+                            attrs="{'invisible': [('stage_name','not in',['Proses Approval','Reject','Approve'])]}"/>
+                        <!-- <button name="cancel" type="object" string="Batal"
 							attrs="{'invisible': [('stage_name','=','Cancel')]}" /> -->
                         <field name="stage_id" widget="statusbar"
-                               domain="[('request','!=',False)]"/>
-
+                            domain="[('request','!=',False)]"/>
                         <field name="stage_name" invisible="1"/>
-
                     </header>
                     <sheet>
                         <div class="oe_title">
@@ -57,19 +55,19 @@
                                 <field name="jenis_nasabah" required="1"/>
                                 <field name="bank_id" options="{'no_create':True,'no_open':True}" required="1"/>
                                 <field name="jenis_id" options="{'no_create':True,'no_open':True}" required="1"
-                                       domain="[('tipe', '=', 'Non Cash')]"/>
+                                    domain="[('tipe', '=', 'Non Cash')]"/>
                                 <field name="plafond_bank_id" options="{'no_create':True,'no_open':True}" required="1"/>
-                                <!-- x -->
+                                <field name="tipe_jenis"  attrs="{'required':[('nama_jenis','!=','SCF')]}"  options="{'no_create':True,'no_open':True}"
+                                    domain="[('jenis_id', '=', jenis_id)]" widget="selection"/>
                                 <field name="branch_id" options="{'no_create':True,'no_open':True}" required="1"/>
-                                <!-- <field name="projek_id" options="{'no_create':True,'no_open':True}"
-                                       attrs="{'readonly': ['|',('stage_name','in',['Akseptasi','Disetujui','TR']),('from_sap','=',True)],
-											'invisible': ['|','|',('anak_perusahaan','!=',False),('department_parent','!=',False),('tipe_jenis_name','in',['USANCE Pengadaan','Tender'])]}"
-                                      domain="[('sap_code','!=',False)]" /> -->
-                                <!-- <field name="partner_jo" attrs="{'invisible': [('nama_jenis','!=','BG')]}"/>
+                                <field name="project_id" 
+                                    attrs="{'readonly': ['|', ('stage_name', 'in', ['Akseptasi', 'Disetujui', 'TR']), ('tipe_jenis_name', 'in', ['USANCE Pengadaan', 'Tender'])], 
+                                            'invisible': ['|', ('stage_name', 'in', ['Akseptasi', 'Disetujui', 'TR']), ('tipe_jenis_name', 'in', ['USANCE Pengadaan', 'Tender'])]}"
+                                    options="{'no_create': True, 'no_open': True}"/>
+                                <field name="partner_jo" attrs="{'invisible': [('nama_jenis','!=','BG')]}"/>
                                 <field name="vendor_id" options="{'no_create':True,'no_open':True}"
-                                       attrs="{'readonly': [('stage_name','in',['Akseptasi','Disetujui','TR'])],
-											'invisible': [('anak_perusahaan','!=',False)]}"
-                                />
+                                    attrs="{'readonly': [('stage_name','in',['Akseptasi','Disetujui','TR'])],
+										'invisible': [('anak_perusahaan','!=',False)]}"/>
                                 <field name="nama_proyek"
                                        attrs="{'invisible': [('tipe_jenis_name','not in',['USANCE Pengadaan','Tender'])]}"/>
                                 <field name="nama_vendor"
@@ -79,18 +77,23 @@
                                 <label for="tenor" string="Tenor" attrs="{'invisible': [('nama_jenis','=','BG')]}"/>
                                 <div class="o_address_format" attrs="{'invisible': [('nama_jenis','=','BG')]}">
                                     <field name="tenor" class="o_address_city"
-                                           attrs="{'invisible': [('nama_jenis','=','BG')]}"/>
+                                        attrs="{'invisible': [('nama_jenis','=','BG')]}"/>
                                     Hari ,terhitung sejak
                                     <field name="sejak" class="o_address_city"
-                                           attrs="{'invisible': [('nama_jenis','=','BG')]}"/>
+                                        attrs="{'invisible': [('nama_jenis','=','BG')]}"/>
                                 </div>
+                                <field name="step_approve"/>
                                 <field name="catatan"/>
-                                <field name="invoice_id" widget="many2many_tags" options="{'no_create':True}"/>
+                                <field name="invoice_id"/>
                                 <field name="sisa_plafond" invisible="1"/>
                                 <field name="sisa_plafond_max" invisible="1"/>
-                                <field name="tipe_jenis_name" invisible="1"/> -->
+                                <field name="tipe_jenis_name" invisible="0"/>
+                                <field name="nama_jenis" invisible="0"/>
+                                <field name="level"/>
+                                <field name="anak_perusahaan"/>
+
                             </group>
-                            <!-- <group>
+                            <group>
                                 <field name="tgl_pembukaan"
                                        attrs="{'readonly': [('stage_name','in',['Setuju','Akseptasi','Disetujui','TR','Perpanjangan'])]}"/>
                                 <field name="currency_id"
@@ -105,9 +108,9 @@
                                 <field name="tanggal_kontrak" attrs="{'readonly': [('is_pmcs','=',True)]}"/>
                                 <field name="nomor_kontrak" attrs="{'readonly': [('is_pmcs','=',True)]}"/>
                                 <field name="nilai_progress" widget="monetary" options="{'currency_field': 'currency_id'}" attrs="{'readonly': [('is_pmcs','=',True)],
-                                                                    'invisible': [('nama_jenis','!=','SKBDN/LC')]}"/>
+                                    'invisible': [('nama_jenis','!=','SKBDN/LC')]}"/>
                                 <field name="potongan_um" widget="monetary" options="{'currency_field': 'currency_id'}" attrs="{'readonly': [('is_pmcs','=',True)],
-                                                                    'invisible': [('nama_jenis','!=','SKBDN/LC')]}"/>
+                                        'invisible': [('nama_jenis','!=','SKBDN/LC')]}"/>
                                 <field name="nilai_pokok_tagihan" widget="monetary" options="{'currency_field': 'currency_id'}" attrs="{'readonly': [('is_pmcs','=',True)]}"/>
                                 <field name="ppn" widget="monetary" options="{'currency_field': 'currency_id'}" attrs="{'readonly': [('is_pmcs','=',True)]}"/>
                                 <field name="nilai_pokok_ppn" widget="monetary" options="{'currency_field': 'currency_id'}" readonly="1"/>
@@ -117,57 +120,21 @@
                                 <field name="potongan_lain" widget="monetary" options="{'currency_field': 'currency_id'}" attrs="{'readonly': [('is_pmcs','=',True)]}"/>
                                 <field name="nilai_tagihan_netto" widget="monetary" options="{'currency_field': 'currency_id'}" readonly="1"/>
                                 <field name="nilai_tagihan_netto" widget="monetary" options="{'currency_field': 'currency_id'}"  invisible="1"/>
-                                <field name="jumlah_pengajuan" widget="monetary"
-                                       options="{'currency_field': 'company_currency'}"
-                                       attrs="{'readonly': [('stage_name','in',['Setuju','Akseptasi','Disetujui','TR','Perpanjangan'])]}"/>
-                                <field name="nama_barang" attrs="{'readonly': [('is_pmcs','=',True)],
-                                                                    'invisible': [('nama_jenis','!=','SKBDN/LC')]}"/>
-                                <field name="step_approve" invisible="1"/>
-                                <field name="stage_name" invisible="1"/>
-                                <field name="nama_jenis" invisible="1"/>
-                                <field name="anak_perusahaan" invisible="1"/>
-                                <field name="department_parent" invisible="1"/>
-                                <field name="company_currency" invisible="1"/>
-									<div style="background-color: aliceblue;" >
-                                        <div attrs="{'invisible': [('nama_jenis','!=','SCF')]}">
-											<h4>Keterangan :</h4>
-                                        <ul>
-                                            <li>
-                                                Nilai Tagihan Netto = Nilai Pokok + PPN - Potongan PPh - Potongan Lain
-                                            </li>
-                                            <li>
-                                                Nilai Pengajuan = Nilai Pokok Tagihan - Potongan PPh - Potongan Lain
-                                            </li>
-                                        </ul>
-                                            </div>
-                                        <div attrs="{'invisible': [('nama_jenis','!=','SKBDN/LC')]}">
-                                                <h4>Keterangan :</h4>
-                                            <ul>
-                                                <li>
-                                                    Nilai Pokok = Nilai Progress - Potongan Uang Muka
-                                                </li>
-                                                <li>
-                                                    Nilai Tagihan Netto = Nilai Pokok + PPN - Potongan PPh
-                                                </li>
-                                                <li>
-                                                    Nilai Pengajuan = Nilai Pokok Tagihan - Potongan PPh
-                                                </li>
-                                            </ul>
-                                        </div>
-									</div>
-
-                            </group> -->
+                                <field name="jumlah_pengajuan" widget="monetary" options="{'currency_field': 'company_currency'}"
+                                    attrs="{'readonly': [('stage_name','in',['Setuju','Akseptasi','Disetujui','TR','Perpanjangan'])]}"/>
+                                <field name="keterangan_html"/>
+                                <field name="nama_barang" attrs="{'readonly': [('is_pmcs','=',True)], 'invisible': [('nama_jenis','!=','SKBDN/LC')]}"/>
+                            </group>
                         </group>
 
-                        <!-- <notebook>
-                            <page name="audit_log" string="History Approval">
-                                <field name="audit_log_ids" nolabel="1" readonly="1">
+                        <notebook>
+                            <page name="approval_log" string="History Approval">
+                                <field name="history_approval_ids" nolabel="1" readonly="1">
                                     <tree>
-                                        <field name="date"/>
-                                        <field name="level"/>
                                         <field name="user_id"/>
                                         <field name="groups_id"/>
-                                        <field name="description"/>
+                                        <field name="date"/>
+                                        <field name="note"/>
                                     </tree>
                                 </field>
                             </page>
@@ -177,57 +144,61 @@
                                         <field name="nomor_memorial" />
                                         <field name="nilai_akutansi" />
                                         <field name="no_sap" readonly="1" groups="base.group_no_one"/>
-                                         <field name="line_item_sap" readonly="1"/>
-                                         <field name="payment_proposal_id_sap" readonly="1"/>
-                                         <field name="run_date_sap" readonly="1"/>
-                                          <field name="fiscal_year_sap" readonly="1" />
-                                         <field name="from_sap" groups="base.group_no_one"/>
-                                          <field name="upload_to_sap" groups="base.group_no_one"/>
-                                         <field name="send" groups="base.group_no_one"/>
-                                         <field name="identifier" groups="base.group_no_one"/>
+                                        <field name="line_item_sap" readonly="1"/>
+                                        <field name="payment_proposal_id_sap" readonly="1"/>
+                                        <field name="run_date_sap" readonly="1"/>
+                                        <field name="fiscal_year_sap" readonly="1" />
+                                        <field name="from_sap" groups="base.group_no_one"/>
+                                        <field name="upload_to_sap" groups="base.group_no_one"/>
+                                        <field name="send" groups="base.group_no_one"/>
+                                        <field name="identifier" groups="base.group_no_one"/>
                                     </group>
                                 </group>
                             </page>
-                        </notebook> -->
+                            <page name="syarat_dok" string="Persyaratan Dokumen">
+                                <field name="syarat_ids" nolabel="1">
+                                    <tree editable="bottom" create="0" delete="0">
+                                        <field name="dokumen"/>
+                                        <field name="check_ada"/>
+                                        <field name="check_tidak"/>
+                                        <field name="dok_asli"/>
+                                        <field name="dok_copy"/>
+                                        <field name="keterangan"/>
+                                    </tree>
+                                </field>
+                            </page>
+                            <page name="invoice" string="List Invoice">
+                                <field name="invoice_ids" nolabel="1">
+                                    <tree editable="bottom">
+                                        <field name="name"/>
+                                        <field name="tanggal"/>
+                                        <field name="nilai"/>
+                                        <field name="nilai_asing"/>
+                                        <field name="ket"/>
+                                        <field name="doc_number"/>
+                                        <field name="invoice_id" readonly="1"/>
+                                    </tree>
+                                </field>
+                            </page>
+                        </notebook>
                     </sheet>
-                    <!-- <div class="oe_chatter">
-                        <field name="message_follower_ids" widget="mail_followers"
-                               groups="base.group_user"/>
-                        <field name="message_ids" widget="mail_thread"/>
-                    </div> -->
+                    <div class="oe_chatter">
+                        <field name="message_follower_ids"/>
+                        <field name="activity_ids"/>
+                        <field name="message_ids"/>
+                    </div>
                 </form>
             </field>
         </record>
 
-        <!-- <record id="wika_ncl_input_action" model="ir.actions.act_window">
+        <record id="wika_ncl_input_server_action" model="ir.actions.server">
             <field name="name">NCL Input</field>
-            <field name="res_model">wika.noncash.loan</field>
-            <field name="view_mode">tree,form</field>
-        </record> -->
-
-        <!-- <record id="wika_ncl_input_action" model="ir.actions.act_window">
-            <field name="name">NCL Input</field>
-            <field name="res_model">wika.noncash.loan</field>
-            <field name="target">current</field>
-            <field name="context">{}</field>
-            <field name="domain">[]</field>
-            <field name="limit">80</field>
-            <field name="view_mode">tree,form</field>
-            <field name="view_ids" eval="[(5, 0, 0),
-                (0, 0, {'view_mode': 'tree', 'view_id': ref('wika_ncl_input_view_tree')}),
-                (0, 0, {'view_mode': 'form', 'view_id': ref('wika_ncl_input_view_form')})]"/>                     
-            <field name="help" type="html">
-                <p class="oe_view_nocontent_create">Tambahkan Data</p>
-            </field>
-        </record> -->
-        <!-- <record id="wika_ncl_input_action" model="ir.actions.server">
-            <field name="name">assenbuch_Action</field>
-            <field name="model_id" ref="wika_noncash_loan.model_wika_noncash_loan"/>
-
-            <field name="binding_model_id" ref="wika_noncash_loan.model_wika_noncash_loan"/>
+            <field name="model_id" ref="model_wika_noncash_loan"/>
+            <field name="binding_model_id" ref="model_wika_noncash_loan"/>
             <field name="state">code</field>
             <field name="code">action = model.action_input()</field>
-        </record> -->
+        </record>
+
     </data>
     
 
