@@ -3,7 +3,7 @@
         id="report_wika_rpp_progress_id"
         model="wika.berita.acara.pembayaran"
         string="Report Wika RPP Progress"
-        report_type="qweb-pdf"
+        report_type="qweb-html"
         name="wika_berita_acara_pembayaran.report_wika_rpp_progress"
         file="wika_berita_acara_pembayaran.report_wika_rpp_progress"
         attachment_use="False"
