@@ -610,6 +610,7 @@ class WikaMCSBudgetReviewLinePrognosa(models.Model):
     realisasi = fields.Float('Realisasi')
     prognosa = fields.Float('Prognosa')
     nilai_rkap = fields.Float('RKAP Tahun Berikutnya')
+    sequence = fields.Integer(string='Sequence')
 
 class WikaReviewBeban(models.Model):
     _name = 'wika.review.beban'
@@ -639,39 +640,40 @@ class WikaMCSBudgetReviewLine(models.Model):
     budget_id = fields.Many2one(string='Budget', comodel_name='wika.mcs.budget.coa')
     persentase = fields.Float(string='Persentase Kenaikan', related='review_id.persentase',store=True)
     persentase_turun = fields.Float(string='Persentase Penurunan', related='review_id.persentase_turun',store=True)
-    kode_perkiraan = fields.Many2one(string="Kode Perkiraan",comodel_name='account.account',related='budget_id.kode_coa')
-    kode_perkiraan_id = fields.Many2one(string="Kode Perkiraan",comodel_name='account.account')
+    kode_perkiraan = fields.Many2one(string="Kode Perkiraan", comodel_name='account.account',related='budget_id.kode_coa')
+    kode_perkiraan_id = fields.Many2one(string="Kode Perkiraan", comodel_name='account.account')
     rkap = fields.Float( string='RKAP',related='budget_id.total_anggaran')
-    rkap_review = fields.Float(string='Simulasi Penurunan RKAP',compute='change_rkap_review')
-    realisasi = fields.Float('Realisasi s/d Bulan Dipilih',compute='_compute_ripersen')
-    realisasi_persen = fields.Float('% ri Thd RKAP',compute='_compute_ripersen')
+    rkap_review = fields.Float(string='Simulasi Penurunan RKAP', compute='change_rkap_review')
+    realisasi = fields.Float('Realisasi s/d Bulan Dipilih', compute='_compute_ripersen')
+    realisasi_persen = fields.Float('% ri Thd RKAP', compute='_compute_ripersen')
     sisa_anggaran = fields.Float('Sisa Anggaran (s/d bulan Dipilih)', compute='_compute_sisa')
-    prognosa = fields.Float('Sisa Biaya s/d Desember',compute='_compute_prognosa')
+    prognosa = fields.Float('Sisa Biaya s/d Desember', compute='_compute_prognosa')
     prognosa_sd = fields.Float('RKAP Review', compute='_compute_rkap_review')
-    rkap_ts = fields.Float(string='RKAP Tahun Selanjutnya',compute='_compute_rkap_ts')
+    rkap_ts = fields.Float(string='RKAP Tahun Selanjutnya', compute='_compute_rkap_ts')
 
-    ts_persen = fields.Float('% RKAP Tahun Selanjutnya vs Prognosa',compute="_compute_tspersen")
-    ts_persen_rkap = fields.Float('% RKAP Tahun Selanjutnya vs RKAP Awal',compute="_compute_tspersen")
-    selisih = fields.Float('Selisih Tahun Selanjutnya - Prognosa',compute="_compute_selisih")
+    ts_persen = fields.Float('% RKAP Tahun Selanjutnya vs Prognosa', compute="_compute_tspersen")
+    ts_persen_rkap = fields.Float('% RKAP Tahun Selanjutnya vs RKAP Awal', compute="_compute_tspersen")
+    selisih = fields.Float('Selisih Tahun Selanjutnya - Prognosa', compute="_compute_selisih")
 
-    detail_ids= fields.One2many(string='Product Detail', comodel_name='wika.review.line.detail', ondelete='cascade',
+    detail_ids = fields.One2many(string='Product Detail', comodel_name='wika.review.line.detail', ondelete='cascade',
                                  inverse_name='line_id', index=True)
-    status_generate=fields.Boolean(string="Status Generate", copy=False, default=False,related='review_id.status_generate',store=True)
+    status_generate =fields.Boolean(string="Status Generate", copy=False, default=False,related='review_id.status_generate',store=True)
 
     def act_generate(self):
         for x in self.detail_ids:
             if x.status_generate==False:
                 for i in range(12):
+                    bulan = str(i+1)
                     self.env['wika.mcs.budget.review.line.prognosa'].create({
                         'review_id': x.id,
-                        'bulan': i+1,
+                        'bulan': bulan,
                         'sequence': i+1,
                         'rencana': 0,
                         'realisasi': 0,
                         'prognosa': 0,
                     })
                 x.status_generate = True
-    
+            
     @api.depends('rkap','review_id.type','detail_ids.line_ids.prognosa')
     def _compute_prognosa(self):
         for x in self:
@@ -796,8 +798,13 @@ class WikaMCSBudgetReviewLine(models.Model):
                         [('kode_coa', '=', x.kode_perkiraan.id), ('department', '=', x.review_id.department.id),
                         ('tahun', '=', x.review_id.tahun), ('state', '=', 'Confirm'),('tipe_budget','=','opex')])
                 x.rkap_review = rkap.total_anggaran - (x.persentase_turun/100*rkap.total_anggaran)
+            else:
+                x.rkap_review = 0.0
+
             if x.review_id.persentase>0.0:
                 x.rkap_review = x.budget_id.total_anggaran + (x.persentase/100*x.budget_id.total_anggaran)
+            else:
+                x.rkap_review = 0.0
 
     @api.onchange('rkap')
     def change_rkap(self):
