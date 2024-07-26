@@ -57,7 +57,7 @@
         <field name="binding_view_types">form</field>
     </record> -->
 
-    <record id="report_wika_rpp_uang_muka_action" model="ir.actions.report">
+    <!-- <record id="report_wika_rpp_uang_muka_action" model="ir.actions.report">
         <field name="name">Rekap Progress Pekerjaan Uang Muka</field>
         <field name="model">wika.berita.acara.pembayaran</field>
         <field name="report_type">qweb-html</field>
@@ -66,9 +66,9 @@
         <field name="print_report_name">'Rekap Progress Pekerjaan Uang Muka- %s' % (object.name)</field>
         <field name="binding_model_id" ref="model_wika_berita_acara_pembayaran"/>
         <field name="binding_view_types">form</field>
-    </record>
+    </record> -->
 
-    <record id="report_wika_rpp_retensi_action" model="ir.actions.report">
+    <!-- <record id="report_wika_rpp_retensi_action" model="ir.actions.report">
         <field name="name">Rekap Progress Pekerjaan Retensi</field>
         <field name="model">wika.berita.acara.pembayaran</field>
         <field name="report_type">qweb-html</field>
@@ -77,9 +77,9 @@
         <field name="print_report_name">'Rekap Progress Pekerjaan Retensi - %s' % (object.name)</field>
         <field name="binding_model_id" ref="model_wika_berita_acara_pembayaran"/>
         <field name="binding_view_types">form</field>
-    </record>
+    </record> -->
 
-    <record id="report_wika_rpp_cut_over_action" model="ir.actions.report">
+    <!-- <record id="report_wika_rpp_cut_over_action" model="ir.actions.report">
         <field name="name">Rekap Progress Pekerjaan Cut Over</field>
         <field name="model">wika.berita.acara.pembayaran</field>
         <field name="report_type">qweb-html</field>
@@ -88,7 +88,7 @@
         <field name="print_report_name">'Rekap Progress Pekerjaan Cut Over - %s' % (object.name)</field>
         <field name="binding_model_id" ref="model_wika_berita_acara_pembayaran"/>
         <field name="binding_view_types">form</field>
-    </record>
+    </record> -->
 
     <record id="report_qweb_paperformat" model="report.paperformat">
         <field name="name">F4 Landscape</field>
