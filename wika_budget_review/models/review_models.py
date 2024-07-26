@@ -33,7 +33,7 @@ class WikaMCSBudgetReview(models.Model):
     tahun = fields.Selection(get_years(), string='Year')
     department = fields.Many2one(comodel_name='res.branch', string='Divisi',copy=False,default=_get_default_branch)
     persentase = fields.Float(string='Persentase Kenaikan')
-    type = fields.Selection([('review', 'review'), ('rkap', 'RKAP')], string='Type')
+    type = fields.Selection([('review', 'Review'), ('rkap', 'RKAP')], string='Type', default='review')
     persentase_turun = fields.Float(string='Persentase Penurunan')
     review_ids = fields.One2many('wika.mcs.budget.review.line', 'review_id', ondelete='cascade', string='Per Bulan', index=True)
     state = fields.Selection([
@@ -331,16 +331,16 @@ class WikaMCSBudgetReview(models.Model):
                                         SELECT
                                             SUM(invl.price_subtotal)            
                                         FROM
-                                            account_invoice_line invl                            
+                                            account_move_line invl                            
                                         LEFT JOIN
-                                            account_invoice inv ON inv.id = invl.invoice_id
+                                            account_move inv ON inv.id = invl.move_id
                                         LEFT JOIN
                                             account_account coa ON coa.id = invl.account_id
                                         LEFT JOIN
                                             product_product product ON product.id = invl.product_id
                                         WHERE
-                                            TO_CHAR(inv.date_invoice,'yyyy')= '%s' AND
-                                            TO_CHAR(inv.date_invoice,'fmMM') ='%s' AND
+                                            TO_CHAR(inv.date,'yyyy')= '%s' AND
+                                            TO_CHAR(inv.date,'fmMM') ='%s' AND
                                             inv.biro = %s and inv.branch_id = %s AND
                                             invl.account_id = %s AND
                                             invl.product_id = %s  
@@ -348,23 +348,23 @@ class WikaMCSBudgetReview(models.Model):
 
                                 elif not self.biro:
                                     query = """
-    #                                     SELECT
-    #                                       SUM(invl.price_subtotal)
-    #                                     FROM
-                                            account_invoice_line invl
-    #                                     LEFT JOIN
-                                            account_invoice inv on inv.id = invl.invoice_id
-    #                                     LEFT JOIN
+                                         SELECT
+                                           SUM(invl.price_subtotal)
+                                         FROM
+                                            account_move_line invl
+                                         LEFT JOIN
+                                            account_move inv on inv.id = invl.move_id
+                                         LEFT JOIN
                                             account_account coa on coa.id = invl.account_id
-    #                                     LEFT JOIN
+                                         LEFT JOIN
                                             product_product product on product.id = invl.product_id
-    #                                     WHERE
-                                            TO_CHAR(inv.date_invoice, 'yyyy') = '%s' AND
-                                            TO_CHAR(inv.date_invoice,'fmMM') = '%s' AND
+                                         WHERE
+                                            TO_CHAR(inv.date, 'yyyy') = '%s' AND
+                                            TO_CHAR(inv.date,'fmMM') = '%s' AND
                                             inv.branch_id = %s AND
                                             invl.account_id = %s AND
                                             invl.product_id = %s
-    #                               """ % (self.tahun, bln.bulan,self.department.id, x.kode_perkiraan.id, product_id.product_id.id)
+                                   """ % (self.tahun, bln.bulan,self.department.id, x.kode_perkiraan.id, product_id.product_id.id)
                                     
                                 self._cr.execute(query)
                                 hasil = 0.0
@@ -416,16 +416,16 @@ class WikaMCSBudgetReview(models.Model):
                                         SELECT
                                             SUM(invl.price_subtotal)            
                                         FROM
-                                            account_invoice_line invl                            
+                                            account_move_line invl                            
                                         LEFT JOIN
-                                            account_invoice inv ON inv.id = invl.invoice_id
+                                            account_move inv ON inv.id = invl.move_id
                                         LEFT JOIN
                                             account_account coa ON coa.id = invl.account_id
                                         LEFT JOIN
                                             product_product product ON product.id = invl.product_id
                                         WHERE
-                                            TO_CHAR(inv.date_invoice,'yyyy') = '%s' AND
-                                            TO_CHAR(inv.date_invoice,'fmMM') = '%s' AND
+                                            TO_CHAR(inv.date,'yyyy') = '%s' AND
+                                            TO_CHAR(inv.date,'fmMM') = '%s' AND
                                             inv.biro = %s AND
                                             inv.branch_id = %s AND
                                             invl.account_id= %s AND
@@ -436,16 +436,16 @@ class WikaMCSBudgetReview(models.Model):
                                         SELECT
                                             SUM(invl.price_subtotal)
                                         FROM
-                                            account_invoice_line invl
+                                            account_move_line invl
                                         LEFT JOIN
-                                            account_invoice inv ON inv.id = invl.invoice_id
+                                            account_move inv ON inv.id = invl.move_id
                                         LEFT JOIN
                                             account_account coa ON coa.id = invl.account_id
                                         LEFT JOIN
                                             product_product product ON product.id = invl.product_id
                                         WHERE
-                                            TO_CHAR(inv.date_invoice, 'yyyy') = '%s' AND
-                                            TO_CHAR(inv.date_invoice,'fmMM') = '%s' AND
+                                            TO_CHAR(inv.date, 'yyyy') = '%s' AND
+                                            TO_CHAR(inv.date,'fmMM') = '%s' AND
                                             inv.branch_id = %s and
                                             invl.account_id = %s and
                                             invl.product_id = %s
@@ -694,9 +694,12 @@ class WikaMCSBudgetReviewLine(models.Model):
 
     @api.depends('detail_ids.total_anggaran','review_id.type')
     def _compute_rkap_review(self):
+        
         for x in self:
-            if x.detail_ids and x.review_id.type=='review':
-                x.prognosa_sd=sum(z.total_anggaran for z in x.detail_ids)
+            if x.detail_ids and x.review_id.type == 'review':
+                x.prognosa_sd = sum(z.total_anggaran for z in x.detail_ids)
+            else:
+                x.prognosa_sd = 0.0
 
 
     @api.depends('rkap','review_id')
@@ -722,19 +725,29 @@ class WikaMCSBudgetReviewLine(models.Model):
 
             if x.rkap > 0 and x.review_id.biro:
                 hasil = 0.0
-                if x.review_id.type== 'review':
+                if x.review_id.type == 'review':
                     tahun = str(x.review_id.tahun)
-                if x.review_id.type== 'rkap':
+                if x.review_id.type == 'rkap':
                     tahun = str(x.review_id.tahun-1)
                 bulan = str(x.review_id.bulan)
                 dept = x.review_id.biro.id
                 div = x.review_id.department.id
-                query = """select sum(invl.price_subtotal)from account_invoice_line invl
-                            left join account_invoice inv on inv.id=invl.invoice_id
-                            left join account_account coa on coa.id=invl.account_id
-                            where to_char(inv.date_invoice,'yyyy')= '%s'  and to_char(inv.date_invoice,'fmMM')<='%s' 
-                            and inv.biro=%s and inv.branch_id=%s and invl.account_id=%s
-                            """%(tahun,bulan,dept,div,x.kode_perkiraan.id)
+                query = """
+                        SELECT
+                            SUM(invl.price_subtotal)
+                        FROM
+                            account_move_line invl
+                        LEFT JOIN
+                            account_move inv ON inv.id = invl.move_id
+                        LEFT JOIN
+                            account_account coa ON coa.id = invl.account_id
+                        WHERE
+                            TO_CHAR(inv.date,'yyyy') = '%s' AND
+                            TO_CHAR(inv.date,'fmMM') <= '%s' AND
+                            inv.biro = %s AND
+                            inv.branch_id = %s AND 
+                            (invl.account_id = %s::integer OR invl.account_id IS NULL)
+                        """%(tahun,bulan,dept,div,x.kode_perkiraan.id)
                 self._cr.execute(query)
                 hasil =self._cr.fetchone()[0]
                 x.realisasi = hasil
@@ -746,26 +759,29 @@ class WikaMCSBudgetReviewLine(models.Model):
                 line = self.env['wika.mcs.budget.bulan'].search([('bulan', '=', x.review_id.bulan), ('coa_id', '=', x.budget_id.id)],limit=1)
                 terpakai = line.terpakai_vb_sd
                 x.realisasi = terpakai
-                x.realisasi_persen = x.realisasi/x.rkap *100
-                #x.prognosa_sd = x.realisasi + x.prognosa
+                x.realisasi_persen = x.realisasi/x.rkap * 100
             else:
                 x.realisasi_persen = 0.0
-                x.realisasi =0.0
-                #x.prognosa_sd =0.0
+                x.realisasi = 0.0
 
     @api.depends('review_id.type','detail_ids.total_anggaran')
     def _compute_rkap_ts(self):
         for x in self:
-            if x.detail_ids and x.review_id.type=='rkap':
-                x.rkap_ts=sum(z.total_anggaran for z in x.detail_ids)
+            if x.detail_ids and x.review_id.type == 'rkap':
+                x.rkap_ts = sum(z.total_anggaran for z in x.detail_ids)
+            else:
+                x.rkap_ts = 0.0
 
     @api.depends('rkap_ts', 'rkap')
     def _compute_tspersen(self):
         for x in self:
-            x.ts_persen_rkap=0.0
+            x.ts_persen_rkap = 0.0
             if x.rkap_ts > 0:
-                x.ts_persen = x.prognosa  /  x.rkap_ts * 100
-                x.ts_persen_rkap = x.rkap /x.rkap_ts * 100
+                x.ts_persen = x.prognosa / x.rkap_ts * 100
+                x.ts_persen_rkap = x.rkap / x.rkap_ts * 100
+            else:
+                x.ts_persen = 0.0
+                x.ts_persen_rkap = 0.0
 
     @api.depends('review_id.persentase_turun','rkap','review_id.persentase','budget_id')
     def change_rkap_review(self):
@@ -796,16 +812,16 @@ class WikaMCSBudgetReviewLine(models.Model):
 
     def act_detail_pekerjaan(self):
         if self.review_id.state == 'reviewed' and self.review_id.type=='review':
-            form_id = self.env.ref('mcs_budget.review_form_view_2_2')
+            form_id = self.env.ref('wika_budget_review.review_form_view_2_2')
             ctx = {}
         elif self.review_id.state not in ('reviewed','rkap') and self.review_id.type=='review':
-            form_id = self.env.ref('mcs_budget.review_form_view_2')
+            form_id = self.env.ref('wika_budget_review.review_form_view_2')
             ctx = {'form_view_initial_mode': 'edit', 'force_detailed_view': 'true', 'default_id': self.id}
         elif self.review_id.state == 'rkap' and self.review_id.type=='rkap':
-            form_id = self.env.ref('mcs_budget.generate_rkap_form_view_2_2')
+            form_id = self.env.ref('wika_budget_review.review_form_view_2')
             ctx = {}
         elif self.review_id.state not in ('reviewed','rkap')  and self.review_id.type=='rkap':
-            form_id = self.env.ref('mcs_budget.generate_rkap_line_form_view_2')
+            form_id = self.env.ref('wika_budget_review.generate_rkap_line_form_view_2')
             ctx = {'form_view_initial_mode': 'edit', 'force_detailed_view': 'true', 'default_id': self.id}
 
         return {
