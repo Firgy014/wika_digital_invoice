@@ -1400,40 +1400,43 @@ class WikaInheritedAccountMove(models.Model):
             _logger.info("# === CEK PAYLOAD === #")
             _logger.info(payload)
 
-            # try:
-            response = requests.request("GET", url_config, data=payload, headers=headers)
-            txt = json.loads(response.text)
+            try:
+                response = requests.request("GET", url_config, data=payload, headers=headers)
+                txt = json.loads(response.text)
 
-            if txt['DATA']:
-                _logger.info("# === IMPORT DATA === #")
-                company_id = self.env.company.id
-                
-                txt_data = sorted(txt['DATA'], key=lambda x: x["DOC_NUMBER"])
-                tot_amount = 0
-                for data in txt_data:
-                    # _logger.info(data)
-                    # _logger.info(self.status_payment)
-                    doc_number = data["DOC_NUMBER"]
-                    year = str(data["YEAR"])
-                    line_item = data["LINE_ITEM"]
-                    amount = data["AMOUNT"] * -1
-                    clear_date = data["CLEAR_DATE"]
-                    clear_doc = data["CLEAR_DOC"]
-                    status = data["STATUS"]
-                    new_name = doc_number+str(year)
+                if txt['DATA']:
+                    _logger.info("# === IMPORT DATA === #")
+                    company_id = self.env.company.id
+                    
+                    txt_data = sorted(txt['DATA'], key=lambda x: x["DOC_NUMBER"])
+                    tot_amount = 0
+                    for data in txt_data:
+                        # _logger.info(data)
+                        # _logger.info(self.status_payment)
+                        doc_number = data["DOC_NUMBER"]
+                        year = str(data["YEAR"])
+                        line_item = data["LINE_ITEM"]
+                        amount = data["AMOUNT"] * -1
+                        clear_date = data["CLEAR_DATE"]
+                        clear_doc = data["CLEAR_DOC"]
+                        status = data["STATUS"]
+                        new_name = doc_number+str(year)
 
-                    if self.partner_id.company_id.id and self.status_payment != 'Paid' and year == str(self.year):
-                        tot_amount += amount
-                        self.sap_amount_payment = tot_amount
-                    elif self.partner_id.company_id.id and self.status_payment != 'Paid' and year == str(self.date.year):
-                        tot_amount += amount
-                        self.sap_amount_payment = tot_amount
+                        if self.partner_id.company_id.id and self.status_payment != 'Paid' and year == str(self.year):
+                            tot_amount += amount
+                            self.sap_amount_payment = tot_amount
+                        elif self.partner_id.company_id.id and self.status_payment != 'Paid' and year == str(self.date.year):
+                            tot_amount += amount
+                            self.sap_amount_payment = tot_amount
 
 
 
-                _logger.info("# === IMPORT DATA SUKSES === #")
-            else:
-                raise UserError(_("Data Payment Status Tidak Tersedia!"))
+                    _logger.info("# === IMPORT DATA SUKSES === #")
+                else:
+                    raise UserError(_("Data Payment Status Tidak Tersedia!"))
+            except Exception as e:
+                    _logger.info("# === ERROR === #")
+                    _logger.info(e)
             
     def get_payment_status_partial(self):
         _logger.info("# === get_payment_status_partial === #")
