@@ -1,6 +1,6 @@
 from odoo import fields, models, api, _
 import requests
-from odoo.exceptions import UserError, ValidationError, Warning, AccessError
+from odoo.exceptions import UserError, ValidationError, AccessError
 from datetime import datetime,timedelta
 import math, re
 from odoo.tools.float_utils import float_compare
