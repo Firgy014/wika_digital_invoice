@@ -4,6 +4,7 @@ import json
 from datetime import datetime, timedelta
 from odoo import models, fields, api,_
 from odoo.exceptions import UserError, ValidationError, Warning,AccessError
+
 import logging, json
 _logger = logging.getLogger(__name__)
 
@@ -546,6 +547,7 @@ class wika_get_po(models.Model):
                             'company_id': company_id
                         })
                         _logger.info(res_partner_bank_create)
+                        res_partner_create.update_tax()
 
 
             return res_partner

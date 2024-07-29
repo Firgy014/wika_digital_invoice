@@ -6,8 +6,14 @@
             <field name="model">res.partner</field>
             <field name="inherit_id" ref="base.view_partner_form"/>
             <field name="arch" type="xml">
+                <sheet position="before">
+                    <header>
+                        <button string="Update Taxes" name="update_tax" type="object" class="oe_highlight"/>
+                    </header>
+                </sheet>
                 <xpath expr="//field[@name='category_id']" position="after">
                     <field name="bill_coa_type"/>
+                    <field name="tax_ids" widget="many2many_tags" options="{'no_create_edit': True}"/>
                 </xpath>
                 <!-- <xpath expr="//page[@name='accounting']//group[@name='accounting_entries']" position="inside">
                     <field name="account_berelasi_id"/>
