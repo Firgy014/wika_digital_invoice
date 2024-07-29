@@ -31,7 +31,9 @@
     'data': [
         'security/ir.model.access.csv',
         'views/views.xml',
+        'views/account_views.xml',
         'views/budget_views.xml',
+        'views/company_views.xml',
         'views/expense_account_setting_views.xml',
         # 'views/review_views.xml',
         'views/action.xml',
