@@ -83,7 +83,7 @@
                                     <tree>
                                          
                                         <field name="budget_id" invisible="1"/>
-                                         <field name="kode_perkiraan"  invisible="1"/>
+                                        <field name="kode_perkiraan" invisible="1"/>
                                         <field name="kode_perkiraan_id"   />
                                         <field name="rkap" sum="Total Anggaran" readonly="1"/>
                                         <field name="rkap_review" string="Simulasi RKAP Selanjutnya" readonly="1" sum="Total RKAP Review"/>

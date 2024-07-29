@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <data>
+        <!-- Inherit the existing list view and add the new field -->
+        <record id="view_account_list_inherit" model="ir.ui.view">
+            <field name="name">account.account.list.inherit</field>
+            <field name="model">account.account</field>
+            <field name="inherit_id" ref="account.view_account_list"/>
+            <field name="arch" type="xml">
+                <!-- Use xpath to add the new field after currency_id -->
+                <xpath expr="//field[@name='currency_id']" position="after">
+                    <field name="sap_code" string="SAP Code"/>
+                </xpath>
+            </field>
+        </record>
+    </data>
+</odoo>
