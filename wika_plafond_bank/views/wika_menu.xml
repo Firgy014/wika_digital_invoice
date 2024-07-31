@@ -7,7 +7,7 @@
         <menuitem
             id="loan_menu_root"
             name="Loan"
-            sequence="10" web_icon="wika_plafond_bank,static/src/img/icon.png"/>
+            sequence="10" web_icon="wika_plafond_bank,static/src/img/new_loan.png"/>
 
         <!-- submenu -->
         <menuitem

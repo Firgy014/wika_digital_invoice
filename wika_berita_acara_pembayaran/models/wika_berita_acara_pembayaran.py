@@ -1475,16 +1475,16 @@ class WikaBeritaAcaraPembayaran(models.Model):
 
     def action_print_bap(self):
         if self.bap_type == 'progress':
-            return self.env.ref('wika_berita_acara_pembayaran.report_wika_rpp_progress_action').report_action(self)
+            return self.env.ref('wika_berita_acara_pembayaran.report_wika_rpp_progress_id').report_action(self)
         elif self.bap_type == 'uang muka':
-            return self.env.ref('wika_berita_acara_pembayaran.report_wika_rpp_uang_muka_action').report_action(self)
+            return self.env.ref('wika_berita_acara_pembayaran.report_wika_rpp_um_id').report_action(self)
         elif self.bap_type == 'retensi':
-            return self.env.ref('wika_berita_acara_pembayaran.report_wika_rpp_retensi_action').report_action(self)
+            return self.env.ref('wika_berita_acara_pembayaran.report_wika_rpp_retensi_id').report_action(self)
         elif self.bap_type == 'cut over':
             self._compute_cut_over()
             if self.bap_type =='cut over' and any(not line.stock_move_id for line in self.bap_ids):
                 raise ValidationError('Data Invoice cut over belum di mapping!')
-            return self.env.ref('wika_berita_acara_pembayaran.report_wika_rpp_cut_over_action').report_action(self)
+            return self.env.ref('wika_berita_acara_pembayaran.report_wika_rpp_co_id').report_action(self)
         else:
             return super(WikaBeritaAcaraPembayaran, self).action_print_bap()
 

@@ -19,6 +19,13 @@ class WikaLoanJenis(models.Model):
         ('revolving loans', 'Revolving Loans'),
         ('terms loans', 'Terms Loans'),
     ], string='Kelompok')
+    jenis = fields.Selection(string="Jenis", selection=[
+        ('SCF', 'SCF'),
+        ('SKBDN/LC', 'SKBDN/LC'),
+        ('BG', 'BG'),
+        ('Jaminan', 'Jaminan'),
+        ('SBLC', 'SBLC'),
+    ])
 
 class WikaTipeJenis(models.Model):
 

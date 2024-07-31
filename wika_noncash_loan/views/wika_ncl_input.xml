@@ -31,10 +31,9 @@
             <field name="arch" type="xml">
                 <form string="Loan Form">
                     <header>
-                        <button name="action_submit" type="object" string="Meminta Persetujuan"
-                            class="oe_highlight" attrs="{'invisible': [('stage_name','!=','Pengajuan')]}"/>
-                        <button name="action_approve_input" type="object" string="Approve"
-                            class="oe_highlight"
+                        <button name="submit" type="object" string="Meminta Persetujuan" class="oe_highlight" 
+                            attrs="{'invisible': [('stage_name','!=','Pengajuan')]}"/>
+                        <button name="approve_input" type="object" string="Approve" class="oe_highlight"
                             attrs="{'invisible': [('stage_name','not in',['Proses Approval','Reject','Approve'])]}"/>
                         <button name="action_reject_input" type="object" string="Reject"
                             attrs="{'invisible': [('stage_name','not in',['Proses Approval','Reject','Approve'])]}"/>
@@ -53,11 +52,12 @@
                         <group>
                             <group string="Input Data">
                                 <field name="jenis_nasabah" required="1"/>
+                                <!-- <field name="stage_id"/> -->
                                 <field name="bank_id" options="{'no_create':True,'no_open':True}" required="1"/>
-                                <field name="jenis_id" options="{'no_create':True,'no_open':True}" required="1"
-                                    domain="[('tipe', '=', 'Non Cash')]"/>
+                                <field name="jenis_id" options="{'no_create':True,'no_open':True}"  domain="[('tipe', '=', 'Non Cash')]"
+									attrs="{'readonly': [('stage_name','in',['Setuju','Akseptasi','Disetujui','TR','Perpanjangan'])]}" required="1"/>
                                 <field name="plafond_bank_id" options="{'no_create':True,'no_open':True}" required="1"/>
-                                <field name="tipe_jenis"  attrs="{'required':[('nama_jenis','!=','SCF')]}"  options="{'no_create':True,'no_open':True}"
+                                <field name="tipe_jenis"  attrs="{'required':[('nama_jenis','=','BG')]}" options="{'no_create':True,'no_open':True}" 
                                     domain="[('jenis_id', '=', jenis_id)]" widget="selection"/>
                                 <field name="branch_id" options="{'no_create':True,'no_open':True}" required="1"/>
                                 <field name="project_id" 
