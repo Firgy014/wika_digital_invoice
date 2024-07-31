@@ -1235,7 +1235,7 @@ class WikaInheritedAccountMove(models.Model):
             'Content-Type': 'application/json'
         }
 
-        if self.pph_amount > 0 and not self.is_upd_api_pph_amount:
+        if not self.is_upd_api_pph_amount:
             try:
                 year = self.date.strftime('%Y')
                 date_format = '%Y-%m-%d'
