@@ -12,4 +12,4 @@ class DocumentSettingModels(models.Model):
         ('gr', 'GR'),
         ('ses', 'SES'),
     ],string='Transaction Type')
-    active = fields.Boolean('Active')
+    active = fields.Boolean('Active', default=True)
