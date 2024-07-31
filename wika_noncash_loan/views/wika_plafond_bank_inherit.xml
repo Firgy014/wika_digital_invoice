@@ -9,7 +9,8 @@
             <field name="inherit_id" ref="wika_plafond_bank.wika_plafond_bank_view_form"/>
             <field name="arch" type="xml">
                 <xpath expr="//notebook/page[1]" position="after">
-                    <page name="detail_transaksi" string="Detail Transaksi NCL">
+                    <page name="detail_transaksi" string="Detail Transaksi NCL" 
+                        attrs="{'invisible':[('tipe', '=', 'cash')]}">
                         <field name="plaf_bank_ids" nolabel="1">
                             <tree editable="bottom" create="1" delete="1">
                                 <field name="name"/>
@@ -18,6 +19,9 @@
                                 <field name="vendor_id"/>
                                 <field name="tgl_mulai"/>
                                 <field name="tgl_akhir"/>
+                                <field name="branch_id"/>
+                                <field name="jumlah_pengajuan"/>
+                                <field name="stage_id"/>
                             </tree>
                         </field>
                     </page>

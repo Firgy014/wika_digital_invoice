@@ -28,6 +28,9 @@
             <field name="arch" type="xml">
                 <form string="">
                     <header>
+                        <button type="object" name="lunas" string="Bayar" class="oe_highlight"
+                            attrs="{'invisible': ['|','|',('nama_jenis','=','BG'),('state','=','Lunas'),'&amp;',
+                            ('nama_jenis','=','SKBDN/LC'),('status_akseptasi','!=','Akseptasi')]}"/>
                         <field name="state" widget="statusbar" statusbar_visible="Belum Dibayar,Lunas,TR,Perpanjangan"/>
                     </header>
                     <sheet>
@@ -86,6 +89,118 @@
                     </sheet>
                 </form>
             </field>
+        </record>
+        
+        <!-- Form Untuk Isi No SWIFT TR di SKBDN dan SCF detail -->
+        <record model="ir.ui.view" id="ncl_pembayaran_form_view_tr">
+            <field name="name">wika.ncl.pembayaran.form.TR</field>
+            <field name="model">wika.ncl.pembayaran</field>
+            <field name="arch" type="xml">
+                <form string="Form TR">
+                    <sheet >
+				        <group cols="4" col="4">
+				        	<field name="no_swift_tr_baru" required="1"/>
+                            <field name="tgl_swift_tr_baru" required="1"/>
+							<field name="tgl_jatuh_tempo_baru" required="1"/>
+							<field name="keterangan_jatuh_tempo"/>
+                     	</group>
+                     	<group>	                                                      
+				              	<field name="loan_id" readonly="1"/>
+				              	<field name="nomor_swift"  readonly="1"/>				              
+                       			<field name="nama_jenis" readonly="1"/>                     			
+                     			<field name="vendor_id" readonly="1"/>
+								<field name="branch_id" readonly="1"/>
+                     			<field name="nilai_pokok" readonly="1"/>
+                     			<field name="bank_id" readonly="1"/> 
+                     			<field name="nilai_bunga" readonly="1"/>
+                     			
+                     			<field name="keterangan"/> 	
+                     			<field name="currency_id" readonly="1"/>                                               
+                        </group>
+						<notebook>
+							<page string="History TR/Perpanjangan">
+								<field name="tr_ids">
+									<tree create="0" edit="0">
+										<field name="ke" string="TR Ke"/>
+										<field name="tgl_jatuh_tempo_lama"/>
+										<field name="no_swift_lama"/>
+										<field name="tgl_swift_lama"/>
+										<field name="tgl_eksekusi"/>
+									</tree>
+								</field>
+							</page>
+						</notebook>
+                        <footer>
+							<button type="object" name="tr" string="TR" class="oe_highlight"/>
+						    <button string="Batal" class="btn btn-sm btn-default" special="cancel"/>
+                        </footer>
+                    </sheet>
+                </form>
+            </field> 
+        </record>
+
+        <!-- Form Untuk Bayar Perpindahan Plafond -->
+        <record model="ir.ui.view" id="ncl_pembayaran_form_view1">
+            <field name="name">ncl.pembayaran.form1</field>
+            <field name="model">wika.ncl.pembayaran</field>
+            <field name="arch" type="xml">
+                <form string="Form Pembayaran">
+					<field name="state" invisible="1"/>
+                    <sheet>
+                        <group attrs="{'invisible': [('state','=','Lunas')]}">
+                            <group cols="4" col="4">
+                                <field name="total" readonly="1"/>
+                                <field name="nama_jenis" readonly="1"/>
+                                <field name="plafond_bank_id" readonly="1"/>
+                                <field name="currency_id" invisible="1"/>
+                                <field name="jenis_id" invisible="1"/>
+                                <field name="state" invisible="1"/>
+                                <field name="status_akseptasi" invisible="1"/>
+                            </group>
+                            <group>
+                                <field name="kurs_awal" readonly="1" attrs="{'invisible': [('currency_id','=',13)]}"/>
+                                <field name="kurs_baru" attrs="{'invisible': [('currency_id','=',13)]}"/>
+                                <field name="cek_pelunasan"/>
+                                <field name="new_bank_id" attrs="{'required': [('cek_pelunasan', '=', True)],'invisible': [('cek_pelunasan', '!=', True)]}" options="{'no_create':True,'no_open':True}"/>
+                                <field name="new_plafond_id" options="{'no_create':True,'no_open':True}" attrs="{'required': [('cek_pelunasan', '=', True)],'invisible': [('cek_pelunasan', '!=', True)]}" domain="[('bank_id','=',new_bank_id),('jenis_id','=',jenis_id)]" />
+                                <field name="new_no_rekening" options="{'no_create':True,'no_open':True}" attrs="{'required': [('cek_pelunasan', '=', True)],'invisible': [('cek_pelunasan', '!=', True)]}" domain="[('bank_id','=',new_bank_id)]" />
+                                <field name="nomor_swift_baru" attrs="{'required': [('cek_pelunasan', '=', True)],'invisible': [('cek_pelunasan', '!=', True)]}" options="{'no_create':True,'no_open':True}"/>
+                                <field name="tgl_swift_baru" attrs="{'required': [('cek_pelunasan', '=', True)],'invisible': [('cek_pelunasan', '!=', True)]}" options="{'no_create':True,'no_open':True}"/>
+                                <field name="tgl_jatuh_tempo_baru" attrs="{'required': [('cek_pelunasan', '=', True)],'invisible': [('cek_pelunasan', '!=', True)]}" options="{'no_create':True,'no_open':True}"/>
+                                </group>
+                            <footer>
+                                <button type="object"  name="bayar" string="Bayar" class="oe_highlight"
+                                    attrs="{'invisible': ['|',('state','=','Lunas'),'&#38;',('nama_jenis','=','SKBDN/LC'),('status_akseptasi','!=','Akseptasi')]}"/>
+                                <!-- <button string="Cancel" class="btn btn-sm btn-default" special="cancel"/> -->
+                            </footer>
+                        </group>
+                        <group col="2" attrs="{'invisible': [('state','!=','Lunas')]}">
+                            <group col="2">
+                                <field name="loan_id" readonly="1"/>
+                                <field name="nama_jenis" readonly="1"/>
+                                <field name="vendor_id"/>
+                                <field name="tgl_jatuh_tempo" />
+                                <field name="branch_id" readonly="1"/>
+                                <field name="nilai_pokok" readonly="1"/>
+                                <field name="bank_id" readonly="1"/>
+                                <field name="nilai_bunga" readonly="1"/>
+                                <field name="keterangan"/>
+                                <field name="currency_id" invisible="1"/>
+                                <field name="status_akseptasi" invisible="1"/>
+                            </group>
+                            <group col="2">
+                                <field name="no_swift_akseptasi" attrs="{'readonly': [('state','=','Lunas')]}"/>
+                                <field name="tgl_swift_akseptasi" attrs="{'readonly': [('state','=','Lunas')]}"/>
+                                <field name="no_swift_tr" attrs="{'readonly': [('state','=','Lunas')]}"/>
+                                <field name="tgl_swift_tr" attrs="{'readonly': [('state','=','Lunas')]}"/>
+                                <field name="kurs_awal" readonly="1" attrs="{'invisible': [('currency_id','=',13)]}"/>
+                                <field name="total" readonly="1"/>
+                                <field name="kurs_baru" attrs="{'invisible': [('currency_id','=',13)]}"/>
+                            </group>
+                        </group>
+                    </sheet>
+                </form>
+            </field> 
         </record>
 
         <record id="wika_ncl_pembayaran_action" model="ir.actions.act_window">

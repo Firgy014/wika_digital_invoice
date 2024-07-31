@@ -11,7 +11,12 @@ class WikaNonCashLoan(models.Model):
     _inherit = 'mail.thread'
     _order = 'sisa_outstanding desc'
 
-    plaf_id = fields.Many2one('wika.plafond.bank', string="Plafond Bank")
+    plaf_id = fields.Many2one(
+        comodel_name='wika.plafond.bank', 
+        string="Plafond ID", 
+        related='plafond_bank_id.plafond_id', 
+        store=True
+    )
     name = fields.Char(string='Nomor', required=True, copy=False, readonly=True, 
         index=True, default=lambda self: _('New'))
     no_swift = fields.Char(string='Nomor Swift',copy=False)   
@@ -107,7 +112,7 @@ class WikaNonCashLoan(models.Model):
     # tgl_mulai_baru              = fields.Date(string='Tanggal Mulai')
     # tgl_akhir_baru              = fields.Date(string='Tanggal Akhir')
     # comp_amandemen              = fields.Integer(string='Amandemen Ke', compute='_compute_amandemen',copy=False)
-    # tgl_jatuh_tempo_baru = fields.Date(string='Tanggal Jatuh Tempo')
+    tgl_jatuh_tempo_baru = fields.Date(string='Tanggal Jatuh Tempo')
     # keterangan_hari_mulai_baru       = fields.Char(string="Keterangan Hari Mulai", store=True)
     # keterangan_hari_akhir_baru       = fields.Char(string="Keterangan Hari Akhir", store=True)
     catatan_sistem                   = fields.Text(string="Catatan Sistem")
@@ -173,11 +178,68 @@ class WikaNonCashLoan(models.Model):
     upload_to_sap       = fields.Boolean(string='Upload to SAP',default=False)
     send= fields.Boolean(string='Send to SAP',default=False,copy=False)
     identifier          = fields.Char(string='Identifier',copy=False)
+    is_pmcs = fields.Boolean(string="Dari PMCS", default=False)
+    allocation_id = fields.Many2one('wika.loan.allocation', string='Allocation')
+    kelompok            = fields.Selection([
+        ('Revolving Loans','Revolving Loans'),
+        ('Terms Loan','Terms Loan')],string='Kelompok', 
+    related='jenis_id.kelompok',store=True)
+
+    @api.onchange('nilai_progress', 'potongan_um')
+    def _nilai_pokok_tagihan(self):
+        for x in self:
+            if not x.is_pmcs:
+                x.nilai_pokok_tagihan = x.nilai_progress + x.potongan_um
+
+    @api.onchange('nilai_pokok_tagihan')
+    def _nilai_ppn(self):
+        for x in self:
+            if not x.is_pmcs:
+                x.ppn = round((x.nilai_pokok_tagihan/10))
+
+    @api.onchange('nilai_pokok_tagihan','potongan_pph_persen')
+    def _nilai_pph_persen(self):
+        for x in self:
+            if not x.is_pmcs:
+                x.potongan_pph = round((x.nilai_pokok_tagihan * x.potongan_pph_persen)/100)
+
+    @api.onchange('nilai_pokok_tagihan', 'ppn')
+    def _nilai_pokok_ppn(self):
+        for x in self:
+            if not x.is_pmcs:
+                x.nilai_pokok_ppn = x.nilai_pokok_tagihan + x.ppn
+
+    @api.onchange('nilai_pokok_ppn', 'potongan_pph', 'potongan_lain')
+    def _nilai_tagihan(self):
+        for x in self:
+            if not x.is_pmcs:
+                x.nilai_tagihan_netto = x.nilai_pokok_ppn - x.potongan_pph - x.potongan_lain
+
+    @api.onchange('nilai_pokok_tagihan', 'potongan_pph','potongan_lain')
+    def _nilai_pengajuan(self):
+        for x in self:
+            if not x.is_pmcs:
+                jumlah_pengajuan = x.nilai_pokok_tagihan - x.potongan_pph - x.potongan_lain
+                x.jumlah_pengajuan = int(jumlah_pengajuan)
+
+    # @api.onchange('jenis_id')
+    # def onchange_jenis(self):
+    #     self.nama_jenis = self.jenis_id.jenis
+    #     self.plafond_bank_id = None
+
+    @api.constrains('masa_klaim','jumlah_pengajuan','jumlah_pengajuan_asing')
+    def _check_masaklaim(self):
+        if self.masa_klaim < 0:
+            raise ValidationError('Masa Klaim harus bernilai positif!')
+        elif self.jumlah_pengajuan <= 0:
+            raise ValidationError('Nilai Pengajuan harus lebih dari 0')
+        elif self.jumlah_pengajuan <= 0 and self.currency_id != 13:
+            raise ValidationError('Nilai Pengajuan Asing harus lebih dari 0')
 
     @api.onchange('jenis_id')
     def onchange_jenis(self):
         self.nama_jenis=self.jenis_id.nama
-
+    
     @api.depends('project_id', 'branch_id', 'department_id')
     def _compute_level(self):
         for res in self:
@@ -274,7 +336,7 @@ class WikaNonCashLoan(models.Model):
         }
         return action
 
-    def action_submit(self):
+    def submit(self):
         if self.jenis_id.lock_date and self.tgl_pembukaan:
             today = datetime.today().strftime('%Y-%m-')
             end_date3 = self.tgl_pembukaan.strftime('%Y-%m-')
@@ -383,7 +445,13 @@ class WikaNonCashLoan(models.Model):
         else:
             raise ValidationError('User Akses Anda tidak berhak Submit!')
 
-    def action_approve_input(self):
+    def approve_input(self):
+        if self.jenis_id.lock_date and self.tgl_pembukaan:
+            today = datetime.today().strftime('%Y-%m-')
+            end_date3 = self.tgl_pembukaan.strftime('%Y-%m-')
+            if end_date3!=today:
+                raise ValidationError('Periksa Kembali Tanggal Pembukaan anda!')
+
         cek = False
         model_id = self.env['ir.model'].search([('model', '=', 'wika.noncash.loan')], limit=1)
         level = self.level
@@ -392,7 +460,7 @@ class WikaNonCashLoan(models.Model):
                 [('model_id', '=', model_id.id), ('level', '=', level)], limit=1)
             if not approval_id:
                 raise ValidationError(
-                    'Approval Setting untuk menu BAP tidak ditemukan. Silakan hubungi Administrator!')
+                    'Approval Setting untuk menu NCL tidak ditemukan. Silakan hubungi Administrator!')
 
             approval_line_id = self.env['wika.approval.setting.line'].search([
                 ('sequence', '=', self.step_approve),
@@ -403,7 +471,7 @@ class WikaNonCashLoan(models.Model):
             if groups_id:
                 print(groups_id.name)
                 for x in groups_id.users:
-                    if level == 'Proyek' and  self.project_id in x.project_ids and x.id == self._uid:
+                    if level == 'Proyek' and self.project_id in x.project_ids and x.id == self._uid:
                         cek = True
                     if level == 'Divisi Operasi' and x.branch_id == self.branch_id and x.id == self._uid:
                         cek = True
@@ -452,7 +520,7 @@ class WikaNonCashLoan(models.Model):
                 if groups_id_next:
                     print(groups_id_next.name)
                     for x in groups_id_next.users:
-                        if level == 'Proyek' and  self.project_id in x.project_ids:
+                        if level == 'Proyek' and (x.branch_id == self.branch_id or x.branch_id.parent_id.code == 'Pusat'):
                             first_user = x.id
                         if level == 'Divisi Operasi' and x.branch_id == self.branch_id:
                             first_user = x.id
@@ -469,7 +537,124 @@ class WikaNonCashLoan(models.Model):
                             'date_deadline': fields.Date.today() + timedelta(days=2),
                             'state': 'planned',
                             'status': 'to_approve',
-                            'summary': "Need Approval Document BAP"
+                            'summary': "Need Approval NCL"
+                        })
+                    else:
+                        raise ValidationError('User Role Next Approval Belum di Setting!')
+
+                # Cek jika level_role adalah 'Proyek' dan user ini adalah user terakhir yang menyetujui
+                if approval_line_id.level_role == 'Proyek':
+                    # Ambil semua user 'Proyek' yang belum menyetujui
+                    pending_users = self.env['wika.approval.setting.line'].search([
+                        ('approval_id', '=', approval_id.id),
+                        ('level_role', '=', 'Proyek'),
+                        ('sequence', '>', self.step_approve)
+                    ]).mapped('groups_id.users')
+                    
+                    # Jika tidak ada user 'Proyek' yang tersisa untuk menyetujui
+                    if not any(user.id != self._uid for user in pending_users):
+                        stage_next = self.env['wika.loan.stage'].search([
+                            ('tipe', '=', 'Non Cash'),
+                            ('name', '=', 'Pembukaan')
+                        ], limit=1)
+                        self.stage_id = stage_next.id
+
+            # Update status aktivitas yang sudah ada
+            if self.activity_ids:
+                for activity in self.activity_ids.filtered(lambda a: a.status != 'approved'):
+                    if activity.user_id.id == self._uid:
+                        activity.status = 'approved'
+                        activity.action_done()
+        else:
+            raise ValidationError('User Akses Anda tidak berhak Approve!')
+
+    def request(self):
+        cek = False
+        model_id = self.env['ir.model'].search([('model', '=', 'wika.noncash.loan')], limit=1)
+        
+        # Langsung menetapkan level sebagai 'Pusat'
+        level = 'Pusat'
+        
+        approval_id = self.env['wika.approval.setting'].sudo().search(
+            [('model_id', '=', model_id.id)], limit=1)
+        
+        if not approval_id:
+            raise ValidationError(
+                'Approval Setting untuk menu BAP tidak ditemukan. Silakan hubungi Administrator!')
+
+        approval_line_id = self.env['wika.approval.setting.line'].search([
+            ('sequence', '=', self.step_approve),
+            ('approval_id', '=', approval_id.id),
+            ('level_role', '=', level)
+        ], limit=1)
+        
+        # if not approval_line_id:
+        #     raise ValidationError('User Role Next Approval Belum di Setting!')
+        
+        groups_id = approval_line_id.groups_id
+        
+        if groups_id:
+            for x in groups_id.users:
+                if x.id == self._uid:
+                    cek = True
+
+        if cek:
+            # Proses approval
+            self.env['wika.noncash.loan.approval.line'].create({
+                'user_id': self._uid,
+                'groups_id': groups_id.id,
+                'date': datetime.now(),
+                'note': 'Approved',
+                'ncl_id': self.id
+            })
+
+            stage_sekarang = self.stage_id.sequence
+            # Proses akhir persetujuan
+            stage_next = self.env['wika.loan.stage'].search([
+                ('sequence', '=', stage_sekarang + 1),
+                ('tipe', '=', 'Non Cash'),
+                ('name', '=', 'Diajukan')
+            ], limit=1)
+            if stage_next:
+                self.stage_id = stage_next.id
+                self.step_approve += 1
+            # else:
+            #     # Update stage dan step approval
+            #     self.step_approve += 1
+            #     stage_next = self.env['wika.loan.stage'].search([
+            #         ('sequence', '=', stage_sekarang + 1),
+            #         ('tipe', '=', 'Non Cash'),
+            #         ('name', '=', 'Diajukan')
+            #     ], limit=1)
+            #     if stage_next:
+            #         self.stage_id = stage_next.id
+
+                # Cari approval setting line berikutnya
+                groups_line_next = self.env['wika.approval.setting.line'].search([
+                    ('level_role', '=', level),
+                    ('sequence', '=', self.step_approve),
+                    ('approval_id', '=', approval_id.id)
+                ], limit=1)
+                
+                groups_id_next = groups_line_next.groups_id
+
+                first_user = False
+                if groups_id_next:
+                    for x in groups_id_next.users:
+                        first_user = x.id
+                        break
+
+                    if first_user:
+                        # Buat aktivitas approval untuk user berikutnya
+                        self.env['mail.activity'].sudo().create({
+                            'activity_type_id': 4,
+                            'res_model_id': model_id.id,
+                            'res_id': self.id,
+                            'user_id': first_user,
+                            'date_deadline': fields.Date.today() + timedelta(days=2),
+                            'state': 'planned',
+                            'status': 'to_approve',
+                            'summary': "Need Approval NCL"
                         })
                     else:
                         raise ValidationError('User Role Next Approval Belum di Setting!')
@@ -482,6 +667,441 @@ class WikaNonCashLoan(models.Model):
                         activity.action_done()
         else:
             raise ValidationError('User Akses Anda tidak berhak Approve!')
+
+    def approve(self):
+        cek = False
+        model_id = self.env['ir.model'].search([('model', '=', 'wika.noncash.loan')], limit=1)
+        plafond = self.env['wika.loan.plafond.detail'].search([('id', '=', self.plafond_bank_id.id)])
+        
+        # Langsung menetapkan level sebagai 'Pusat'
+        level = 'Pusat'
+        
+        approval_id = self.env['wika.approval.setting'].sudo().search(
+            [('model_id', '=', model_id.id)], limit=1)
+        
+        if not approval_id:
+            raise ValidationError(
+                'Approval Setting untuk menu BAP tidak ditemukan. Silakan hubungi Administrator!')
+
+        approval_line_id = self.env['wika.approval.setting.line'].search([
+            ('sequence', '=', self.step_approve),
+            ('approval_id', '=', approval_id.id),
+            ('level_role', '=', level)
+        ], limit=1)
+        
+        # if not approval_line_id:
+        #     raise ValidationError('User Role Next Approval Belum di Setting!')
+        
+        groups_id = approval_line_id.groups_id
+        
+        if groups_id:
+            for x in groups_id.users:
+                if x.id == self._uid:
+                    cek = True
+
+        if cek:
+            # Proses approval
+            self.env['wika.noncash.loan.approval.line'].create({
+                'user_id': self._uid,
+                'groups_id': groups_id.id,
+                'date': datetime.now(),
+                'note': 'Approved',
+                'ncl_id': self.id
+            })
+            if self.status_loan == 'Aktif':
+                for data in plafond:
+                    use = sum(x.jumlah_pengajuan for x in self)
+                    plafond.terpakai += float(use)
+                    plafond.pengajuan -= float(use)
+                    plafond.plafond_id.terpakai += float(use)
+                    plafond.sisa = plafond.nilai - plafond.nilai_book - plafond.terpakai
+                    plafond.plafond_id.sisa = plafond.plafond_id.jumlah - plafond.plafond_id.terpakai - plafond.plafond_id.nilai_book
+                
+                self.tgl_akhir = self.tgl_akhir_perkiraan
+                
+                stage_next = self.env['wika.loan.stage'].search([
+                    ('tipe', '=', 'Non Cash'),
+                    ('name', '=', 'Disetujui')
+                ], limit=1)
+
+                if stage_next:
+                    self.stage_id = stage_next.id
+                else:
+                    raise ValidationError("Tahap 'Disetujui' tidak ditemukan!")
+
+            self.step_approve += 1
+
+            if self.step_approve < approval_id.total_approve:
+                groups_line_next = self.env['wika.approval.setting.line'].search([
+                    ('level_role', '=', level),
+                    ('sequence', '=', self.step_approve),
+                    ('approval_id', '=', approval_id.id)
+                ], limit=1)
+                
+            groups_id_next = groups_line_next.groups_id
+
+            first_user = False
+            if groups_id_next:
+                for x in groups_id_next.users:
+                    first_user = x.id
+                    break
+
+                if first_user:
+                    # Buat aktivitas approval untuk user berikutnya
+                    self.env['mail.activity'].sudo().create({
+                        'activity_type_id': 4,
+                        'res_model_id': model_id.id,
+                        'res_id': self.id,
+                        'user_id': first_user,
+                        'date_deadline': fields.Date.today() + timedelta(days=2),
+                        'state': 'planned',
+                        'status': 'to_approve',
+                        'summary': "Need Approval NCL"
+                    })
+                else:
+                    raise ValidationError('User Role Next Approval Belum di Setting!')
+
+            # Update status aktivitas yang sudah ada
+            if self.activity_ids:
+                for activity in self.activity_ids.filtered(lambda a: a.status != 'approved'):
+                    if activity.user_id.id == self._uid:
+                        activity.status = 'approved'
+                        activity.action_done()
+        else:
+            raise ValidationError('User Akses Anda tidak berhak Approve!')
+
+    def proses(self):
+        cek = False
+        model_id = self.env['ir.model'].search([('model', '=', 'wika.noncash.loan')], limit=1)
+        
+        # Langsung menetapkan level sebagai 'Pusat'
+        level = 'Pusat'
+        
+        approval_id = self.env['wika.approval.setting'].sudo().search(
+            [('model_id', '=', model_id.id)], limit=1)
+        
+        if not approval_id:
+            raise ValidationError(
+                'Approval Setting untuk menu BAP tidak ditemukan. Silakan hubungi Administrator!')
+
+        approval_line_id = self.env['wika.approval.setting.line'].search([
+            ('sequence', '=', self.step_approve),
+            ('approval_id', '=', approval_id.id),
+            ('level_role', '=', level)
+        ], limit=1)
+        
+        # if not approval_line_id:
+        #     raise ValidationError('User Role Next Approval Belum di Setting!')
+        
+        groups_id = approval_line_id.groups_id
+        
+        if groups_id:
+            for x in groups_id.users:
+                if x.id == self._uid:
+                    cek = True
+
+        if cek:
+            # Proses approval
+            self.env['wika.noncash.loan.approval.line'].create({
+                'user_id': self._uid,
+                'groups_id': groups_id.id,
+                'date': datetime.now(),
+                'note': 'Approved',
+                'ncl_id': self.id
+            })
+
+            stage_sekarang = self.stage_id.sequence
+            # Proses akhir persetujuan
+            stage_next = self.env['wika.loan.stage'].search([
+                ('sequence','=',stage_sekarang+1),
+                ('tipe','=','Non Cash'),
+                ('name','=','PENERBITAN')
+            ], limit=1)
+            if stage_next:
+                self.stage_id = stage_next.id
+                self.step_approve += 1
+
+                groups_line_next = self.env['wika.approval.setting.line'].search([
+                    ('level_role', '=', level),
+                    ('sequence', '=', self.step_approve),
+                    ('approval_id', '=', approval_id.id)
+                ], limit=1)
+                
+                groups_id_next = groups_line_next.groups_id
+
+                first_user = False
+                if groups_id_next:
+                    for x in groups_id_next.users:
+                        first_user = x.id
+                        break
+
+                    if first_user:
+                        # Buat aktivitas approval untuk user berikutnya
+                        self.env['mail.activity'].sudo().create({
+                            'activity_type_id': 4,
+                            'res_model_id': model_id.id,
+                            'res_id': self.id,
+                            'user_id': first_user,
+                            'date_deadline': fields.Date.today() + timedelta(days=2),
+                            'state': 'planned',
+                            'status': 'to_approve',
+                            'summary': "Need Approval NCL"
+                        })
+                    else:
+                        raise ValidationError('User Role Next Approval Belum di Setting!')
+
+            # Update status aktivitas yang sudah ada
+            if self.activity_ids:
+                for activity in self.activity_ids.filtered(lambda a: a.status != 'approved'):
+                    if activity.user_id.id == self._uid:
+                        activity.status = 'approved'
+                        activity.action_done()
+        else:
+            raise ValidationError('User Akses Anda tidak berhak Approve!')
+
+    def setuju(self):
+        cek = False
+        model_id = self.env['ir.model'].search([('model', '=', 'wika.noncash.loan')], limit=1)
+        plafond = self.env['wika.loan.plafond.detail'].search([('id', '=', self.plafond_bank_id.id)])
+        # Langsung menetapkan level sebagai 'Pusat'
+        level = 'Pusat'
+        
+        approval_id = self.env['wika.approval.setting'].sudo().search(
+            [('model_id', '=', model_id.id)], limit=1)
+        
+        if not approval_id:
+            raise ValidationError(
+                'Approval Setting untuk menu BAP tidak ditemukan. Silakan hubungi Administrator!')
+
+        approval_line_id = self.env['wika.approval.setting.line'].search([
+            ('sequence', '=', self.step_approve),
+            ('approval_id', '=', approval_id.id),
+            ('level_role', '=', level)
+        ], limit=1)
+        
+        # if not approval_line_id:
+        #     raise ValidationError('User Role Next Approval Belum di Setting!')
+        
+        groups_id = approval_line_id.groups_id
+        
+        if groups_id:
+            for x in groups_id.users:
+                if x.id == self._uid:
+                    cek = True
+
+        if cek:
+            # Proses approval
+            self.env['wika.noncash.loan.approval.line'].create({
+                'user_id': self._uid,
+                'groups_id': groups_id.id,
+                'date': datetime.now(),
+                'note': 'Approved',
+                'ncl_id': self.id
+            })
+
+            if self.nama_jenis == 'SCF':  
+                
+                scf_detail = {
+                    'loan_id': self.id,
+                    'no_swift_akseptasi':self.no_swift,
+                    'tgl_swift_akseptasi': self.tgl_swift,
+                    'tgl_jatuh_tempo': self.tgl_akhir,
+                    'nilai_pokok': self.jumlah_pengajuan,
+                }
+                detail = self.env['wika.ncl.pembayaran'].create(scf_detail)
+                # self.stage_id = stage_next.id
+                self.upload_to_sap = True
+
+                if self.status_loan=="Tidak Aktif":
+                    for data in plafond:
+                        use = self.jumlah_pengajuan
+                        plafond.terpakai = plafond.terpakai + float(use)
+                        plafond.plafond_id.terpakai = plafond.plafond_id.terpakai + float(use)
+                        plafond.sisa = plafond.nilai - plafond.nilai_book - plafond.terpakai
+                        plafond.plafond_id.sisa = plafond.plafond_id.jumlah - plafond.plafond_id.terpakai - plafond.plafond_id.nilai_book
+
+            elif self.nama_jenis == 'BG':
+                pembayaran = {                  
+                    'loan_id': self.id,
+                    'nama_jenis' :self.nama_jenis,
+                    'plafond_bank_id' : self.plafond_bank_id.id,
+                    'bank_id': self.bank_id.id,
+                    'branch_id': self.branch_id.id,
+                    'currency_id': self.currency_id.id,
+                    'masa_klaim': self.masa_klaim,
+                    'nilai_pokok': self.jumlah_pengajuan,
+                    'nilai_pokok_asing': self.jumlah_pengajuan_asing,
+                    'tgl_swift_akseptasi': self.tgl_swift,
+                    'no_swift_akseptasi': self.no_swift,
+                    'tgl_jatuh_tempo' : self.tgl_jatuh_tempo,
+                    'state' : 'Belum Dibayar'
+                    }
+                detail = self.env['wika.ncl.pembayaran'].create(pembayaran)
+                self.payment_id = detail.id
+                self.stage_id = stage_next.id
+                self.upload_to_sap = True
+                if self.status_loan=="Tidak Aktif":
+                    for data in plafond:
+                        use = self.jumlah_pengajuan
+                        plafond.terpakai = plafond.terpakai + float(use)
+                        plafond.plafond_id.terpakai = plafond.plafond_id.terpakai + float(use)
+                        plafond.sisa = plafond.nilai - plafond.nilai_book - plafond.terpakai
+                        plafond.plafond_id.sisa = plafond.plafond_id.jumlah - plafond.plafond_id.terpakai - plafond.plafond_id.nilai_book
+            else:
+                self.stage_id = stage_next.id
+                self.upload_to_sap = True
+
+            stage_sekarang = self.stage_id.sequence
+            # Proses akhir persetujuan
+            stage_next = self.env['wika.loan.stage'].search([
+                ('sequence','=',stage_sekarang+1),
+                ('tipe','=','Non Cash'),
+                ('name','=','Setuju')
+                ], limit=1)
+            if stage_next:
+                self.stage_id = stage_next.id
+                self.step_approve += 1
+
+                groups_line_next = self.env['wika.approval.setting.line'].search([
+                    ('level_role', '=', level),
+                    ('sequence', '=', self.step_approve),
+                    ('approval_id', '=', approval_id.id)
+                ], limit=1)
+                
+                groups_id_next = groups_line_next.groups_id
+
+                first_user = False
+                if groups_id_next:
+                    for x in groups_id_next.users:
+                        first_user = x.id
+                        break
+
+                    if first_user:
+                        # Buat aktivitas approval untuk user berikutnya
+                        self.env['mail.activity'].sudo().create({
+                            'activity_type_id': 4,
+                            'res_model_id': model_id.id,
+                            'res_id': self.id,
+                            'user_id': first_user,
+                            'date_deadline': fields.Date.today() + timedelta(days=2),
+                            'state': 'planned',
+                            'status': 'to_approve',
+                            'summary': "Need Approval NCL"
+                        })
+                    else:
+                        raise ValidationError('User Role Next Approval Belum di Setting!')
+
+            # Update status aktivitas yang sudah ada
+            if self.activity_ids:
+                for activity in self.activity_ids.filtered(lambda a: a.status != 'approved'):
+                    if activity.user_id.id == self._uid:
+                        activity.status = 'approved'
+                        activity.action_done()
+        else:
+            raise ValidationError('User Akses Anda tidak berhak Approve!')
+    
+    def perpanjangan(self):
+        cek = False
+        model_id = self.env['ir.model'].search([('model', '=', 'wika.noncash.loan')], limit=1)
+        
+        # Langsung menetapkan level sebagai 'Pusat'
+        level = 'Pusat'
+        
+        approval_id = self.env['wika.approval.setting'].sudo().search(
+            [('model_id', '=', model_id.id)], limit=1)
+        
+        if not approval_id:
+            raise ValidationError(
+                'Approval Setting untuk menu BAP tidak ditemukan. Silakan hubungi Administrator!')
+
+        approval_line_id = self.env['wika.approval.setting.line'].search([
+            ('sequence', '=', self.step_approve),
+            ('approval_id', '=', approval_id.id),
+            ('level_role', '=', level)
+        ], limit=1)
+        
+        # if not approval_line_id:
+        #     raise ValidationError('User Role Next Approval Belum di Setting!')
+        
+        groups_id = approval_line_id.groups_id
+        
+        if groups_id:
+            for x in groups_id.users:
+                if x.id == self._uid:
+                    cek = True
+
+        if cek:
+            # Proses approval
+            self.env['wika.noncash.loan.approval.line'].create({
+                'user_id': self._uid,
+                'groups_id': groups_id.id,
+                'date': datetime.now(),
+                'note': 'Approved',
+                'ncl_id': self.id
+            })
+
+            stage_sekarang = self.stage_id.sequence
+            # Proses akhir persetujuan
+            stage_next = self.env['wika.loan.stage'].search([
+                ('tipe','=','Non Cash'),
+                ('name','=','Perpanjangan')
+            ], limit=1)
+            if stage_next:
+                self.stage_id = stage_next.id
+                self.step_approve += 1
+
+                groups_line_next = self.env['wika.approval.setting.line'].search([
+                    ('level_role', '=', level),
+                    ('sequence', '=', self.step_approve),
+                    ('approval_id', '=', approval_id.id)
+                ], limit=1)
+                
+                groups_id_next = groups_line_next.groups_id
+
+                first_user = False
+                if groups_id_next:
+                    for x in groups_id_next.users:
+                        first_user = x.id
+                        break
+
+                    if first_user:
+                        # Buat aktivitas approval untuk user berikutnya
+                        self.env['mail.activity'].sudo().create({
+                            'activity_type_id': 4,
+                            'res_model_id': model_id.id,
+                            'res_id': self.id,
+                            'user_id': first_user,
+                            'date_deadline': fields.Date.today() + timedelta(days=2),
+                            'state': 'planned',
+                            'status': 'to_approve',
+                            'summary': "Need Approval NCL"
+                        })
+                    else:
+                        raise ValidationError('User Role Next Approval Belum di Setting!')
+
+            # Update status aktivitas yang sudah ada
+            if self.activity_ids:
+                for activity in self.activity_ids.filtered(lambda a: a.status != 'approved'):
+                    if activity.user_id.id == self._uid:
+                        activity.status = 'approved'
+                        activity.action_done()
+        else:
+            raise ValidationError('User Akses Anda tidak berhak Approve!')
+
+    def dok_diterima(self):
+        stage_sekarang = self.stage_id.sequence
+        stage_next = self.env['wika.loan.stage'].search([
+            ('sequence','=',stage_sekarang+1),
+            ('tipe','=','Non Cash'),
+            ('name','=','Dok Diterima')])
+        if stage_next.id:
+            plafond = self.env['wika.loan.plafond.detail'].search([('id', '=', self.plafond_bank_id.id)])
+            for data in plafond:
+                use = sum(x.jumlah_pengajuan for x in self)
+                plafond.pengajuan = plafond.pengajuan + float(use)
+            self.stage_id = stage_next.id
+            self.dalam_proses = self.jumlah_pengajuan
+            # self.step_approve = 1
 
     def action_reject_input(self):
         user = self.env['res.users'].search([('id', '=', self._uid)], limit=1)
@@ -522,8 +1142,6 @@ class WikaNonCashLoan(models.Model):
             return action
         else:
             raise ValidationError('User Akses Anda tidak berhak Reject!')
-
-
 
     def action_proses(self):
         stage_default = self.env['wika.loan.stage'].search([
@@ -575,6 +1193,26 @@ class WikaNonCashLoan(models.Model):
 
             record.keterangan_html = keterangan_html
 
+    def action_pp(self):
+        if self.payment_id:
+            if self.payment_id.state == 'Lunas':
+                raise ValidationError('Loan ini sudah lunas. Tidak dapat diperpanjang!')
+
+        form_id = self.env.ref('wika_noncash_loan.ncl_view_form_pp_id')
+        self.tgl_jatuh_tempo_baru=self.tgl_jatuh_tempo
+        return {
+            'name': 'Perpanjangan',
+            'view_type': 'form',
+            'view_mode': 'form',
+            'res_model': 'wika.noncash.loan',
+            'view_id': form_id.id,
+            'type': 'ir.actions.act_window', 
+            'res_id':self.id,        
+            'target': 'new',
+            'context': {'default_id': self.id} 
+        }
+    
+    
 # class WikAuditLog(models.Model):
 #     _name = 'wika.ncl.audit.log'
 #     _description = 'Audit Log'
@@ -621,7 +1259,7 @@ class WikaNclPembayaran(models.Model):
     
     loan_id = fields.Many2one(comodel_name='wika.noncash.loan', string="Loan",
         ondelete='set null')
-    # jenis_id                = fields.Many2one(related='loan_id.jenis_id')
+    jenis_id                = fields.Many2one(related='loan_id.jenis_id')
     nama_jenis              = fields.Char(related='loan_id.nama_jenis',string="Kriteria",store=True, index=True)
     # nama_tipe_kriteria      = fields.Char(related='loan_id.tipe_jenis_name',string="Tipe Kriteria",store=True)
     jumlah_pengajuan        = fields.Float(related='loan_id.jumlah_pengajuan', string="Nilai Pengajuan",
@@ -634,8 +1272,8 @@ class WikaNclPembayaran(models.Model):
     tgl_swift_akseptasi     = fields.Date(string='Tanggal Swift Akseptasi')
     no_swift_tr             = fields.Char(string='Nomor Swift TR/Perpanjangan')
     tgl_swift_tr            = fields.Date(string='Tanggal Swift TR/Perpanjangan')
-    # no_swift_tr_baru        = fields.Char(string='Nomor Swift TR/Perpanjangan')
-    # tgl_swift_tr_baru       = fields.Date(string='Tanggal Swift TR/Perpanjangan')
+    no_swift_tr_baru        = fields.Char(string='Nomor Swift TR/Perpanjangan')
+    tgl_swift_tr_baru       = fields.Date(string='Tanggal Swift TR/Perpanjangan')
     bank_id                 = fields.Many2one(related='loan_id.bank_id',string="Bank", index=True, store=True)
     # department_id           = fields.Many2one(related='loan_id.department_id',
     #                           string="Divisi Lama", store=True, index=True, readonly=True)
@@ -648,7 +1286,7 @@ class WikaNclPembayaran(models.Model):
     # currency_diff           = fields.Many2one(comodel_name="res.currency",string='Currency') 
     kurs_awal               = fields.Float(related='loan_id.kurs',string='Kurs Pembukaan')    
     kurs_baru               = fields.Float(string='Kurs Baru')  
-    # masa_klaim              = fields.Integer(string='Masa Klaim (Hari)')
+    masa_klaim              = fields.Integer(string='Masa Klaim (Hari)')
 
     # cur_id                  = fields.Integer(related='loan_id.currency_id.id',store=False)
     nilai_pokok_asing       = fields.Float(string='Pembayaran Pokok Asing')
@@ -667,20 +1305,20 @@ class WikaNclPembayaran(models.Model):
         ('TR', 'TR'),
         ('Perpanjangan', 'Perpanjangan')
     ], default='Belum Dibayar', index=True)
-    # cek_pelunasan           = fields.Boolean(string='Apakah Pelunasan dilakukan dengan Bank Lain?')
-    # new_no_rekening = fields.Many2one(comodel_name='res.partner.bank',
-    #                               string="No Rekening")
-    # new_bank_id             = fields.Many2one(comodel_name='res.bank',string='New Bank')
-    # new_plafond_id          = fields.Many2one(comodel_name='loan.plafond.detail')
+    cek_pelunasan           = fields.Boolean(string='Apakah Pelunasan dilakukan dengan Bank Lain?')
+    new_no_rekening = fields.Many2one(comodel_name='res.partner.bank',
+                                  string="No Rekening")
+    new_bank_id             = fields.Many2one(comodel_name='res.bank',string='New Bank')
+    new_plafond_id          = fields.Many2one(comodel_name='wika.loan.plafond.detail')
     status_akseptasi        = fields.Selection(string='Status Akseptasi', selection=[
                                 ('Akseptasi', 'Akseptasi'),
                                 ('Tidak Akseptasi', 'Tidak Akseptasi')])            
     project_id               = fields.Many2one(comodel_name='project.project',
                                           string="Proyek", ondelete='set null', index=True)
 
-    # nomor_swift_baru = fields.Char(string="Nomor Swift Baru", store=True)
-    # tgl_swift_baru = fields.Date(string='Tanggal Swift Baru', store=True)
-    # tgl_jatuh_tempo_baru = fields.Date(string='Tanggal Jatuh Tempo Baru', store=True)
+    nomor_swift_baru = fields.Char(string="Nomor Swift Baru", store=True)
+    tgl_swift_baru = fields.Date(string='Tanggal Swift Baru', store=True)
+    tgl_jatuh_tempo_baru = fields.Date(string='Tanggal Jatuh Tempo Baru', store=True)
     keterangan_jatuh_tempo = fields.Selection(string='Keterangan Jatuh Tempo',
                                               selection=[('pasti', 'Pasti'), ('tidak_pasti', 'Tidak Pasti')])
     # # Baru
@@ -711,6 +1349,223 @@ class WikaNclPembayaran(models.Model):
     upload_to_sap       = fields.Boolean(string='Upload to SAP',default=False)
     send= fields.Boolean(string='Send to SAP',default=False,copy=False)
     identifier          = fields.Char(string='Identifier',copy=False)
+
+
+    @api.depends('nilai_pokok', 'nilai_bunga')
+    def _compute_total(self):
+        for record in self:
+            record.total = record.nilai_pokok + record.nilai_bunga
+    
+    @api.onchange('nilai_pokok')
+    def onchange_nilai_bunga(self):
+        for x in self:
+            if x.nilai_pokok and x.loan_id.rate_bunga:
+                x.nilai_bunga = ((x.nilai_pokok * x.loan_id.rate_bunga) / 100)
+    
+    def action_pp(self):
+        form_id = self.env.ref('wika_noncash_loan.ncl_view_form_pp_id')
+        return {
+            'name': 'Perpanjangan',
+            'view_type': 'form',
+            'view_mode': 'form',
+            'res_model': 'wika.noncash.loan',
+            'view_id': form_id.id,
+            'type': 'ir.actions.act_window', 
+            'res_id':self.loan_id.id,        
+            'target': 'new',
+            'context': {'default_id': self.loan_id.id} 
+        }    
+
+    def action_tr(self):
+        form_id = self.env.ref('wika_noncash_loan.ncl_pembayaran_form_view_tr')
+        return {
+            'name': 'TR',
+            'view_type': 'form',
+            'view_mode': 'form',
+            'res_model': 'wika.ncl.pembayaran',
+            'view_id': form_id.id,
+            'type': 'ir.actions.act_window', 
+            'res_id':self.id,        
+            'target': 'new',
+            'context': {'default_id': self.id} 
+        }
+
+    def tr(self):
+        if self.loan_id.nama_jenis == 'SCF' or self.loan_id.nama_jenis == 'SKBDN/LC':
+            jenis = self.env['wika.loan.jenis'].search([
+                ('nama', '=', self.loan_id.nama_jenis), 
+                ('tipe', '=', 'Non Cash')
+                ], limit=1)
+            
+            tgl_formatted = self.tgl_jatuh_tempo_baru
+            tgl_mulai = "%s-01-01" % tgl_formatted.year
+            tgl_akhir = "%s-12-31" % tgl_formatted.year
+        
+            stage_next = self.env['wika.loan.stage'].search([
+                ('tipe', '=', 'Non Cash'),
+                ('name', '=', 'TR')])
+
+            # cek jenis dulu, skbdn tr, else perpanjangan, terus status akseptasi
+            if self.nama_jenis == 'SCF':
+                if self.state == 'Belum Dibayar':
+                    self.state = 'TR'
+                    self.loan_id.stage_id = stage_next.id
+            else:
+                if self.state == 'Belum Dibayar' and self.status_akseptasi == 'Akseptasi':
+                    self.state = 'TR'
+                    self.loan_id.stage_id = stage_next.id
+
+            log_tr = self.env['wika.loan.log.tr'].search([
+                ('pembayaran_id', '=', self.id)])
+            ke = 1
+            if log_tr:
+                for x in log_tr:
+                    ke += 1
+            today = fields.Date.context_today(self)
+            self.env['wika.loan.log.tr'].create({
+                'loan_id': self.loan_id.id,
+                'ke': ke,
+                'pembayaran_id': self.id,
+                'no_swift_lama': self.no_swift_tr,
+                'tgl_swift_lama': self.tgl_swift_tr,
+                'tgl_jatuh_tempo_lama': self.tgl_jatuh_tempo,
+                'tgl_eksekusi': today})
+
+            self.no_swift_tr = self.no_swift_tr_baru
+            self.tgl_swift_tr = self.tgl_swift_tr_baru
+            self.tgl_jatuh_tempo = self.tgl_jatuh_tempo_baru
+
+    def action_bayar_view(self):
+        form_id = self.env.ref('wika_noncash_loan.ncl_pembayaran_form_view1')
+        return {
+            'name': 'Form Pembayaran',
+            'view_type': 'form',
+            'view_mode': 'form',
+            'res_model': 'wika.ncl.pembayaran',
+            'view_id': form_id.id,
+            'type': 'ir.actions.act_window',
+            'res_id':self.id,
+            'context': {'default_id': self.id},
+            'target': 'new',
+        }  
+
+    @api.depends('plafond_bank_id.terpakai')
+    def bayar(self):          
+        today = fields.Date.context_today(self)
+        stage_next = self.env['wika.loan.stage'].search([
+            ('tipe','=','Non Cash'),
+            ('name','=','TR')])
+
+        loan_obj = self.env['wika.noncash.loan']
+        loan_pembayaran_obj = self.env['wika.ncl.pembayaran']
+        if  self.cek_pelunasan == True and self.new_plafond_id:  
+            self.plafond_bank_id.terpakai = self.plafond_bank_id.terpakai - self.nilai_pokok
+            self.plafond_bank_id.plafond_id.terpakai = sum(x.terpakai for x in self.plafond_bank_id.plafond_id.plafond_ids)
+            self.plafond_bank_id.sisa = self.plafond_bank_id.nilai - self.plafond_bank_id.nilai_book - self.plafond_bank_id.terpakai
+            self.plafond_bank_id.plafond_id.sisa = self.plafond_bank_id.plafond_id.jumlah - self.plafond_bank_id.plafond_id.terpakai
+
+            self.new_plafond_id.terpakai = self.new_plafond_id.terpakai + self.nilai_pokok
+            self.new_plafond_id.plafond_id.terpakai =  sum(x.terpakai for x in self.new_plafond_id.plafond_id.plafond_ids)
+            self.new_plafond_id.sisa = self.new_plafond_id.nilai -  self.new_plafond_id.nilai_book- self.new_plafond_id.terpakai
+            self.new_plafond_id.plafond_id.sisa = self.new_plafond_id.plafond_id.jumlah - self.new_plafond_id.plafond_id.terpakai - self.new_plafond_id.plafond_id.nilai_book
+
+            self.loan_id.sisa_outstanding -= self.nilai_pokok
+
+            state_sebelumnya=self.state
+            self.state = 'Lunas'
+            self.tgl_bayar  = today
+            swift_formatted = datetime.strptime(self.tgl_swift_baru, '%Y-%m-%d')
+            data = loan_obj.create({
+                'bank_id': self.new_bank_id.id,
+                'tgl_pembukaan':self.loan_id.tgl_pembukaan,
+                'jenis_id' : self.loan_id.jenis_id.id,
+                'tgl_swift':self.tgl_swift_baru,
+                'tgl_mulai' : self.tgl_swift_baru,
+                'tgl_akhir' : swift_formatted+ timedelta(days=self.loan_id.tenor),
+                'tgl_mulai_perkiraan': self.tgl_swift_baru,
+                'tgl_akhir_perkiraan': swift_formatted+ timedelta(days=self.loan_id.tenor),
+                'no_swift':self.nomor_swift_baru,
+                'currency_id' : self.loan_id.currency_id.id,
+                'plafond_bank_id': self.new_plafond_id.id,
+                'jumlah_pengajuan': self.nilai_pokok,
+                'rate_bunga': self.loan_id.rate_bunga,
+                'tipe_jenis': self.loan_id.tipe_jenis.id,
+                'branch_id': self.loan_id.branch_id.id,
+                'projek_id': self.loan_id.projek_id.id or False,
+                'vendor_id': self.loan_id.vendor_id.id,
+                'nomor_surat': self.loan_id.nomor_surat,
+                'tenor': self.loan_id.tenor,
+                'stage_id' : stage_next.id,
+                'no_rekening':self.new_no_rekening.id,
+                'sisa_outstanding':self.nilai_pokok,
+                'catatan': "Loan dari pembayaran lain."
+                    "\nBank : "+self.bank_id.name+
+                    "\nNomor Loan : "+self.loan_id.name+
+                    "\nNomor Swift : " + str(self.no_swift_akseptasi) or str(self.loan_id.no_swift)
+                })
+            self.keterangan = "Dengan Bank Lain "+data.name
+            loan_pembayaran_obj.create({
+                'loan_id':data.id,
+                'bank_id': self.new_bank_id.id,
+                'state': state_sebelumnya,
+                'tgl_jatuh_tempo': self.tgl_jatuh_tempo_baru,
+                'nama_jenis': self.nama_jenis,
+                'state': 'TR',
+                'stage_name': stage_next.name,              
+                'currency_id': self.loan_id.currency_id.id,
+                'plafond_bank_id': self.new_plafond_id.id,
+                'nilai_pokok': self.nilai_pokok,
+                'total': self.total,
+                'branch_id': self.loan_id.branch_id.id,
+                'projek_id': self.projek_id.id or False,
+                'plaf_id': self.new_plafond_id.plafond_id.id,
+                'Csisa': self.Csisa,
+                'Gsisa': self.Gsisa,
+                'nama_tipe_kriteria': self.nama_tipe_kriteria
+            })
+        elif self.cek_pelunasan != True:
+            self.new_plafond_id = None  
+            self.new_bank_id = None                       
+            self.plafond_bank_id.terpakai = self.plafond_bank_id.terpakai - self.nilai_pokok 
+            self.plafond_bank_id.plafond_id.terpakai = sum(x.terpakai for x in self.plafond_bank_id.plafond_id.plafond_ids)                                
+            self.plafond_bank_id.sisa = self.plafond_bank_id.nilai - self.plafond_bank_id.nilai_book - self.plafond_bank_id.terpakai
+            self.plafond_bank_id.plafond_id.sisa = self.plafond_bank_id.plafond_id.jumlah - self.plafond_bank_id.plafond_id.terpakai - self.new_plafond_id.plafond_id.nilai_book
+            self.state = 'Lunas'
+            self.tgl_bayar  = today
+            self.loan_id.sisa_outstanding-=self.nilai_pokok
+
+
+    @api.depends('loan_id.plafond_bank_id.terpakai')
+    def lunas(self):
+        today = fields.Date.today()
+        today_formatted = datetime.strptime(today, '%Y-%m-%d')
+        for x in self:
+            if x.nilai_pokok:
+                x.plafond_bank_id.terpakai = x.plafond_bank_id.terpakai - x.nilai_pokok
+            x.plafond_bank_id.sisa = x.plafond_bank_id.nilai - x.plafond_bank_id.terpakai
+            x.plafond_bank_id.plafond_id.terpakai = sum(x.terpakai for x in self.plafond_bank_id.plafond_id.plafond_ids)                                
+            x.plafond_bank_id.plafond_id.sisa = x.plafond_bank_id.plafond_id.jumlah - x.plafond_bank_id.plafond_id.terpakai        
+        self.state = 'Lunas'
+        self.tgl_bayar  = today_formatted
+        self.loan_id.sisa_outstanding -= self.nilai_pokok
+
+
+    def lunas_auto(self):
+        today = fields.Date.today()                      
+        ncl_tempo = self.env['wika.noncash.loan'].search([
+            ('nama_jenis', '=', 'BG'),
+            ('payment_id.state','=','Belum Dibayar'),
+            ('tgl_jatuh_tempo','<',today)])
+        for x in ncl_tempo:
+            if ncl_tempo:
+                x.plafond_bank_id.terpakai = x.plafond_bank_id.terpakai - x.jumlah_pengajuan               
+                x.plafond_bank_id.sisa = x.plafond_bank_id.nilai - x.plafond_bank_id.terpakai - x.plafond_bank_id.nilai_book
+                x.plafond_bank_id.plafond_id.terpakai = x.plafond_bank_id.plafond_id.terpakai - x.payment_id.nilai_pokok              
+                x.plafond_bank_id.plafond_id.sisa = x.plafond_bank_id.plafond_id.jumlah - x.plafond_bank_id.plafond_id.terpakai  - x.plafond_bank_id.plafond_id.nilai_book       
+        
+                x.payment_id.state = 'Lunas'
+                x.payment_id.keterangan = 'Auto Payment'
+                x.payment_id.tgl_bayar  = today
 
 
 class WikaLogTr(models.Model):
