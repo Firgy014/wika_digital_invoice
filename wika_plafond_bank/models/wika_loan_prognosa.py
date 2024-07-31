@@ -70,11 +70,11 @@ class WikaLoanPrognosaLine(models.Model):
         ('9', 'September'), ('10', 'Oktober'), ('11', 'November'), ('12', 'Desember')],
         string='Bulan')
     tgl_mulai = fields.Date(string='Tanggal Mulai')
-    tgl_mulai = fields.Date(string='Tanggal Akhir')
+    tgl_akhir = fields.Date(string='Tanggal Akhir')
     nilai_pembukaan = fields.Float(string='Nilai Pembukaan')
     nilai_tr = fields.Float(string='Nilai TR')
-    terpakai = fields.Float(string='Terpakai')
-    terpakai_tr = fields.Float(string='Terpakai TR')
+    terpakai = fields.Float(string="Terpakai Pembukaan", compute='_compute_terpakai')
+    terpakai_tr = fields.Float(string="Terpakai TR", compute='_compute_terpakai_tr')
 
     def replace_lower(self):
         if self.bulan:
@@ -82,3 +82,63 @@ class WikaLoanPrognosaLine(models.Model):
             xvalue = value.replace('.', '_').replace(' ', '_').lower()
             return xvalue
         return None
+
+    def _compute_terpakai(self):
+        for x in self:
+            # Gunakan tgl_mulai langsung karena sudah bertipe datetime.date
+            tgl_formatted = x.prognosa_id.tgl_mulai
+            
+            # Konversi bulan ke integer
+            bulan_int = int(x.bulan)
+            bln_next = bulan_int + 1
+            year_next = tgl_formatted.year
+            if bln_next > 12:
+                bln_next -= 12
+                year_next += 1
+
+            # Format tanggal menjadi string
+            tgl_awal = "{}-{:02d}-01".format(tgl_formatted.year, bulan_int)
+            tgl_akhir = "{}-{:02d}-01".format(year_next, bln_next)
+
+            loan = self.env['wika.noncash.loan'].search([
+                ('tgl_pembukaan', '>=', tgl_awal),
+                ('tgl_pembukaan', '<', tgl_akhir),
+                ('nama_jenis', '=', x.prognosa_id.tipe_id.nama),
+                ('bank_id', '=', x.prognosa_id.bank_id.id),
+                ('branch_id', '=', x.prognosa_id.branch_id.id),
+                ('stage_name', 'not in', ['Pengajuan', 'Proses Approval', 'Reject', 'Ditolak', 'Tidak Akseptasi', 'Cancel', 'Perpanjangan', 'TR'])
+            ])
+            jumlah = 0
+            for z in loan:
+                jumlah += z.jumlah_pengajuan
+
+            x.terpakai = jumlah
+
+    def _compute_terpakai_tr(self):
+        for x in self:
+            tgl_formatted = x.prognosa_id.tgl_mulai
+            bulan_int = int(x.bulan)
+            bln_next = bulan_int + 1
+            year_next = tgl_formatted.year
+            if bln_next > 12:
+                bln_next -= 12
+                year_next += 1
+
+            # tinggal cek yang tr nya. Berarti cari juga yang stage name nya not in tr (tbd)
+
+            tgl_awal = "{}-{:02d}-01".format(tgl_formatted.year, bulan_int)
+            tgl_akhir = "{}-{:02d}-01".format(year_next, bln_next)
+
+            pembayaran = self.env['wika.ncl.pembayaran'].search([
+                ('tgl_jatuh_tempo', '>=', tgl_awal),
+                ('tgl_jatuh_tempo', '<', tgl_akhir),
+                ('nama_jenis', '=', x.prognosa_id.tipe_id.nama),
+                ('bank_id', '=', x.prognosa_id.bank_id.id),
+                ('branch_id', '=', x.prognosa_id.branch_id.id),
+                ('state', '=', 'TR')
+            ])
+            jumlah = 0
+            for z in pembayaran:
+                jumlah += z.nilai_pokok
+
+            x.terpakai_tr = jumlah

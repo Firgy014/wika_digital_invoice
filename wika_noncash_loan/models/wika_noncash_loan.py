@@ -1293,7 +1293,7 @@ class WikaNclPembayaran(models.Model):
 
     nilai_pokok             = fields.Float(string='Pembayaran Pokok')
     nilai_bunga             = fields.Float(string='Nilai Bunga')
-    total                   = fields.Float(string='Total', compute='_compute_total', store=True)
+    total                   = fields.Float(string='Total', compute='_compute_total')
     # jumlah_bayar            = fields.Float(string='Jumlah Bayar')
 
     tgl_jatuh_tempo         = fields.Date(string='Tanggal Jatuh Tempo', index=True, required=True)
